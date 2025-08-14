@@ -1,0 +1,19 @@
+[project]
+name = "proplotter"
+version = "0.1.0"
+description = "A general-purpose plotting library for creating publication-quality figures."
+readme = "README.md"
+authors = [
+    { name = "Danielle Rothermel", email = "danielle.rothermel@gmail.com" }
+]
+requires-python = ">=3.9"
+dependencies = [
+    "matplotlib>=3.9.4",
+    "seaborn>=0.13.2",
+    "numpy>=2.0.2",
+    "pandas>=2.3.1"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
