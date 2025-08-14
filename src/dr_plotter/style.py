@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from typing import List
 
 
-class ProPlotterStyle:
+class DrPlotterStyle:
     """Unified visual styling for all plots."""
 
     # Color palette
