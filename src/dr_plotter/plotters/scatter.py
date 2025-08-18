@@ -10,7 +10,7 @@ class ScatterPlotter(BasePlotter):
     An atomic plotter for creating scatter plots.
     """
 
-    def __init__(self, data, x, y, **kwargs):
+    def __init__(self, data, x, y, dr_plotter_kwargs, matplotlib_kwargs):
         """
         Initialize the ScatterPlotter.
 
@@ -18,9 +18,10 @@ class ScatterPlotter(BasePlotter):
             data: A pandas DataFrame.
             x: The column for the x-axis.
             y: The column for the y-axis.
-            **kwargs: Styling options for the scatter plot.
+            dr_plotter_kwargs: High-level styling options for dr_plotter.
+            matplotlib_kwargs: Low-level kwargs to pass to matplotlib.
         """
-        super().__init__(data, **kwargs)
+        super().__init__(data, dr_plotter_kwargs, matplotlib_kwargs)
         self.x = x
         self.y = y
 
@@ -31,5 +32,6 @@ class ScatterPlotter(BasePlotter):
         Args:
             ax: A matplotlib Axes object.
         """
-        ax.scatter(self.data[self.x], self.data[self.y], **self.kwargs)
+        ax.scatter(self.data[self.x], self.data[self.y], **self.matplotlib_kwargs)
         self.style.apply_grid(ax)
+        self._apply_styling(ax)

@@ -4,7 +4,7 @@ Example 3: The Low-Level API (FigureManager)
 This script introduces power-users to creating complex, multi-panel figures
 using the FigureManager.
 
-The plot will be displayed for 30 seconds.
+The plot will be displayed for 5 seconds.
 """
 
 import pandas as pd
@@ -16,27 +16,29 @@ from dr_plotter.plotters.histogram import HistogramPlotter
 
 if __name__ == "__main__":
     # --- Create sample data ---
-    ts_data = pd.DataFrame({"x": np.arange(100), "y": np.random.randn(100).cumsum()})
-    dist_data = pd.DataFrame({"z": np.random.randn(1000)})
+    ts_data = pd.DataFrame({'x_axis_time': np.arange(100), 'y_axis_value': np.random.randn(100).cumsum()})
+    dist_data = pd.DataFrame({'distribution': np.random.randn(1000)})
 
     # --- Use the FigureManager for a multi-panel layout ---
-    # Note: We don't use the context manager here because we need to control the show() call
     fm = FigureManager(rows=1, cols=2, figsize=(12, 5))
 
     # --- Add a line plot to the first subplot ---
-    ax1 = fm.get_axes(row=0, col=0)
-    line_plotter = LinePlotter(ts_data, x="x", y="y")
-    line_plotter.render(ax1)
-    ax1.set_title("Time Series")
+    # Note that the plotter automatically infers the axis labels from the column names.
+    line_plotter = LinePlotter(ts_data, 'x_axis_time', 'y_axis_value', 
+                               dr_plotter_kwargs={'title': 'Time Series'}, 
+                               matplotlib_kwargs={})
+    fm.add_plotter(line_plotter, row=0, col=0)
 
     # --- Add a histogram to the second subplot ---
-    ax2 = fm.get_axes(row=0, col=1)
-    hist_plotter = HistogramPlotter(dist_data, x="z", bins=20)
-    hist_plotter.render(ax2)
-    ax2.set_title("Value Distribution")
+    # Note the smart 'Frequency' ylabel and inferred xlabel.
+    hist_plotter = HistogramPlotter(dist_data, 'distribution', 
+                                    dr_plotter_kwargs={'title': 'Value Distribution'}, 
+                                    matplotlib_kwargs={'bins': 20})
+    fm.add_plotter(hist_plotter, row=0, col=1)
 
     # --- Show plot with timeout ---
     plt.suptitle("Example 3: FigureManager with Low-Level Plotters")
+    plt.tight_layout(rect=[0, 0, 1, 0.96]) # Adjust layout to make room for suptitle
     plt.show(block=False)
-    plt.pause(10)
+    plt.pause(5)
     plt.close()
