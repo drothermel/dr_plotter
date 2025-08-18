@@ -5,8 +5,6 @@ Example 3: The Low-Level API (FigureManager)
 import pandas as pd
 import numpy as np
 from dr_plotter.figure import FigureManager
-from dr_plotter.plotters.line import LinePlotter
-from dr_plotter.plotters.histogram import HistogramPlotter
 from dr_plotter.utils import setup_arg_parser, show_or_save_plot
 
 if __name__ == "__main__":
@@ -16,17 +14,16 @@ if __name__ == "__main__":
     ts_data = pd.DataFrame({'x_axis_time': np.arange(100), 'y_axis_value': np.random.randn(100).cumsum()})
     dist_data = pd.DataFrame({'distribution': np.random.randn(1000)})
 
+    # Use the FigureManager with its new, cleaner API
     fm = FigureManager(rows=1, cols=2, figsize=(12, 5))
-    fm.fig.suptitle("Example 3: FigureManager with Low-Level Plotters")
+    fm.fig.suptitle("Example 3: FigureManager with High-Level API")
 
-    line_plotter = LinePlotter(ts_data, 'x_axis_time', 'y_axis_value', 
-                               dr_plotter_kwargs={'title': 'Time Series'}, 
-                               matplotlib_kwargs={})
-    fm.add_plotter(line_plotter, row=0, col=0)
+    # Add a line plot to the first subplot
+    fm.line(row=0, col=0, data=ts_data, x='x_axis_time', y='y_axis_value', 
+            title='Time Series')
 
-    hist_plotter = HistogramPlotter(dist_data, 'distribution', 
-                                    dr_plotter_kwargs={'title': 'Value Distribution'}, 
-                                    matplotlib_kwargs={'bins': 20})
-    fm.add_plotter(hist_plotter, row=0, col=1)
+    # Add a histogram to the second subplot
+    fm.hist(row=0, col=1, data=dist_data, x='distribution', 
+            title='Value Distribution', bins=20)
 
     show_or_save_plot(fm.fig, args, '03_figure_manager')

@@ -14,23 +14,11 @@ from .plotters.heatmap import HeatmapPlotter
 from .plotters.bump import BumpPlotter
 from .plotters.contour import ContourPlotter
 from .plotters.grouped_bar import GroupedBarPlotter
-
-DR_PLOTTER_STYLE_KEYS = ['title', 'xlabel', 'ylabel', 'legend', 'display_values', 'xlabel_pos']
-
-def _partition_kwargs(kwargs):
-    """Partitions kwargs into dr_plotter specific and matplotlib specific."""
-    dr_plotter_kwargs = {}
-    matplotlib_kwargs = {}
-    for key, value in kwargs.items():
-        if key in DR_PLOTTER_STYLE_KEYS:
-            dr_plotter_kwargs[key] = value
-        else:
-            matplotlib_kwargs[key] = value
-    return dr_plotter_kwargs, matplotlib_kwargs
+from .utils import partition_kwargs
 
 def _create_plot(plotter_class, plotter_args, ax=None, **kwargs):
     """Generic factory for creating and rendering a plot."""
-    dr_plotter_kwargs, matplotlib_kwargs = _partition_kwargs(kwargs)
+    dr_plotter_kwargs, matplotlib_kwargs = partition_kwargs(kwargs)
     
     if ax is None:
         fig, ax = plt.subplots()
