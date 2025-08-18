@@ -54,7 +54,7 @@ BASE_THEME = Theme(
     # Cycles for multi-series plots
     color_cycle=itertools.cycle(BASE_COLORS),
     linestyle_cycle=itertools.cycle(["-", "--", ":", "-."]),
-    marker_cycle=itertools.cycle(["o", "s", "^", "D", "v", "< ", ">", "p"]),
+    marker_cycle=itertools.cycle(["o", "s", "^", "D", "v", "<", ">", "p"]),
     # Global defaults
     line_width=2.0,
     marker_size=50,

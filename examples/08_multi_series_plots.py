@@ -1,21 +1,22 @@
 """
-Example 8: Multi-Series Plots with the new Theming system.
+Example 8: Multi-Series Plots with the new simplified API.
 """
 
 import pandas as pd
 import numpy as np
 import dr_plotter.api as drp
 from dr_plotter.figure import FigureManager
+from dr_plotter import consts
 from dr_plotter.utils import setup_arg_parser, show_or_save_plot
 
 if __name__ == "__main__":
-    parser = setup_arg_parser(description="Multi-Series Plot Example using Theming")
+    parser = setup_arg_parser(description="Multi-Series Plot Example using New API")
     args = parser.parse_args()
 
     fm = FigureManager(rows=2, cols=2, figsize=(15, 12))
-    fm.fig.suptitle("Multi-Series Plot Examples with Theming", fontsize=16)
+    fm.fig.suptitle("Multi-Series Plot Examples with Simplified API", fontsize=16)
 
-    # --- 1. Multi-Line Plot ---
+    # --- 1. Multi-Line Plot with hue grouping ---
     ax1 = fm.get_axes(row=0, col=0)
     line_data = pd.DataFrame(
         {
@@ -24,16 +25,16 @@ if __name__ == "__main__":
             "category": np.repeat(["A", "B", "C"], 10),
         }
     )
-    # The theme automatically cycles through colors
-    for i, category in enumerate(line_data["category"].unique()):
-        subset = line_data[line_data["category"] == category]
-        drp.line(subset, x="time", y="value", ax=ax1, label=category)
+    drp.line(
+        line_data,
+        x="time",
+        y="value",
+        hue="category",
+        ax=ax1,
+        title="Multi-Line Plot (hue=category)",
+    )
 
-    # Apply final styling
-    ax1.set_title("Multi-Line Plot")
-    ax1.legend()
-
-    # --- 2. Multi-Scatter Plot ---
+    # --- 2. Multi-Scatter Plot with redundant encoding ---
     ax2 = fm.get_axes(row=0, col=1)
     scatter_data = pd.DataFrame(
         {
@@ -42,54 +43,61 @@ if __name__ == "__main__":
             "category": np.repeat(["X", "Y", "Z"], 30),
         }
     )
-    # The theme automatically cycles through markers
-    for i, category in enumerate(scatter_data["category"].unique()):
-        subset = scatter_data[scatter_data["category"] == category]
-        drp.scatter(subset, x="x_coord", y="y_coord", ax=ax2, label=category)
+    drp.scatter(
+        scatter_data,
+        x="x_coord",
+        y="y_coord",
+        hue="category",  # Color by category
+        marker="category",  # AND marker by category (redundant encoding)
+        ax=ax2,
+        title="Multi-Scatter Plot (hue+marker=category)",
+    )
 
-    # Apply final styling
-    ax2.set_title("Multi-Scatter Plot")
-    ax2.legend()
-
-    # --- 3. Multi-Bar Plot (Grouped) ---
-    bar_data = pd.DataFrame(
+    # --- 3. Multi-Metric Line Plot ---
+    # Create data with multiple metrics and groupings
+    multi_metric_data = pd.DataFrame(
         {
-            "group": ["Group 1", "Group 2", "Group 3"] * 2,
-            "category": np.repeat(["Category A", "Category B"], 3),
-            "value": np.random.rand(6) * 10 + 2,
+            "epoch": list(range(20)) * 2,
+            "learning_rate": [0.001] * 20 + [0.01] * 20,
+            "train_loss": np.random.rand(40) * np.exp(-np.linspace(0, 2, 40)),
+            "val_loss": np.random.rand(40) * np.exp(-np.linspace(0, 1.5, 40)) + 0.1,
         }
     )
-    fm.grouped_bar(
-        row=1,
-        col=0,
-        data=bar_data,
-        x="group",
-        y="value",
-        hue="category",
-        title="Grouped Bar Plot",
+
+    ax3 = fm.get_axes(row=1, col=0)
+    # Plot multiple metrics with automatic METRICS encoding
+    drp.line(
+        multi_metric_data,
+        x="epoch",
+        y=["train_loss", "val_loss"],
+        hue=consts.METRICS,  # Metrics get different colors
+        style="learning_rate",  # LR gets different line styles
+        ax=ax3,
+        title="Multi-Metric Plot (hue=METRICS, style=lr)",
     )
 
-    # --- 4. Grouped Violin Plot ---
-    groups = ["Group 1", "Group 2", "Group 3"]
-    hues = ["Type A", "Type B"]
-    data = []
-    for group in groups:
-        for hue in hues:
-            values = np.random.normal(
-                loc=groups.index(group) * 3 + hues.index(hue), scale=1, size=100
-            )
-            for value in values:
-                data.append([group, hue, value])
-    violin_data = pd.DataFrame(data, columns=["main_category", "sub_category", "value"])
-    fm.violin(
-        row=1,
-        col=1,
-        data=violin_data,
-        x="main_category",
-        y="value",
-        hue="sub_category",
-        title="Grouped Violin Plot",
-        legend=True,
+    # --- 4. Complex encoding example ---
+    ax4 = fm.get_axes(row=1, col=1)
+
+    # Create a more complex dataset
+    complex_data = pd.DataFrame(
+        {
+            "x": np.random.rand(120) * 10,
+            "y": np.random.rand(120) * 10,
+            "experiment": np.repeat(["Exp1", "Exp2", "Exp3"], 40),
+            "condition": np.tile(np.repeat(["Control", "Treatment"], 20), 3),
+        }
     )
 
-    show_or_save_plot(fm.fig, args, "08_multi_series_themed")
+    # Use multiple visual channels
+    drp.scatter(
+        complex_data,
+        x="x",
+        y="y",
+        hue="experiment",  # Color by experiment
+        marker="condition",  # Marker by condition
+        ax=ax4,
+        title="Complex Encoding (hue=exp, marker=cond)",
+    )
+
+    show_or_save_plot(fm.fig, args, "08_multi_series_new_api")
