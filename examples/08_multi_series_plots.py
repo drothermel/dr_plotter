@@ -28,7 +28,7 @@ if __name__ == "__main__":
     for i, category in enumerate(line_data["category"].unique()):
         subset = line_data[line_data["category"] == category]
         drp.line(subset, x="time", y="value", ax=ax1, label=category)
-    
+
     # Apply final styling
     ax1.set_title("Multi-Line Plot")
     ax1.legend()
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     for i, category in enumerate(scatter_data["category"].unique()):
         subset = scatter_data[scatter_data["category"] == category]
         drp.scatter(subset, x="x_coord", y="y_coord", ax=ax2, label=category)
-    
+
     # Apply final styling
     ax2.set_title("Multi-Scatter Plot")
     ax2.legend()
