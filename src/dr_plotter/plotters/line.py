@@ -32,6 +32,8 @@ class LinePlotter(BasePlotter):
         Args:
             ax: A matplotlib Axes object.
         """
-        ax.plot(self.data[self.x], self.data[self.y], **self.matplotlib_kwargs)
+        if not self.data.empty and self.x is not None and self.y is not None:
+            ax.plot(self.data[self.x], self.data[self.y], **self.matplotlib_kwargs)
+        
         self.style.apply_grid(ax)
         self._apply_styling(ax)

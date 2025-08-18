@@ -1,48 +1,39 @@
 """
 Example 1: The High-Level API
-
-This script demonstrates the simplicity of the high-level API for creating basic plots.
-Each plot will be displayed for 5 seconds.
 """
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import dr_plotter.api as drp
+from dr_plotter.utils import setup_arg_parser, show_or_save_plot
 
-# --- Create Sample Data ---
-def create_data():
-    """Creates a sample DataFrame for plotting."""
-    return pd.DataFrame({
+if __name__ == "__main__":
+    parser = setup_arg_parser(description='High-Level API Example')
+    args = parser.parse_args()
+
+    data = pd.DataFrame({
         'x_values': np.arange(50),
         'y_values': np.random.randn(50).cumsum(),
         'categories': ['A', 'B', 'C', 'D', 'E'] * 10
     })
 
-def show_plot():
-    """Helper function to show a plot with a timeout."""
-    plt.show(block=False)
-    plt.pause(5)
-    plt.close()
-
-
-if __name__ == "__main__":
-    data = create_data()
-
     # --- Scatter Plot ---
-    drp.scatter(data, x='x_values', y='y_values', title='Scatter Plot')
-    show_plot()
+    fig1, _ = drp.scatter(data, x='x_values', y='y_values', title='Scatter Plot')
+    show_or_save_plot(fig1, args, '01_scatter')
 
     # --- Line Plot ---
-    drp.line(data, x='x_values', y='y_values', title='Line Plot')
-    show_plot()
+    fig2, _ = drp.line(data, x='x_values', y='y_values', title='Line Plot')
+    show_or_save_plot(fig2, args, '01_line')
 
     # --- Bar Plot ---
     bar_data = data.groupby('categories')['y_values'].mean().reset_index()
-    drp.bar(bar_data, x='categories', y='y_values', title='Bar Plot')
-    show_plot()
+    fig3, _ = drp.bar(bar_data, x='categories', y='y_values', title='Bar Plot')
+    show_or_save_plot(fig3, args, '01_bar')
 
-    # --- Histogram ---
-    # Note the automatic 'Frequency' ylabel
-    drp.hist(data, x='y_values', bins=10, title='Histogram')
-    show_plot()
+    # --- Histogram (Counts) ---
+    fig4, _ = drp.hist(data, x='y_values', bins=10, title='Histogram (Counts)')
+    show_or_save_plot(fig4, args, '01_histogram_counts')
+
+    # --- Histogram (Density) ---
+    fig5, _ = drp.hist(data, x='y_values', bins=10, title='Histogram (Density)', density=True)
+    show_or_save_plot(fig5, args, '01_histogram_density')

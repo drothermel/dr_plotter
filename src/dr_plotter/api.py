@@ -5,37 +5,27 @@ High-level API for creating plots.
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from .plotters.scatter import ScatterPlotter
-from .plotters.line import LinePlotter
-from .plotters.bar import BarPlotter
-from .plotters.histogram import HistogramPlotter
-from .plotters.violin import ViolinPlotter
-from .plotters.heatmap import HeatmapPlotter
-
-DR_PLOTTER_STYLE_KEYS = ['title', 'xlabel', 'ylabel', 'legend']
-
-def _partition_kwargs(kwargs):
-    """Partitions kwargs into dr_plotter specific and matplotlib specific."""
-    dr_plotter_kwargs = {}
-    matplotlib_kwargs = {}
-    for key, value in kwargs.items():
-        if key in DR_PLOTTER_STYLE_KEYS:
-            dr_plotter_kwargs[key] = value
-        else:
-            matplotlib_kwargs[key] = value
-    return dr_plotter_kwargs, matplotlib_kwargs
+from .plotters import (
+    ScatterPlotter,
+    LinePlotter,
+    BarPlotter,
+    HistogramPlotter,
+    ViolinPlotter,
+    HeatmapPlotter,
+    BumpPlotter,
+    ContourPlotter,
+    GroupedBarPlotter,
+)
+from .utils import create_and_render_plot
 
 def _create_plot(plotter_class, plotter_args, ax=None, **kwargs):
-    """Generic factory for creating and rendering a plot."""
-    dr_plotter_kwargs, matplotlib_kwargs = _partition_kwargs(kwargs)
-    
+    """Generic factory for creating a figure and then rendering a plot."""
     if ax is None:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(constrained_layout=True)
     else:
         fig = ax.get_figure()
-
-    plotter = plotter_class(*plotter_args, dr_plotter_kwargs, matplotlib_kwargs)
-    plotter.render(ax)
+    
+    create_and_render_plot(ax, plotter_class, plotter_args, **kwargs)
     return fig, ax
 
 def scatter(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
@@ -54,10 +44,22 @@ def hist(data: pd.DataFrame, x: str, ax=None, **kwargs):
     """Create a histogram."""
     return _create_plot(HistogramPlotter, (data, x), ax, **kwargs)
 
-def violin(data: pd.DataFrame, x: str = None, y: str = None, ax=None, **kwargs):
+def violin(data: pd.DataFrame, x: str = None, y: str = None, hue: str = None, ax=None, **kwargs):
     """Create a violin plot."""
-    return _create_plot(ViolinPlotter, (data, x, y), ax, **kwargs)
+    return _create_plot(ViolinPlotter, (data, x, y, hue), ax, **kwargs)
 
 def heatmap(data: pd.DataFrame, ax=None, **kwargs):
     """Create a heatmap."""
     return _create_plot(HeatmapPlotter, (data,), ax, **kwargs)
+
+def bump_plot(data: pd.DataFrame, time_col: str, category_col: str, value_col: str, ax=None, **kwargs):
+    """Create a bump plot to visualize rankings over time."""
+    return _create_plot(BumpPlotter, (data, time_col, category_col, value_col), ax, **kwargs)
+
+def gmm_level_set(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
+    """Create a GMM level set plot."""
+    return _create_plot(ContourPlotter, (data, x, y), ax, **kwargs)
+
+def grouped_bar(data: pd.DataFrame, x: str, y: str, hue: str, ax=None, **kwargs):
+    """Create a grouped bar plot."""
+    return _create_plot(GroupedBarPlotter, (data, x, y, hue), ax, **kwargs)

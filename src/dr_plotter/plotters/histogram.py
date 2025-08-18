@@ -36,5 +36,8 @@ class HistogramPlotter(BasePlotter):
 
         # Apply styling with smart default for ylabel
         if 'ylabel' not in self.dr_plotter_kwargs:
-            self.dr_plotter_kwargs['ylabel'] = 'Frequency'
+            if self.matplotlib_kwargs.get('density'):
+                self.dr_plotter_kwargs['ylabel'] = 'Density'
+            else:
+                self.dr_plotter_kwargs['ylabel'] = 'Frequency'
         self._apply_styling(ax)
