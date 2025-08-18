@@ -16,8 +16,8 @@ from dr_plotter.plotters.histogram import HistogramPlotter
 
 if __name__ == "__main__":
     # --- Create sample data ---
-    ts_data = pd.DataFrame({'x': np.arange(100), 'y': np.random.randn(100).cumsum()})
-    dist_data = pd.DataFrame({'z': np.random.randn(1000)})
+    ts_data = pd.DataFrame({"x": np.arange(100), "y": np.random.randn(100).cumsum()})
+    dist_data = pd.DataFrame({"z": np.random.randn(1000)})
 
     # --- Use the FigureManager for a multi-panel layout ---
     # Note: We don't use the context manager here because we need to control the show() call
@@ -25,18 +25,18 @@ if __name__ == "__main__":
 
     # --- Add a line plot to the first subplot ---
     ax1 = fm.get_axes(row=0, col=0)
-    line_plotter = LinePlotter(ts_data, x='x', y='y')
+    line_plotter = LinePlotter(ts_data, x="x", y="y")
     line_plotter.render(ax1)
-    ax1.set_title('Time Series')
+    ax1.set_title("Time Series")
 
     # --- Add a histogram to the second subplot ---
     ax2 = fm.get_axes(row=0, col=1)
-    hist_plotter = HistogramPlotter(dist_data, x='z', bins=20)
+    hist_plotter = HistogramPlotter(dist_data, x="z", bins=20)
     hist_plotter.render(ax2)
-    ax2.set_title('Value Distribution')
+    ax2.set_title("Value Distribution")
 
     # --- Show plot with timeout ---
     plt.suptitle("Example 3: FigureManager with Low-Level Plotters")
     plt.show(block=False)
-    plt.pause(30)
+    plt.pause(10)
     plt.close()

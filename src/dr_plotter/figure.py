@@ -32,13 +32,32 @@ class FigureManager:
         Returns:
             A matplotlib Axes object.
         """
-        if row is None and col is None:
+        # If axes is a single object, return it
+        if not hasattr(self.axes, '__len__'):
             return self.axes
+
+        # If axes is 1D array
+        if self.axes.ndim == 1:
+            if row is not None and col is not None:
+                # This case is ambiguous, but we'll assume the user wants the col index
+                # if rows==1, or the row index if cols==1.
+                idx = col if self.axes.shape[0] > 1 else row
+                return self.axes[idx]
+            elif row is not None:
+                return self.axes[row]
+            elif col is not None:
+                return self.axes[col]
+            else:
+                return self.axes
+
+        # If axes is 2D array
         if row is not None and col is not None:
             return self.axes[row, col]
-        if row is not None:
-            return self.axes[row]
-        return self.axes[col]
+        elif row is not None:
+            return self.axes[row, :]
+        elif col is not None:
+            return self.axes[:, col]
+        return self.axes
 
     def add_plotter(self, plotter, row=None, col=None):
         """
