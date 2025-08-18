@@ -3,6 +3,7 @@ Atomic plotter for scatter plots.
 """
 
 from .base import BasePlotter
+from ..theme import SCATTER_THEME
 
 
 class ScatterPlotter(BasePlotter):
@@ -10,30 +11,26 @@ class ScatterPlotter(BasePlotter):
     An atomic plotter for creating scatter plots.
     """
 
-    def __init__(self, data, x, y, dr_plotter_kwargs, matplotlib_kwargs):
+    def __init__(self, data, x, y, **kwargs):
         """
         Initialize the ScatterPlotter.
-
-        Args:
-            data: A pandas DataFrame.
-            x: The column for the x-axis.
-            y: The column for the y-axis.
-            dr_plotter_kwargs: High-level styling options for dr_plotter.
-            matplotlib_kwargs: Low-level kwargs to pass to matplotlib.
         """
-        super().__init__(data, dr_plotter_kwargs, matplotlib_kwargs)
+        super().__init__(data, **kwargs)
         self.x = x
         self.y = y
+        self.theme = SCATTER_THEME
 
     def render(self, ax):
         """
         Render the scatter plot on the given axes.
-
-        Args:
-            ax: A matplotlib Axes object.
         """
-        if not self.data.empty and self.x is not None and self.y is not None:
-            ax.scatter(self.data[self.x], self.data[self.y], **self.matplotlib_kwargs)
-        
-        self.style.apply_grid(ax)
+        plot_kwargs = {
+            "marker": self._get_style("marker"),
+            "s": self._get_style("marker_size"),
+            "alpha": self._get_style("alpha"),
+            "color": self._get_style("color", next(self.theme.get("color_cycle"))),
+        }
+        plot_kwargs.update(self._filter_plot_kwargs())
+
+        ax.scatter(self.data[self.x], self.data[self.y], **plot_kwargs)
         self._apply_styling(ax)

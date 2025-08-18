@@ -2,59 +2,70 @@
 Base class for all plotter objects.
 """
 
-from ..style import DrPlotterStyle
+from ..theme import BASE_THEME, DR_PLOTTER_STYLE_KEYS
 
 
 class BasePlotter:
     """
     A base class for all atomic plotters.
-
-    Defines the interface that all plotters must follow and provides
-    centralized styling logic.
     """
 
-    def __init__(self, data, dr_plotter_kwargs, matplotlib_kwargs):
+    def __init__(self, data, **kwargs):
         """
         Initialize the plotter.
 
         Args:
             data: A pandas DataFrame.
-            dr_plotter_kwargs: High-level styling options for dr_plotter.
-            matplotlib_kwargs: Low-level kwargs to pass to matplotlib.
+            **kwargs: All keyword arguments, including styling.
         """
         self.data = data
-        self.dr_plotter_kwargs = dr_plotter_kwargs
-        self.matplotlib_kwargs = matplotlib_kwargs
-        self.style = DrPlotterStyle()
+        self.kwargs = kwargs
+        self.theme = BASE_THEME  # Default theme
+
+    def _get_style(self, key, default_override=None):
+        """Gets a style value, prioritizing user kwargs over theme defaults."""
+        if key in self.kwargs:
+            return self.kwargs.get(key)
+        return self.theme.get(key, default_override)
+
+    def _filter_plot_kwargs(self):
+        """Removes dr_plotter specific keys from self.kwargs."""
+        plot_kwargs = self.kwargs.copy()
+        for key in DR_PLOTTER_STYLE_KEYS:
+            plot_kwargs.pop(key, None)
+        return plot_kwargs
 
     def _apply_styling(self, ax):
         """Apply high-level styling options to the axes object."""
-        # Set title
-        if 'title' in self.dr_plotter_kwargs:
-            ax.set_title(self.dr_plotter_kwargs['title'])
+        ax.set_title(
+            self._get_style("title"), fontsize=self.theme.get("title_fontsize")
+        )
 
-        # Set xlabel
-        if 'xlabel' in self.dr_plotter_kwargs:
-            ax.set_xlabel(self.dr_plotter_kwargs['xlabel'])
-        elif hasattr(self, 'x') and self.x:
-            ax.set_xlabel(self.x.replace('_', ' ').title())
+        xlabel = self._get_style(
+            "xlabel",
+            self.x.replace("_", " ").title() if hasattr(self, "x") and self.x else None,
+        )
+        ax.set_xlabel(xlabel, fontsize=self.theme.get("label_fontsize"))
 
-        # Set ylabel
-        if 'ylabel' in self.dr_plotter_kwargs:
-            ax.set_ylabel(self.dr_plotter_kwargs['ylabel'])
-        elif hasattr(self, 'y') and self.y:
-            ax.set_ylabel(self.y.replace('_', ' ').title())
+        ylabel = self._get_style(
+            "ylabel",
+            self.y.replace("_", " ").title() if hasattr(self, "y") and self.y else None,
+        )
+        ax.set_ylabel(ylabel, fontsize=self.theme.get("label_fontsize"))
 
-        # Set legend
-        if self.dr_plotter_kwargs.get('legend') is True:
-            # Avoid duplicate legends
+        if self._get_style("grid", True):
+            ax.grid(True, alpha=self.theme.get("grid_alpha"))
+        else:
+            ax.grid(False)
+
+        if self._get_style("legend") is True:
             if not ax.get_legend():
-                ax.legend()
+                ax.legend(fontsize=self.theme.get("legend_fontsize"))
 
     def render(self, ax):
         """
         The core method to draw the plot on a matplotlib Axes object.
-
-        This method should be implemented by all subclasses.
         """
-        raise NotImplementedError("The render method must be implemented by subclasses.")
+        raise NotImplementedError(
+            "The render method must be implemented by subclasses."
+        )
