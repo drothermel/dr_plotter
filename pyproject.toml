@@ -1,5 +1,5 @@
 [project]
-name = "proplotter"
+name = "dr_plotter"
 version = "0.1.0"
 description = "A general-purpose plotting library for creating publication-quality figures."
 readme = "README.md"
@@ -11,9 +11,14 @@ dependencies = [
     "matplotlib>=3.9.4",
     "seaborn>=0.13.2",
     "numpy>=2.0.2",
-    "pandas>=2.3.1"
+    "pandas>=2.3.1",
+    "datadec",
+    "scipy>=1.13.1",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.uv.sources]
+datadec = { git = "https://github.com/drothermel/datadec.git" }

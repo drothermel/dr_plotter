@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from ..style import ProPlotterStyle
+from ..style import DrPlotterStyle
 
 
 class BasePlotter:
@@ -18,7 +18,7 @@ class BasePlotter:
             data: A pandas DataFrame.
         """
         self.data = data
-        self.style = ProPlotterStyle()
+        self.style = DrPlotterStyle()
 
     def _setup_figure(self, figsize=(10, 6)):
         """
