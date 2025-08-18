@@ -3,63 +3,66 @@ Compound plotter for contour plots, specifically for GMM level sets.
 """
 
 import numpy as np
-import pandas as pd
 from sklearn.mixture import GaussianMixture
 from .base import BasePlotter
+from ..theme import CONTOUR_THEME
+
 
 class ContourPlotter(BasePlotter):
     """
     A compound plotter for creating contour plots of GMM level sets.
     """
 
-    def __init__(self, data, x, y, dr_plotter_kwargs, matplotlib_kwargs):
+    def __init__(self, data, x, y, **kwargs):
         """
         Initialize the ContourPlotter.
-
-        Args:
-            data: A pandas DataFrame.
-            x: The column for the x-axis data points.
-            y: The column for the y-axis data points.
-            dr_plotter_kwargs: High-level styling options for dr_plotter.
-            matplotlib_kwargs: Low-level kwargs to pass to matplotlib.
         """
-        super().__init__(data, dr_plotter_kwargs, matplotlib_kwargs)
+        super().__init__(data, **kwargs)
         self.x = x
         self.y = y
+        self.theme = CONTOUR_THEME
 
     def _prepare_data(self):
         """Fit GMM and create a meshgrid for contour plotting."""
-        # Fit a Gaussian Mixture Model
-        gmm = GaussianMixture(n_components=3, random_state=0).fit(self.data[[self.x, self.y]])
-
-        # Create a meshgrid
+        gmm = GaussianMixture(n_components=3, random_state=0).fit(
+            self.data[[self.x, self.y]]
+        )
         x_min, x_max = self.data[self.x].min() - 1, self.data[self.x].max() + 1
         y_min, y_max = self.data[self.y].min() - 1, self.data[self.y].max() + 1
-        xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100),
-                             np.linspace(y_min, y_max, 100))
-        
-        # Calculate the log probability density
+        xx, yy = np.meshgrid(
+            np.linspace(x_min, x_max, 100), np.linspace(y_min, y_max, 100)
+        )
         Z = -gmm.score_samples(np.c_[xx.ravel(), yy.ravel()])
         Z = Z.reshape(xx.shape)
-
         return xx, yy, Z
 
     def render(self, ax):
         """
         Render the GMM level set plot on the given axes.
-
-        Args:
-            ax: A matplotlib Axes object.
         """
         xx, yy, Z = self._prepare_data()
 
-        # Plot the contour and create a colorbar
-        contour = ax.contour(xx, yy, Z, levels=14, **self.matplotlib_kwargs)
+        contour_kwargs = {
+            "levels": self.theme.get("levels"),
+            "cmap": self.theme.get("cmap"),
+        }
+        contour_kwargs.update(self._filter_plot_kwargs())
+
+        scatter_kwargs = {
+            "s": self.theme.get("scatter_size"),
+            "alpha": self.theme.get("scatter_alpha"),
+            "color": self.theme.get("color_cycle").__next__(),
+        }
+        # Don't let contour kwargs leak into scatter
+        filtered_scatter_kwargs = self._filter_plot_kwargs()
+        for key in ["levels", "cmap"]:
+            filtered_scatter_kwargs.pop(key, None)
+        scatter_kwargs.update(filtered_scatter_kwargs)
+
+        contour = ax.contour(xx, yy, Z, **contour_kwargs)
         fig = ax.get_figure()
         fig.colorbar(contour, ax=ax)
 
-        # Overlay the original data points
-        ax.scatter(self.data[self.x], self.data[self.y], s=10, alpha=0.5)
+        ax.scatter(self.data[self.x], self.data[self.y], **scatter_kwargs)
 
-        self.style.apply_grid(ax)
         self._apply_styling(ax)
