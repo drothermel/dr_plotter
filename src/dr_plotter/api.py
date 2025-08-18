@@ -11,8 +11,11 @@ from .plotters.bar import BarPlotter
 from .plotters.histogram import HistogramPlotter
 from .plotters.violin import ViolinPlotter
 from .plotters.heatmap import HeatmapPlotter
+from .plotters.bump import BumpPlotter
+from .plotters.contour import ContourPlotter
+from .plotters.grouped_bar import GroupedBarPlotter
 
-DR_PLOTTER_STYLE_KEYS = ['title', 'xlabel', 'ylabel', 'legend']
+DR_PLOTTER_STYLE_KEYS = ['title', 'xlabel', 'ylabel', 'legend', 'display_values', 'xlabel_pos']
 
 def _partition_kwargs(kwargs):
     """Partitions kwargs into dr_plotter specific and matplotlib specific."""
@@ -54,10 +57,22 @@ def hist(data: pd.DataFrame, x: str, ax=None, **kwargs):
     """Create a histogram."""
     return _create_plot(HistogramPlotter, (data, x), ax, **kwargs)
 
-def violin(data: pd.DataFrame, x: str = None, y: str = None, ax=None, **kwargs):
+def violin(data: pd.DataFrame, x: str = None, y: str = None, hue: str = None, ax=None, **kwargs):
     """Create a violin plot."""
-    return _create_plot(ViolinPlotter, (data, x, y), ax, **kwargs)
+    return _create_plot(ViolinPlotter, (data, x, y, hue), ax, **kwargs)
 
 def heatmap(data: pd.DataFrame, ax=None, **kwargs):
     """Create a heatmap."""
     return _create_plot(HeatmapPlotter, (data,), ax, **kwargs)
+
+def bump_plot(data: pd.DataFrame, time_col: str, category_col: str, value_col: str, ax=None, **kwargs):
+    """Create a bump plot to visualize rankings over time."""
+    return _create_plot(BumpPlotter, (data, time_col, category_col, value_col), ax, **kwargs)
+
+def gmm_level_set(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
+    """Create a GMM level set plot."""
+    return _create_plot(ContourPlotter, (data, x, y), ax, **kwargs)
+
+def grouped_bar(data: pd.DataFrame, x: str, y: str, hue: str, ax=None, **kwargs):
+    """Create a grouped bar plot."""
+    return _create_plot(GroupedBarPlotter, (data, x, y, hue), ax, **kwargs)
