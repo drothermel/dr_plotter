@@ -9,6 +9,7 @@ from .plotters.scatter import ScatterPlotter
 from .plotters.line import LinePlotter
 from .plotters.bar import BarPlotter
 from .plotters.histogram import HistogramPlotter
+from .plotters.violin import ViolinPlotter
 
 
 def scatter(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
@@ -105,6 +106,30 @@ def hist(data: pd.DataFrame, x: str, ax=None, **kwargs):
         fig = ax.get_figure()
 
     plotter = HistogramPlotter(data=data, x=x, **kwargs)
+    plotter.render(ax)
+
+    return fig, ax
+
+def violin(data: pd.DataFrame, x: str = None, y: str = None, ax=None, **kwargs):
+    """
+    Create a violin plot.
+
+    Args:
+        data: A pandas DataFrame.
+        x: The column for the x-axis (categories).
+        y: The column for the y-axis (values).
+        ax: A matplotlib Axes object to plot on. If None, a new figure and axes are created.
+        **kwargs: Styling options for the violin plot.
+
+    Returns:
+        A tuple of (figure, axes).
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+
+    plotter = ViolinPlotter(data=data, x=x, y=y, **kwargs)
     plotter.render(ax)
 
     return fig, ax
