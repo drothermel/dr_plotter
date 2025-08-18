@@ -4,6 +4,7 @@ Context manager for creating complex figures.
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import itertools
 from .plotters import (
     ScatterPlotter,
     LinePlotter,
@@ -29,6 +30,9 @@ class FigureManager:
         self.fig, self.axes = plt.subplots(
             rows, cols, constrained_layout=True, **fig_kwargs
         )
+        # Cross-subplot style coordination
+        self._shared_hue_styles = {}  # Maps hue values to consistent colors
+        self._shared_style_cycles = None  # Lazy initialization
 
     def get_axes(self, row=None, col=None):
         """
@@ -47,9 +51,26 @@ class FigureManager:
             return self.axes[:, col]
         return self.axes
 
+    def _get_shared_style_cycles(self):
+        """Initialize shared style cycles once, reuse across subplots."""
+        if self._shared_style_cycles is None:
+            # Use BASE_THEME to create consistent cycles across subplots
+            from .theme import BASE_THEME
+            self._shared_style_cycles = {
+                'color': itertools.cycle(BASE_THEME.get('color_cycle')),
+                'linestyle': itertools.cycle(BASE_THEME.get('linestyle_cycle')),
+                'marker': itertools.cycle(BASE_THEME.get('marker_cycle')),
+            }
+        return self._shared_style_cycles
+
     def _add_plot(self, plotter_class, plotter_args, row, col, **kwargs):
-        """Private helper to add any plot type to a subplot."""
+        """Private helper to add any plot type to a subplot with style coordination."""
         ax = self.get_axes(row, col)
+        
+        # Add shared style state for cross-subplot coordination
+        kwargs['_figure_manager'] = self
+        kwargs['_shared_hue_styles'] = self._shared_hue_styles
+        
         plotter = plotter_class(*plotter_args, **kwargs)
         plotter.render(ax)
 

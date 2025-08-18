@@ -159,7 +159,19 @@ class BasePlotter:
                 value_styles = {}
                 for channel in channels:
                     if channel == "hue":
-                        value_styles["color"] = next(synchronized_cycles[channel])
+                        # Check for shared coordination first
+                        if (hasattr(self, 'kwargs') and 
+                            '_figure_manager' in self.kwargs):
+                            
+                            shared_styles = self.kwargs['_shared_hue_styles']
+                            if value not in shared_styles:
+                                # Get shared cycles from figure manager
+                                fm = self.kwargs['_figure_manager']
+                                shared_cycles = fm._get_shared_style_cycles()
+                                shared_styles[value] = {'color': next(shared_cycles['color'])}
+                            value_styles["color"] = shared_styles[value]['color']
+                        else:
+                            value_styles["color"] = next(synchronized_cycles[channel])
                     elif channel == "style":
                         value_styles["linestyle"] = next(synchronized_cycles[channel])
                     elif channel == "marker":
@@ -228,6 +240,8 @@ class BasePlotter:
             "size",
             "marker",
             "alpha",
+            "_figure_manager",      # Color coordination
+            "_shared_hue_styles",   # Color coordination
         ]
         for key in filter_keys:
             plot_kwargs.pop(key, None)
