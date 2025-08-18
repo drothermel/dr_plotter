@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 from .base import BasePlotter
 
 
@@ -26,9 +25,7 @@ class CurvePlotter(BasePlotter):
         ax.set_title(f"{y_col} vs {x_col}")
         return fig, ax
 
-    def plot_curve_comparison(
-        self, x_col: str, y_col: str, group_by: str, **kwargs
-    ):
+    def plot_curve_comparison(self, x_col: str, y_col: str, group_by: str, **kwargs):
         """Plot multiple curves on the same axis for comparison."""
         fig, ax = self._setup_figure()
 

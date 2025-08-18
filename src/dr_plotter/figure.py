@@ -33,7 +33,7 @@ class FigureManager:
             A matplotlib Axes object.
         """
         # If axes is a single object, return it
-        if not hasattr(self.axes, '__len__'):
+        if not hasattr(self.axes, "__len__"):
             return self.axes
 
         # If axes is 1D array

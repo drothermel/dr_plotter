@@ -30,4 +30,6 @@ class BasePlotter:
 
         This method should be implemented by all subclasses.
         """
-        raise NotImplementedError("The render method must be implemented by subclasses.")
+        raise NotImplementedError(
+            "The render method must be implemented by subclasses."
+        )
