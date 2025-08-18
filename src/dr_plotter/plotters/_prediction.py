@@ -1,7 +1,5 @@
 import pandas as pd
-import numpy as np
 from .base import BasePlotter
-from scipy import stats
 
 
 class PredictionPlotter(BasePlotter):
@@ -51,7 +49,11 @@ class PredictionPlotter(BasePlotter):
         return fig, ax
 
     def plot_error_distribution(
-        self, predicted_col: str = "predicted", actual_col: str = "actual", bins: int = 30, **kwargs
+        self,
+        predicted_col: str = "predicted",
+        actual_col: str = "actual",
+        bins: int = 30,
+        **kwargs,
     ):
         """Create histogram of prediction errors."""
         fig, ax = self._setup_figure()

@@ -39,6 +39,8 @@ class MetricsPlotter(BasePlotter):
         """Plot RMSE."""
         self._plot_metric(ax, x_col, metric_col, **kwargs)
 
-    def plot_correlation(self, ax, x_col: str, metric_col: str = "correlation", **kwargs):
+    def plot_correlation(
+        self, ax, x_col: str, metric_col: str = "correlation", **kwargs
+    ):
         """Plot correlation."""
         self._plot_metric(ax, x_col, metric_col, **kwargs)

@@ -15,7 +15,7 @@ class ComparisonPlotter(BasePlotter):
                      DataFrames with 'true' and 'predicted' columns.
         """
         self.results = results
-        super().__init__(data=None) # No single dataframe for this plotter
+        super().__init__(data=None)  # No single dataframe for this plotter
 
     def display_performance_table(self):
         """Display a table of performance metrics for each model."""

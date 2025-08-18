@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 from .base import BasePlotter
 
 
@@ -67,11 +66,13 @@ class FeaturePlotter(BasePlotter):
 
         ax.set_xlabel(x_col)
         ax.set_ylabel(y_col)
-        ax.set_title(f"Slope Calculation Overlay")
+        ax.set_title("Slope Calculation Overlay")
         ax.legend(fontsize=self.style.FONT_SIZES["legend"])
         return fig, ax
 
-    def plot_window_boundaries_demo(self, x_col: str, y_col: str, windows: list, **kwargs):
+    def plot_window_boundaries_demo(
+        self, x_col: str, y_col: str, windows: list, **kwargs
+    ):
         """Demonstrate how window boundaries are defined on the curve."""
         fig, ax = self._setup_figure()
 
@@ -96,11 +97,11 @@ class FeaturePlotter(BasePlotter):
                 window_end,
                 alpha=self.style.ALPHA["regions"],
                 color=colors[i],
-                label=f"Window {i+1}",
+                label=f"Window {i + 1}",
             )
 
         ax.set_xlabel(x_col)
         ax.set_ylabel(y_col)
-        ax.set_title(f"Window Boundaries Demo")
+        ax.set_title("Window Boundaries Demo")
         ax.legend(fontsize=self.style.FONT_SIZES["legend"], bbox_to_anchor=(1.05, 1))
         return fig, ax

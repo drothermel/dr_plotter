@@ -1,37 +1,63 @@
+"""
+High-level API for creating plots.
+"""
+
+import matplotlib.pyplot as plt
 import pandas as pd
-from .plotters.comparison import ComparisonPlotter
-from .plotters.feature import FeaturePlotter
-from .plotters.metrics import MetricsPlotter
-from .plotters.prediction import PredictionPlotter
-from .plotters.curve import CurvePlotter
 
+from .plotters.scatter import ScatterPlotter
+from .plotters.line import LinePlotter
+from .plotters.bar import BarPlotter
+from .plotters.histogram import HistogramPlotter
+from .plotters.violin import ViolinPlotter
+from .plotters.heatmap import HeatmapPlotter
 
-def scatter(data: pd.DataFrame, x_col: str, y_col: str, **kwargs):
+DR_PLOTTER_STYLE_KEYS = ['title', 'xlabel', 'ylabel', 'legend']
+
+def _partition_kwargs(kwargs):
+    """Partitions kwargs into dr_plotter specific and matplotlib specific."""
+    dr_plotter_kwargs = {}
+    matplotlib_kwargs = {}
+    for key, value in kwargs.items():
+        if key in DR_PLOTTER_STYLE_KEYS:
+            dr_plotter_kwargs[key] = value
+        else:
+            matplotlib_kwargs[key] = value
+    return dr_plotter_kwargs, matplotlib_kwargs
+
+def _create_plot(plotter_class, plotter_args, ax=None, **kwargs):
+    """Generic factory for creating and rendering a plot."""
+    dr_plotter_kwargs, matplotlib_kwargs = _partition_kwargs(kwargs)
+    
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+
+    plotter = plotter_class(*plotter_args, dr_plotter_kwargs, matplotlib_kwargs)
+    plotter.render(ax)
+    return fig, ax
+
+def scatter(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
     """Create a scatter plot."""
-    plotter = PredictionPlotter(data)
-    return plotter.plot_predicted_vs_actual_scatter(x_col, y_col, **kwargs)
+    return _create_plot(ScatterPlotter, (data, x, y), ax, **kwargs)
 
-
-def line(data: pd.DataFrame, x_col: str, y_col: str, **kwargs):
+def line(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
     """Create a line plot."""
-    plotter = CurvePlotter(data)
-    return plotter.plot_curve(x_col, y_col, **kwargs)
+    return _create_plot(LinePlotter, (data, x, y), ax, **kwargs)
 
-
-def bar(data: pd.DataFrame, x_col: str, y_col: str, **kwargs):
+def bar(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
     """Create a bar plot."""
-    plotter = MetricsPlotter(data)
-    fig, ax = plotter._setup_figure()
-    plotter._plot_metric(ax, x_col, y_col, plot_type="bar", **kwargs)
-    return fig, ax
+    return _create_plot(BarPlotter, (data, x, y), ax, **kwargs)
 
-
-def hist(data: pd.DataFrame, x_col: str, **kwargs):
+def hist(data: pd.DataFrame, x: str, ax=None, **kwargs):
     """Create a histogram."""
-    plotter = PredictionPlotter(data)
-    fig, ax = plotter._setup_figure()
-    ax.hist(data[x_col], **kwargs)
-    ax.set_xlabel(x_col)
-    ax.set_ylabel("Frequency")
-    ax.set_title(f"Distribution of {x_col}")
-    return fig, ax
+    return _create_plot(HistogramPlotter, (data, x), ax, **kwargs)
+
+def violin(data: pd.DataFrame, x: str = None, y: str = None, ax=None, **kwargs):
+    """Create a violin plot."""
+    return _create_plot(ViolinPlotter, (data, x, y), ax, **kwargs)
+
+def heatmap(data: pd.DataFrame, ax=None, **kwargs):
+    """Create a heatmap."""
+    return _create_plot(HeatmapPlotter, (data,), ax, **kwargs)
