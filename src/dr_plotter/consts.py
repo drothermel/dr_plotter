@@ -5,10 +5,10 @@ Constants for dr_plotter, including special markers for multi-series plotting.
 
 class _MetricsMarker:
     """Sentinel class for the METRICS constant."""
-    
+
     def __repr__(self):
         return "METRICS"
-    
+
     def __str__(self):
         return "_metrics"
 

@@ -47,8 +47,8 @@ if __name__ == "__main__":
         scatter_data,
         x="x_coord",
         y="y_coord",
-        hue="category",      # Color by category
-        marker="category",   # AND marker by category (redundant encoding)
+        hue="category",  # Color by category
+        marker="category",  # AND marker by category (redundant encoding)
         ax=ax2,
         title="Multi-Scatter Plot (hue+marker=category)",
     )

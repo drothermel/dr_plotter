@@ -30,10 +30,20 @@ def _create_plot(plotter_class, plotter_args, ax=None, **kwargs):
     return fig, ax
 
 
-def scatter(data: pd.DataFrame, x: str, y, hue=None, size=None, marker=None, alpha=None, ax=None, **kwargs):
+def scatter(
+    data: pd.DataFrame,
+    x: str,
+    y,
+    hue=None,
+    size=None,
+    marker=None,
+    alpha=None,
+    ax=None,
+    **kwargs,
+):
     """
     Create a scatter plot with multi-series support.
-    
+
     Args:
         data: DataFrame containing the data
         x: Column name for x-axis
@@ -46,16 +56,31 @@ def scatter(data: pd.DataFrame, x: str, y, hue=None, size=None, marker=None, alp
         **kwargs: Additional styling parameters
     """
     # Fail fast on removed parameters
-    if 'style' in kwargs:
-        raise TypeError("scatter() got an unexpected keyword argument 'style'. Use 'marker' instead for scatter plots.")
-    
-    return _create_plot(ScatterPlotter, (data, x, y, hue, size, marker, alpha), ax, **kwargs)
+    if "style" in kwargs:
+        raise TypeError(
+            "scatter() got an unexpected keyword argument 'style'. Use 'marker' instead for scatter plots."
+        )
+
+    return _create_plot(
+        ScatterPlotter, (data, x, y, hue, size, marker, alpha), ax, **kwargs
+    )
 
 
-def line(data: pd.DataFrame, x: str, y, hue=None, style=None, size=None, marker=None, alpha=None, ax=None, **kwargs):
+def line(
+    data: pd.DataFrame,
+    x: str,
+    y,
+    hue=None,
+    style=None,
+    size=None,
+    marker=None,
+    alpha=None,
+    ax=None,
+    **kwargs,
+):
     """
     Create a line plot with multi-series support.
-    
+
     Args:
         data: DataFrame containing the data
         x: Column name for x-axis
@@ -68,7 +93,9 @@ def line(data: pd.DataFrame, x: str, y, hue=None, style=None, size=None, marker=
         ax: Existing axes to plot on
         **kwargs: Additional styling parameters
     """
-    return _create_plot(LinePlotter, (data, x, y, hue, style, size, marker, alpha), ax, **kwargs)
+    return _create_plot(
+        LinePlotter, (data, x, y, hue, style, size, marker, alpha), ax, **kwargs
+    )
 
 
 def bar(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
