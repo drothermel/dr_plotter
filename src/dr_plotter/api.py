@@ -5,28 +5,27 @@ High-level API for creating plots.
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from .plotters.scatter import ScatterPlotter
-from .plotters.line import LinePlotter
-from .plotters.bar import BarPlotter
-from .plotters.histogram import HistogramPlotter
-from .plotters.violin import ViolinPlotter
-from .plotters.heatmap import HeatmapPlotter
-from .plotters.bump import BumpPlotter
-from .plotters.contour import ContourPlotter
-from .plotters.grouped_bar import GroupedBarPlotter
-from .utils import partition_kwargs
+from .plotters import (
+    ScatterPlotter,
+    LinePlotter,
+    BarPlotter,
+    HistogramPlotter,
+    ViolinPlotter,
+    HeatmapPlotter,
+    BumpPlotter,
+    ContourPlotter,
+    GroupedBarPlotter,
+)
+from .utils import create_and_render_plot
 
 def _create_plot(plotter_class, plotter_args, ax=None, **kwargs):
-    """Generic factory for creating and rendering a plot."""
-    dr_plotter_kwargs, matplotlib_kwargs = partition_kwargs(kwargs)
-    
+    """Generic factory for creating a figure and then rendering a plot."""
     if ax is None:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(constrained_layout=True)
     else:
         fig = ax.get_figure()
-
-    plotter = plotter_class(*plotter_args, dr_plotter_kwargs, matplotlib_kwargs)
-    plotter.render(ax)
+    
+    create_and_render_plot(ax, plotter_class, plotter_args, **kwargs)
     return fig, ax
 
 def scatter(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):

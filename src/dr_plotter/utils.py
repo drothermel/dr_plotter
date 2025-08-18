@@ -34,10 +34,8 @@ def show_or_save_plot(fig, args, filename: str):
         args: The parsed arguments from setup_arg_parser.
         filename: The base filename for the saved plot.
     """
-    rect = [0, 0, 1, 1]
-    if fig._suptitle is not None:
-        rect = [0, 0, 1, 0.95]
-    fig.tight_layout(rect=rect)
+    # The layout is now handled by the constrained_layout engine at figure creation.
+    # No further adjustments are needed here.
 
     if args.save_dir:
         os.makedirs(args.save_dir, exist_ok=True)
@@ -60,3 +58,18 @@ def partition_kwargs(kwargs):
         else:
             matplotlib_kwargs[key] = value
     return dr_plotter_kwargs, matplotlib_kwargs
+
+def create_and_render_plot(ax, plotter_class, plotter_args, **kwargs):
+    """
+    The single source of truth for creating and rendering any plot.
+    Partitions kwargs, creates a plotter instance, and calls its render method.
+
+    Args:
+        ax: The matplotlib Axes object to render on.
+        plotter_class: The class of the plotter to instantiate.
+        plotter_args: The specific positional arguments for the plotter's constructor.
+        **kwargs: All keyword arguments for the plot.
+    """
+    dr_plotter_kwargs, matplotlib_kwargs = partition_kwargs(kwargs)
+    plotter = plotter_class(*plotter_args, dr_plotter_kwargs, matplotlib_kwargs)
+    plotter.render(ax)
