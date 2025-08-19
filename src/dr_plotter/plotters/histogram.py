@@ -26,6 +26,8 @@ class HistogramPlotter(BasePlotter):
         """
         Render the histogram on the given axes.
         """
+        self.prepare_data()
+        
         plot_kwargs = {
             "alpha": self._get_style("alpha"),
             "color": self._get_style("color", next(self.theme.get("color_cycle"))),
@@ -33,5 +35,5 @@ class HistogramPlotter(BasePlotter):
         }
         plot_kwargs.update(self._filter_plot_kwargs())
 
-        ax.hist(self.data[self.x], **plot_kwargs)
+        ax.hist(self.plot_data[self.x], **plot_kwargs)
         self._apply_styling(ax)

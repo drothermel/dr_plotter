@@ -22,25 +22,32 @@ class ContourPlotter(BasePlotter):
         self.y = y
         self.theme = CONTOUR_THEME
 
-    def _prepare_data(self):
+    def prepare_data(self):
         """Fit GMM and create a meshgrid for contour plotting."""
+        # Call parent validation
+        super().prepare_data()
+        
+        # Fit GMM and create meshgrid
         gmm = GaussianMixture(n_components=3, random_state=0).fit(
-            self.data[[self.x, self.y]]
+            self.raw_data[[self.x, self.y]]
         )
-        x_min, x_max = self.data[self.x].min() - 1, self.data[self.x].max() + 1
-        y_min, y_max = self.data[self.y].min() - 1, self.data[self.y].max() + 1
+        x_min, x_max = self.raw_data[self.x].min() - 1, self.raw_data[self.x].max() + 1
+        y_min, y_max = self.raw_data[self.y].min() - 1, self.raw_data[self.y].max() + 1
         xx, yy = np.meshgrid(
             np.linspace(x_min, x_max, 100), np.linspace(y_min, y_max, 100)
         )
         Z = -gmm.score_samples(np.c_[xx.ravel(), yy.ravel()])
         Z = Z.reshape(xx.shape)
-        return xx, yy, Z
+        
+        # Store prepared data
+        self.xx, self.yy, self.Z = xx, yy, Z
+        return self.raw_data
 
     def render(self, ax):
         """
         Render the GMM level set plot on the given axes.
         """
-        xx, yy, Z = self._prepare_data()
+        self.prepare_data()
 
         contour_kwargs = {
             "levels": self.theme.get("levels"),
@@ -59,10 +66,10 @@ class ContourPlotter(BasePlotter):
             filtered_scatter_kwargs.pop(key, None)
         scatter_kwargs.update(filtered_scatter_kwargs)
 
-        contour = ax.contour(xx, yy, Z, **contour_kwargs)
+        contour = ax.contour(self.xx, self.yy, self.Z, **contour_kwargs)
         fig = ax.get_figure()
         fig.colorbar(contour, ax=ax)
 
-        ax.scatter(self.data[self.x], self.data[self.y], **scatter_kwargs)
+        ax.scatter(self.raw_data[self.x], self.raw_data[self.y], **scatter_kwargs)
 
         self._apply_styling(ax)

@@ -24,23 +24,28 @@ class BumpPlotter(BasePlotter):
         self.x = time_col
         self.y = "Rank"
 
-    def _prepare_data(self):
+    def prepare_data(self):
         """Calculate ranks for each category at each time point."""
-        self.data["rank"] = self.data.groupby(self.time_col)[self.value_col].rank(
+        # Call parent validation
+        super().prepare_data()
+        
+        # Add rank calculation
+        self.plot_data = self.raw_data.copy()
+        self.plot_data["rank"] = self.plot_data.groupby(self.time_col)[self.value_col].rank(
             method="first", ascending=False
         )
-        return self.data
+        return self.plot_data
 
     def render(self, ax):
         """
         Render the bump plot on the given axes.
         """
-        plot_data = self._prepare_data()
-        categories = plot_data[self.category_col].unique()
+        self.prepare_data()
+        categories = self.plot_data[self.category_col].unique()
 
         for category in categories:
-            category_data = plot_data[
-                plot_data[self.category_col] == category
+            category_data = self.plot_data[
+                self.plot_data[self.category_col] == category
             ].sort_values(by=self.time_col)
 
             plot_kwargs = {
@@ -69,7 +74,7 @@ class BumpPlotter(BasePlotter):
             )
 
         ax.invert_yaxis()
-        max_rank = int(plot_data["rank"].max())
+        max_rank = int(self.plot_data["rank"].max())
         ax.set_yticks(range(1, max_rank + 1))
         ax.margins(x=0.15)
 

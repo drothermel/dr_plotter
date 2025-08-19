@@ -30,54 +30,73 @@ class ScatterPlotter(BasePlotter):
         """
         super().__init__(data, **kwargs)
         self.x = x
+        self.raw_y = y  # Store original y parameter
         self.theme = SCATTER_THEME
+        
+        # Store parameters for prepare_data
+        self.init_hue = hue
+        self.init_size = size
+        self.init_marker = marker
+        self.init_alpha = alpha
 
+    def prepare_data(self):
+        """
+        Prepare and validate data for scatter plotting.
+        """
+        # Call parent validation
+        super().prepare_data()
+        
         # Handle multi-metric case
-        if isinstance(y, list):
+        if isinstance(self.raw_y, list):
             # Set default hue to METRICS if not specified
-            if hue is None and size is None and marker is None and alpha is None:
+            hue = self.init_hue
+            if hue is None and self.init_size is None and self.init_marker is None and self.init_alpha is None:
                 hue = METRICS
 
             # Melt the data to long format
-            id_vars = [col for col in data.columns if col not in y and col != x]
-            if x not in id_vars:
-                id_vars = [x] + id_vars
+            id_vars = [col for col in self.raw_data.columns if col not in self.raw_y and col != self.x]
+            if self.x not in id_vars:
+                id_vars = [self.x] + id_vars
 
-            self.melted_data = self._melt_metrics(data, id_vars, y, "_metric", "_value")
+            self.melted_data = self._melt_metrics(self.raw_data, id_vars, self.raw_y, "_metric", "_value")
             self.metric_column = "_metric"
             self.y = "_value"
             self.plot_data = self.melted_data
         else:
-            self.y = y
-            self.plot_data = data
+            self.y = self.raw_y
+            self.plot_data = self.raw_data
             self.metric_column = None
 
         # Process grouping parameters
-        self.hue = self._process_grouping_params(hue)
-        self.size = self._process_grouping_params(size)
-        self.alpha = self._process_grouping_params(alpha)
+        self.hue = self._process_grouping_params(self.init_hue)
+        self.size = self._process_grouping_params(self.init_size)
+        self.alpha = self._process_grouping_params(self.init_alpha)
 
         # Handle marker parameter - check if it's a column name or direct matplotlib marker
         if (
-            marker is not None
-            and isinstance(marker, str)
-            and marker not in self.plot_data.columns
-            and marker not in [METRICS, METRICS_STR]
+            self.init_marker is not None
+            and isinstance(self.init_marker, str)
+            and self.init_marker not in self.plot_data.columns
+            and self.init_marker not in [METRICS, METRICS_STR]
         ):
             # It's a direct matplotlib marker - don't treat as grouping parameter
             self.marker = None
-            self.direct_marker = marker
+            self.direct_marker = self.init_marker
         else:
-            self.marker = self._process_grouping_params(marker)
+            self.marker = self._process_grouping_params(self.init_marker)
             self.direct_marker = None
 
         # Check if we have any groupings
         self._has_groups = any([self.hue, self.size, self.marker, self.alpha])
+        
+        return self.plot_data
 
     def render(self, ax):
         """
         Render the scatter plot on the given axes.
         """
+        self.prepare_data()
+        
         if not self._has_groups:
             # Simple single scatter plot
             plot_kwargs = {

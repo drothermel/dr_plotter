@@ -24,11 +24,13 @@ class BarPlotter(BasePlotter):
         """
         Render the bar plot on the given axes.
         """
+        self.prepare_data()
+        
         plot_kwargs = {
             "alpha": self._get_style("alpha"),
             "color": self._get_style("color", next(self.theme.get("color_cycle"))),
         }
         plot_kwargs.update(self._filter_plot_kwargs())
 
-        ax.bar(self.data[self.x], self.data[self.y], **plot_kwargs)
+        ax.bar(self.plot_data[self.x], self.plot_data[self.y], **plot_kwargs)
         self._apply_styling(ax)

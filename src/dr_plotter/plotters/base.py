@@ -21,7 +21,8 @@ class BasePlotter:
             data: A pandas DataFrame.
             **kwargs: All keyword arguments, including styling.
         """
-        self.data = data
+        self.raw_data = data
+        self.plot_data = None  # Will be set by prepare_data()
         self.kwargs = kwargs
         self.theme = BASE_THEME  # Default theme
         self.metric_column = None  # Will be set if metrics are melted
@@ -37,8 +38,8 @@ class BasePlotter:
 
         Subclasses can override this method to add additional validation.
         """
-        assert isinstance(self.data, pd.DataFrame), "Data must be a pandas DataFrame"
-        assert not self.data.empty, "DataFrame cannot be empty"
+        assert isinstance(self.raw_data, pd.DataFrame), "Data must be a pandas DataFrame"
+        assert not self.raw_data.empty, "DataFrame cannot be empty"
 
     def prepare_data(self):
         """
@@ -49,11 +50,11 @@ class BasePlotter:
         plotter-specific data preparation logic.
 
         Returns:
-            The prepared data (by default, returns self.data unchanged)
+            The prepared data (by default, returns self.raw_data unchanged)
         """
         self._validate_data()
         # Set default plot_data (subclasses may override)
-        self.plot_data = self.data
+        self.plot_data = self.raw_data
         return self.plot_data
 
     def _melt_metrics(

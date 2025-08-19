@@ -40,50 +40,70 @@ class LinePlotter(BasePlotter):
         """
         super().__init__(data, **kwargs)
         self.x = x
+        self.raw_y = y  # Store original y parameter
         self.theme = LINE_THEME
+        
+        # Store parameters for prepare_data
+        self.init_hue = hue
+        self.init_style = style
+        self.init_size = size
+        self.init_marker = marker
+        self.init_alpha = alpha
 
+    def prepare_data(self):
+        """
+        Prepare and validate data for line plotting.
+        """
+        # Call parent validation
+        super().prepare_data()
+        
         # Handle multi-metric case
-        if isinstance(y, list):
+        if isinstance(self.raw_y, list):
             # Set default hue to METRICS if not specified
+            hue = self.init_hue
             if (
                 hue is None
-                and style is None
-                and size is None
-                and marker is None
-                and alpha is None
+                and self.init_style is None
+                and self.init_size is None
+                and self.init_marker is None
+                and self.init_alpha is None
             ):
                 hue = METRICS
 
             # Melt the data to long format
-            id_vars = [col for col in data.columns if col not in y and col != x]
-            if x not in id_vars:
-                id_vars = [x] + id_vars
+            id_vars = [col for col in self.raw_data.columns if col not in self.raw_y and col != self.x]
+            if self.x not in id_vars:
+                id_vars = [self.x] + id_vars
 
-            self.melted_data = self._melt_metrics(data, id_vars, y, "_metric", "_value")
+            self.melted_data = self._melt_metrics(self.raw_data, id_vars, self.raw_y, "_metric", "_value")
             self.metric_column = "_metric"
             self.y = "_value"
             self.plot_data = self.melted_data
         else:
-            self.y = y
-            self.plot_data = data
+            self.y = self.raw_y
+            self.plot_data = self.raw_data
             self.metric_column = None
 
         # Process grouping parameters
-        self.hue = self._process_grouping_params(hue)
-        self.style = self._process_grouping_params(style)
-        self.size = self._process_grouping_params(size)
-        self.marker = self._process_grouping_params(marker)
-        self.alpha = self._process_grouping_params(alpha)
+        self.hue = self._process_grouping_params(self.init_hue)
+        self.style = self._process_grouping_params(self.init_style)
+        self.size = self._process_grouping_params(self.init_size)
+        self.marker = self._process_grouping_params(self.init_marker)
+        self.alpha = self._process_grouping_params(self.init_alpha)
 
         # Check if we have any groupings
         self._has_groups = any(
             [self.hue, self.style, self.size, self.marker, self.alpha]
         )
+        
+        return self.plot_data
 
     def render(self, ax):
         """
         Render the line plot on the given axes.
         """
+        self.prepare_data()
+        
         if not self._has_groups:
             # Simple single line plot
             plot_kwargs = {

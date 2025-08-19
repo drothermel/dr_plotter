@@ -30,23 +30,22 @@ class HeatmapPlotter(BasePlotter):
         self.y = y
         self.values = values
         self.theme = HEATMAP_THEME
-        self._prepare_data()
 
-    def _prepare_data(self):
+    def prepare_data(self):
         """
         Convert tidy/long format data to matrix format for heatmap visualization.
         """
         # Validate basic structure
-        assert isinstance(self.data, pd.DataFrame), "Data must be a pandas DataFrame"
-        assert not self.data.empty, "DataFrame cannot be empty"
+        assert isinstance(self.raw_data, pd.DataFrame), "Data must be a pandas DataFrame"
+        assert not self.raw_data.empty, "DataFrame cannot be empty"
         
         # Validate required columns exist
         required_cols = [self.x, self.y, self.values]
         for col in required_cols:
-            assert col in self.data.columns, f"Column '{col}' not found in data"
+            assert col in self.raw_data.columns, f"Column '{col}' not found in data"
         
         # Convert from tidy/long to matrix format using pivot
-        self.plot_data = self.data.pivot(
+        self.plot_data = self.raw_data.pivot(
             index=self.y,      # rows
             columns=self.x,    # columns
             values=self.values # cell values
@@ -59,6 +58,8 @@ class HeatmapPlotter(BasePlotter):
         """
         Render the heatmap on the given axes.
         """
+        self.prepare_data()
+        
         plot_kwargs = {"cmap": self.theme.get("cmap")}
         plot_kwargs.update(self._filter_plot_kwargs())
 
