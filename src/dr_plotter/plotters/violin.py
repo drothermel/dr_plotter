@@ -5,6 +5,7 @@ Atomic plotter for violin plots.
 import numpy as np
 from .base import BasePlotter
 from dr_plotter.theme import VIOLIN_THEME
+from dr_plotter.plotters.style_engine import StyleEngine
 from .plot_data import ViolinPlotData
 
 
@@ -19,6 +20,9 @@ class ViolinPlotter(BasePlotter):
         self.y_param = y  # Store original y parameter
         self.hue = hue
         self.theme = VIOLIN_THEME
+        
+        # Create style engine with only hue channel enabled (violins only use color)
+        self.style_engine = StyleEngine(self.theme, enabled_channels={'hue': True})
 
     def prepare_data(self):
         """
@@ -81,42 +85,58 @@ class ViolinPlotter(BasePlotter):
             ax.set_xticklabels(numeric_cols)
 
     def _render_grouped(self, ax):
+        """Render grouped violins using unified style system."""
         x_categories = self.plot_data[self.x].unique()
-        hue_categories = self.plot_data[self.hue].unique()
-        n_hues = len(hue_categories)
-
-        width = 0.8
-        violin_width = width / n_hues
         x_positions = np.arange(len(x_categories))
-        hue_colors = {
-            hue_cat: next(self.theme.get("color_cycle")) for hue_cat in hue_categories
-        }
-
+        
+        # Generate styles using unified engine (same pattern as Line/Scatter!)
+        group_styles = self.style_engine.generate_styles(
+            self.plot_data, hue=self.hue
+        )
+        
+        # Get grouping columns (will be [self.hue])
+        group_cols = self.style_engine.get_grouping_columns(hue=self.hue)
+        
+        # Use standard groupby pattern (same as Line/Scatter!)
+        if group_cols:
+            grouped = self.plot_data.groupby(group_cols)
+            n_groups = len(list(grouped))
+            width = 0.8
+            violin_width = width / n_groups if n_groups > 0 else width
+            
+            # Create mapping from hue values to styles
+            hue_to_style = {}
+            for name, group_data in grouped:
+                group_key = tuple([(group_cols[0], name)])
+                styles = group_styles.get(group_key, {})
+                hue_to_style[name] = styles.get('color', 'blue')
+        
+        # Plot violins with proper positioning
         for i, x_cat in enumerate(x_categories):
-            for j, hue_cat in enumerate(hue_categories):
-                position = x_positions[i] - width / 2 + (j + 0.5) * violin_width
-                dataset = self.plot_data[
-                    (self.plot_data[self.x] == x_cat) & (self.plot_data[self.hue] == hue_cat)
-                ][self.y].dropna()
+            if group_cols:
+                for j, (hue_val, color) in enumerate(hue_to_style.items()):
+                    position = x_positions[i] - width / 2 + (j + 0.5) * violin_width
+                    dataset = self.plot_data[
+                        (self.plot_data[self.x] == x_cat) & (self.plot_data[self.hue] == hue_val)
+                    ][self.y].dropna()
 
-                if not dataset.empty:
-                    color = hue_colors[hue_cat]
-                    plot_kwargs = self._get_plot_kwargs()
-                    parts = ax.violinplot(
-                        dataset,
-                        positions=[position],
-                        widths=[violin_width],
-                        **plot_kwargs,
-                    )
-                    for pc in parts["bodies"]:
-                        pc.set_facecolor(color)
-                        pc.set_edgecolor("black")
-                        pc.set_alpha(0.8)
-                    for part_name in ("cbars", "cmins", "cmaxes", "cmeans"):
-                        if part_name in parts:
-                            vp = parts[part_name]
-                            vp.set_edgecolor(color)
-                            vp.set_linewidth(1.5)
+                    if not dataset.empty:
+                        plot_kwargs = self._get_plot_kwargs()
+                        parts = ax.violinplot(
+                            dataset,
+                            positions=[position],
+                            widths=[violin_width],
+                            **plot_kwargs,
+                        )
+                        for pc in parts["bodies"]:
+                            pc.set_facecolor(color)
+                            pc.set_edgecolor("black")
+                            pc.set_alpha(0.8)
+                        for part_name in ("cbars", "cmins", "cmaxes", "cmeans"):
+                            if part_name in parts:
+                                vp = parts[part_name]
+                                vp.set_edgecolor(color)
+                                vp.set_linewidth(1.5)
 
         from matplotlib.patches import Patch
 

@@ -5,6 +5,7 @@ Atomic plotter for scatter plots with multi-series support.
 from .base import BasePlotter
 from dr_plotter.theme import SCATTER_THEME, BASE_COLORS
 from dr_plotter.consts import METRICS, METRICS_STR
+from dr_plotter.plotters.style_engine import StyleEngine
 from .plot_data import ScatterPlotData
 
 
@@ -37,6 +38,9 @@ class ScatterPlotter(BasePlotter):
         self.marker = marker
         self.alpha = alpha
         self.theme = SCATTER_THEME
+        
+        # Create style engine with all channels enabled for complex scatter plots
+        self.style_engine = StyleEngine(self.theme)
 
     def prepare_data(self):
         """
@@ -115,30 +119,20 @@ class ScatterPlotter(BasePlotter):
 
     def _render_grouped(self, ax):
         """Render grouped scatter plots based on visual encoding parameters."""
-        # Get the group styles
-        group_styles = self._get_group_styles(
+        # Get the group styles using style engine
+        group_styles = self.style_engine.generate_styles(
             self.plot_data,
-            self.hue,
-            None,
-            self.size,
+            hue=self.hue,
+            size=self.size,
             marker=self.marker,
             alpha=self.alpha,
+            shared_context=self.kwargs
         )
 
-        # Determine grouping columns
-        group_cols = []
-        if self.hue:
-            group_cols.append(self.hue)
-        if self.size:
-            group_cols.append(self.size)
-        if self.marker:
-            group_cols.append(self.marker)
-        if self.alpha:
-            group_cols.append(self.alpha)
-
-        # Remove duplicates while preserving order
-        seen = set()
-        group_cols = [x for x in group_cols if not (x in seen or seen.add(x))]
+        # Get grouping columns from style engine
+        group_cols = self.style_engine.get_grouping_columns(
+            hue=self.hue, size=self.size, marker=self.marker, alpha=self.alpha
+        )
 
         # Group the data and plot each group
         if group_cols:

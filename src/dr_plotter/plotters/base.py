@@ -155,122 +155,24 @@ class BasePlotter:
         self, data, hue=None, style=None, size=None, marker=None, alpha=None
     ):
         """
-        Generate styles for each group based on visual encoding parameters.
-        Supports redundant encoding where multiple visual channels can vary together.
-
-        Returns:
-            Dictionary mapping group values to their visual properties
+        DEPRECATED: Use StyleEngine.generate_styles() instead.
+        
+        This method is kept for backward compatibility during migration.
         """
-        cycles = self._create_style_cycles()
-        styles = {}
-
-        # Group visual channels by the column they encode
-        # This allows multiple visual channels to vary together for the same column
-        column_to_channels = {}
-        channel_params = [
-            ("hue", hue),
-            ("style", style),
-            ("size", size),
-            ("marker", marker),
-            ("alpha", alpha),
-        ]
-
-        for channel_name, column_name in channel_params:
-            if column_name is not None:
-                if column_name not in column_to_channels:
-                    column_to_channels[column_name] = []
-                column_to_channels[column_name].append(channel_name)
-
-        # Create synchronized mappings for each unique column
-        value_mappings = {}
-
-        for column_name, channels in column_to_channels.items():
-            unique_values = data[column_name].unique()
-
-            # Create synchronized cycles for all channels that encode this column
-            synchronized_cycles = {}
-            for channel in channels:
-                if channel == "hue":
-                    synchronized_cycles[channel] = cycles["color"]
-                elif channel == "style":
-                    synchronized_cycles[channel] = cycles["linestyle"]
-                elif channel == "marker":
-                    synchronized_cycles[channel] = cycles["marker"]
-                elif channel == "size":
-                    synchronized_cycles[channel] = cycles["size"]
-                elif channel == "alpha":
-                    synchronized_cycles[channel] = cycles["alpha"]
-
-            # Advance all cycles together for each unique value
-            column_mapping = {}
-            for value in unique_values:
-                value_styles = {}
-                for channel in channels:
-                    if channel == "hue":
-                        # Check for shared coordination first
-                        if hasattr(self, "kwargs") and "_figure_manager" in self.kwargs:
-                            shared_styles = self.kwargs["_shared_hue_styles"]
-                            if value not in shared_styles:
-                                # Get shared cycles from figure manager
-                                fm = self.kwargs["_figure_manager"]
-                                shared_cycles = fm._get_shared_style_cycles()
-                                shared_styles[value] = {
-                                    "color": next(shared_cycles["color"])
-                                }
-                            value_styles["color"] = shared_styles[value]["color"]
-                        else:
-                            value_styles["color"] = next(synchronized_cycles[channel])
-                    elif channel == "style":
-                        value_styles["linestyle"] = next(synchronized_cycles[channel])
-                    elif channel == "marker":
-                        value_styles["marker"] = next(synchronized_cycles[channel])
-                    elif channel == "size":
-                        value_styles["size_mult"] = next(synchronized_cycles[channel])
-                    elif channel == "alpha":
-                        value_styles["alpha"] = next(synchronized_cycles[channel])
-
-                column_mapping[value] = value_styles
-
-            value_mappings[column_name] = column_mapping
-
-        # Get unique grouping columns (deduplicated)
-        unique_grouping_cols = []
-        grouping_params = [
-            ("hue", hue),
-            ("style", style),
-            ("size", size),
-            ("marker", marker),
-            ("alpha", alpha),
-        ]
-
-        for param_name, column_name in grouping_params:
-            if column_name is not None and column_name not in unique_grouping_cols:
-                unique_grouping_cols.append(column_name)
-
-        # Generate all combinations of unique grouping columns
-        if unique_grouping_cols:
-            # Get unique values for each unique column
-            column_unique_values = [data[col].unique() for col in unique_grouping_cols]
-
-            for combo in itertools.product(*column_unique_values):
-                # Create group key from unique columns
-                group_key = tuple(zip(unique_grouping_cols, combo))
-                group_style = {}
-
-                # Look up synchronized styles for each column in the combination
-                for column_name, value in group_key:
-                    column_styles = value_mappings[column_name][value]
-                    group_style.update(column_styles)
-
-                styles[group_key] = group_style
-        else:
-            # No grouping, single series
-            styles[None] = {
-                "color": next(cycles["color"]),
-                "linestyle": next(cycles["linestyle"]),
-            }
-
-        return styles
+        from dr_plotter.plotters.style_engine import StyleEngine
+        
+        # Create a temporary style engine with all channels enabled
+        engine = StyleEngine(self.theme)
+        
+        return engine.generate_styles(
+            data, 
+            hue=hue, 
+            style=style, 
+            size=size, 
+            marker=marker, 
+            alpha=alpha,
+            shared_context=getattr(self, 'kwargs', None)
+        )
 
     def _get_style(self, key, default_override=None):
         """Gets a style value, prioritizing user kwargs over theme defaults."""

@@ -5,6 +5,7 @@ Atomic plotter for bar plots with optional grouping support.
 import numpy as np
 
 from dr_plotter.theme import BAR_THEME
+from dr_plotter.plotters.style_engine import StyleEngine
 
 from .base import BasePlotter
 from .plot_data import BarPlotData
@@ -31,6 +32,9 @@ class BarPlotter(BasePlotter):
         self.y_param = y  # Store original y parameter
         self.hue = hue
         self.theme = BAR_THEME
+        
+        # Create style engine with only hue channel enabled (bars only use color)
+        self.style_engine = StyleEngine(self.theme, enabled_channels={'hue': True})
 
     def prepare_data(self):
         """
@@ -93,44 +97,52 @@ class BarPlotter(BasePlotter):
         self._apply_styling(ax)
 
     def _render_grouped(self, ax):
-        """Render grouped bar plots using direct matplotlib positioning."""
-        # Get unique categories and groups
+        """Render grouped bars using unified style system."""
+        # Setup
         x_categories = self.plot_data[self.x].unique()
-        hue_values = self.plot_data[self.hue].unique()
-
-        # Calculate positioning
         x_pos = np.arange(len(x_categories))
-        width = 0.8 / len(hue_values)  # Total width divided by number of groups
-
-        # Get colors from theme
-        colors = [next(self.theme.get("color_cycle")) for _ in range(len(hue_values))]
-
-        # Plot each hue group
-        for i, hue_val in enumerate(hue_values):
-            # Filter data for this hue value
-            hue_data = self.plot_data[self.plot_data[self.hue] == hue_val]
-
-            # Get y values in the same order as x_categories
-            y_values = []
-            for x_cat in x_categories:
-                cat_data = hue_data[hue_data[self.x] == x_cat]
-                if not cat_data.empty:
-                    y_values.append(cat_data[self.y].iloc[0])
-                else:
-                    y_values.append(0)  # Default to 0 if no data
-
-            # Calculate offset for this group
-            offset = width * (i - len(hue_values) / 2 + 0.5)
-
-            # Plot bars for this hue group
-            plot_kwargs = {
-                "alpha": self._get_style("alpha"),
-                "color": colors[i],
-                "label": str(hue_val),
-            }
-            plot_kwargs.update(self._filter_plot_kwargs())
-
-            ax.bar(x_pos + offset, y_values, width, **plot_kwargs)
+        
+        # Generate styles using unified engine (same pattern as Line/Scatter!)
+        group_styles = self.style_engine.generate_styles(
+            self.plot_data, hue=self.hue
+        )
+        
+        # Get grouping columns (will be [self.hue])
+        group_cols = self.style_engine.get_grouping_columns(hue=self.hue)
+        
+        # Use standard groupby pattern (same as Line/Scatter!)
+        if group_cols:
+            grouped = self.plot_data.groupby(group_cols)
+            n_groups = len(list(grouped))
+            width = 0.8 / n_groups if n_groups > 0 else 0.8
+            
+            for i, (name, group_data) in enumerate(grouped):
+                # Standard style lookup (same as Line/Scatter!)
+                group_key = tuple([(group_cols[0], name)])
+                styles = group_styles.get(group_key, {})
+                
+                # Extract color from unified styles
+                color = styles.get('color', 'blue')
+                
+                # Bar-specific geometry calculations
+                offset = width * (i - n_groups / 2 + 0.5)
+                y_values = []
+                for x_cat in x_categories:
+                    cat_data = group_data[group_data[self.x] == x_cat]
+                    if not cat_data.empty:
+                        y_values.append(cat_data[self.y].iloc[0])
+                    else:
+                        y_values.append(0)  # Default to 0 if no data
+                
+                # Plot bars with unified style
+                plot_kwargs = {
+                    "alpha": self._get_style("alpha"),
+                    "color": color,
+                    "label": str(name),
+                }
+                plot_kwargs.update(self._filter_plot_kwargs())
+                
+                ax.bar(x_pos + offset, y_values, width, **plot_kwargs)
 
         # Set x-axis labels
         ax.set_xticks(x_pos)
