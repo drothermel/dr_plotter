@@ -1,21 +1,20 @@
 """Plot data validation classes for dr_plotter."""
 
+from .bar import BarPlotData
 from .base import PlotData
-from .scatter import ScatterPlotData
-from .line import LinePlotData
-from .bar import BarPlotData, GroupedBarData
-from .histogram import HistogramData
-from .violin import ViolinPlotData
-from .heatmap import HeatmapData
-from .contour import ContourPlotData
 from .bump import BumpPlotData
+from .contour import ContourPlotData
+from .heatmap import HeatmapData
+from .histogram import HistogramData
+from .line import LinePlotData
+from .scatter import ScatterPlotData
+from .violin import ViolinPlotData
 
 __all__ = [
     "PlotData",
     "ScatterPlotData",
     "LinePlotData",
     "BarPlotData",
-    "GroupedBarData", 
     "HistogramData",
     "ViolinPlotData",
     "HeatmapData",
