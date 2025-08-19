@@ -3,8 +3,8 @@ Atomic plotter for scatter plots with multi-series support.
 """
 
 from .base import BasePlotter
-from ..theme import SCATTER_THEME, BASE_COLORS
-from ..consts import METRICS, METRICS_STR
+from dr_plotter.theme import SCATTER_THEME, BASE_COLORS
+from dr_plotter.consts import METRICS, METRICS_STR
 
 
 class ScatterPlotter(BasePlotter):

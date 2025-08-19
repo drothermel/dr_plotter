@@ -4,8 +4,8 @@ Base class for all plotter objects.
 
 import pandas as pd
 import itertools
-from ..theme import BASE_THEME, DR_PLOTTER_STYLE_KEYS
-from ..consts import METRICS, METRICS_STR
+from dr_plotter.theme import BASE_THEME, DR_PLOTTER_STYLE_KEYS
+from dr_plotter.consts import METRICS, METRICS_STR
 
 
 class BasePlotter:

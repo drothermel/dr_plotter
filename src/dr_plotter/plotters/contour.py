@@ -5,7 +5,7 @@ Compound plotter for contour plots, specifically for GMM level sets.
 import numpy as np
 from sklearn.mixture import GaussianMixture
 from .base import BasePlotter
-from ..theme import CONTOUR_THEME
+from dr_plotter.theme import CONTOUR_THEME
 
 
 class ContourPlotter(BasePlotter):

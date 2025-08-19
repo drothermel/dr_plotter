@@ -3,7 +3,7 @@ Atomic plotter for histograms.
 """
 
 from .base import BasePlotter
-from ..theme import HISTOGRAM_THEME
+from dr_plotter.theme import HISTOGRAM_THEME
 
 
 class HistogramPlotter(BasePlotter):

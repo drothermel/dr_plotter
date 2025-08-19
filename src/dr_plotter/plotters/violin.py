@@ -4,7 +4,7 @@ Atomic plotter for violin plots.
 
 import numpy as np
 from .base import BasePlotter
-from ..theme import VIOLIN_THEME
+from dr_plotter.theme import VIOLIN_THEME
 
 
 class ViolinPlotter(BasePlotter):

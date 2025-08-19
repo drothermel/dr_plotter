@@ -3,8 +3,8 @@ Atomic plotter for line plots with multi-series support.
 """
 
 from .base import BasePlotter
-from ..theme import LINE_THEME, BASE_COLORS
-from ..consts import METRICS
+from dr_plotter.theme import LINE_THEME, BASE_COLORS
+from dr_plotter.consts import METRICS
 
 
 class LinePlotter(BasePlotter):

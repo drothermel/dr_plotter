@@ -5,7 +5,7 @@ Atomic plotter for heatmaps.
 import numpy as np
 import matplotlib.pyplot as plt
 from .base import BasePlotter
-from ..theme import HEATMAP_THEME
+from dr_plotter.theme import HEATMAP_THEME
 
 
 class HeatmapPlotter(BasePlotter):

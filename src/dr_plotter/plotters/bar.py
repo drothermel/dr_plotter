@@ -3,7 +3,7 @@ Atomic plotter for bar plots.
 """
 
 from .base import BasePlotter
-from ..theme import BAR_THEME
+from dr_plotter.theme import BAR_THEME
 
 
 class BarPlotter(BasePlotter):

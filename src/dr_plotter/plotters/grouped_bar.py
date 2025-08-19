@@ -3,7 +3,7 @@ Compound plotter for grouped bar plots.
 """
 
 from .base import BasePlotter
-from ..theme import GROUPED_BAR_THEME
+from dr_plotter.theme import GROUPED_BAR_THEME
 
 
 class GroupedBarPlotter(BasePlotter):

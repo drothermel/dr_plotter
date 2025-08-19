@@ -4,7 +4,7 @@ Compound plotter for bump plots.
 
 import matplotlib.patheffects as path_effects
 from .base import BasePlotter
-from ..theme import BUMP_PLOT_THEME
+from dr_plotter.theme import BUMP_PLOT_THEME
 
 
 class BumpPlotter(BasePlotter):
