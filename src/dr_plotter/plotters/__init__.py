@@ -10,7 +10,6 @@ from .violin import ViolinPlotter
 from .heatmap import HeatmapPlotter
 from .bump import BumpPlotter
 from .contour import ContourPlotter
-from .grouped_bar import GroupedBarPlotter
 
 __all__ = [
     "ScatterPlotter",
@@ -21,5 +20,4 @@ __all__ = [
     "HeatmapPlotter",
     "BumpPlotter",
     "ContourPlotter",
-    "GroupedBarPlotter",
 ]

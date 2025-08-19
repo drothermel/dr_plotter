@@ -14,7 +14,6 @@ from .plotters import (
     HeatmapPlotter,
     BumpPlotter,
     ContourPlotter,
-    GroupedBarPlotter,
 )
 
 
@@ -98,9 +97,9 @@ def line(
     )
 
 
-def bar(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
-    """Create a bar plot."""
-    return _create_plot(BarPlotter, (data, x, y), ax, **kwargs)
+def bar(data: pd.DataFrame, x: str, y: str, hue: str = None, ax=None, **kwargs):
+    """Create a bar plot with optional grouping."""
+    return _create_plot(BarPlotter, (data, x, y, hue), ax, **kwargs)
 
 
 def hist(data: pd.DataFrame, x: str, ax=None, **kwargs):
@@ -149,6 +148,3 @@ def gmm_level_set(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
     return _create_plot(ContourPlotter, (data, x, y), ax, **kwargs)
 
 
-def grouped_bar(data: pd.DataFrame, x: str, y: str, hue: str, ax=None, **kwargs):
-    """Create a grouped bar plot."""
-    return _create_plot(GroupedBarPlotter, (data, x, y, hue), ax, **kwargs)

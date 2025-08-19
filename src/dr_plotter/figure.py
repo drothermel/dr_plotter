@@ -14,7 +14,6 @@ from .plotters import (
     HeatmapPlotter,
     BumpPlotter,
     ContourPlotter,
-    GroupedBarPlotter,
 )
 
 
@@ -150,4 +149,4 @@ class FigureManager:
         self, row, col, data: pd.DataFrame, x: str, y: str, hue: str, **kwargs
     ):
         """Add a grouped bar plot to a specified subplot."""
-        self._add_plot(GroupedBarPlotter, (data, x, y, hue), row, col, **kwargs)
+        self._add_plot(BarPlotter, (data, x, y, hue), row, col, **kwargs)
