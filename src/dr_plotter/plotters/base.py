@@ -27,6 +27,35 @@ class BasePlotter:
         self.metric_column = None  # Will be set if metrics are melted
         self.melted_data = None  # Will hold melted data if needed
 
+    def _validate_data(self):
+        """
+        Validate that data meets basic requirements for plotting.
+
+        This base implementation checks:
+        - Data is a pandas DataFrame
+        - DataFrame is not empty
+
+        Subclasses can override this method to add additional validation.
+        """
+        assert isinstance(self.data, pd.DataFrame), "Data must be a pandas DataFrame"
+        assert not self.data.empty, "DataFrame cannot be empty"
+
+    def prepare_data(self):
+        """
+        Prepare and validate data for plotting.
+
+        This method validates the input data and performs any necessary
+        preprocessing. Subclasses can override this method to add
+        plotter-specific data preparation logic.
+
+        Returns:
+            The prepared data (by default, returns self.data unchanged)
+        """
+        self._validate_data()
+        # Set default plot_data (subclasses may override)
+        self.plot_data = self.data
+        return self.plot_data
+
     def _melt_metrics(
         self, data, id_vars, value_vars, var_name="_metric", value_name="_value"
     ):
