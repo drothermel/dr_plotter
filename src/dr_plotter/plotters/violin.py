@@ -30,6 +30,13 @@ class ViolinPlotter(BasePlotter):
             x=self.x,
             y=self.y
         )
+        
+        # Validate hue column if provided (following ScatterPlotter/LinePlotter pattern)
+        if self.hue is not None:
+            from .plot_data.base_validation import validate_columns_exist, validate_categorical_columns
+            validate_columns_exist(self.raw_data, [self.hue])
+            validate_categorical_columns(self.raw_data, [self.hue])
+        
         return self.plot_data
 
     def _get_plot_kwargs(self):
