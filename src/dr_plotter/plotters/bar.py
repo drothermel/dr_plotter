@@ -32,9 +32,9 @@ class BarPlotter(BasePlotter):
         self.y_param = y  # Store original y parameter
         self.hue = hue
         self.theme = BAR_THEME
-        
+
         # Create style engine with only hue channel enabled (bars only use color)
-        self.style_engine = StyleEngine(self.theme, enabled_channels={'hue': True})
+        self.style_engine = StyleEngine(self.theme, enabled_channels={"hue": True})
 
     def prepare_data(self):
         """
@@ -42,34 +42,23 @@ class BarPlotter(BasePlotter):
         """
         # Gets multi-metric support for free
         self.plot_data, self.y, self.metric_column = self._prepare_multi_metric_data(
-            self.y_param, self.x, 
-            auto_hue_groupings={'hue': self.hue}
+            self.y_param, self.x, auto_hue_groupings={"hue": self.hue}
         )
-        
+
         # Update hue if auto-set to METRICS
         if self.metric_column and self.hue is None:
             self.hue = self.metric_column
-        
+
         # Create validated plot data for single metrics
         if self.metric_column is None:
-            validated_data = BarPlotData(
-                data=self.plot_data,
-                x=self.x,
-                y=self.y
-            )
+            validated_data = BarPlotData(data=self.plot_data, x=self.x, y=self.y)
             self.plot_data = validated_data.data
-        
+
         # Process grouping parameters
         self.hue = self._process_grouping_params(self.hue)
-        
-        # Validate hue column if provided
-        if self.hue is not None:
-            from .plot_data.base_validation import validate_columns_exist, validate_categorical_columns
-            validate_columns_exist(self.plot_data, [self.hue])
-            validate_categorical_columns(self.plot_data, [self.hue])
-            self._has_groups = True
-        else:
-            self._has_groups = False
+
+        # Check if we have groupings
+        self._has_groups = self.hue is not None
 
         return self.plot_data
 
@@ -87,9 +76,7 @@ class BarPlotter(BasePlotter):
             }
             plot_kwargs.update(self._filter_plot_kwargs())
 
-            ax.bar(
-                self.plot_data[self.x], self.plot_data[self.y], **plot_kwargs
-            )
+            ax.bar(self.plot_data[self.x], self.plot_data[self.y], **plot_kwargs)
         else:
             # Grouped bar plot
             self._render_grouped(ax)
@@ -101,29 +88,27 @@ class BarPlotter(BasePlotter):
         # Setup
         x_categories = self.plot_data[self.x].unique()
         x_pos = np.arange(len(x_categories))
-        
+
         # Generate styles using unified engine (same pattern as Line/Scatter!)
-        group_styles = self.style_engine.generate_styles(
-            self.plot_data, hue=self.hue
-        )
-        
+        group_styles = self.style_engine.generate_styles(self.plot_data, hue=self.hue)
+
         # Get grouping columns (will be [self.hue])
         group_cols = self.style_engine.get_grouping_columns(hue=self.hue)
-        
+
         # Use standard groupby pattern (same as Line/Scatter!)
         if group_cols:
             grouped = self.plot_data.groupby(group_cols)
             n_groups = len(list(grouped))
             width = 0.8 / n_groups if n_groups > 0 else 0.8
-            
+
             for i, (name, group_data) in enumerate(grouped):
                 # Standard style lookup (same as Line/Scatter!)
                 group_key = tuple([(group_cols[0], name)])
                 styles = group_styles.get(group_key, {})
-                
+
                 # Extract color from unified styles
-                color = styles.get('color', 'blue')
-                
+                color = styles.get("color", "blue")
+
                 # Bar-specific geometry calculations
                 offset = width * (i - n_groups / 2 + 0.5)
                 y_values = []
@@ -133,7 +118,7 @@ class BarPlotter(BasePlotter):
                         y_values.append(cat_data[self.y].iloc[0])
                     else:
                         y_values.append(0)  # Default to 0 if no data
-                
+
                 # Plot bars with unified style
                 plot_kwargs = {
                     "alpha": self._get_style("alpha"),
@@ -141,7 +126,7 @@ class BarPlotter(BasePlotter):
                     "label": str(name),
                 }
                 plot_kwargs.update(self._filter_plot_kwargs())
-                
+
                 ax.bar(x_pos + offset, y_values, width, **plot_kwargs)
 
         # Set x-axis labels

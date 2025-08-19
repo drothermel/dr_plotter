@@ -117,11 +117,11 @@ def violin(
 def heatmap(data: pd.DataFrame, x: str, y: str, values: str, ax=None, **kwargs):
     """
     Create a heatmap from tidy/long format data.
-    
+
     Args:
         data: DataFrame containing the data in tidy/long format
         x: Column name for heatmap columns (x-axis)
-        y: Column name for heatmap rows (y-axis) 
+        y: Column name for heatmap rows (y-axis)
         values: Column name for cell values
         ax: Optional matplotlib axes
         **kwargs: Additional styling parameters
@@ -146,5 +146,3 @@ def bump_plot(
 def gmm_level_set(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
     """Create a GMM level set plot."""
     return _create_plot(ContourPlotter, (data, x, y), ax, **kwargs)
-
-

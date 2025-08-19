@@ -26,12 +26,8 @@ class ContourPlotter(BasePlotter):
     def prepare_data(self):
         """Fit GMM and create a meshgrid for contour plotting."""
         # Create validated plot data first
-        validated_data = ContourPlotData(
-            data=self.raw_data,
-            x=self.x,
-            y=self.y
-        )
-        
+        ContourPlotData(data=self.raw_data, x=self.x, y=self.y)
+
         # Fit GMM and create meshgrid
         gmm = GaussianMixture(n_components=3, random_state=0).fit(
             self.raw_data[[self.x, self.y]]
@@ -43,7 +39,7 @@ class ContourPlotter(BasePlotter):
         )
         Z = -gmm.score_samples(np.c_[xx.ravel(), yy.ravel()])
         Z = Z.reshape(xx.shape)
-        
+
         # Store prepared data
         self.xx, self.yy, self.Z = xx, yy, Z
         return self.raw_data

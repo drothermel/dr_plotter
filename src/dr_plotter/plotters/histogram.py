@@ -28,10 +28,7 @@ class HistogramPlotter(BasePlotter):
         Prepare and validate data for histogram plotting.
         """
         # Create validated plot data
-        self.plot_data = HistogramData(
-            data=self.raw_data,
-            x=self.x
-        )
+        self.plot_data = HistogramData(data=self.raw_data, x=self.x)
         return self.plot_data
 
     def render(self, ax):
@@ -39,7 +36,7 @@ class HistogramPlotter(BasePlotter):
         Render the histogram on the given axes.
         """
         self.prepare_data()
-        
+
         plot_kwargs = {
             "alpha": self._get_style("alpha"),
             "color": self._get_style("color", next(self.theme.get("color_cycle"))),

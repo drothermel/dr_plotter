@@ -30,6 +30,8 @@ EXAMPLES=(
     "06_bump_plot.py"
     "07_gmm_level_set.py"
     "08_multi_series_plots.py"
+    "09_ml_experiment_plot.py"
+    "10_color_coordination.py"
 )
 
 echo ""

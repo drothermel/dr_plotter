@@ -32,14 +32,14 @@ class BumpPlotter(BasePlotter):
             data=self.raw_data,
             x=self.time_col,
             y=self.value_col,
-            group=self.category_col
+            group=self.category_col,
         )
-        
+
         # Add rank calculation
         self.plot_data = validated_data.data.copy()
-        self.plot_data["rank"] = self.plot_data.groupby(self.time_col)[self.value_col].rank(
-            method="first", ascending=False
-        )
+        self.plot_data["rank"] = self.plot_data.groupby(self.time_col)[
+            self.value_col
+        ].rank(method="first", ascending=False)
         return self.plot_data
 
     def render(self, ax):

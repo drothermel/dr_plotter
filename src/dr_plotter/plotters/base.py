@@ -46,33 +46,36 @@ class BasePlotter:
     def _prepare_multi_metric_data(self, y_param, x_col, auto_hue_groupings=None):
         """
         Unified multi-metric preparation. Handles detection, melting, and auto-hue.
-        
+
         Args:
             y_param: str or List[str] - the y parameter
-            x_col: str - x column name  
+            x_col: str - x column name
             auto_hue_groupings: dict - grouping params for auto-hue detection
-            
+
         Returns:
             tuple: (plot_data_df, final_y_col, metric_column_name)
         """
         if not isinstance(y_param, list):
             # Single metric - return original data
             return self.raw_data, y_param, None
-        
+
         # Multi-metric path
         # Auto-set hue to METRICS if no other groupings specified
         if auto_hue_groupings and all(v is None for v in auto_hue_groupings.values()):
-            auto_hue_groupings['hue'] = METRICS
-        
+            auto_hue_groupings["hue"] = METRICS
+
         # Build id_vars for melting
-        id_vars = [col for col in self.raw_data.columns 
-                   if col not in y_param and col != x_col]
+        id_vars = [
+            col for col in self.raw_data.columns if col not in y_param and col != x_col
+        ]
         if x_col and x_col not in id_vars:
             id_vars = [x_col] + id_vars
-        
+
         # Use robust melt method
-        melted_df = self._melt_metrics(self.raw_data, id_vars, y_param, "_metric", "_value")
-        
+        melted_df = self._melt_metrics(
+            self.raw_data, id_vars, y_param, "_metric", "_value"
+        )
+
         return melted_df, "_value", "_metric"
 
     def _melt_metrics(
@@ -156,22 +159,22 @@ class BasePlotter:
     ):
         """
         DEPRECATED: Use StyleEngine.generate_styles() instead.
-        
+
         This method is kept for backward compatibility during migration.
         """
         from dr_plotter.plotters.style_engine import StyleEngine
-        
+
         # Create a temporary style engine with all channels enabled
         engine = StyleEngine(self.theme)
-        
+
         return engine.generate_styles(
-            data, 
-            hue=hue, 
-            style=style, 
-            size=size, 
-            marker=marker, 
+            data,
+            hue=hue,
+            style=style,
+            size=size,
+            marker=marker,
             alpha=alpha,
-            shared_context=getattr(self, 'kwargs', None)
+            shared_context=getattr(self, "kwargs", None),
         )
 
     def _get_style(self, key, default_override=None):

@@ -3,7 +3,6 @@ Atomic plotter for heatmaps.
 """
 
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from .base import BasePlotter
 from dr_plotter.theme import HEATMAP_THEME
@@ -18,7 +17,7 @@ class HeatmapPlotter(BasePlotter):
     def __init__(self, data, x, y, values, **kwargs):
         """
         Initialize the HeatmapPlotter.
-        
+
         Args:
             data: A pandas DataFrame in tidy/long format
             x: Column name for heatmap columns (x-axis)
@@ -38,22 +37,19 @@ class HeatmapPlotter(BasePlotter):
         """
         # Create validated heatmap data (includes pivot compatibility check)
         heatmap_data = HeatmapData(
-            data=self.raw_data,
-            x=self.x,
-            y=self.y,
-            values=self.values
+            data=self.raw_data, x=self.x, y=self.y, values=self.values
         )
-        
+
         # Convert from tidy/long to matrix format using pivot
         self.plot_data = heatmap_data.data.pivot(
-            index=self.y,      # rows
-            columns=self.x,    # columns
-            values=self.values # cell values
+            index=self.y,  # rows
+            columns=self.x,  # columns
+            values=self.values,  # cell values
         )
-        
+
         # Handle any missing values by filling with 0
         self.plot_data = self.plot_data.fillna(0)
-        
+
         return self.plot_data
 
     def render(self, ax):
@@ -61,7 +57,7 @@ class HeatmapPlotter(BasePlotter):
         Render the heatmap on the given axes.
         """
         self.prepare_data()
-        
+
         plot_kwargs = {"cmap": self.theme.get("cmap")}
         plot_kwargs.update(self._filter_plot_kwargs())
 

@@ -4,7 +4,6 @@ Atomic plotter for line plots with multi-series support.
 
 from .base import BasePlotter
 from dr_plotter.theme import LINE_THEME, BASE_COLORS
-from dr_plotter.consts import METRICS
 from dr_plotter.plotters.style_engine import StyleEngine
 from .plot_data import LinePlotData
 
@@ -49,7 +48,7 @@ class LinePlotter(BasePlotter):
         self.marker = marker
         self.alpha = alpha
         self.theme = LINE_THEME
-        
+
         # Create style engine with all channels enabled for complex line plots
         self.style_engine = StyleEngine(self.theme)
 
@@ -59,25 +58,25 @@ class LinePlotter(BasePlotter):
         """
         # Single unified call replaces 40+ lines of duplicated logic
         self.plot_data, self.y, self.metric_column = self._prepare_multi_metric_data(
-            self.y_param, self.x,
+            self.y_param,
+            self.x,
             auto_hue_groupings={
-                'hue': self.hue, 'style': self.style, 'size': self.size,
-                'marker': self.marker, 'alpha': self.alpha
-            }
+                "hue": self.hue,
+                "style": self.style,
+                "size": self.size,
+                "marker": self.marker,
+                "alpha": self.alpha,
+            },
         )
-        
+
         # Update hue if auto-set to METRICS
         if self.metric_column and self.hue is None:
             self.hue = self.metric_column
-        
+
         # Create validated plot data (always validate, whether melted or not)
-        validated_data = LinePlotData(
-            data=self.plot_data,
-            x=self.x,
-            y=self.y
-        )
+        validated_data = LinePlotData(data=self.plot_data, x=self.x, y=self.y)
         self.plot_data = validated_data.data
-        
+
         # Process all grouping params with METRICS handling
         self.hue = self._process_grouping_params(self.hue)
         self.style = self._process_grouping_params(self.style)
@@ -89,7 +88,7 @@ class LinePlotter(BasePlotter):
         self._has_groups = any(
             [self.hue, self.style, self.size, self.marker, self.alpha]
         )
-        
+
         return self.plot_data
 
     def render(self, ax):
@@ -97,7 +96,7 @@ class LinePlotter(BasePlotter):
         Render the line plot on the given axes.
         """
         self.prepare_data()
-        
+
         if not self._has_groups:
             # Simple single line plot
             plot_kwargs = {
@@ -123,19 +122,22 @@ class LinePlotter(BasePlotter):
         """Render grouped line plots based on visual encoding parameters."""
         # Get the group styles using style engine
         group_styles = self.style_engine.generate_styles(
-            self.plot_data, 
-            hue=self.hue, 
-            style=self.style, 
-            size=self.size, 
-            marker=self.marker, 
+            self.plot_data,
+            hue=self.hue,
+            style=self.style,
+            size=self.size,
+            marker=self.marker,
             alpha=self.alpha,
-            shared_context=self.kwargs
+            shared_context=self.kwargs,
         )
 
         # Get grouping columns from style engine
         group_cols = self.style_engine.get_grouping_columns(
-            hue=self.hue, style=self.style, size=self.size, 
-            marker=self.marker, alpha=self.alpha
+            hue=self.hue,
+            style=self.style,
+            size=self.size,
+            marker=self.marker,
+            alpha=self.alpha,
         )
 
         # Group the data and plot each group

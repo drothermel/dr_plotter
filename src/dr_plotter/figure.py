@@ -64,21 +64,22 @@ class FigureManager:
         if self._shared_style_cycles is None:
             # Use BASE_THEME to create consistent cycles across subplots
             from .theme import BASE_THEME
+
             self._shared_style_cycles = {
-                'color': itertools.cycle(BASE_THEME.get('color_cycle')),
-                'linestyle': itertools.cycle(BASE_THEME.get('linestyle_cycle')),
-                'marker': itertools.cycle(BASE_THEME.get('marker_cycle')),
+                "color": itertools.cycle(BASE_THEME.get("color_cycle")),
+                "linestyle": itertools.cycle(BASE_THEME.get("linestyle_cycle")),
+                "marker": itertools.cycle(BASE_THEME.get("marker_cycle")),
             }
         return self._shared_style_cycles
 
     def _add_plot(self, plotter_class, plotter_args, row, col, **kwargs):
         """Private helper to add any plot type to a subplot with style coordination."""
         ax = self.get_axes(row, col)
-        
+
         # Add shared style state for cross-subplot coordination
-        kwargs['_figure_manager'] = self
-        kwargs['_shared_hue_styles'] = self._shared_hue_styles
-        
+        kwargs["_figure_manager"] = self
+        kwargs["_shared_hue_styles"] = self._shared_hue_styles
+
         plotter = plotter_class(*plotter_args, **kwargs)
         plotter.render(ax)
 
@@ -111,10 +112,12 @@ class FigureManager:
         """Add a violin plot to a specified subplot."""
         self._add_plot(ViolinPlotter, (data, x, y, hue), row, col, **kwargs)
 
-    def heatmap(self, row, col, data: pd.DataFrame, x: str, y: str, values: str, **kwargs):
+    def heatmap(
+        self, row, col, data: pd.DataFrame, x: str, y: str, values: str, **kwargs
+    ):
         """
         Add a heatmap to a specified subplot.
-        
+
         Args:
             row: Row position in subplot grid
             col: Column position in subplot grid

@@ -20,9 +20,9 @@ class ViolinPlotter(BasePlotter):
         self.y_param = y  # Store original y parameter
         self.hue = hue
         self.theme = VIOLIN_THEME
-        
+
         # Create style engine with only hue channel enabled (violins only use color)
-        self.style_engine = StyleEngine(self.theme, enabled_channels={'hue': True})
+        self.style_engine = StyleEngine(self.theme, enabled_channels={"hue": True})
 
     def prepare_data(self):
         """
@@ -30,32 +30,21 @@ class ViolinPlotter(BasePlotter):
         """
         # Gets multi-metric support for free
         self.plot_data, self.y, self.metric_column = self._prepare_multi_metric_data(
-            self.y_param, self.x, 
-            auto_hue_groupings={'hue': self.hue}
+            self.y_param, self.x, auto_hue_groupings={"hue": self.hue}
         )
-        
+
         # Update hue if auto-set to METRICS
         if self.metric_column and self.hue is None:
             self.hue = self.metric_column
-        
+
         # Create validated plot data for single metrics
         if self.metric_column is None:
-            validated_data = ViolinPlotData(
-                data=self.plot_data,
-                x=self.x,
-                y=self.y
-            )
+            validated_data = ViolinPlotData(data=self.plot_data, x=self.x, y=self.y)
             self.plot_data = validated_data.data
-        
+
         # Process grouping parameters
         self.hue = self._process_grouping_params(self.hue)
-        
-        # Validate hue column if provided
-        if self.hue is not None:
-            from .plot_data.base_validation import validate_columns_exist, validate_categorical_columns
-            validate_columns_exist(self.plot_data, [self.hue])
-            validate_categorical_columns(self.plot_data, [self.hue])
-        
+
         return self.plot_data
 
     def _get_plot_kwargs(self):
@@ -88,36 +77,35 @@ class ViolinPlotter(BasePlotter):
         """Render grouped violins using unified style system."""
         x_categories = self.plot_data[self.x].unique()
         x_positions = np.arange(len(x_categories))
-        
+
         # Generate styles using unified engine (same pattern as Line/Scatter!)
-        group_styles = self.style_engine.generate_styles(
-            self.plot_data, hue=self.hue
-        )
-        
+        group_styles = self.style_engine.generate_styles(self.plot_data, hue=self.hue)
+
         # Get grouping columns (will be [self.hue])
         group_cols = self.style_engine.get_grouping_columns(hue=self.hue)
-        
+
         # Use standard groupby pattern (same as Line/Scatter!)
         if group_cols:
             grouped = self.plot_data.groupby(group_cols)
             n_groups = len(list(grouped))
             width = 0.8
             violin_width = width / n_groups if n_groups > 0 else width
-            
+
             # Create mapping from hue values to styles
             hue_to_style = {}
             for name, group_data in grouped:
                 group_key = tuple([(group_cols[0], name)])
                 styles = group_styles.get(group_key, {})
-                hue_to_style[name] = styles.get('color', 'blue')
-        
+                hue_to_style[name] = styles.get("color", "blue")
+
         # Plot violins with proper positioning
         for i, x_cat in enumerate(x_categories):
             if group_cols:
                 for j, (hue_val, color) in enumerate(hue_to_style.items()):
                     position = x_positions[i] - width / 2 + (j + 0.5) * violin_width
                     dataset = self.plot_data[
-                        (self.plot_data[self.x] == x_cat) & (self.plot_data[self.hue] == hue_val)
+                        (self.plot_data[self.x] == x_cat)
+                        & (self.plot_data[self.hue] == hue_val)
                     ][self.y].dropna()
 
                     if not dataset.empty:
@@ -140,18 +128,19 @@ class ViolinPlotter(BasePlotter):
 
         from matplotlib.patches import Patch
 
-        legend_handles = [
-            Patch(facecolor=hue_colors[hue_cat], label=hue_cat)
-            for hue_cat in hue_categories
-        ]
-        self.kwargs["_legend_handles"] = legend_handles
+        if group_cols:
+            legend_handles = [
+                Patch(facecolor=color, label=hue_val)
+                for hue_val, color in hue_to_style.items()
+            ]
+            self.kwargs["_legend_handles"] = legend_handles
 
         ax.set_xticks(x_positions)
         ax.set_xticklabels(x_categories)
 
     def render(self, ax):
         self.prepare_data()
-        
+
         if self.hue and self.x and self.y:
             self._render_grouped(ax)
         else:

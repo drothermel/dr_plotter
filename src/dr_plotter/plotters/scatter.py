@@ -38,7 +38,7 @@ class ScatterPlotter(BasePlotter):
         self.marker = marker
         self.alpha = alpha
         self.theme = SCATTER_THEME
-        
+
         # Create style engine with all channels enabled for complex scatter plots
         self.style_engine = StyleEngine(self.theme)
 
@@ -48,22 +48,22 @@ class ScatterPlotter(BasePlotter):
         """
         # Single unified call replaces 30+ lines of duplicated logic
         self.plot_data, self.y, self.metric_column = self._prepare_multi_metric_data(
-            self.y_param, self.x,
+            self.y_param,
+            self.x,
             auto_hue_groupings={
-                'hue': self.hue, 'size': self.size, 'marker': self.marker, 'alpha': self.alpha
-            }
+                "hue": self.hue,
+                "size": self.size,
+                "marker": self.marker,
+                "alpha": self.alpha,
+            },
         )
-        
+
         # Update hue if auto-set to METRICS
         if self.metric_column and self.hue is None:
             self.hue = self.metric_column
-        
+
         # Create validated plot data
-        validated_data = ScatterPlotData(
-            data=self.plot_data,
-            x=self.x,
-            y=self.y
-        )
+        validated_data = ScatterPlotData(data=self.plot_data, x=self.x, y=self.y)
         # Keep using DataFrame for consistency with other plotters
         self.plot_data = validated_data.data
 
@@ -88,7 +88,7 @@ class ScatterPlotter(BasePlotter):
 
         # Check if we have any groupings
         self._has_groups = any([self.hue, self.size, self.marker, self.alpha])
-        
+
         return self.plot_data
 
     def render(self, ax):
@@ -96,7 +96,7 @@ class ScatterPlotter(BasePlotter):
         Render the scatter plot on the given axes.
         """
         self.prepare_data()
-        
+
         if not self._has_groups:
             # Simple single scatter plot
             plot_kwargs = {
@@ -126,7 +126,7 @@ class ScatterPlotter(BasePlotter):
             size=self.size,
             marker=self.marker,
             alpha=self.alpha,
-            shared_context=self.kwargs
+            shared_context=self.kwargs,
         )
 
         # Get grouping columns from style engine
