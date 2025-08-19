@@ -5,6 +5,7 @@ Atomic plotter for violin plots.
 import numpy as np
 from .base import BasePlotter
 from dr_plotter.theme import VIOLIN_THEME
+from .plot_data import ViolinPlotData
 
 
 class ViolinPlotter(BasePlotter):
@@ -19,6 +20,18 @@ class ViolinPlotter(BasePlotter):
         self.hue = hue
         self.theme = VIOLIN_THEME
 
+    def prepare_data(self):
+        """
+        Prepare and validate data for violin plotting.
+        """
+        # Create validated plot data
+        self.plot_data = ViolinPlotData(
+            data=self.raw_data,
+            x=self.x,
+            y=self.y
+        )
+        return self.plot_data
+
     def _get_plot_kwargs(self):
         """Prepare the kwargs for the matplotlib violinplot function."""
         plot_kwargs = {"showmeans": self.theme.get("showmeans")}
@@ -28,26 +41,26 @@ class ViolinPlotter(BasePlotter):
     def _render_simple(self, ax):
         plot_kwargs = self._get_plot_kwargs()
         if self.x and self.y:
-            groups = self.plot_data[self.x].unique()
+            groups = self.plot_data.data[self.x].unique()
             dataset = [
-                self.plot_data[self.plot_data[self.x] == group][self.y].dropna()
+                self.plot_data.data[self.plot_data.data[self.x] == group][self.y].dropna()
                 for group in groups
             ]
             ax.violinplot(dataset, **plot_kwargs)
             ax.set_xticks(np.arange(1, len(groups) + 1))
             ax.set_xticklabels(groups)
         elif self.y:
-            ax.violinplot(self.plot_data[self.y].dropna(), **plot_kwargs)
+            ax.violinplot(self.plot_data.data[self.y].dropna(), **plot_kwargs)
         else:
-            numeric_cols = self.plot_data.select_dtypes(include="number").columns
-            dataset = [self.plot_data[col].dropna() for col in numeric_cols]
+            numeric_cols = self.plot_data.data.select_dtypes(include="number").columns
+            dataset = [self.plot_data.data[col].dropna() for col in numeric_cols]
             ax.violinplot(dataset, **plot_kwargs)
             ax.set_xticks(np.arange(1, len(numeric_cols) + 1))
             ax.set_xticklabels(numeric_cols)
 
     def _render_grouped(self, ax):
-        x_categories = self.plot_data[self.x].unique()
-        hue_categories = self.plot_data[self.hue].unique()
+        x_categories = self.plot_data.data[self.x].unique()
+        hue_categories = self.plot_data.data[self.hue].unique()
         n_hues = len(hue_categories)
 
         width = 0.8
@@ -60,8 +73,8 @@ class ViolinPlotter(BasePlotter):
         for i, x_cat in enumerate(x_categories):
             for j, hue_cat in enumerate(hue_categories):
                 position = x_positions[i] - width / 2 + (j + 0.5) * violin_width
-                dataset = self.plot_data[
-                    (self.plot_data[self.x] == x_cat) & (self.plot_data[self.hue] == hue_cat)
+                dataset = self.plot_data.data[
+                    (self.plot_data.data[self.x] == x_cat) & (self.plot_data.data[self.hue] == hue_cat)
                 ][self.y].dropna()
 
                 if not dataset.empty:

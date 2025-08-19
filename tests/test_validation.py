@@ -1,34 +1,66 @@
 import pytest
 import pandas as pd
-from dr_plotter.utils.validation import validate_columns_exist, validate_numeric_columns
+from pydantic import ValidationError
+from dr_plotter.plotters.plot_data import (
+    ScatterPlotData, HistogramData, HeatmapData, BarPlotData
+)
 
 
 @pytest.fixture
-def sample_df():
+def valid_data():
     return pd.DataFrame({
-        'numeric': [1, 2, 3],
-        'text': ['a', 'b', 'c'],
-        'float': [1.5, 2.5, 3.5]
+        'x_num': [1, 2, 3],
+        'y_num': [4, 5, 6], 
+        'category': ['A', 'B', 'C'],
+        'values': [10, 20, 30]
     })
 
 
-def test_validate_columns_exist_success(sample_df):
-    validate_columns_exist(sample_df, 'numeric')
-    validate_columns_exist(sample_df, ['numeric', 'text'])
-    validate_columns_exist(sample_df, None)
+@pytest.fixture
+def invalid_data():
+    return pd.DataFrame({
+        'x_text': ['a', 'b', 'c'],
+        'y_num': [4, 5, 6]
+    })
 
 
-def test_validate_columns_exist_failure(sample_df):
-    with pytest.raises(AssertionError, match="Column 'missing' not found"):
-        validate_columns_exist(sample_df, 'missing')
+def test_scatter_validation_success(valid_data):
+    data = ScatterPlotData(data=valid_data, x='x_num', y='y_num')
+    assert data.x == 'x_num'
+    assert data.y == 'y_num'
 
 
-def test_validate_numeric_columns_success(sample_df):
-    validate_numeric_columns(sample_df, 'numeric')
-    validate_numeric_columns(sample_df, ['numeric', 'float'])
-    validate_numeric_columns(sample_df, None)
+def test_missing_column_error(valid_data):
+    with pytest.raises(ValidationError, match="Missing required columns"):
+        ScatterPlotData(data=valid_data, x='missing', y='y_num')
 
 
-def test_validate_numeric_columns_failure(sample_df):
-    with pytest.raises(AssertionError, match="must contain numeric data"):
-        validate_numeric_columns(sample_df, 'text')
+def test_non_numeric_error(invalid_data):
+    with pytest.raises(ValidationError, match="should be numeric"):
+        ScatterPlotData(data=invalid_data, x='x_text', y='y_num')
+
+
+def test_histogram_validation(valid_data):
+    data = HistogramData(data=valid_data, x='x_num')
+    assert data.x == 'x_num'
+
+
+def test_bar_categorical_validation(valid_data):
+    data = BarPlotData(data=valid_data, x='category', y='y_num')
+    assert data.x == 'category'
+
+
+def test_heatmap_pivot_validation():
+    # Valid: no duplicates
+    valid_data = pd.DataFrame({
+        'x_cat': ['A', 'B', 'C'], 'y_cat': ['X', 'Y', 'Z'], 'values': [1, 2, 3]
+    })
+    data = HeatmapData(data=valid_data, x='x_cat', y='y_cat', values='values')
+    assert data.x == 'x_cat'
+    
+    # Invalid: duplicate x,y combinations
+    dup_data = pd.DataFrame({
+        'x': ['A', 'A'], 'y': ['B', 'B'], 'values': [1, 2]
+    })
+    with pytest.raises(ValidationError, match="duplicate x,y combinations"):
+        HeatmapData(data=dup_data, x='x', y='y', values='values')

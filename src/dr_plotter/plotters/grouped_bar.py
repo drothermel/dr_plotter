@@ -4,6 +4,7 @@ Compound plotter for grouped bar plots.
 
 from .base import BasePlotter
 from dr_plotter.theme import GROUPED_BAR_THEME
+from .plot_data import GroupedBarData
 
 
 class GroupedBarPlotter(BasePlotter):
@@ -25,11 +26,16 @@ class GroupedBarPlotter(BasePlotter):
         """
         Prepare data for grouped bar plotting by pivoting to wide format.
         """
-        # Call parent validation
-        super().prepare_data()
+        # Create validated plot data first
+        validated_data = GroupedBarData(
+            data=self.raw_data,
+            x=self.x,
+            y=self.y,
+            group=self.hue
+        )
         
         # Pivot data for grouped bars
-        self.plot_data = self.raw_data.pivot(index=self.x, columns=self.hue, values=self.y)
+        self.plot_data = validated_data.data.pivot(index=self.x, columns=self.hue, values=self.y)
         return self.plot_data
 
     def render(self, ax):

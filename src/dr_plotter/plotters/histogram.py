@@ -4,6 +4,7 @@ Atomic plotter for histograms.
 
 from .base import BasePlotter
 from dr_plotter.theme import HISTOGRAM_THEME
+from .plot_data import HistogramData
 
 
 class HistogramPlotter(BasePlotter):
@@ -22,6 +23,17 @@ class HistogramPlotter(BasePlotter):
         )
         self.theme = HISTOGRAM_THEME
 
+    def prepare_data(self):
+        """
+        Prepare and validate data for histogram plotting.
+        """
+        # Create validated plot data
+        self.plot_data = HistogramData(
+            data=self.raw_data,
+            x=self.x
+        )
+        return self.plot_data
+
     def render(self, ax):
         """
         Render the histogram on the given axes.
@@ -35,5 +47,5 @@ class HistogramPlotter(BasePlotter):
         }
         plot_kwargs.update(self._filter_plot_kwargs())
 
-        ax.hist(self.plot_data[self.x], **plot_kwargs)
+        ax.hist(self.plot_data.data[self.x], **plot_kwargs)
         self._apply_styling(ax)

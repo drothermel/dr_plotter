@@ -5,6 +5,7 @@ Compound plotter for bump plots.
 import matplotlib.patheffects as path_effects
 from .base import BasePlotter
 from dr_plotter.theme import BUMP_PLOT_THEME
+from .plot_data import BumpPlotData
 
 
 class BumpPlotter(BasePlotter):
@@ -26,11 +27,16 @@ class BumpPlotter(BasePlotter):
 
     def prepare_data(self):
         """Calculate ranks for each category at each time point."""
-        # Call parent validation
-        super().prepare_data()
+        # Create validated plot data first
+        validated_data = BumpPlotData(
+            data=self.raw_data,
+            x=self.time_col,
+            y=self.value_col,
+            group=self.category_col
+        )
         
         # Add rank calculation
-        self.plot_data = self.raw_data.copy()
+        self.plot_data = validated_data.data.copy()
         self.plot_data["rank"] = self.plot_data.groupby(self.time_col)[self.value_col].rank(
             method="first", ascending=False
         )

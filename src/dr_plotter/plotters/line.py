@@ -5,6 +5,7 @@ Atomic plotter for line plots with multi-series support.
 from .base import BasePlotter
 from dr_plotter.theme import LINE_THEME, BASE_COLORS
 from dr_plotter.consts import METRICS
+from .plot_data import LinePlotData
 
 
 class LinePlotter(BasePlotter):
@@ -81,8 +82,15 @@ class LinePlotter(BasePlotter):
             self.plot_data = self.melted_data
         else:
             self.y = self.raw_y
-            self.plot_data = self.raw_data
             self.metric_column = None
+            
+            # Create validated plot data
+            validated_data = LinePlotData(
+                data=self.raw_data,
+                x=self.x,
+                y=self.y
+            )
+            self.plot_data = validated_data.data
 
         # Process grouping parameters
         self.hue = self._process_grouping_params(self.init_hue)

@@ -7,6 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from .base import BasePlotter
 from dr_plotter.theme import HEATMAP_THEME
+from .plot_data import HeatmapData
 
 
 class HeatmapPlotter(BasePlotter):
@@ -35,17 +36,16 @@ class HeatmapPlotter(BasePlotter):
         """
         Convert tidy/long format data to matrix format for heatmap visualization.
         """
-        # Validate basic structure
-        assert isinstance(self.raw_data, pd.DataFrame), "Data must be a pandas DataFrame"
-        assert not self.raw_data.empty, "DataFrame cannot be empty"
-        
-        # Validate required columns exist
-        required_cols = [self.x, self.y, self.values]
-        for col in required_cols:
-            assert col in self.raw_data.columns, f"Column '{col}' not found in data"
+        # Create validated heatmap data (includes pivot compatibility check)
+        heatmap_data = HeatmapData(
+            data=self.raw_data,
+            x=self.x,
+            y=self.y,
+            values=self.values
+        )
         
         # Convert from tidy/long to matrix format using pivot
-        self.plot_data = self.raw_data.pivot(
+        self.plot_data = heatmap_data.data.pivot(
             index=self.y,      # rows
             columns=self.x,    # columns
             values=self.values # cell values
@@ -53,6 +53,8 @@ class HeatmapPlotter(BasePlotter):
         
         # Handle any missing values by filling with 0
         self.plot_data = self.plot_data.fillna(0)
+        
+        return self.plot_data
 
     def render(self, ax):
         """

@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.mixture import GaussianMixture
 from .base import BasePlotter
 from dr_plotter.theme import CONTOUR_THEME
+from .plot_data import ContourPlotData
 
 
 class ContourPlotter(BasePlotter):
@@ -24,8 +25,12 @@ class ContourPlotter(BasePlotter):
 
     def prepare_data(self):
         """Fit GMM and create a meshgrid for contour plotting."""
-        # Call parent validation
-        super().prepare_data()
+        # Create validated plot data first
+        validated_data = ContourPlotData(
+            data=self.raw_data,
+            x=self.x,
+            y=self.y
+        )
         
         # Fit GMM and create meshgrid
         gmm = GaussianMixture(n_components=3, random_state=0).fit(

@@ -5,6 +5,7 @@ Atomic plotter for scatter plots with multi-series support.
 from .base import BasePlotter
 from dr_plotter.theme import SCATTER_THEME, BASE_COLORS
 from dr_plotter.consts import METRICS, METRICS_STR
+from .plot_data import ScatterPlotData
 
 
 class ScatterPlotter(BasePlotter):
@@ -43,10 +44,7 @@ class ScatterPlotter(BasePlotter):
         """
         Prepare and validate data for scatter plotting.
         """
-        # Call parent validation
-        super().prepare_data()
-        
-        # Handle multi-metric case
+        # Handle multi-metric case first (before validation)
         if isinstance(self.raw_y, list):
             # Set default hue to METRICS if not specified
             hue = self.init_hue
@@ -61,11 +59,23 @@ class ScatterPlotter(BasePlotter):
             self.melted_data = self._melt_metrics(self.raw_data, id_vars, self.raw_y, "_metric", "_value")
             self.metric_column = "_metric"
             self.y = "_value"
-            self.plot_data = self.melted_data
+            
+            # Create validated plot data with melted data
+            self.plot_data = ScatterPlotData(
+                data=self.melted_data,
+                x=self.x,
+                y=self.y
+            )
         else:
             self.y = self.raw_y
-            self.plot_data = self.raw_data
             self.metric_column = None
+            
+            # Create validated plot data with original data
+            self.plot_data = ScatterPlotData(
+                data=self.raw_data,
+                x=self.x,
+                y=self.y
+            )
 
         # Process grouping parameters
         self.hue = self._process_grouping_params(self.init_hue)
@@ -76,7 +86,7 @@ class ScatterPlotter(BasePlotter):
         if (
             self.init_marker is not None
             and isinstance(self.init_marker, str)
-            and self.init_marker not in self.plot_data.columns
+            and self.init_marker not in self.plot_data.data.columns
             and self.init_marker not in [METRICS, METRICS_STR]
         ):
             # It's a direct matplotlib marker - don't treat as grouping parameter
@@ -110,7 +120,7 @@ class ScatterPlotter(BasePlotter):
             if "label" in self.kwargs:
                 plot_kwargs["label"] = self.kwargs["label"]
 
-            ax.scatter(self.plot_data[self.x], self.plot_data[self.y], **plot_kwargs)
+            ax.scatter(self.plot_data.data[self.x], self.plot_data.data[self.y], **plot_kwargs)
         else:
             # Multi-series scatter with groupings
             self._render_grouped(ax)
@@ -121,7 +131,7 @@ class ScatterPlotter(BasePlotter):
         """Render grouped scatter plots based on visual encoding parameters."""
         # Get the group styles
         group_styles = self._get_group_styles(
-            self.plot_data,
+            self.plot_data.data,
             self.hue,
             None,
             self.size,
@@ -146,7 +156,7 @@ class ScatterPlotter(BasePlotter):
 
         # Group the data and plot each group
         if group_cols:
-            grouped = self.plot_data.groupby(group_cols)
+            grouped = self.plot_data.data.groupby(group_cols)
 
             for name, group_data in grouped:
                 # Create group key for style lookup
