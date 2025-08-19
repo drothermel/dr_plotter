@@ -112,9 +112,20 @@ class FigureManager:
         """Add a violin plot to a specified subplot."""
         self._add_plot(ViolinPlotter, (data, x, y, hue), row, col, **kwargs)
 
-    def heatmap(self, row, col, data: pd.DataFrame, **kwargs):
-        """Add a heatmap to a specified subplot."""
-        self._add_plot(HeatmapPlotter, (data,), row, col, **kwargs)
+    def heatmap(self, row, col, data: pd.DataFrame, x: str, y: str, values: str, **kwargs):
+        """
+        Add a heatmap to a specified subplot.
+        
+        Args:
+            row: Row position in subplot grid
+            col: Column position in subplot grid
+            data: DataFrame containing the data in tidy/long format
+            x: Column name for heatmap columns (x-axis)
+            y: Column name for heatmap rows (y-axis)
+            values: Column name for cell values
+            **kwargs: Additional styling parameters
+        """
+        self._add_plot(HeatmapPlotter, (data, x, y, values), row, col, **kwargs)
 
     def bump_plot(
         self,

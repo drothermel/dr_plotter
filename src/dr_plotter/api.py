@@ -115,9 +115,19 @@ def violin(
     return _create_plot(ViolinPlotter, (data, x, y, hue), ax, **kwargs)
 
 
-def heatmap(data: pd.DataFrame, ax=None, **kwargs):
-    """Create a heatmap."""
-    return _create_plot(HeatmapPlotter, (data,), ax, **kwargs)
+def heatmap(data: pd.DataFrame, x: str, y: str, values: str, ax=None, **kwargs):
+    """
+    Create a heatmap from tidy/long format data.
+    
+    Args:
+        data: DataFrame containing the data in tidy/long format
+        x: Column name for heatmap columns (x-axis)
+        y: Column name for heatmap rows (y-axis) 
+        values: Column name for cell values
+        ax: Optional matplotlib axes
+        **kwargs: Additional styling parameters
+    """
+    return _create_plot(HeatmapPlotter, (data, x, y, values), ax, **kwargs)
 
 
 def bump_plot(
