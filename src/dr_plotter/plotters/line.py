@@ -41,63 +41,45 @@ class LinePlotter(BasePlotter):
         """
         super().__init__(data, **kwargs)
         self.x = x
-        self.raw_y = y  # Store original y parameter
+        self.y_param = y  # Store original y parameter
+        self.hue = hue
+        self.style = style
+        self.size = size
+        self.marker = marker
+        self.alpha = alpha
         self.theme = LINE_THEME
-        
-        # Store parameters for prepare_data
-        self.init_hue = hue
-        self.init_style = style
-        self.init_size = size
-        self.init_marker = marker
-        self.init_alpha = alpha
 
     def prepare_data(self):
         """
         Prepare and validate data for line plotting.
         """
-        # Call parent validation
-        super().prepare_data()
+        # Single unified call replaces 40+ lines of duplicated logic
+        self.plot_data, self.y, self.metric_column = self._prepare_multi_metric_data(
+            self.y_param, self.x,
+            auto_hue_groupings={
+                'hue': self.hue, 'style': self.style, 'size': self.size,
+                'marker': self.marker, 'alpha': self.alpha
+            }
+        )
         
-        # Handle multi-metric case
-        if isinstance(self.raw_y, list):
-            # Set default hue to METRICS if not specified
-            hue = self.init_hue
-            if (
-                hue is None
-                and self.init_style is None
-                and self.init_size is None
-                and self.init_marker is None
-                and self.init_alpha is None
-            ):
-                hue = METRICS
-
-            # Melt the data to long format
-            id_vars = [col for col in self.raw_data.columns if col not in self.raw_y and col != self.x]
-            if self.x not in id_vars:
-                id_vars = [self.x] + id_vars
-
-            self.melted_data = self._melt_metrics(self.raw_data, id_vars, self.raw_y, "_metric", "_value")
-            self.metric_column = "_metric"
-            self.y = "_value"
-            self.plot_data = self.melted_data
-        else:
-            self.y = self.raw_y
-            self.metric_column = None
-            
-            # Create validated plot data
-            validated_data = LinePlotData(
-                data=self.raw_data,
-                x=self.x,
-                y=self.y
-            )
-            self.plot_data = validated_data.data
-
-        # Process grouping parameters
-        self.hue = self._process_grouping_params(self.init_hue)
-        self.style = self._process_grouping_params(self.init_style)
-        self.size = self._process_grouping_params(self.init_size)
-        self.marker = self._process_grouping_params(self.init_marker)
-        self.alpha = self._process_grouping_params(self.init_alpha)
+        # Update hue if auto-set to METRICS
+        if self.metric_column and self.hue is None:
+            self.hue = self.metric_column
+        
+        # Create validated plot data (always validate, whether melted or not)
+        validated_data = LinePlotData(
+            data=self.plot_data,
+            x=self.x,
+            y=self.y
+        )
+        self.plot_data = validated_data.data
+        
+        # Process all grouping params with METRICS handling
+        self.hue = self._process_grouping_params(self.hue)
+        self.style = self._process_grouping_params(self.style)
+        self.size = self._process_grouping_params(self.size)
+        self.marker = self._process_grouping_params(self.marker)
+        self.alpha = self._process_grouping_params(self.alpha)
 
         # Check if we have any groupings
         self._has_groups = any(

@@ -31,69 +31,55 @@ class ScatterPlotter(BasePlotter):
         """
         super().__init__(data, **kwargs)
         self.x = x
-        self.raw_y = y  # Store original y parameter
+        self.y_param = y  # Store original y parameter
+        self.hue = hue
+        self.size = size
+        self.marker = marker
+        self.alpha = alpha
         self.theme = SCATTER_THEME
-        
-        # Store parameters for prepare_data
-        self.init_hue = hue
-        self.init_size = size
-        self.init_marker = marker
-        self.init_alpha = alpha
 
     def prepare_data(self):
         """
         Prepare and validate data for scatter plotting.
         """
-        # Handle multi-metric case first (before validation)
-        if isinstance(self.raw_y, list):
-            # Set default hue to METRICS if not specified
-            hue = self.init_hue
-            if hue is None and self.init_size is None and self.init_marker is None and self.init_alpha is None:
-                hue = METRICS
-
-            # Melt the data to long format
-            id_vars = [col for col in self.raw_data.columns if col not in self.raw_y and col != self.x]
-            if self.x not in id_vars:
-                id_vars = [self.x] + id_vars
-
-            self.melted_data = self._melt_metrics(self.raw_data, id_vars, self.raw_y, "_metric", "_value")
-            self.metric_column = "_metric"
-            self.y = "_value"
-            
-            # Create validated plot data with melted data
-            self.plot_data = ScatterPlotData(
-                data=self.melted_data,
-                x=self.x,
-                y=self.y
-            )
-        else:
-            self.y = self.raw_y
-            self.metric_column = None
-            
-            # Create validated plot data with original data
-            self.plot_data = ScatterPlotData(
-                data=self.raw_data,
-                x=self.x,
-                y=self.y
-            )
+        # Single unified call replaces 30+ lines of duplicated logic
+        self.plot_data, self.y, self.metric_column = self._prepare_multi_metric_data(
+            self.y_param, self.x,
+            auto_hue_groupings={
+                'hue': self.hue, 'size': self.size, 'marker': self.marker, 'alpha': self.alpha
+            }
+        )
+        
+        # Update hue if auto-set to METRICS
+        if self.metric_column and self.hue is None:
+            self.hue = self.metric_column
+        
+        # Create validated plot data
+        validated_data = ScatterPlotData(
+            data=self.plot_data,
+            x=self.x,
+            y=self.y
+        )
+        # Keep using DataFrame for consistency with other plotters
+        self.plot_data = validated_data.data
 
         # Process grouping parameters
-        self.hue = self._process_grouping_params(self.init_hue)
-        self.size = self._process_grouping_params(self.init_size)
-        self.alpha = self._process_grouping_params(self.init_alpha)
+        self.hue = self._process_grouping_params(self.hue)
+        self.size = self._process_grouping_params(self.size)
+        self.alpha = self._process_grouping_params(self.alpha)
 
         # Handle marker parameter - check if it's a column name or direct matplotlib marker
         if (
-            self.init_marker is not None
-            and isinstance(self.init_marker, str)
-            and self.init_marker not in self.plot_data.data.columns
-            and self.init_marker not in [METRICS, METRICS_STR]
+            self.marker is not None
+            and isinstance(self.marker, str)
+            and self.marker not in self.plot_data.columns
+            and self.marker not in [METRICS, METRICS_STR]
         ):
             # It's a direct matplotlib marker - don't treat as grouping parameter
+            self.direct_marker = self.marker
             self.marker = None
-            self.direct_marker = self.init_marker
         else:
-            self.marker = self._process_grouping_params(self.init_marker)
+            self.marker = self._process_grouping_params(self.marker)
             self.direct_marker = None
 
         # Check if we have any groupings
@@ -120,7 +106,7 @@ class ScatterPlotter(BasePlotter):
             if "label" in self.kwargs:
                 plot_kwargs["label"] = self.kwargs["label"]
 
-            ax.scatter(self.plot_data.data[self.x], self.plot_data.data[self.y], **plot_kwargs)
+            ax.scatter(self.plot_data[self.x], self.plot_data[self.y], **plot_kwargs)
         else:
             # Multi-series scatter with groupings
             self._render_grouped(ax)
@@ -131,7 +117,7 @@ class ScatterPlotter(BasePlotter):
         """Render grouped scatter plots based on visual encoding parameters."""
         # Get the group styles
         group_styles = self._get_group_styles(
-            self.plot_data.data,
+            self.plot_data,
             self.hue,
             None,
             self.size,
@@ -156,7 +142,7 @@ class ScatterPlotter(BasePlotter):
 
         # Group the data and plot each group
         if group_cols:
-            grouped = self.plot_data.data.groupby(group_cols)
+            grouped = self.plot_data.groupby(group_cols)
 
             for name, group_data in grouped:
                 # Create group key for style lookup

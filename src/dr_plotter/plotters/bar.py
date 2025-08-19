@@ -22,13 +22,13 @@ class BarPlotter(BasePlotter):
         Args:
             data: A pandas DataFrame
             x: Column name for x-axis (categories)
-            y: Column name for y-axis (values)
+            y: Column name for y-axis (values), or list of column names for multiple metrics
             hue: Optional column name for grouping bars within each category
             **kwargs: Additional styling parameters
         """
         super().__init__(data, **kwargs)
         self.x = x
-        self.y = y
+        self.y_param = y  # Store original y parameter
         self.hue = hue
         self.theme = BAR_THEME
 
@@ -36,18 +36,33 @@ class BarPlotter(BasePlotter):
         """
         Prepare and validate data for bar plotting.
         """
-        # Create validated plot data
-        self.plot_data = BarPlotData(
-            data=self.raw_data,
-            x=self.x,
-            y=self.y
+        # Gets multi-metric support for free
+        self.plot_data, self.y, self.metric_column = self._prepare_multi_metric_data(
+            self.y_param, self.x, 
+            auto_hue_groupings={'hue': self.hue}
         )
         
-        # Validate hue column if provided (following ScatterPlotter/LinePlotter pattern)
+        # Update hue if auto-set to METRICS
+        if self.metric_column and self.hue is None:
+            self.hue = self.metric_column
+        
+        # Create validated plot data for single metrics
+        if self.metric_column is None:
+            validated_data = BarPlotData(
+                data=self.plot_data,
+                x=self.x,
+                y=self.y
+            )
+            self.plot_data = validated_data.data
+        
+        # Process grouping parameters
+        self.hue = self._process_grouping_params(self.hue)
+        
+        # Validate hue column if provided
         if self.hue is not None:
             from .plot_data.base_validation import validate_columns_exist, validate_categorical_columns
-            validate_columns_exist(self.raw_data, [self.hue])
-            validate_categorical_columns(self.raw_data, [self.hue])
+            validate_columns_exist(self.plot_data, [self.hue])
+            validate_categorical_columns(self.plot_data, [self.hue])
             self._has_groups = True
         else:
             self._has_groups = False
@@ -69,7 +84,7 @@ class BarPlotter(BasePlotter):
             plot_kwargs.update(self._filter_plot_kwargs())
 
             ax.bar(
-                self.plot_data.data[self.x], self.plot_data.data[self.y], **plot_kwargs
+                self.plot_data[self.x], self.plot_data[self.y], **plot_kwargs
             )
         else:
             # Grouped bar plot
@@ -80,8 +95,8 @@ class BarPlotter(BasePlotter):
     def _render_grouped(self, ax):
         """Render grouped bar plots using direct matplotlib positioning."""
         # Get unique categories and groups
-        x_categories = self.plot_data.data[self.x].unique()
-        hue_values = self.plot_data.data[self.hue].unique()
+        x_categories = self.plot_data[self.x].unique()
+        hue_values = self.plot_data[self.hue].unique()
 
         # Calculate positioning
         x_pos = np.arange(len(x_categories))
@@ -93,7 +108,7 @@ class BarPlotter(BasePlotter):
         # Plot each hue group
         for i, hue_val in enumerate(hue_values):
             # Filter data for this hue value
-            hue_data = self.plot_data.data[self.plot_data.data[self.hue] == hue_val]
+            hue_data = self.plot_data[self.plot_data[self.hue] == hue_val]
 
             # Get y values in the same order as x_categories
             y_values = []

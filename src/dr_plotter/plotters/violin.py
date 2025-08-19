@@ -16,7 +16,7 @@ class ViolinPlotter(BasePlotter):
     def __init__(self, data, x=None, y=None, hue=None, **kwargs):
         super().__init__(data, **kwargs)
         self.x = x
-        self.y = y
+        self.y_param = y  # Store original y parameter
         self.hue = hue
         self.theme = VIOLIN_THEME
 
@@ -24,19 +24,33 @@ class ViolinPlotter(BasePlotter):
         """
         Prepare and validate data for violin plotting.
         """
-        # Create validated plot data
-        validated_data = ViolinPlotData(
-            data=self.raw_data,
-            x=self.x,
-            y=self.y
+        # Gets multi-metric support for free
+        self.plot_data, self.y, self.metric_column = self._prepare_multi_metric_data(
+            self.y_param, self.x, 
+            auto_hue_groupings={'hue': self.hue}
         )
-        self.plot_data = validated_data.data
         
-        # Validate hue column if provided (following ScatterPlotter/LinePlotter pattern)
+        # Update hue if auto-set to METRICS
+        if self.metric_column and self.hue is None:
+            self.hue = self.metric_column
+        
+        # Create validated plot data for single metrics
+        if self.metric_column is None:
+            validated_data = ViolinPlotData(
+                data=self.plot_data,
+                x=self.x,
+                y=self.y
+            )
+            self.plot_data = validated_data.data
+        
+        # Process grouping parameters
+        self.hue = self._process_grouping_params(self.hue)
+        
+        # Validate hue column if provided
         if self.hue is not None:
             from .plot_data.base_validation import validate_columns_exist, validate_categorical_columns
-            validate_columns_exist(self.raw_data, [self.hue])
-            validate_categorical_columns(self.raw_data, [self.hue])
+            validate_columns_exist(self.plot_data, [self.hue])
+            validate_categorical_columns(self.plot_data, [self.hue])
         
         return self.plot_data
 
