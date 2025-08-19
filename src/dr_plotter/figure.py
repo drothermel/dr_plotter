@@ -34,6 +34,15 @@ class FigureManager:
         self._shared_hue_styles = {}  # Maps hue values to consistent colors
         self._shared_style_cycles = None  # Lazy initialization
 
+    def __enter__(self):
+        """Enter the context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit the context manager."""
+        # No cleanup needed, but context manager protocol requires this
+        return False
+
     def get_axes(self, row=None, col=None):
         """
         Get the axes object for a specific subplot for manual manipulation.
