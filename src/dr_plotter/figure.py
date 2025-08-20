@@ -22,13 +22,28 @@ class FigureManager:
     A context manager for creating complex figures with multiple subplots.
     """
 
-    def __init__(self, rows=1, cols=1, **fig_kwargs):
+    def __init__(self, rows=1, cols=1, external_ax=None, **fig_kwargs):
         """
-        Initialize the FigureManager.
+        Initialize the FigureManager in managed or external mode.
+        
+        Args:
+            rows: Number of subplot rows (ignored if external_ax provided)
+            cols: Number of subplot columns (ignored if external_ax provided)  
+            external_ax: Use external axes instead of creating new figure
+            **fig_kwargs: Additional arguments for plt.subplots (ignored if external_ax provided)
         """
-        self.fig, self.axes = plt.subplots(
-            rows, cols, constrained_layout=True, **fig_kwargs
-        )
+        if external_ax is not None:
+            # External mode: work with provided axes
+            self.fig = external_ax.get_figure()
+            self.axes = external_ax
+            self.external_mode = True
+        else:
+            # Managed mode: create own figure
+            self.fig, self.axes = plt.subplots(
+                rows, cols, constrained_layout=True, **fig_kwargs
+            )
+            self.external_mode = False
+            
         # Cross-subplot style coordination
         self._shared_hue_styles = {}  # Maps hue values to consistent colors
         self._shared_style_cycles = None  # Lazy initialization
@@ -45,7 +60,11 @@ class FigureManager:
     def get_axes(self, row=None, col=None):
         """
         Get the axes object for a specific subplot for manual manipulation.
+        In external mode, returns the external axes regardless of row/col.
         """
+        if self.external_mode:
+            return self.axes
+            
         if not hasattr(self.axes, "__len__"):
             return self.axes
         if self.axes.ndim == 1:
@@ -74,7 +93,12 @@ class FigureManager:
 
     def _add_plot(self, plotter_class, plotter_args, row, col, **kwargs):
         """Private helper to add any plot type to a subplot with style coordination."""
-        ax = self.get_axes(row, col)
+        if self.external_mode:
+            # In external mode, ignore row/col and use the external axes
+            ax = self.axes
+        else:
+            # In managed mode, use row/col to get the correct subplot
+            ax = self.get_axes(row, col)
 
         # Add shared style state for cross-subplot coordination
         kwargs["_figure_manager"] = self
@@ -83,17 +107,19 @@ class FigureManager:
         plotter = plotter_class(*plotter_args, **kwargs)
         plotter.render(ax)
 
-    def scatter(self, row, col, data: pd.DataFrame, x: str, y: str, **kwargs):
+    def scatter(self, row, col, data: pd.DataFrame, x: str, y: str, 
+               hue=None, size=None, marker=None, alpha=None, **kwargs):
         """Add a scatter plot to a specified subplot."""
-        self._add_plot(ScatterPlotter, (data, x, y), row, col, **kwargs)
+        self._add_plot(ScatterPlotter, (data, x, y, hue, size, marker, alpha), row, col, **kwargs)
 
-    def line(self, row, col, data: pd.DataFrame, x: str, y: str, **kwargs):
+    def line(self, row, col, data: pd.DataFrame, x: str, y: str,
+            hue=None, style=None, size=None, marker=None, alpha=None, **kwargs):
         """Add a line plot to a specified subplot."""
-        self._add_plot(LinePlotter, (data, x, y), row, col, **kwargs)
+        self._add_plot(LinePlotter, (data, x, y, hue, style, size, marker, alpha), row, col, **kwargs)
 
-    def bar(self, row, col, data: pd.DataFrame, x: str, y: str, **kwargs):
+    def bar(self, row, col, data: pd.DataFrame, x: str, y: str, hue=None, **kwargs):
         """Add a bar plot to a specified subplot."""
-        self._add_plot(BarPlotter, (data, x, y), row, col, **kwargs)
+        self._add_plot(BarPlotter, (data, x, y, hue), row, col, **kwargs)
 
     def hist(self, row, col, data: pd.DataFrame, x: str, **kwargs):
         """Add a histogram to a specified subplot."""

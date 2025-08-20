@@ -2,31 +2,10 @@
 High-level API for creating plots.
 """
 
-import matplotlib.pyplot as plt
 import pandas as pd
-
-from .plotters import (
-    ScatterPlotter,
-    LinePlotter,
-    BarPlotter,
-    HistogramPlotter,
-    ViolinPlotter,
-    HeatmapPlotter,
-    BumpPlotter,
-    ContourPlotter,
-)
+from .figure import FigureManager
 
 
-def _create_plot(plotter_class, plotter_args, ax=None, **kwargs):
-    """Generic factory for creating a figure and then rendering a plot."""
-    if ax is None:
-        fig, ax = plt.subplots(constrained_layout=True)
-    else:
-        fig = ax.get_figure()
-
-    plotter = plotter_class(*plotter_args, **kwargs)
-    plotter.render(ax)
-    return fig, ax
 
 
 def scatter(
@@ -60,9 +39,13 @@ def scatter(
             "scatter() got an unexpected keyword argument 'style'. Use 'marker' instead for scatter plots."
         )
 
-    return _create_plot(
-        ScatterPlotter, (data, x, y, hue, size, marker, alpha), ax, **kwargs
-    )
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.scatter(0, 0, data, x, y, hue, size, marker, alpha, **kwargs)
+    
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
 def line(
@@ -92,26 +75,48 @@ def line(
         ax: Existing axes to plot on
         **kwargs: Additional styling parameters
     """
-    return _create_plot(
-        LinePlotter, (data, x, y, hue, style, size, marker, alpha), ax, **kwargs
-    )
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.line(0, 0, data, x, y, hue, style, size, marker, alpha, **kwargs)
+    
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
 def bar(data: pd.DataFrame, x: str, y: str, hue: str = None, ax=None, **kwargs):
     """Create a bar plot with optional grouping."""
-    return _create_plot(BarPlotter, (data, x, y, hue), ax, **kwargs)
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.bar(0, 0, data, x, y, hue, **kwargs)
+    
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
 def hist(data: pd.DataFrame, x: str, ax=None, **kwargs):
     """Create a histogram."""
-    return _create_plot(HistogramPlotter, (data, x), ax, **kwargs)
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.hist(0, 0, data, x, **kwargs)
+    
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
 def violin(
     data: pd.DataFrame, x: str = None, y: str = None, hue: str = None, ax=None, **kwargs
 ):
     """Create a violin plot."""
-    return _create_plot(ViolinPlotter, (data, x, y, hue), ax, **kwargs)
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.violin(0, 0, data, x, y, hue, **kwargs)
+    
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
 def heatmap(data: pd.DataFrame, x: str, y: str, values: str, ax=None, **kwargs):
@@ -126,7 +131,13 @@ def heatmap(data: pd.DataFrame, x: str, y: str, values: str, ax=None, **kwargs):
         ax: Optional matplotlib axes
         **kwargs: Additional styling parameters
     """
-    return _create_plot(HeatmapPlotter, (data, x, y, values), ax, **kwargs)
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.heatmap(0, 0, data, x, y, values, **kwargs)
+    
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
 def bump_plot(
@@ -138,11 +149,21 @@ def bump_plot(
     **kwargs,
 ):
     """Create a bump plot to visualize rankings over time."""
-    return _create_plot(
-        BumpPlotter, (data, time_col, category_col, value_col), ax, **kwargs
-    )
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.bump_plot(0, 0, data, time_col, category_col, value_col, **kwargs)
+    
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
 def gmm_level_set(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
     """Create a GMM level set plot."""
-    return _create_plot(ContourPlotter, (data, x, y), ax, **kwargs)
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.gmm_level_set(0, 0, data, x, y, **kwargs)
+    
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
