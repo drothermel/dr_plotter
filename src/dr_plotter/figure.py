@@ -5,16 +5,9 @@ Context manager for creating complex figures.
 import matplotlib.pyplot as plt
 import pandas as pd
 import itertools
-from .plotters import (
-    ScatterPlotter,
-    LinePlotter,
-    BarPlotter,
-    HistogramPlotter,
-    ViolinPlotter,
-    HeatmapPlotter,
-    BumpPlotter,
-    ContourPlotter,
-)
+from .plotters import BasePlotter
+# Import all plotters to ensure they're registered
+import dr_plotter.plotters  # This triggers all plotter imports and registration
 
 
 class FigureManager:
@@ -110,20 +103,24 @@ class FigureManager:
     def scatter(self, row, col, data: pd.DataFrame, x: str, y: str, 
                hue=None, size=None, marker=None, alpha=None, **kwargs):
         """Add a scatter plot to a specified subplot."""
-        self._add_plot(ScatterPlotter, (data, x, y, hue, size, marker, alpha), row, col, **kwargs)
+        plotter_class = BasePlotter.get_plotter("scatter")
+        self._add_plot(plotter_class, (data, x, y, hue, size, marker, alpha), row, col, **kwargs)
 
     def line(self, row, col, data: pd.DataFrame, x: str, y: str,
             hue=None, style=None, size=None, marker=None, alpha=None, **kwargs):
         """Add a line plot to a specified subplot."""
-        self._add_plot(LinePlotter, (data, x, y, hue, style, size, marker, alpha), row, col, **kwargs)
+        plotter_class = BasePlotter.get_plotter("line")
+        self._add_plot(plotter_class, (data, x, y, hue, style, size, marker, alpha), row, col, **kwargs)
 
     def bar(self, row, col, data: pd.DataFrame, x: str, y: str, hue=None, **kwargs):
         """Add a bar plot to a specified subplot."""
-        self._add_plot(BarPlotter, (data, x, y, hue), row, col, **kwargs)
+        plotter_class = BasePlotter.get_plotter("bar")
+        self._add_plot(plotter_class, (data, x, y, hue), row, col, **kwargs)
 
     def hist(self, row, col, data: pd.DataFrame, x: str, **kwargs):
         """Add a histogram to a specified subplot."""
-        self._add_plot(HistogramPlotter, (data, x), row, col, **kwargs)
+        plotter_class = BasePlotter.get_plotter("histogram")
+        self._add_plot(plotter_class, (data, x), row, col, **kwargs)
 
     def violin(
         self,
@@ -136,7 +133,8 @@ class FigureManager:
         **kwargs,
     ):
         """Add a violin plot to a specified subplot."""
-        self._add_plot(ViolinPlotter, (data, x, y, hue), row, col, **kwargs)
+        plotter_class = BasePlotter.get_plotter("violin")
+        self._add_plot(plotter_class, (data, x, y, hue), row, col, **kwargs)
 
     def heatmap(
         self, row, col, data: pd.DataFrame, x: str, y: str, values: str, **kwargs
@@ -153,7 +151,8 @@ class FigureManager:
             values: Column name for cell values
             **kwargs: Additional styling parameters
         """
-        self._add_plot(HeatmapPlotter, (data, x, y, values), row, col, **kwargs)
+        plotter_class = BasePlotter.get_plotter("heatmap")
+        self._add_plot(plotter_class, (data, x, y, values), row, col, **kwargs)
 
     def bump_plot(
         self,
@@ -166,16 +165,37 @@ class FigureManager:
         **kwargs,
     ):
         """Add a bump plot to a specified subplot."""
+        plotter_class = BasePlotter.get_plotter("bump")
         self._add_plot(
-            BumpPlotter, (data, time_col, category_col, value_col), row, col, **kwargs
+            plotter_class, (data, time_col, category_col, value_col), row, col, **kwargs
         )
 
     def gmm_level_set(self, row, col, data: pd.DataFrame, x: str, y: str, **kwargs):
         """Add a GMM level set plot to a specified subplot."""
-        self._add_plot(ContourPlotter, (data, x, y), row, col, **kwargs)
+        plotter_class = BasePlotter.get_plotter("contour")
+        self._add_plot(plotter_class, (data, x, y), row, col, **kwargs)
 
     def grouped_bar(
         self, row, col, data: pd.DataFrame, x: str, y: str, hue: str, **kwargs
     ):
         """Add a grouped bar plot to a specified subplot."""
-        self._add_plot(BarPlotter, (data, x, y, hue), row, col, **kwargs)
+        plotter_class = BasePlotter.get_plotter("bar")
+        self._add_plot(plotter_class, (data, x, y, hue), row, col, **kwargs)
+    
+    def plot(self, plot_type, row, col, *args, **kwargs):
+        """
+        Generic plot method that uses the registry to create any plot type.
+        
+        Args:
+            plot_type: String name of the plot type (e.g., "scatter", "line")
+            row: Row position in subplot grid
+            col: Column position in subplot grid
+            *args: Positional arguments to pass to the plotter constructor
+            **kwargs: Keyword arguments to pass to the plotter constructor
+            
+        Example:
+            fm.plot("scatter", 0, 0, data, "x_col", "y_col", hue="category")
+            fm.plot("custom", 1, 0, data, custom_param=value)
+        """
+        plotter_class = BasePlotter.get_plotter(plot_type)
+        self._add_plot(plotter_class, args, row, col, **kwargs)

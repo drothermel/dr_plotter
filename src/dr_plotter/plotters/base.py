@@ -11,7 +11,66 @@ from dr_plotter.consts import METRICS, METRICS_STR
 class BasePlotter:
     """
     A base class for all atomic plotters with multi-series support.
+    
+    Includes automatic registration of subclasses for dynamic plotter discovery.
     """
+    
+    # Class-level registry to store all plotter subclasses
+    _registry = {}
+    
+    def __init_subclass__(cls, **kwargs):
+        """
+        Automatically register plotter subclasses when they are defined.
+        
+        The registry key is derived from the class name:
+        - LinePlotter -> "line"
+        - ScatterPlotter -> "scatter"
+        - CustomPlotter -> "custom"
+        """
+        super().__init_subclass__(**kwargs)
+        
+        # Derive registry key from class name
+        # Remove "Plotter" suffix and convert to lowercase
+        class_name = cls.__name__
+        if class_name.endswith("Plotter"):
+            plot_type = class_name[:-7].lower()  # Remove "Plotter" suffix
+        else:
+            plot_type = class_name.lower()
+            
+        # Register the class
+        BasePlotter._registry[plot_type] = cls
+    
+    @classmethod
+    def get_plotter(cls, plot_type):
+        """
+        Get a plotter class from the registry by plot type name.
+        
+        Args:
+            plot_type: String name of the plot type (e.g., "line", "scatter")
+            
+        Returns:
+            The plotter class
+            
+        Raises:
+            ValueError: If plot_type is not registered
+        """
+        if plot_type not in cls._registry:
+            available = ", ".join(sorted(cls._registry.keys()))
+            raise ValueError(
+                f"Unknown plot type: '{plot_type}'. "
+                f"Available types: {available}"
+            )
+        return cls._registry[plot_type]
+    
+    @classmethod
+    def list_plotters(cls):
+        """
+        List all registered plotter types.
+        
+        Returns:
+            List of registered plot type names
+        """
+        return sorted(cls._registry.keys())
 
     def __init__(self, data, **kwargs):
         """
