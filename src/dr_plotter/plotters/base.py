@@ -257,6 +257,7 @@ class BasePlotter:
             "size_by",
             "marker_by",
             "alpha_by",
+            "colorbar_label",  # Colorbar customization
             "_figure_manager",  # Color coordination
             "_shared_hue_styles",  # Color coordination
         ]

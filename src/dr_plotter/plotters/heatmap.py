@@ -64,7 +64,10 @@ class HeatmapPlotter(BasePlotter):
         im = ax.imshow(self.plot_data, **plot_kwargs)
 
         fig = ax.get_figure()
-        fig.colorbar(im, ax=ax)
+        cbar = fig.colorbar(im, ax=ax)
+        # Use custom colorbar label if provided, otherwise default to values column name
+        colorbar_label = self.kwargs.get("colorbar_label", self.values)
+        cbar.set_label(colorbar_label)
 
         ax.set_xticks(np.arange(len(self.plot_data.columns)))
         ax.set_yticks(np.arange(len(self.plot_data.index)))

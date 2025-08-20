@@ -31,8 +31,12 @@ class FigureManager:
             self.external_mode = True
         else:
             # Managed mode: create own figure
+            # Use constrained_layout for multi-subplot figures or if explicitly requested
+            use_constrained = rows > 1 or cols > 1 or fig_kwargs.get('constrained_layout', False)
+            # Remove constrained_layout from fig_kwargs to avoid duplicate parameter
+            fig_kwargs_clean = {k: v for k, v in fig_kwargs.items() if k != 'constrained_layout'}
             self.fig, self.axes = plt.subplots(
-                rows, cols, constrained_layout=True, **fig_kwargs
+                rows, cols, constrained_layout=use_constrained, **fig_kwargs_clean
             )
             self.external_mode = False
 

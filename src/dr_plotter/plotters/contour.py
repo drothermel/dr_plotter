@@ -69,7 +69,10 @@ class ContourPlotter(BasePlotter):
 
         contour = ax.contour(self.xx, self.yy, self.Z, **contour_kwargs)
         fig = ax.get_figure()
-        fig.colorbar(contour, ax=ax)
+        cbar = fig.colorbar(contour, ax=ax)
+        # Use custom colorbar label if provided, otherwise default to "Density"
+        colorbar_label = self.kwargs.get("colorbar_label", "Density")
+        cbar.set_label(colorbar_label)
 
         ax.scatter(self.raw_data[self.x], self.raw_data[self.y], **scatter_kwargs)
 
