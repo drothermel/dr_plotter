@@ -214,7 +214,7 @@ class BasePlotter:
         }
 
     def _get_group_styles(
-        self, data, hue=None, style=None, size=None, marker=None, alpha=None
+        self, data, hue_by=None, style_by=None, size_by=None, marker_by=None, alpha_by=None
     ):
         """
         DEPRECATED: Use StyleEngine.generate_styles() instead.
@@ -228,11 +228,11 @@ class BasePlotter:
 
         return engine.generate_styles(
             data,
-            hue=hue,
-            style=style,
-            size=size,
-            marker=marker,
-            alpha=alpha,
+            hue_by=hue_by,
+            style_by=style_by,
+            size_by=size_by,
+            marker_by=marker_by,
+            alpha_by=alpha_by,
             shared_context=getattr(self, "kwargs", None),
         )
 
@@ -245,13 +245,13 @@ class BasePlotter:
     def _filter_plot_kwargs(self):
         """Removes dr_plotter specific keys from self.kwargs."""
         plot_kwargs = self.kwargs.copy()
-        # Extended list of keys to filter
+        # Extended list of keys to filter - now using _by suffixes
         filter_keys = DR_PLOTTER_STYLE_KEYS + [
-            "hue",
-            "style",
-            "size",
-            "marker",
-            "alpha",
+            "hue_by",
+            "style_by", 
+            "size_by",
+            "marker_by",
+            "alpha_by",
             "_figure_manager",  # Color coordination
             "_shared_hue_styles",  # Color coordination
         ]

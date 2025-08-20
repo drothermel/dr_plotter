@@ -101,21 +101,21 @@ class FigureManager:
         plotter.render(ax)
 
     def scatter(self, row, col, data: pd.DataFrame, x: str, y: str, 
-               hue=None, size=None, marker=None, alpha=None, **kwargs):
+               hue_by=None, size_by=None, marker_by=None, alpha_by=None, **kwargs):
         """Add a scatter plot to a specified subplot."""
         plotter_class = BasePlotter.get_plotter("scatter")
-        self._add_plot(plotter_class, (data, x, y, hue, size, marker, alpha), row, col, **kwargs)
+        self._add_plot(plotter_class, (data, x, y, hue_by, size_by, marker_by, alpha_by), row, col, **kwargs)
 
     def line(self, row, col, data: pd.DataFrame, x: str, y: str,
-            hue=None, style=None, size=None, marker=None, alpha=None, **kwargs):
+            hue_by=None, style_by=None, size_by=None, marker_by=None, alpha_by=None, **kwargs):
         """Add a line plot to a specified subplot."""
         plotter_class = BasePlotter.get_plotter("line")
-        self._add_plot(plotter_class, (data, x, y, hue, style, size, marker, alpha), row, col, **kwargs)
+        self._add_plot(plotter_class, (data, x, y, hue_by, style_by, size_by, marker_by, alpha_by), row, col, **kwargs)
 
-    def bar(self, row, col, data: pd.DataFrame, x: str, y: str, hue=None, **kwargs):
+    def bar(self, row, col, data: pd.DataFrame, x: str, y: str, hue_by=None, **kwargs):
         """Add a bar plot to a specified subplot."""
         plotter_class = BasePlotter.get_plotter("bar")
-        self._add_plot(plotter_class, (data, x, y, hue), row, col, **kwargs)
+        self._add_plot(plotter_class, (data, x, y, hue_by), row, col, **kwargs)
 
     def hist(self, row, col, data: pd.DataFrame, x: str, **kwargs):
         """Add a histogram to a specified subplot."""
@@ -129,12 +129,12 @@ class FigureManager:
         data: pd.DataFrame,
         x: str = None,
         y: str = None,
-        hue: str = None,
+        hue_by: str = None,
         **kwargs,
     ):
         """Add a violin plot to a specified subplot."""
         plotter_class = BasePlotter.get_plotter("violin")
-        self._add_plot(plotter_class, (data, x, y, hue), row, col, **kwargs)
+        self._add_plot(plotter_class, (data, x, y, hue_by), row, col, **kwargs)
 
     def heatmap(
         self, row, col, data: pd.DataFrame, x: str, y: str, values: str, **kwargs
@@ -176,11 +176,11 @@ class FigureManager:
         self._add_plot(plotter_class, (data, x, y), row, col, **kwargs)
 
     def grouped_bar(
-        self, row, col, data: pd.DataFrame, x: str, y: str, hue: str, **kwargs
+        self, row, col, data: pd.DataFrame, x: str, y: str, hue_by: str, **kwargs
     ):
         """Add a grouped bar plot to a specified subplot."""
         plotter_class = BasePlotter.get_plotter("bar")
-        self._add_plot(plotter_class, (data, x, y, hue), row, col, **kwargs)
+        self._add_plot(plotter_class, (data, x, y, hue_by), row, col, **kwargs)
     
     def plot(self, plot_type, row, col, *args, **kwargs):
         """

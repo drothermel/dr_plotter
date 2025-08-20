@@ -12,10 +12,10 @@ def scatter(
     data: pd.DataFrame,
     x: str,
     y,
-    hue=None,
-    size=None,
-    marker=None,
-    alpha=None,
+    hue_by=None,
+    size_by=None,
+    marker_by=None,
+    alpha_by=None,
     ax=None,
     **kwargs,
 ):
@@ -26,10 +26,10 @@ def scatter(
         data: DataFrame containing the data
         x: Column name for x-axis
         y: Column name for y-axis, or list of column names for multiple metrics
-        hue: Column name or consts.METRICS for color grouping
-        size: Column name or consts.METRICS for marker size grouping
-        marker: Column name or consts.METRICS for marker style grouping
-        alpha: Column name or consts.METRICS for alpha/transparency grouping
+        hue_by: Column name or consts.METRICS for color grouping
+        size_by: Column name or consts.METRICS for marker size grouping
+        marker_by: Column name or consts.METRICS for marker style grouping
+        alpha_by: Column name or consts.METRICS for alpha/transparency grouping
         ax: Existing axes to plot on
         **kwargs: Additional styling parameters
     """
@@ -40,7 +40,7 @@ def scatter(
         )
 
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.scatter(0, 0, data, x, y, hue, size, marker, alpha, **kwargs)
+    fm.scatter(0, 0, data, x, y, hue_by, size_by, marker_by, alpha_by, **kwargs)
     
     if ax is not None:
         return ax.get_figure(), ax
@@ -52,11 +52,11 @@ def line(
     data: pd.DataFrame,
     x: str,
     y,
-    hue=None,
-    style=None,
-    size=None,
-    marker=None,
-    alpha=None,
+    hue_by=None,
+    style_by=None,
+    size_by=None,
+    marker_by=None,
+    alpha_by=None,
     ax=None,
     **kwargs,
 ):
@@ -67,16 +67,16 @@ def line(
         data: DataFrame containing the data
         x: Column name for x-axis
         y: Column name for y-axis, or list of column names for multiple metrics
-        hue: Column name or consts.METRICS for color grouping
-        style: Column name or consts.METRICS for linestyle grouping
-        size: Column name or consts.METRICS for line width grouping
-        marker: Column name or consts.METRICS for marker grouping
-        alpha: Column name or consts.METRICS for alpha/transparency grouping
+        hue_by: Column name or consts.METRICS for color grouping
+        style_by: Column name or consts.METRICS for linestyle grouping
+        size_by: Column name or consts.METRICS for line width grouping
+        marker_by: Column name or consts.METRICS for marker grouping
+        alpha_by: Column name or consts.METRICS for alpha/transparency grouping
         ax: Existing axes to plot on
         **kwargs: Additional styling parameters
     """
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.line(0, 0, data, x, y, hue, style, size, marker, alpha, **kwargs)
+    fm.line(0, 0, data, x, y, hue_by, style_by, size_by, marker_by, alpha_by, **kwargs)
     
     if ax is not None:
         return ax.get_figure(), ax
@@ -84,10 +84,10 @@ def line(
         return fm.fig, fm.get_axes(0, 0)
 
 
-def bar(data: pd.DataFrame, x: str, y: str, hue: str = None, ax=None, **kwargs):
+def bar(data: pd.DataFrame, x: str, y: str, hue_by: str = None, ax=None, **kwargs):
     """Create a bar plot with optional grouping."""
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.bar(0, 0, data, x, y, hue, **kwargs)
+    fm.bar(0, 0, data, x, y, hue_by, **kwargs)
     
     if ax is not None:
         return ax.get_figure(), ax
@@ -107,11 +107,11 @@ def hist(data: pd.DataFrame, x: str, ax=None, **kwargs):
 
 
 def violin(
-    data: pd.DataFrame, x: str = None, y: str = None, hue: str = None, ax=None, **kwargs
+    data: pd.DataFrame, x: str = None, y: str = None, hue_by: str = None, ax=None, **kwargs
 ):
     """Create a violin plot."""
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.violin(0, 0, data, x, y, hue, **kwargs)
+    fm.violin(0, 0, data, x, y, hue_by, **kwargs)
     
     if ax is not None:
         return ax.get_figure(), ax

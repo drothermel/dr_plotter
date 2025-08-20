@@ -16,7 +16,7 @@ class BarPlotter(BasePlotter):
     An atomic plotter for creating bar plots with optional grouping support.
     """
 
-    def __init__(self, data, x, y, hue=None, **kwargs):
+    def __init__(self, data, x, y, hue_by=None, **kwargs):
         """
         Initialize the BarPlotter.
 
@@ -30,7 +30,7 @@ class BarPlotter(BasePlotter):
         super().__init__(data, **kwargs)
         self.x = x
         self.y_param = y  # Store original y parameter
-        self.hue = hue
+        self.hue_by = hue_by
         self.theme = BAR_THEME
 
         # Create style engine with only hue channel enabled (bars only use color)
@@ -42,12 +42,12 @@ class BarPlotter(BasePlotter):
         """
         # Gets multi-metric support for free
         self.plot_data, self.y, self.metric_column = self._prepare_multi_metric_data(
-            self.y_param, self.x, auto_hue_groupings={"hue": self.hue}
+            self.y_param, self.x, auto_hue_groupings={"hue": self.hue_by}
         )
 
-        # Update hue if auto-set to METRICS
-        if self.metric_column and self.hue is None:
-            self.hue = self.metric_column
+        # Update hue_by if auto-set to METRICS
+        if self.metric_column and self.hue_by is None:
+            self.hue_by = self.metric_column
 
         # Create validated plot data for single metrics
         if self.metric_column is None:
@@ -55,10 +55,10 @@ class BarPlotter(BasePlotter):
             self.plot_data = validated_data.data
 
         # Process grouping parameters
-        self.hue = self._process_grouping_params(self.hue)
+        self.hue_by = self._process_grouping_params(self.hue_by)
 
         # Check if we have groupings
-        self._has_groups = self.hue is not None
+        self._has_groups = self.hue_by is not None
 
         return self.plot_data
 
@@ -90,10 +90,10 @@ class BarPlotter(BasePlotter):
         x_pos = np.arange(len(x_categories))
 
         # Generate styles using unified engine (same pattern as Line/Scatter!)
-        group_styles = self.style_engine.generate_styles(self.plot_data, hue=self.hue)
+        group_styles = self.style_engine.generate_styles(self.plot_data, hue_by=self.hue_by)
 
-        # Get grouping columns (will be [self.hue])
-        group_cols = self.style_engine.get_grouping_columns(hue=self.hue)
+        # Get grouping columns (will be [self.hue_by])
+        group_cols = self.style_engine.get_grouping_columns(hue_by=self.hue_by)
 
         # Use standard groupby pattern (same as Line/Scatter!)
         if group_cols:

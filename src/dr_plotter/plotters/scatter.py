@@ -15,7 +15,7 @@ class ScatterPlotter(BasePlotter):
     """
 
     def __init__(
-        self, data, x, y, hue=None, size=None, marker=None, alpha=None, **kwargs
+        self, data, x, y, hue_by=None, size_by=None, marker_by=None, alpha_by=None, **kwargs
     ):
         """
         Initialize the ScatterPlotter.
@@ -24,19 +24,19 @@ class ScatterPlotter(BasePlotter):
             data: A pandas DataFrame
             x: Column name for x-axis
             y: Column name for y-axis, or list of column names for multiple metrics
-            hue: Column name or METRICS for color grouping
-            size: Column name or METRICS for marker size grouping
-            marker: Column name or METRICS for marker style grouping
-            alpha: Column name or METRICS for alpha/transparency grouping
-            **kwargs: Additional styling parameters
+            hue_by: Column name or METRICS for color grouping
+            size_by: Column name or METRICS for marker size grouping
+            marker_by: Column name or METRICS for marker style grouping
+            alpha_by: Column name or METRICS for alpha/transparency grouping
+            **kwargs: Additional styling parameters (including direct matplotlib params)
         """
         super().__init__(data, **kwargs)
         self.x = x
         self.y_param = y  # Store original y parameter
-        self.hue = hue
-        self.size = size
-        self.marker = marker
-        self.alpha = alpha
+        self.hue_by = hue_by
+        self.size_by = size_by
+        self.marker_by = marker_by
+        self.alpha_by = alpha_by
         self.theme = SCATTER_THEME
 
         # Create style engine with all channels enabled for complex scatter plots
@@ -51,43 +51,30 @@ class ScatterPlotter(BasePlotter):
             self.y_param,
             self.x,
             auto_hue_groupings={
-                "hue": self.hue,
-                "size": self.size,
-                "marker": self.marker,
-                "alpha": self.alpha,
+                "hue": self.hue_by,
+                "size": self.size_by,
+                "marker": self.marker_by,
+                "alpha": self.alpha_by,
             },
         )
 
-        # Update hue if auto-set to METRICS
-        if self.metric_column and self.hue is None:
-            self.hue = self.metric_column
+        # Update hue_by if auto-set to METRICS
+        if self.metric_column and self.hue_by is None:
+            self.hue_by = self.metric_column
 
         # Create validated plot data
         validated_data = ScatterPlotData(data=self.plot_data, x=self.x, y=self.y)
         # Keep using DataFrame for consistency with other plotters
         self.plot_data = validated_data.data
 
-        # Process grouping parameters
-        self.hue = self._process_grouping_params(self.hue)
-        self.size = self._process_grouping_params(self.size)
-        self.alpha = self._process_grouping_params(self.alpha)
-
-        # Handle marker parameter - check if it's a column name or direct matplotlib marker
-        if (
-            self.marker is not None
-            and isinstance(self.marker, str)
-            and self.marker not in self.plot_data.columns
-            and self.marker not in [METRICS, METRICS_STR]
-        ):
-            # It's a direct matplotlib marker - don't treat as grouping parameter
-            self.direct_marker = self.marker
-            self.marker = None
-        else:
-            self.marker = self._process_grouping_params(self.marker)
-            self.direct_marker = None
+        # Process grouping parameters (now with _by suffix)
+        self.hue_by = self._process_grouping_params(self.hue_by)
+        self.size_by = self._process_grouping_params(self.size_by)
+        self.alpha_by = self._process_grouping_params(self.alpha_by)
+        self.marker_by = self._process_grouping_params(self.marker_by)
 
         # Check if we have any groupings
-        self._has_groups = any([self.hue, self.size, self.marker, self.alpha])
+        self._has_groups = any([self.hue_by, self.size_by, self.marker_by, self.alpha_by])
 
         return self.plot_data
 
@@ -100,7 +87,7 @@ class ScatterPlotter(BasePlotter):
         if not self._has_groups:
             # Simple single scatter plot
             plot_kwargs = {
-                "marker": self.direct_marker or self._get_style("marker", "o"),
+                "marker": self._get_style("marker", "o"),
                 "s": self._get_style("marker_size"),
                 "alpha": self._get_style("alpha"),
                 "color": self._get_style("color", next(self.theme.get("color_cycle"))),
@@ -122,16 +109,16 @@ class ScatterPlotter(BasePlotter):
         # Get the group styles using style engine
         group_styles = self.style_engine.generate_styles(
             self.plot_data,
-            hue=self.hue,
-            size=self.size,
-            marker=self.marker,
-            alpha=self.alpha,
+            hue_by=self.hue_by,
+            size_by=self.size_by,
+            marker_by=self.marker_by,
+            alpha_by=self.alpha_by,
             shared_context=self.kwargs,
         )
 
         # Get grouping columns from style engine
         group_cols = self.style_engine.get_grouping_columns(
-            hue=self.hue, size=self.size, marker=self.marker, alpha=self.alpha
+            hue_by=self.hue_by, size_by=self.size_by, marker_by=self.marker_by, alpha_by=self.alpha_by
         )
 
         # Group the data and plot each group

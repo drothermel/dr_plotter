@@ -18,11 +18,11 @@ class LinePlotter(BasePlotter):
         data,
         x,
         y,
-        hue=None,
-        style=None,
-        size=None,
-        marker=None,
-        alpha=None,
+        hue_by=None,
+        style_by=None,
+        size_by=None,
+        marker_by=None,
+        alpha_by=None,
         **kwargs,
     ):
         """
@@ -32,21 +32,21 @@ class LinePlotter(BasePlotter):
             data: A pandas DataFrame
             x: Column name for x-axis
             y: Column name for y-axis, or list of column names for multiple metrics
-            hue: Column name or METRICS for color grouping
-            style: Column name or METRICS for linestyle grouping
-            size: Column name or METRICS for line width grouping
-            marker: Column name or METRICS for marker grouping
-            alpha: Column name or METRICS for alpha/transparency grouping
+            hue_by: Column name or METRICS for color grouping
+            style_by: Column name or METRICS for linestyle grouping
+            size_by: Column name or METRICS for line width grouping
+            marker_by: Column name or METRICS for marker grouping
+            alpha_by: Column name or METRICS for alpha/transparency grouping
             **kwargs: Additional styling parameters
         """
         super().__init__(data, **kwargs)
         self.x = x
         self.y_param = y  # Store original y parameter
-        self.hue = hue
-        self.style = style
-        self.size = size
-        self.marker = marker
-        self.alpha = alpha
+        self.hue_by = hue_by
+        self.style_by = style_by
+        self.size_by = size_by
+        self.marker_by = marker_by
+        self.alpha_by = alpha_by
         self.theme = LINE_THEME
 
         # Create style engine with all channels enabled for complex line plots
@@ -61,32 +61,32 @@ class LinePlotter(BasePlotter):
             self.y_param,
             self.x,
             auto_hue_groupings={
-                "hue": self.hue,
-                "style": self.style,
-                "size": self.size,
-                "marker": self.marker,
-                "alpha": self.alpha,
+                "hue": self.hue_by,
+                "style": self.style_by,
+                "size": self.size_by,
+                "marker": self.marker_by,
+                "alpha": self.alpha_by,
             },
         )
 
-        # Update hue if auto-set to METRICS
-        if self.metric_column and self.hue is None:
-            self.hue = self.metric_column
+        # Update hue_by if auto-set to METRICS
+        if self.metric_column and self.hue_by is None:
+            self.hue_by = self.metric_column
 
         # Create validated plot data (always validate, whether melted or not)
         validated_data = LinePlotData(data=self.plot_data, x=self.x, y=self.y)
         self.plot_data = validated_data.data
 
         # Process all grouping params with METRICS handling
-        self.hue = self._process_grouping_params(self.hue)
-        self.style = self._process_grouping_params(self.style)
-        self.size = self._process_grouping_params(self.size)
-        self.marker = self._process_grouping_params(self.marker)
-        self.alpha = self._process_grouping_params(self.alpha)
+        self.hue_by = self._process_grouping_params(self.hue_by)
+        self.style_by = self._process_grouping_params(self.style_by)
+        self.size_by = self._process_grouping_params(self.size_by)
+        self.marker_by = self._process_grouping_params(self.marker_by)
+        self.alpha_by = self._process_grouping_params(self.alpha_by)
 
         # Check if we have any groupings
         self._has_groups = any(
-            [self.hue, self.style, self.size, self.marker, self.alpha]
+            [self.hue_by, self.style_by, self.size_by, self.marker_by, self.alpha_by]
         )
 
         return self.plot_data
@@ -123,21 +123,21 @@ class LinePlotter(BasePlotter):
         # Get the group styles using style engine
         group_styles = self.style_engine.generate_styles(
             self.plot_data,
-            hue=self.hue,
-            style=self.style,
-            size=self.size,
-            marker=self.marker,
-            alpha=self.alpha,
+            hue_by=self.hue_by,
+            style_by=self.style_by,
+            size_by=self.size_by,
+            marker_by=self.marker_by,
+            alpha_by=self.alpha_by,
             shared_context=self.kwargs,
         )
 
         # Get grouping columns from style engine
         group_cols = self.style_engine.get_grouping_columns(
-            hue=self.hue,
-            style=self.style,
-            size=self.size,
-            marker=self.marker,
-            alpha=self.alpha,
+            hue_by=self.hue_by,
+            style_by=self.style_by,
+            size_by=self.size_by,
+            marker_by=self.marker_by,
+            alpha_by=self.alpha_by,
         )
 
         # Group the data and plot each group

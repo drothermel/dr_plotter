@@ -64,16 +64,11 @@ class PlotData:
                         f"Try converting with pd.to_numeric(data['{field_value}'], errors='coerce')."
                     )
             elif rule == "categorical":
-                # Categorical validation - check it's suitable for grouping
-                dtype = self.data[field_value].dtype
-                if not (
-                    pd.api.types.is_string_dtype(dtype)
-                    or pd.api.types.is_categorical_dtype(dtype)
-                    or pd.api.types.is_object_dtype(dtype)
-                ):
+                # Categorical validation - check if suitable for categorical plotting based on uniqueness
+                unique_count = self.data[field_value].nunique()
+                if unique_count > 20:
                     sample = self.data[field_value].head(3).tolist()
                     raise ValueError(
-                        f"Column '{field_value}' should be categorical/string but has dtype {dtype} "
-                        f"with values: {sample}. "
-                        f"Try converting with data['{field_value}'].astype(str)."
+                        f"Column '{field_value}' has {unique_count} unique values, too many for categorical plotting. "
+                        f"Sample values: {sample}. Consider binning or grouping the data first."
                     )

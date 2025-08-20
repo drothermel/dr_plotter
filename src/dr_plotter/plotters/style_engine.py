@@ -56,11 +56,11 @@ class StyleEngine:
     def generate_styles(
         self,
         data,
-        hue=None,
-        style=None,
-        size=None,
-        marker=None,
-        alpha=None,
+        hue_by=None,
+        style_by=None,
+        size_by=None,
+        marker_by=None,
+        alpha_by=None,
         shared_context=None,
     ):
         """
@@ -68,11 +68,11 @@ class StyleEngine:
 
         Args:
             data: DataFrame to generate styles for
-            hue: Column name for color grouping
-            style: Column name for linestyle grouping
-            size: Column name for size grouping
-            marker: Column name for marker grouping
-            alpha: Column name for alpha grouping
+            hue_by: Column name for color grouping
+            style_by: Column name for linestyle grouping
+            size_by: Column name for size grouping
+            marker_by: Column name for marker grouping
+            alpha_by: Column name for alpha grouping
             shared_context: Dict with shared styling context (e.g., figure manager)
 
         Returns:
@@ -80,21 +80,21 @@ class StyleEngine:
         """
         # Filter parameters based on enabled channels
         if not self.enabled_channels.get("hue"):
-            hue = None
+            hue_by = None
         if not self.enabled_channels.get("style"):
-            style = None
+            style_by = None
         if not self.enabled_channels.get("size"):
-            size = None
+            size_by = None
         if not self.enabled_channels.get("marker"):
-            marker = None
+            marker_by = None
         if not self.enabled_channels.get("alpha"):
-            alpha = None
+            alpha_by = None
 
         styles = {}
 
         # Group visual channels by the column they encode
         column_to_channels = self._map_channels_to_columns(
-            hue, style, size, marker, alpha
+            hue_by, style_by, size_by, marker_by, alpha_by
         )
 
         if not column_to_channels:
@@ -114,16 +114,16 @@ class StyleEngine:
         return self._build_group_combinations(data, column_to_channels, value_mappings)
 
     def _map_channels_to_columns(
-        self, hue=None, style=None, size=None, marker=None, alpha=None
+        self, hue_by=None, style_by=None, size_by=None, marker_by=None, alpha_by=None
     ):
         """Map visual channels to the data columns they encode."""
         column_to_channels = {}
         channel_params = [
-            ("hue", hue),
-            ("style", style),
-            ("size", size),
-            ("marker", marker),
-            ("alpha", alpha),
+            ("hue", hue_by),
+            ("style", style_by),
+            ("size", size_by),
+            ("marker", marker_by),
+            ("alpha", alpha_by),
         ]
 
         for channel_name, column_name in channel_params:
@@ -216,7 +216,7 @@ class StyleEngine:
         return styles
 
     def get_grouping_columns(
-        self, hue=None, style=None, size=None, marker=None, alpha=None
+        self, hue_by=None, style_by=None, size_by=None, marker_by=None, alpha_by=None
     ):
         """
         Get list of columns used for grouping based on enabled channels.
@@ -226,16 +226,16 @@ class StyleEngine:
         """
         columns = []
 
-        if hue is not None and self.enabled_channels.get("hue"):
-            columns.append(hue)
-        if style is not None and self.enabled_channels.get("style"):
-            columns.append(style)
-        if size is not None and self.enabled_channels.get("size"):
-            columns.append(size)
-        if marker is not None and self.enabled_channels.get("marker"):
-            columns.append(marker)
-        if alpha is not None and self.enabled_channels.get("alpha"):
-            columns.append(alpha)
+        if hue_by is not None and self.enabled_channels.get("hue"):
+            columns.append(hue_by)
+        if style_by is not None and self.enabled_channels.get("style"):
+            columns.append(style_by)
+        if size_by is not None and self.enabled_channels.get("size"):
+            columns.append(size_by)
+        if marker_by is not None and self.enabled_channels.get("marker"):
+            columns.append(marker_by)
+        if alpha_by is not None and self.enabled_channels.get("alpha"):
+            columns.append(alpha_by)
 
         # Remove duplicates while preserving order
         seen = set()
