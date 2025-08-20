@@ -96,9 +96,17 @@ class ViolinPlotter(BasePlotter):
             # Create mapping from hue values to styles
             hue_to_style = {}
             for name, group_data in grouped:
-                group_key = tuple([(group_cols[0], name)])
+                # Create group key for style lookup (same logic as Bar/Line/Scatter!)
+                if isinstance(name, tuple):
+                    group_key = tuple(zip(group_cols, name))
+                    # Extract actual hue value from tuple
+                    actual_hue_value = name[0] if len(name) == 1 else name
+                else:
+                    group_key = tuple([(group_cols[0], name)])
+                    actual_hue_value = name
+                    
                 styles = group_styles.get(group_key, {})
-                hue_to_style[name] = styles.get("color", "blue")
+                hue_to_style[actual_hue_value] = styles.get("color", "blue")
 
         # Plot violins with proper positioning
         for i, x_cat in enumerate(x_categories):
@@ -150,10 +158,9 @@ class ViolinPlotter(BasePlotter):
         self._apply_styling(ax)
 
     def _apply_styling(self, ax):
-        if self.kwargs.get("legend") and "_legend_handles" in self.kwargs:
+        if self._get_style("legend") is not False and "_legend_handles" in self.kwargs:
             ax.legend(
                 handles=self.kwargs["_legend_handles"],
                 fontsize=self.theme.get("legend_fontsize"),
             )
-            self.kwargs["legend"] = False
         super()._apply_styling(ax)
