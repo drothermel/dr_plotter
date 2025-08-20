@@ -16,7 +16,9 @@ if __name__ == "__main__":
 
         # Basic histogram
         basic_data = ExampleData.distribution_data()
-        fm.plot("histogram", 0, 0, basic_data, "values", bins=20, title="Basic Histogram")
+        fm.plot(
+            "histogram", 0, 0, basic_data, "values", bins=20, title="Basic Histogram"
+        )
 
         # Density histogram
         fm.plot(

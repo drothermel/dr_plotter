@@ -104,7 +104,7 @@ class ViolinPlotter(BasePlotter):
                 else:
                     group_key = tuple([(group_cols[0], name)])
                     actual_hue_value = name
-                    
+
                 styles = group_styles.get(group_key, {})
                 hue_to_style[actual_hue_value] = styles.get("color", "blue")
 

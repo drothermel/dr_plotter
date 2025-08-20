@@ -3,7 +3,6 @@ Context manager for creating complex figures.
 """
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import itertools
 import warnings
 from .plotters import BasePlotter
@@ -15,7 +14,15 @@ class FigureManager:
     A context manager for creating complex figures with multiple subplots.
     """
 
-    def __init__(self, rows=1, cols=1, external_ax=None, layout_rect=None, layout_pad=None, **fig_kwargs):
+    def __init__(
+        self,
+        rows=1,
+        cols=1,
+        external_ax=None,
+        layout_rect=None,
+        layout_pad=None,
+        **fig_kwargs,
+    ):
         """
         Initialize the FigureManager in managed or external mode.
 
@@ -28,8 +35,10 @@ class FigureManager:
             **fig_kwargs: Additional arguments for plt.subplots (ignored if external_ax provided)
         """
         self._layout_rect = layout_rect  # Store for use in __exit__
-        self._layout_pad = layout_pad if layout_pad is not None else 0.5  # Default to proven value
-        
+        self._layout_pad = (
+            layout_pad if layout_pad is not None else 0.5
+        )  # Default to proven value
+
         if external_ax is not None:
             # External mode: work with provided axes
             self.fig = external_ax.get_figure()
@@ -51,8 +60,12 @@ class FigureManager:
         """Enter the context manager."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Exit the context manager and finalize layout."""
+    def finalize_layout(self):
+        """
+        Apply intelligent tight_layout with suptitle detection and user overrides.
+
+        This method is idempotent and can be called multiple times safely.
+        """
         # Apply intelligent tight_layout with suptitle detection and user overrides
         try:
             if self._layout_rect is not None:
@@ -69,25 +82,34 @@ class FigureManager:
                 self.fig.tight_layout(pad=self._layout_pad)
         except ValueError as e:
             # Common tight_layout issues: overlapping elements, insufficient space
-            warnings.warn(f"tight_layout failed: {e}. Layout may not be optimal.", UserWarning)
+            warnings.warn(
+                f"tight_layout failed: {e}. Layout may not be optimal.", UserWarning
+            )
         except RuntimeError as e:
             # Runtime issues with layout computation
-            warnings.warn(f"tight_layout runtime error: {e}. Layout may not be optimal.", UserWarning)
+            warnings.warn(
+                f"tight_layout runtime error: {e}. Layout may not be optimal.",
+                UserWarning,
+            )
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit the context manager and finalize layout."""
+        self.finalize_layout()
         return False
 
     def _has_subplot_titles(self):
         """Check if any subplot has a title that needs space."""
         # Handle both single axes and array of axes
-        if hasattr(self.axes, 'flat'):
+        if hasattr(self.axes, "flat"):
             # Multiple subplots - check all axes
             axes_to_check = self.axes.flat
-        elif hasattr(self.axes, '__iter__') and not isinstance(self.axes, str):
+        elif hasattr(self.axes, "__iter__") and not isinstance(self.axes, str):
             # Array of axes
             axes_to_check = self.axes
         else:
             # Single subplot
             axes_to_check = [self.axes]
-        
+
         for ax in axes_to_check:
             if ax.get_title():  # Returns empty string if no title
                 return True
@@ -142,7 +164,6 @@ class FigureManager:
 
         plotter = plotter_class(*plotter_args, **kwargs)
         plotter.render(ax)
-
 
     def plot(self, plot_type, row, col, *args, **kwargs):
         """

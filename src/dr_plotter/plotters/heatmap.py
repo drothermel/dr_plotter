@@ -67,7 +67,7 @@ class HeatmapPlotter(BasePlotter):
         # Use axes_grid1 for precise colorbar layout control
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.1)
-        
+
         fig = ax.get_figure()
         cbar = fig.colorbar(im, cax=cax)
         # Use custom colorbar label if provided, otherwise default to values column name

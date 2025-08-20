@@ -21,7 +21,14 @@ if __name__ == "__main__":
 
         # All plots use the same hue variable, so colors should be consistent
         fm.plot(
-            "line", 0, 0, grouped_data, "time", "value", hue_by="group", title="Line Plot"
+            "line",
+            0,
+            0,
+            grouped_data,
+            "time",
+            "value",
+            hue_by="group",
+            title="Line Plot",
         )
 
         fm.plot(
@@ -37,7 +44,9 @@ if __name__ == "__main__":
 
         # Bar plot version (aggregate the data first)
         bar_data = grouped_data.groupby("group")["value"].mean().reset_index()
-        fm.plot("bar", 1, 0, bar_data, "group", "value", hue_by="group", title="Bar Plot")
+        fm.plot(
+            "bar", 1, 0, bar_data, "group", "value", hue_by="group", title="Bar Plot"
+        )
 
         # Violin plot
         fm.plot(
