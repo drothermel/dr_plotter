@@ -71,34 +71,141 @@ class BasePlotter:
         """
         return sorted(cls._registry.keys())
 
+    # Default class attributes for declarative configuration
+    default_theme = BASE_THEME
+    enabled_channels = {}  # Which visual channels this plotter supports
+    data_validator = None  # PlotData class for validation
+
     def __init__(self, data, **kwargs):
         """
-        Initialize the plotter.
+        Initialize the plotter with intelligent configuration merging.
 
         Args:
             data: A pandas DataFrame.
-            **kwargs: All keyword arguments, including styling.
+            **kwargs: All keyword arguments, including configuration, styling, and grouping params.
         """
         self.raw_data = data
         self.plot_data = None  # Will be set by prepare_data()
         self.kwargs = kwargs
-        self.theme = BASE_THEME  # Default theme
         self.metric_column = None  # Will be set if metrics are melted
+
+        # Merge class-level defaults with instance-specific overrides
+        for key, value in kwargs.items():
+            if hasattr(self.__class__, key) and not key.startswith("_"):
+                setattr(self, key, value)
+
+        # Set theme (can be overridden via kwargs)
+        self.theme = kwargs.get(
+            "theme", getattr(self.__class__, "default_theme", BASE_THEME)
+        )
+
+        # Extract grouping parameters from kwargs if they exist
+        self.hue_by = kwargs.get("hue_by")
+        self.style_by = kwargs.get("style_by")
+        self.size_by = kwargs.get("size_by")
+        self.marker_by = kwargs.get("marker_by")
+        self.alpha_by = kwargs.get("alpha_by")
+
+        # Initialize style engine if this plotter uses groupings
+        if self.enabled_channels:
+            from dr_plotter.plotters.style_engine import StyleEngine
+
+            self.style_engine = StyleEngine(self.theme, self.enabled_channels)
 
     def prepare_data(self):
         """
-        Prepare and validate data for plotting.
-
-        This method creates a validated PlotData object and performs any necessary
-        preprocessing. Subclasses should override this method to create their
-        specific PlotData dataclass which handles validation automatically.
+        Intelligent data preparation that handles multi-metrics and validation.
 
         Returns:
             The prepared data
         """
-        # Base implementation just sets plot_data to raw_data
-        # Subclasses will override to create specific PlotData dataclasses
-        self.plot_data = self.raw_data
+        # Handle multi-metric data if y_param is defined and is a list
+        if hasattr(self, "y_param") and hasattr(self, "x"):
+            # Build auto-hue groupings dict
+            auto_hue_groupings = {}
+            if hasattr(self, "hue_by"):
+                auto_hue_groupings["hue"] = self.hue_by
+            if hasattr(self, "style_by"):
+                auto_hue_groupings["style"] = self.style_by
+            if hasattr(self, "size_by"):
+                auto_hue_groupings["size"] = self.size_by
+            if hasattr(self, "marker_by"):
+                auto_hue_groupings["marker"] = self.marker_by
+            if hasattr(self, "alpha_by"):
+                auto_hue_groupings["alpha"] = self.alpha_by
+
+            self.plot_data, self.y, self.metric_column = (
+                self._prepare_multi_metric_data(
+                    self.y_param, self.x, auto_hue_groupings
+                )
+            )
+
+            # Update hue_by if auto-set to METRICS
+            if self.metric_column and not self.hue_by:
+                self.hue_by = self.metric_column
+        else:
+            self.plot_data = self.raw_data
+            if hasattr(self, "y_param"):
+                self.y = self.y_param
+
+        # Validate data using the plotter's validator if specified
+        if self.data_validator:
+            # Build validation args dynamically based on what the plotter has
+            validation_kwargs = {"data": self.plot_data}
+            
+            # Add common plotter attributes if they exist
+            for attr in ["x", "y", "values", "time_col", "category_col", "value_col"]:
+                if hasattr(self, attr):
+                    validation_kwargs[attr] = getattr(self, attr)
+            
+            # For plotters that use different naming conventions, map them
+            if hasattr(self, "y_param") and not hasattr(self, "y"):
+                validation_kwargs["y"] = getattr(self, "y_param")
+            
+            # Map BumpPlotter's category_col to group for validation
+            if hasattr(self, "category_col"):
+                validation_kwargs["group"] = getattr(self, "category_col")
+            
+            # For BumpPlotter, use value_col as y for validation (not the computed rank)
+            if hasattr(self, "value_col") and hasattr(self, "time_col"):
+                validation_kwargs["x"] = getattr(self, "time_col")
+                validation_kwargs["y"] = getattr(self, "value_col")
+            
+            validated = self.data_validator(**validation_kwargs)
+            self.plot_data = validated.data
+
+        # Process grouping parameters with METRICS handling
+        if hasattr(self, "hue_by"):
+            self.hue_by = self._process_grouping_params(self.hue_by)
+        if hasattr(self, "style_by"):
+            self.style_by = self._process_grouping_params(self.style_by)
+        if hasattr(self, "size_by"):
+            self.size_by = self._process_grouping_params(self.size_by)
+        if hasattr(self, "marker_by"):
+            self.marker_by = self._process_grouping_params(self.marker_by)
+        if hasattr(self, "alpha_by"):
+            self.alpha_by = self._process_grouping_params(self.alpha_by)
+
+        # Check if we have any groupings (only if channels are enabled)
+        if self.enabled_channels:
+            self._has_groups = any(
+                [
+                    getattr(self, "hue_by", None),
+                    getattr(self, "style_by", None),
+                    getattr(self, "size_by", None),
+                    getattr(self, "marker_by", None),
+                    getattr(self, "alpha_by", None),
+                ]
+            )
+        else:
+            self._has_groups = False
+
+        # Call plotter-specific data preparation if it exists
+        if hasattr(self, "_prepare_specific_data"):
+            specific_data = self._prepare_specific_data()
+            if specific_data is not None:
+                self.plot_data = specific_data
+
         return self.plot_data
 
     def _prepare_multi_metric_data(self, y_param, x_col, auto_hue_groupings=None):
@@ -299,8 +406,153 @@ class BasePlotter:
 
     def render(self, ax):
         """
-        The core method to draw the plot on a matplotlib Axes object.
+        Intelligent render method that orchestrates the plotting lifecycle.
+
+        Concrete plotters only need to implement _draw() method.
+        """
+        # Prepare data
+        self.prepare_data()
+
+        # Render based on grouping
+        if not self._has_groups:
+            # Simple single plot
+            plot_kwargs = self._build_single_plot_kwargs()
+            self._draw(ax, self.plot_data, **plot_kwargs)
+        else:
+            # Multi-series plot with groupings
+            self._render_grouped(ax)
+
+        # Apply styling
+        self._apply_styling(ax)
+
+    def _draw(self, ax, data, **kwargs):
+        """
+        Draw the actual plot. Must be implemented by concrete plotters.
+
+        Args:
+            ax: Matplotlib axes
+            data: The data to plot (DataFrame or dict for compound plots)
+            **kwargs: All plot-specific kwargs
         """
         raise NotImplementedError(
-            "The render method must be implemented by subclasses."
+            f"{self.__class__.__name__} must implement _draw() method"
         )
+
+    def _build_single_plot_kwargs(self):
+        """Build kwargs for a single (non-grouped) plot."""
+        plot_kwargs = {}
+
+        # Add common defaults based on plot type
+        if hasattr(self, "marker"):
+            plot_kwargs["marker"] = self._get_style("marker")
+        if hasattr(self, "linestyle"):
+            plot_kwargs["linestyle"] = self._get_style("linestyle", "-")
+        if hasattr(self, "line_width"):
+            plot_kwargs["linewidth"] = self._get_style("line_width")
+
+        # Common style attributes
+        plot_kwargs["alpha"] = self._get_style("alpha")
+        plot_kwargs["color"] = self._get_style(
+            "color", next(self.theme.get("color_cycle"))
+        )
+
+        # Add user-specified kwargs
+        plot_kwargs.update(self._filter_plot_kwargs())
+
+        # Add label if specified
+        if "label" in self.kwargs:
+            plot_kwargs["label"] = self.kwargs["label"]
+
+        return plot_kwargs
+
+    def _render_grouped(self, ax):
+        """Unified grouped rendering for all plotters that support grouping."""
+        # Get group styles using style engine
+        group_styles = self.style_engine.generate_styles(
+            self.plot_data,
+            hue_by=getattr(self, "hue_by", None),
+            style_by=getattr(self, "style_by", None),
+            size_by=getattr(self, "size_by", None),
+            marker_by=getattr(self, "marker_by", None),
+            alpha_by=getattr(self, "alpha_by", None),
+            shared_context=self.kwargs,
+        )
+
+        # Get grouping columns
+        group_cols = self.style_engine.get_grouping_columns(
+            hue_by=getattr(self, "hue_by", None),
+            style_by=getattr(self, "style_by", None),
+            size_by=getattr(self, "size_by", None),
+            marker_by=getattr(self, "marker_by", None),
+            alpha_by=getattr(self, "alpha_by", None),
+        )
+
+        if group_cols:
+            grouped = self.plot_data.groupby(group_cols)
+
+            for name, group_data in grouped:
+                # Create group key for style lookup
+                if isinstance(name, tuple):
+                    group_key = tuple(zip(group_cols, name))
+                else:
+                    group_key = tuple([(group_cols[0], name)])
+
+                # Get styles for this group
+                styles = group_styles.get(group_key, {})
+
+                # Build plot kwargs for this group
+                plot_kwargs = self._build_group_plot_kwargs(styles, name, group_cols)
+
+                # Call the concrete plotter's draw method
+                self._draw(ax, group_data, **plot_kwargs)
+
+    def _build_group_plot_kwargs(self, styles, name, group_cols):
+        """Build kwargs for a grouped plot."""
+        from dr_plotter.theme import BASE_COLORS
+
+        # Use first color if not grouped by hue
+        default_color = styles.get("color", BASE_COLORS[0])
+
+        plot_kwargs = {
+            "color": default_color,
+            "alpha": styles.get("alpha", self._get_style("alpha", 1.0)),
+        }
+
+        # Add style-specific attributes based on what this plotter supports
+        if "linestyle" in styles:
+            plot_kwargs["linestyle"] = styles["linestyle"]
+        if "marker" in styles:
+            plot_kwargs["marker"] = styles["marker"]
+        if "size_mult" in styles:
+            # Apply size multiplier to appropriate attribute
+            if hasattr(self, "line_width"):
+                plot_kwargs["linewidth"] = (
+                    self._get_style("line_width", 2.0) * styles["size_mult"]
+                )
+            elif hasattr(self, "marker_size"):
+                plot_kwargs["s"] = (
+                    self._get_style("marker_size", 50) * styles["size_mult"]
+                )
+
+        # Add user-specified kwargs that aren't group-controlled
+        user_kwargs = self._filter_plot_kwargs()
+        for k, v in user_kwargs.items():
+            if k not in plot_kwargs:
+                plot_kwargs[k] = v
+
+        # Create label
+        if isinstance(name, tuple):
+            label_parts = []
+            for col, val in zip(group_cols, name):
+                if self.metric_column and col == self.metric_column:
+                    label_parts.append(str(val))
+                else:
+                    label_parts.append(f"{col}={val}")
+            plot_kwargs["label"] = ", ".join(label_parts)
+        else:
+            if self.metric_column and group_cols[0] == self.metric_column:
+                plot_kwargs["label"] = str(name)
+            else:
+                plot_kwargs["label"] = f"{group_cols[0]}={name}"
+
+        return plot_kwargs

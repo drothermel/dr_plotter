@@ -12,8 +12,13 @@ from .plot_data import HeatmapData
 
 class HeatmapPlotter(BasePlotter):
     """
-    An atomic plotter for creating heatmaps.
+    An atomic plotter for creating heatmaps using declarative configuration.
     """
+
+    # Declarative configuration
+    default_theme = HEATMAP_THEME
+    enabled_channels = {}  # No grouping support for heatmaps
+    data_validator = HeatmapData
 
     def __init__(self, data, x, y, values, **kwargs):
         """
@@ -30,39 +35,39 @@ class HeatmapPlotter(BasePlotter):
         self.x = x
         self.y = y
         self.values = values
-        self.theme = HEATMAP_THEME
 
-    def prepare_data(self):
+    def _prepare_specific_data(self):
         """
         Convert tidy/long format data to matrix format for heatmap visualization.
         """
-        # Create validated heatmap data (includes pivot compatibility check)
-        heatmap_data = HeatmapData(
-            data=self.raw_data, x=self.x, y=self.y, values=self.values
-        )
-
         # Convert from tidy/long to matrix format using pivot
-        self.plot_data = heatmap_data.data.pivot(
+        plot_data = self.plot_data.pivot(
             index=self.y,  # rows
             columns=self.x,  # columns
             values=self.values,  # cell values
         )
 
         # Handle any missing values by filling with 0
-        self.plot_data = self.plot_data.fillna(0)
+        return plot_data.fillna(0)
 
-        return self.plot_data
-
-    def render(self, ax):
+    def _draw(self, ax, data, **kwargs):
         """
-        Render the heatmap on the given axes.
+        Draw the heatmap using matplotlib.
+
+        Args:
+            ax: Matplotlib axes
+            data: DataFrame in matrix format (pivoted data)
+            **kwargs: Plot-specific kwargs
         """
-        self.prepare_data()
+        # Set default cmap if not provided
+        if "cmap" not in kwargs:
+            kwargs["cmap"] = self._get_style("cmap")
+        
+        # Filter out parameters that imshow doesn't accept
+        imshow_kwargs = {k: v for k, v in kwargs.items() 
+                        if k not in ['color', 'label', 'alpha']}
 
-        plot_kwargs = {"cmap": self.theme.get("cmap")}
-        plot_kwargs.update(self._filter_plot_kwargs())
-
-        im = ax.imshow(self.plot_data, **plot_kwargs)
+        im = ax.imshow(data, **imshow_kwargs)
 
         # Use axes_grid1 for precise colorbar layout control
         divider = make_axes_locatable(ax)
@@ -74,10 +79,10 @@ class HeatmapPlotter(BasePlotter):
         colorbar_label = self.kwargs.get("colorbar_label", self.values)
         cbar.set_label(colorbar_label)
 
-        ax.set_xticks(np.arange(len(self.plot_data.columns)))
-        ax.set_yticks(np.arange(len(self.plot_data.index)))
-        ax.set_xticklabels(self.plot_data.columns)
-        ax.set_yticklabels(self.plot_data.index)
+        ax.set_xticks(np.arange(len(data.columns)))
+        ax.set_yticks(np.arange(len(data.index)))
+        ax.set_xticklabels(data.columns)
+        ax.set_yticklabels(data.index)
 
         xlabel_pos = self._get_style("xlabel_pos")
         if xlabel_pos == "top":
@@ -92,16 +97,14 @@ class HeatmapPlotter(BasePlotter):
             )
 
         if self._get_style("display_values", True):
-            for i in range(len(self.plot_data.index)):
-                for j in range(len(self.plot_data.columns)):
+            for i in range(len(data.index)):
+                for j in range(len(data.columns)):
                     ax.text(
                         j,
                         i,
-                        f"{self.plot_data.iloc[i, j]:.2f}",
+                        f"{data.iloc[i, j]:.2f}",
                         ha="center",
                         va="center",
                         color="w",
                         fontsize=8,
                     )
-
-        self._apply_styling(ax)
