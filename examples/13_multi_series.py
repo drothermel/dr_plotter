@@ -18,24 +18,26 @@ if __name__ == "__main__":
         complex_data = ExampleData.complex_encoding_data()
 
         # Scatter: hue + marker encoding
-        fm.scatter(
+        fm.plot(
+            "scatter",
             0,
             0,
             complex_data,
-            x="x",
-            y="y",
+            "x",
+            "y",
             hue_by="experiment",
             marker_by="condition",
             title="Scatter: hue + marker",
         )
 
         # Scatter: hue + size encoding
-        fm.scatter(
+        fm.plot(
+            "scatter",
             0,
             1,
             complex_data,
-            x="x",
-            y="y",
+            "x",
+            "y",
             hue_by="condition",
             size_by="performance",
             title="Scatter: hue + size",
@@ -45,24 +47,26 @@ if __name__ == "__main__":
         grouped_ts = ExampleData.time_series_grouped(periods=30, groups=4)
 
         # Line: hue + style encoding
-        fm.line(
+        fm.plot(
+            "line",
             1,
             0,
             grouped_ts,
-            x="time",
-            y="value",
+            "time",
+            "value",
             hue_by="group",
             style_by="group",
             title="Line: hue + style",
         )
 
         # Scatter: alpha encoding for emphasis
-        fm.scatter(
+        fm.plot(
+            "scatter",
             1,
             1,
             complex_data,
-            x="x",
-            y="y",
+            "x",
+            "y",
             hue_by="experiment",
             alpha_by="algorithm",
             title="Scatter: hue + alpha",

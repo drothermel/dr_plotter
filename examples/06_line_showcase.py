@@ -17,27 +17,29 @@ if __name__ == "__main__":
 
         # Basic line
         basic_data = ExampleData.time_series()
-        fm.line(0, 0, basic_data, x="time", y="value", title="Basic Line Plot")
+        fm.plot("line", 0, 0, basic_data, "time", "value", title="Basic Line Plot")
 
         # Multiple lines with hue
         grouped_data = ExampleData.time_series_grouped()
-        fm.line(
+        fm.plot(
+            "line",
             0,
             1,
             grouped_data,
-            x="time",
-            y="value",
+            "time",
+            "value",
             hue_by="group",
             title="Multi-Series (hue)",
         )
 
         # Line style encoding
-        fm.line(
+        fm.plot(
+            "line",
             1,
             0,
             grouped_data,
-            x="time",
-            y="value",
+            "time",
+            "value",
             hue_by="group",
             style_by="group",
             title="Color + Line Style",
@@ -45,12 +47,13 @@ if __name__ == "__main__":
 
         # Multi-metrics with METRICS encoding
         ml_data = ExampleData.ml_training_curves(epochs=30)
-        fm.line(
+        fm.plot(
+            "line",
             1,
             1,
             ml_data,
-            x="epoch",
-            y=["train_loss", "val_loss"],
+            "epoch",
+            ["train_loss", "val_loss"],
             hue_by=consts.METRICS,
             style_by="learning_rate",
             title="Multi-Metrics (METRICS)",

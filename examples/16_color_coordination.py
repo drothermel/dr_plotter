@@ -20,31 +20,33 @@ if __name__ == "__main__":
         grouped_data = ExampleData.time_series_grouped()
 
         # All plots use the same hue variable, so colors should be consistent
-        fm.line(
-            0, 0, grouped_data, x="time", y="value", hue_by="group", title="Line Plot"
+        fm.plot(
+            "line", 0, 0, grouped_data, "time", "value", hue_by="group", title="Line Plot"
         )
 
-        fm.scatter(
+        fm.plot(
+            "scatter",
             0,
             1,
             grouped_data,
-            x="time",
-            y="value",
+            "time",
+            "value",
             hue_by="group",
             title="Scatter Plot",
         )
 
         # Bar plot version (aggregate the data first)
         bar_data = grouped_data.groupby("group")["value"].mean().reset_index()
-        fm.bar(1, 0, bar_data, x="group", y="value", hue_by="group", title="Bar Plot")
+        fm.plot("bar", 1, 0, bar_data, "group", "value", hue_by="group", title="Bar Plot")
 
         # Violin plot
-        fm.violin(
+        fm.plot(
+            "violin",
             1,
             1,
             grouped_data,
-            x="group",
-            y="value",
+            "group",
+            "value",
             hue_by="group",
             title="Violin Plot",
         )

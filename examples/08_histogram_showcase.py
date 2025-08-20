@@ -16,14 +16,15 @@ if __name__ == "__main__":
 
         # Basic histogram
         basic_data = ExampleData.distribution_data()
-        fm.hist(0, 0, basic_data, x="values", bins=20, title="Basic Histogram")
+        fm.plot("histogram", 0, 0, basic_data, "values", bins=20, title="Basic Histogram")
 
         # Density histogram
-        fm.hist(
+        fm.plot(
+            "histogram",
             0,
             1,
             basic_data,
-            x="values",
+            "values",
             bins=20,
             density=True,
             title="Density Histogram",
@@ -31,11 +32,12 @@ if __name__ == "__main__":
 
         # Multiple distributions
         multi_data = ExampleData.distribution_data(distributions=3)
-        fm.hist(
+        fm.plot(
+            "histogram",
             1,
             0,
             multi_data,
-            x="value",
+            "value",
             hue_by="distribution",
             bins=20,
             title="Multiple Distributions",
@@ -43,11 +45,12 @@ if __name__ == "__main__":
         )
 
         # Custom styling
-        fm.hist(
+        fm.plot(
+            "histogram",
             1,
             1,
             basic_data,
-            x="values",
+            "values",
             bins=30,
             title="Custom Styling",
             color="red",

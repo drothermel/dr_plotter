@@ -19,35 +19,38 @@ if __name__ == "__main__":
         ml_data = ExampleData.ml_training_curves()
 
         # Basic multi-metrics: color by METRICS
-        fm.line(
+        fm.plot(
+            "line",
             0,
             0,
             ml_data,
-            x="epoch",
-            y=["train_loss", "val_loss"],
+            "epoch",
+            ["train_loss", "val_loss"],
             hue_by=consts.METRICS,
             title="Loss Metrics (hue_by=METRICS)",
         )
 
         # Multi-metrics with additional grouping
-        fm.line(
+        fm.plot(
+            "line",
             0,
             1,
             ml_data,
-            x="epoch",
-            y=["train_loss", "val_loss"],
+            "epoch",
+            ["train_loss", "val_loss"],
             hue_by=consts.METRICS,
             style_by="learning_rate",
             title="Loss + Learning Rate",
         )
 
         # Accuracy metrics
-        fm.line(
+        fm.plot(
+            "line",
             1,
             0,
             ml_data,
-            x="epoch",
-            y=["train_accuracy", "val_accuracy"],
+            "epoch",
+            ["train_accuracy", "val_accuracy"],
             hue_by="learning_rate",
             style_by=consts.METRICS,
             title="Accuracy (style_by=METRICS)",
@@ -55,12 +58,13 @@ if __name__ == "__main__":
 
         # Generic multi-metric data
         multi_data = ExampleData.multi_metric_data()
-        fm.line(
+        fm.plot(
+            "line",
             1,
             1,
             multi_data,
-            x="x",
-            y=["metric_a", "metric_b", "metric_c"],
+            "x",
+            ["metric_a", "metric_b", "metric_c"],
             hue_by=consts.METRICS,
             title="Generic Multi-Metrics",
         )

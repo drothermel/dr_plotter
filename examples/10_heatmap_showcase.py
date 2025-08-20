@@ -16,23 +16,25 @@ if __name__ == "__main__":
 
         # Basic heatmap
         heatmap_data = ExampleData.heatmap_data()
-        fm.heatmap(
+        fm.plot(
+            "heatmap",
             0,
             0,
             heatmap_data,
-            x="column",
-            y="row",
+            "column",
+            "row",
             values="value",
             title="Basic Heatmap",
         )
 
         # Custom colormap heatmap
-        fm.heatmap(
+        fm.plot(
+            "heatmap",
             0,
             1,
             heatmap_data,
-            x="column",
-            y="row",
+            "column",
+            "row",
             values="value",
             title="Custom Colormap",
             cmap="viridis",

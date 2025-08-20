@@ -21,35 +21,38 @@ if __name__ == "__main__":
         fm.fig.suptitle("ML Experiment Dashboard: Training Analysis", fontsize=16)
 
         # Loss curves by metric type
-        fm.line(
+        fm.plot(
+            "line",
             0,
             0,
             ml_data,
-            x="epoch",
-            y=["train_loss", "val_loss"],
+            "epoch",
+            ["train_loss", "val_loss"],
             hue_by=consts.METRICS,
             style_by="learning_rate",
             title="Loss Curves (color=metric, style=lr)",
         )
 
         # Learning rate comparison for validation loss
-        fm.line(
+        fm.plot(
+            "line",
             0,
             1,
             ml_data,
-            x="epoch",
-            y="val_loss",
+            "epoch",
+            "val_loss",
             hue_by="learning_rate",
             title="Validation Loss by Learning Rate",
         )
 
         # Accuracy progression
-        fm.line(
+        fm.plot(
+            "line",
             1,
             0,
             ml_data,
-            x="epoch",
-            y=["train_accuracy", "val_accuracy"],
+            "epoch",
+            ["train_accuracy", "val_accuracy"],
             hue_by="learning_rate",
             style_by=consts.METRICS,
             title="Accuracy (color=lr, style=metric)",
@@ -89,12 +92,13 @@ if __name__ == "__main__":
 
         perf_df = pd.DataFrame(performance_data)
 
-        fm.bar(
+        fm.plot(
+            "bar",
             1,
             1,
             perf_df,
-            x="learning_rate",
-            y="value",
+            "learning_rate",
+            "value",
             hue_by="metric",
             title="Final Performance Summary",
         )

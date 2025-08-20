@@ -18,12 +18,13 @@ if __name__ == "__main__":
 
         # Scatter with matplotlib parameters
         scatter_data = ExampleData.simple_scatter()
-        fm.scatter(
+        fm.plot(
+            "scatter",
             0,
             0,
             scatter_data,
-            x="x",
-            y="y",
+            "x",
+            "y",
             title="Custom Scatter Styling",
             s=100,  # matplotlib: marker size
             alpha=0.6,  # matplotlib: transparency
@@ -33,12 +34,13 @@ if __name__ == "__main__":
 
         # Line plot with advanced matplotlib styling
         line_data = ExampleData.time_series()
-        fm.line(
+        fm.plot(
+            "line",
             0,
             1,
             line_data,
-            x="time",
-            y="value",
+            "time",
+            "value",
             title="Advanced Line Styling",
             linewidth=3,  # matplotlib: line width
             linestyle="--",  # matplotlib: line style
@@ -51,11 +53,12 @@ if __name__ == "__main__":
 
         # Histogram with matplotlib parameters
         hist_data = ExampleData.distribution_data()
-        fm.hist(
+        fm.plot(
+            "histogram",
             1,
             0,
             hist_data,
-            x="values",
+            "values",
             title="Custom Histogram",
             bins=25,  # matplotlib: number of bins
             alpha=0.7,  # matplotlib: transparency
@@ -67,12 +70,13 @@ if __name__ == "__main__":
         # Bar plot with matplotlib styling
         bar_data = ExampleData.categorical_data()
         bar_summary = bar_data.groupby("category")["value"].mean().reset_index()
-        fm.bar(
+        fm.plot(
+            "bar",
             1,
             1,
             bar_summary,
-            x="category",
-            y="value",
+            "category",
+            "value",
             title="Custom Bar Styling",
             alpha=0.8,  # matplotlib: transparency
             color="orange",  # matplotlib: color

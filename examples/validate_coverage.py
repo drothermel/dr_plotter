@@ -25,7 +25,7 @@ def extract_plotter_usage(file_path):
 
     used_plotters = set()
 
-    # Direct method calls (fm.scatter, drp.line, etc.)
+    # Legacy direct method calls (fm.scatter, drp.line, etc.) - for backward compatibility
     method_patterns = [
         r"\.scatter\(",
         r"\.line\(",
@@ -56,7 +56,7 @@ def extract_plotter_usage(file_path):
             if method_name in plotter_mapping:
                 used_plotters.add(plotter_mapping[method_name])
 
-    # Generic plot() calls with string literals
+    # New unified plot() calls with string literals - primary method
     plot_calls = re.findall(r'\.plot\(\s*["\'](\w+)["\']', content)
     used_plotters.update(plot_calls)
 

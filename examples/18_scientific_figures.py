@@ -19,12 +19,13 @@ if __name__ == "__main__":
 
         # Panel A: Time series data
         ts_data = ExampleData.time_series_grouped(periods=50, groups=3)
-        fm.line(
+        fm.plot(
+            "line",
             0,
             0,
             ts_data,
-            x="time",
-            y="value",
+            "time",
+            "value",
             hue_by="group",
             title="A) Temporal Dynamics",
             xlabel="Time (hours)",
@@ -33,12 +34,13 @@ if __name__ == "__main__":
 
         # Panel B: Distribution comparison
         dist_data = ExampleData.distribution_data(distributions=3)
-        fm.violin(
+        fm.plot(
+            "violin",
             0,
             1,
             dist_data,
-            x="distribution",
-            y="value",
+            "distribution",
+            "value",
             title="B) Response Distributions",
             xlabel="Treatment Group",
             ylabel="Response",
@@ -46,12 +48,13 @@ if __name__ == "__main__":
 
         # Panel C: Correlation analysis
         corr_data = ExampleData.simple_scatter(n=200)
-        fm.scatter(
+        fm.plot(
+            "scatter",
             0,
             2,
             corr_data,
-            x="x",
-            y="y",
+            "x",
+            "y",
             title="C) Variable Correlation",
             xlabel="Predictor X",
             ylabel="Response Y",
@@ -62,12 +65,13 @@ if __name__ == "__main__":
         cat_summary = (
             cat_data.groupby(["category", "group"])["value"].mean().reset_index()
         )
-        fm.bar(
+        fm.plot(
+            "bar",
             1,
             0,
             cat_summary,
-            x="category",
-            y="value",
+            "category",
+            "value",
             hue_by="group",
             title="D) Treatment Effects",
             xlabel="Condition",
@@ -76,12 +80,13 @@ if __name__ == "__main__":
 
         # Panel E: Heatmap of relationships
         heatmap_data = ExampleData.heatmap_data(rows=6, cols=6)
-        fm.heatmap(
+        fm.plot(
+            "heatmap",
             1,
             1,
             heatmap_data,
-            x="column",
-            y="row",
+            "column",
+            "row",
             values="value",
             title="E) Correlation Matrix",
             cmap="RdBu_r",
@@ -89,12 +94,13 @@ if __name__ == "__main__":
 
         # Panel F: Ranking over time
         ranking_data = ExampleData.ranking_data(time_points=10, categories=4)
-        fm.bump_plot(
+        fm.plot(
+            "bump",
             1,
             2,
             ranking_data,
-            time_col="time",
-            category_col="category",
+            "time",
+            "category",
             value_col="score",
             title="F) Performance Rankings",
         )
