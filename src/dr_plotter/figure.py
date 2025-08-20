@@ -5,6 +5,7 @@ Context manager for creating complex figures.
 import matplotlib.pyplot as plt
 import pandas as pd
 import itertools
+import warnings
 from .plotters import BasePlotter
 # Import all plotters to ensure they're registered
 
@@ -31,12 +32,9 @@ class FigureManager:
             self.external_mode = True
         else:
             # Managed mode: create own figure
-            # Use constrained_layout for multi-subplot figures or if explicitly requested
-            use_constrained = rows > 1 or cols > 1 or fig_kwargs.get('constrained_layout', False)
-            # Remove constrained_layout from fig_kwargs to avoid duplicate parameter
-            fig_kwargs_clean = {k: v for k, v in fig_kwargs.items() if k != 'constrained_layout'}
+            # Use tight_layout approach consistently with make_axes_locatable
             self.fig, self.axes = plt.subplots(
-                rows, cols, constrained_layout=use_constrained, **fig_kwargs_clean
+                rows, cols, constrained_layout=False, **fig_kwargs
             )
             self.external_mode = False
 
@@ -49,8 +47,16 @@ class FigureManager:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Exit the context manager."""
-        # No cleanup needed, but context manager protocol requires this
+        """Exit the context manager and finalize layout."""
+        # Apply tight_layout for consistent spacing with make_axes_locatable approach
+        try:
+            self.fig.tight_layout()
+        except ValueError as e:
+            # Common tight_layout issues: overlapping elements, insufficient space
+            warnings.warn(f"tight_layout failed: {e}. Layout may not be optimal.", UserWarning)
+        except RuntimeError as e:
+            # Runtime issues with layout computation
+            warnings.warn(f"tight_layout runtime error: {e}. Layout may not be optimal.", UserWarning)
         return False
 
     def get_axes(self, row=None, col=None):

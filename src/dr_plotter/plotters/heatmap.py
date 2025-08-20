@@ -4,6 +4,7 @@ Atomic plotter for heatmaps.
 
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from .base import BasePlotter
 from dr_plotter.theme import HEATMAP_THEME
 from .plot_data import HeatmapData
@@ -63,8 +64,12 @@ class HeatmapPlotter(BasePlotter):
 
         im = ax.imshow(self.plot_data, **plot_kwargs)
 
+        # Use axes_grid1 for precise colorbar layout control
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.1)
+        
         fig = ax.get_figure()
-        cbar = fig.colorbar(im, ax=ax)
+        cbar = fig.colorbar(im, cax=cax)
         # Use custom colorbar label if provided, otherwise default to values column name
         colorbar_label = self.kwargs.get("colorbar_label", self.values)
         cbar.set_label(colorbar_label)

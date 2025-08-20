@@ -134,7 +134,7 @@ def heatmap(data: pd.DataFrame, x: str, y: str, values: str, ax=None, **kwargs):
         ax: Optional matplotlib axes
         **kwargs: Additional styling parameters
     """
-    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager(constrained_layout=True)
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
     fm.heatmap(0, 0, data, x, y, values, **kwargs)
 
     if ax is not None:

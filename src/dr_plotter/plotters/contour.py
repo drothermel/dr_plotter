@@ -4,6 +4,7 @@ Compound plotter for contour plots, specifically for GMM level sets.
 
 import numpy as np
 from sklearn.mixture import GaussianMixture
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from .base import BasePlotter
 from dr_plotter.theme import CONTOUR_THEME
 from .plot_data import ContourPlotData
@@ -68,8 +69,13 @@ class ContourPlotter(BasePlotter):
         scatter_kwargs.update(filtered_scatter_kwargs)
 
         contour = ax.contour(self.xx, self.yy, self.Z, **contour_kwargs)
+        
+        # Use axes_grid1 for precise colorbar layout control
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.1)
+        
         fig = ax.get_figure()
-        cbar = fig.colorbar(contour, ax=ax)
+        cbar = fig.colorbar(contour, cax=cax)
         # Use custom colorbar label if provided, otherwise default to "Density"
         colorbar_label = self.kwargs.get("colorbar_label", "Density")
         cbar.set_label(colorbar_label)
