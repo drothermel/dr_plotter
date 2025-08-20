@@ -104,8 +104,13 @@ class BarPlotter(BasePlotter):
             width = 0.8 / n_groups if n_groups > 0 else 0.8
 
             for i, (name, group_data) in enumerate(grouped):
-                # Standard style lookup (same as Line/Scatter!)
-                group_key = tuple([(group_cols[0], name)])
+                # Create group key for style lookup (same logic as Line/Scatter!)
+                if isinstance(name, tuple):
+                    group_key = tuple(zip(group_cols, name))
+                else:
+                    group_key = tuple([(group_cols[0], name)])
+
+                # Get styles for this group
                 styles = group_styles.get(group_key, {})
 
                 # Extract color from unified styles
@@ -121,11 +126,17 @@ class BarPlotter(BasePlotter):
                     else:
                         y_values.append(0)  # Default to 0 if no data
 
+                # Clean label formatting (handle tuple names)
+                if isinstance(name, tuple):
+                    label = ", ".join(str(x) for x in name)
+                else:
+                    label = str(name)
+
                 # Plot bars with unified style
                 plot_kwargs = {
                     "alpha": self._get_style("alpha"),
                     "color": color,
-                    "label": str(name),
+                    "label": label,
                 }
                 plot_kwargs.update(self._filter_plot_kwargs())
 
