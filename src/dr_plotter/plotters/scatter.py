@@ -4,7 +4,6 @@ Atomic plotter for scatter plots with multi-series support.
 
 from .base import BasePlotter
 from dr_plotter.theme import SCATTER_THEME, BASE_COLORS
-from dr_plotter.consts import METRICS, METRICS_STR
 from dr_plotter.plotters.style_engine import StyleEngine
 from .plot_data import ScatterPlotData
 
@@ -15,7 +14,15 @@ class ScatterPlotter(BasePlotter):
     """
 
     def __init__(
-        self, data, x, y, hue_by=None, size_by=None, marker_by=None, alpha_by=None, **kwargs
+        self,
+        data,
+        x,
+        y,
+        hue_by=None,
+        size_by=None,
+        marker_by=None,
+        alpha_by=None,
+        **kwargs,
     ):
         """
         Initialize the ScatterPlotter.
@@ -74,7 +81,9 @@ class ScatterPlotter(BasePlotter):
         self.marker_by = self._process_grouping_params(self.marker_by)
 
         # Check if we have any groupings
-        self._has_groups = any([self.hue_by, self.size_by, self.marker_by, self.alpha_by])
+        self._has_groups = any(
+            [self.hue_by, self.size_by, self.marker_by, self.alpha_by]
+        )
 
         return self.plot_data
 
@@ -118,7 +127,10 @@ class ScatterPlotter(BasePlotter):
 
         # Get grouping columns from style engine
         group_cols = self.style_engine.get_grouping_columns(
-            hue_by=self.hue_by, size_by=self.size_by, marker_by=self.marker_by, alpha_by=self.alpha_by
+            hue_by=self.hue_by,
+            size_by=self.size_by,
+            marker_by=self.marker_by,
+            alpha_by=self.alpha_by,
         )
 
         # Group the data and plot each group

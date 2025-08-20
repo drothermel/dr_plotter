@@ -6,8 +6,6 @@ import pandas as pd
 from .figure import FigureManager
 
 
-
-
 def scatter(
     data: pd.DataFrame,
     x: str,
@@ -41,7 +39,7 @@ def scatter(
 
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
     fm.scatter(0, 0, data, x, y, hue_by, size_by, marker_by, alpha_by, **kwargs)
-    
+
     if ax is not None:
         return ax.get_figure(), ax
     else:
@@ -77,7 +75,7 @@ def line(
     """
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
     fm.line(0, 0, data, x, y, hue_by, style_by, size_by, marker_by, alpha_by, **kwargs)
-    
+
     if ax is not None:
         return ax.get_figure(), ax
     else:
@@ -88,7 +86,7 @@ def bar(data: pd.DataFrame, x: str, y: str, hue_by: str = None, ax=None, **kwarg
     """Create a bar plot with optional grouping."""
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
     fm.bar(0, 0, data, x, y, hue_by, **kwargs)
-    
+
     if ax is not None:
         return ax.get_figure(), ax
     else:
@@ -99,7 +97,7 @@ def hist(data: pd.DataFrame, x: str, ax=None, **kwargs):
     """Create a histogram."""
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
     fm.hist(0, 0, data, x, **kwargs)
-    
+
     if ax is not None:
         return ax.get_figure(), ax
     else:
@@ -107,12 +105,17 @@ def hist(data: pd.DataFrame, x: str, ax=None, **kwargs):
 
 
 def violin(
-    data: pd.DataFrame, x: str = None, y: str = None, hue_by: str = None, ax=None, **kwargs
+    data: pd.DataFrame,
+    x: str = None,
+    y: str = None,
+    hue_by: str = None,
+    ax=None,
+    **kwargs,
 ):
     """Create a violin plot."""
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
     fm.violin(0, 0, data, x, y, hue_by, **kwargs)
-    
+
     if ax is not None:
         return ax.get_figure(), ax
     else:
@@ -133,7 +136,7 @@ def heatmap(data: pd.DataFrame, x: str, y: str, values: str, ax=None, **kwargs):
     """
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
     fm.heatmap(0, 0, data, x, y, values, **kwargs)
-    
+
     if ax is not None:
         return ax.get_figure(), ax
     else:
@@ -151,7 +154,7 @@ def bump_plot(
     """Create a bump plot to visualize rankings over time."""
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
     fm.bump_plot(0, 0, data, time_col, category_col, value_col, **kwargs)
-    
+
     if ax is not None:
         return ax.get_figure(), ax
     else:
@@ -162,7 +165,7 @@ def gmm_level_set(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
     """Create a GMM level set plot."""
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
     fm.gmm_level_set(0, 0, data, x, y, **kwargs)
-    
+
     if ax is not None:
         return ax.get_figure(), ax
     else:

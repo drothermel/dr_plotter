@@ -79,7 +79,9 @@ class ViolinPlotter(BasePlotter):
         x_positions = np.arange(len(x_categories))
 
         # Generate styles using unified engine (same pattern as Line/Scatter!)
-        group_styles = self.style_engine.generate_styles(self.plot_data, hue_by=self.hue_by)
+        group_styles = self.style_engine.generate_styles(
+            self.plot_data, hue_by=self.hue_by
+        )
 
         # Get grouping columns (will be [self.hue_by])
         group_cols = self.style_engine.get_grouping_columns(hue_by=self.hue_by)

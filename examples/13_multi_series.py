@@ -18,26 +18,54 @@ if __name__ == "__main__":
         complex_data = ExampleData.complex_encoding_data()
 
         # Scatter: hue + marker encoding
-        fm.scatter(0, 0, complex_data, x="x", y="y", 
-                  hue_by="experiment", marker_by="condition",
-                  title="Scatter: hue + marker")
+        fm.scatter(
+            0,
+            0,
+            complex_data,
+            x="x",
+            y="y",
+            hue_by="experiment",
+            marker_by="condition",
+            title="Scatter: hue + marker",
+        )
 
         # Scatter: hue + size encoding
-        fm.scatter(0, 1, complex_data, x="x", y="y",
-                  hue_by="condition", size_by="performance",
-                  title="Scatter: hue + size")
+        fm.scatter(
+            0,
+            1,
+            complex_data,
+            x="x",
+            y="y",
+            hue_by="condition",
+            size_by="performance",
+            title="Scatter: hue + size",
+        )
 
         # Line plot with grouped time series
         grouped_ts = ExampleData.time_series_grouped(periods=30, groups=4)
-        
+
         # Line: hue + style encoding
-        fm.line(1, 0, grouped_ts, x="time", y="value",
-               hue_by="group", style_by="group",
-               title="Line: hue + style")
+        fm.line(
+            1,
+            0,
+            grouped_ts,
+            x="time",
+            y="value",
+            hue_by="group",
+            style_by="group",
+            title="Line: hue + style",
+        )
 
         # Scatter: alpha encoding for emphasis
-        fm.scatter(1, 1, complex_data, x="x", y="y",
-                  hue_by="experiment", alpha_by="algorithm",
-                  title="Scatter: hue + alpha")
+        fm.scatter(
+            1,
+            1,
+            complex_data,
+            x="x",
+            y="y",
+            hue_by="experiment",
+            alpha_by="algorithm",
+            title="Scatter: hue + alpha",
+        )
 
         show_or_save_plot(fm.fig, args, "13_multi_series")

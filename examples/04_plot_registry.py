@@ -22,7 +22,7 @@ if __name__ == "__main__":
         fm.fig.suptitle("Registry System: Generic plot() Method", fontsize=16)
 
         # Use the generic plot() method instead of specific methods
-        
+
         # Equivalent to fm.scatter(0, 0, ...)
         scatter_data = ExampleData.simple_scatter()
         fm.plot("scatter", 0, 0, scatter_data, "x", "y", title="Generic scatter")

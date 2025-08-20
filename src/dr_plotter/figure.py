@@ -7,7 +7,6 @@ import pandas as pd
 import itertools
 from .plotters import BasePlotter
 # Import all plotters to ensure they're registered
-import dr_plotter.plotters  # This triggers all plotter imports and registration
 
 
 class FigureManager:
@@ -18,10 +17,10 @@ class FigureManager:
     def __init__(self, rows=1, cols=1, external_ax=None, **fig_kwargs):
         """
         Initialize the FigureManager in managed or external mode.
-        
+
         Args:
             rows: Number of subplot rows (ignored if external_ax provided)
-            cols: Number of subplot columns (ignored if external_ax provided)  
+            cols: Number of subplot columns (ignored if external_ax provided)
             external_ax: Use external axes instead of creating new figure
             **fig_kwargs: Additional arguments for plt.subplots (ignored if external_ax provided)
         """
@@ -36,7 +35,7 @@ class FigureManager:
                 rows, cols, constrained_layout=True, **fig_kwargs
             )
             self.external_mode = False
-            
+
         # Cross-subplot style coordination
         self._shared_hue_styles = {}  # Maps hue values to consistent colors
         self._shared_style_cycles = None  # Lazy initialization
@@ -57,7 +56,7 @@ class FigureManager:
         """
         if self.external_mode:
             return self.axes
-            
+
         if not hasattr(self.axes, "__len__"):
             return self.axes
         if self.axes.ndim == 1:
@@ -100,17 +99,52 @@ class FigureManager:
         plotter = plotter_class(*plotter_args, **kwargs)
         plotter.render(ax)
 
-    def scatter(self, row, col, data: pd.DataFrame, x: str, y: str, 
-               hue_by=None, size_by=None, marker_by=None, alpha_by=None, **kwargs):
+    def scatter(
+        self,
+        row,
+        col,
+        data: pd.DataFrame,
+        x: str,
+        y: str,
+        hue_by=None,
+        size_by=None,
+        marker_by=None,
+        alpha_by=None,
+        **kwargs,
+    ):
         """Add a scatter plot to a specified subplot."""
         plotter_class = BasePlotter.get_plotter("scatter")
-        self._add_plot(plotter_class, (data, x, y, hue_by, size_by, marker_by, alpha_by), row, col, **kwargs)
+        self._add_plot(
+            plotter_class,
+            (data, x, y, hue_by, size_by, marker_by, alpha_by),
+            row,
+            col,
+            **kwargs,
+        )
 
-    def line(self, row, col, data: pd.DataFrame, x: str, y: str,
-            hue_by=None, style_by=None, size_by=None, marker_by=None, alpha_by=None, **kwargs):
+    def line(
+        self,
+        row,
+        col,
+        data: pd.DataFrame,
+        x: str,
+        y: str,
+        hue_by=None,
+        style_by=None,
+        size_by=None,
+        marker_by=None,
+        alpha_by=None,
+        **kwargs,
+    ):
         """Add a line plot to a specified subplot."""
         plotter_class = BasePlotter.get_plotter("line")
-        self._add_plot(plotter_class, (data, x, y, hue_by, style_by, size_by, marker_by, alpha_by), row, col, **kwargs)
+        self._add_plot(
+            plotter_class,
+            (data, x, y, hue_by, style_by, size_by, marker_by, alpha_by),
+            row,
+            col,
+            **kwargs,
+        )
 
     def bar(self, row, col, data: pd.DataFrame, x: str, y: str, hue_by=None, **kwargs):
         """Add a bar plot to a specified subplot."""
@@ -181,18 +215,18 @@ class FigureManager:
         """Add a grouped bar plot to a specified subplot."""
         plotter_class = BasePlotter.get_plotter("bar")
         self._add_plot(plotter_class, (data, x, y, hue_by), row, col, **kwargs)
-    
+
     def plot(self, plot_type, row, col, *args, **kwargs):
         """
         Generic plot method that uses the registry to create any plot type.
-        
+
         Args:
             plot_type: String name of the plot type (e.g., "scatter", "line")
             row: Row position in subplot grid
             col: Column position in subplot grid
             *args: Positional arguments to pass to the plotter constructor
             **kwargs: Keyword arguments to pass to the plotter constructor
-            
+
         Example:
             fm.plot("scatter", 0, 0, data, "x_col", "y_col", hue="category")
             fm.plot("custom", 1, 0, data, custom_param=value)

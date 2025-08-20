@@ -16,5 +16,5 @@ if __name__ == "__main__":
 
     # Create a plot - that's it!
     fig, ax = drp.scatter(data, x="x", y="y", title="Quickstart Scatter Plot")
-    
+
     show_or_save_plot(fig, args, "01_quickstart")

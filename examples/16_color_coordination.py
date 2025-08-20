@@ -12,25 +12,41 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     with FigureManager(rows=2, cols=2, figsize=(15, 12)) as fm:
-        fm.fig.suptitle("Color Coordination: Consistent Colors Across Subplots", fontsize=16)
+        fm.fig.suptitle(
+            "Color Coordination: Consistent Colors Across Subplots", fontsize=16
+        )
 
         # Use the same grouped data across all plots
         grouped_data = ExampleData.time_series_grouped()
-        
-        # All plots use the same hue variable, so colors should be consistent
-        fm.line(0, 0, grouped_data, x="time", y="value", hue_by="group",
-               title="Line Plot")
 
-        fm.scatter(0, 1, grouped_data, x="time", y="value", hue_by="group",
-                  title="Scatter Plot")
+        # All plots use the same hue variable, so colors should be consistent
+        fm.line(
+            0, 0, grouped_data, x="time", y="value", hue_by="group", title="Line Plot"
+        )
+
+        fm.scatter(
+            0,
+            1,
+            grouped_data,
+            x="time",
+            y="value",
+            hue_by="group",
+            title="Scatter Plot",
+        )
 
         # Bar plot version (aggregate the data first)
         bar_data = grouped_data.groupby("group")["value"].mean().reset_index()
-        fm.bar(1, 0, bar_data, x="group", y="value", hue_by="group",
-              title="Bar Plot")
+        fm.bar(1, 0, bar_data, x="group", y="value", hue_by="group", title="Bar Plot")
 
         # Violin plot
-        fm.violin(1, 1, grouped_data, x="group", y="value", hue_by="group",
-                 title="Violin Plot")
+        fm.violin(
+            1,
+            1,
+            grouped_data,
+            x="group",
+            y="value",
+            hue_by="group",
+            title="Violin Plot",
+        )
 
         show_or_save_plot(fm.fig, args, "16_color_coordination")

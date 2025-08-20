@@ -3,7 +3,6 @@ Example 10: Heatmap Showcase - All heatmap features.
 Demonstrates heatmaps with different data patterns and styling.
 """
 
-import dr_plotter.api as drp
 from dr_plotter.figure import FigureManager
 from dr_plotter.utils import setup_arg_parser, show_or_save_plot
 from plot_data import ExampleData
@@ -17,11 +16,26 @@ if __name__ == "__main__":
 
         # Basic heatmap
         heatmap_data = ExampleData.heatmap_data()
-        fm.heatmap(0, 0, heatmap_data, x="column", y="row", values="value",
-                  title="Basic Heatmap")
+        fm.heatmap(
+            0,
+            0,
+            heatmap_data,
+            x="column",
+            y="row",
+            values="value",
+            title="Basic Heatmap",
+        )
 
         # Custom colormap heatmap
-        fm.heatmap(0, 1, heatmap_data, x="column", y="row", values="value",
-                  title="Custom Colormap", cmap="viridis")
+        fm.heatmap(
+            0,
+            1,
+            heatmap_data,
+            x="column",
+            y="row",
+            values="value",
+            title="Custom Colormap",
+            cmap="viridis",
+        )
 
         show_or_save_plot(fm.fig, args, "10_heatmap_showcase")

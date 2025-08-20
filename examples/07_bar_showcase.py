@@ -3,7 +3,6 @@ Example 7: Bar Plot Showcase - All bar plot features.
 Demonstrates single and grouped bar plots.
 """
 
-import dr_plotter.api as drp
 from dr_plotter.figure import FigureManager
 from dr_plotter.utils import setup_arg_parser, show_or_save_plot
 from plot_data import ExampleData
@@ -18,13 +17,21 @@ if __name__ == "__main__":
         # Simple bar chart
         simple_data = ExampleData.categorical_data()
         simple_summary = simple_data.groupby("category")["value"].mean().reset_index()
-        fm.bar(0, 0, simple_summary, x="category", y="value", 
-              title="Simple Bar Chart")
+        fm.bar(0, 0, simple_summary, x="category", y="value", title="Simple Bar Chart")
 
         # Grouped bar chart
         grouped_data = ExampleData.grouped_categories()
-        grouped_summary = grouped_data.groupby(["category", "group"])["value"].mean().reset_index()
-        fm.bar(0, 1, grouped_summary, x="category", y="value", hue_by="group",
-              title="Grouped Bar Chart")
+        grouped_summary = (
+            grouped_data.groupby(["category", "group"])["value"].mean().reset_index()
+        )
+        fm.bar(
+            0,
+            1,
+            grouped_summary,
+            x="category",
+            y="value",
+            hue_by="group",
+            title="Grouped Bar Chart",
+        )
 
         show_or_save_plot(fm.fig, args, "07_bar_showcase")

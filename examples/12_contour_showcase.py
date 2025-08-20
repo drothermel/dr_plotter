@@ -3,7 +3,6 @@ Example 12: Contour Plot Showcase - All contour plot features.
 Demonstrates Gaussian Mixture Model level set visualizations.
 """
 
-import dr_plotter.api as drp
 from dr_plotter.figure import FigureManager
 from dr_plotter.utils import setup_arg_parser, show_or_save_plot
 from plot_data import ExampleData
@@ -17,12 +16,10 @@ if __name__ == "__main__":
 
         # Basic contour plot
         mixture_data = ExampleData.gaussian_mixture(n_components=2)
-        fm.gmm_level_set(0, 0, mixture_data, x="x", y="y",
-                        title="2-Component GMM")
+        fm.gmm_level_set(0, 0, mixture_data, x="x", y="y", title="2-Component GMM")
 
         # More complex mixture
         complex_mixture = ExampleData.gaussian_mixture(n_components=3)
-        fm.gmm_level_set(0, 1, complex_mixture, x="x", y="y",
-                        title="3-Component GMM")
+        fm.gmm_level_set(0, 1, complex_mixture, x="x", y="y", title="3-Component GMM")
 
         show_or_save_plot(fm.fig, args, "12_contour_showcase")

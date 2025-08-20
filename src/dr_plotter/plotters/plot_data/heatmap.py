@@ -19,9 +19,14 @@ class HeatmapData(PlotData):
         """Validate columns and pivot compatibility after all fields are set."""
         # First run base validation
         super().__post_init__()
-        
+
         # Then check pivot compatibility
-        if self.x and self.y and self.x in self.data.columns and self.y in self.data.columns:
+        if (
+            self.x
+            and self.y
+            and self.x in self.data.columns
+            and self.y in self.data.columns
+        ):
             duplicates = self.data.duplicated(subset=[self.x, self.y])
             if duplicates.any():
                 dup_count = duplicates.sum()

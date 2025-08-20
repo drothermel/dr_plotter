@@ -34,20 +34,36 @@ if __name__ == "__main__":
 
     # === Violin Plot ===
     violin_data = ExampleData.categorical_data()
-    fig5, _ = drp.violin(violin_data, x="category", y="value", title="High-Level API: Violin")
+    fig5, _ = drp.violin(
+        violin_data, x="category", y="value", title="High-Level API: Violin"
+    )
     show_or_save_plot(fig5, args, "02_violin")
 
     # === Heatmap ===
     heatmap_data = ExampleData.heatmap_data()
-    fig6, _ = drp.heatmap(heatmap_data, x="column", y="row", values="value", title="High-Level API: Heatmap")
+    fig6, _ = drp.heatmap(
+        heatmap_data,
+        x="column",
+        y="row",
+        values="value",
+        title="High-Level API: Heatmap",
+    )
     show_or_save_plot(fig6, args, "02_heatmap")
 
     # === Bump Plot ===
     bump_data = ExampleData.ranking_data()
-    fig7, _ = drp.bump_plot(bump_data, time_col="time", category_col="category", value_col="score", title="High-Level API: Bump Plot")
+    fig7, _ = drp.bump_plot(
+        bump_data,
+        time_col="time",
+        category_col="category",
+        value_col="score",
+        title="High-Level API: Bump Plot",
+    )
     show_or_save_plot(fig7, args, "02_bump")
 
     # === Contour Plot ===
     contour_data = ExampleData.gaussian_mixture()
-    fig8, _ = drp.gmm_level_set(contour_data, x="x", y="y", title="High-Level API: Contour")
+    fig8, _ = drp.gmm_level_set(
+        contour_data, x="x", y="y", title="High-Level API: Contour"
+    )
     show_or_save_plot(fig8, args, "02_contour")

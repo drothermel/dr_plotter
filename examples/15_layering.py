@@ -17,33 +17,42 @@ if __name__ == "__main__":
 
     # === Left plot: Scatter + Line ===
     ax1 = axes[0]
-    
+
     # Base scatter plot - test direct matplotlib parameter (alpha=0.6)
     scatter_data = ExampleData.simple_scatter()
     drp.scatter(scatter_data, x="x", y="y", ax=ax1, alpha=0.6, label="Data points")
-    
+
     # Add trend line (simplified - just connect sorted points)
     sorted_data = scatter_data.sort_values("x")
-    drp.line(sorted_data, x="x", y="y", ax=ax1, color="red", 
-            linewidth=2, label="Trend line")
-    
+    drp.line(
+        sorted_data, x="x", y="y", ax=ax1, color="red", linewidth=2, label="Trend line"
+    )
+
     ax1.set_title("Scatter + Trend Line")
     ax1.legend()
 
     # === Right plot: Histogram + Distribution overlay ===
     ax2 = axes[1]
-    
+
     # Base histogram - test direct matplotlib parameter (alpha=0.7)
     dist_data = ExampleData.distribution_data()
-    drp.hist(dist_data, x="values", ax=ax2, alpha=0.7, density=True, 
-            bins=30, label="Empirical distribution")
-    
+    drp.hist(
+        dist_data,
+        x="values",
+        ax=ax2,
+        alpha=0.7,
+        density=True,
+        bins=30,
+        label="Empirical distribution",
+    )
+
     # Add theoretical normal curve
     import numpy as np
+
     x_theory = np.linspace(dist_data["values"].min(), dist_data["values"].max(), 100)
-    y_theory = (1/np.sqrt(2*np.pi)) * np.exp(-0.5 * x_theory**2)
-    ax2.plot(x_theory, y_theory, 'r-', linewidth=2, label="Standard normal")
-    
+    y_theory = (1 / np.sqrt(2 * np.pi)) * np.exp(-0.5 * x_theory**2)
+    ax2.plot(x_theory, y_theory, "r-", linewidth=2, label="Standard normal")
+
     ax2.set_title("Histogram + Theoretical Curve")
     ax2.legend()
 
