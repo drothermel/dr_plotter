@@ -15,7 +15,7 @@ class FigureManager:
     A context manager for creating complex figures with multiple subplots.
     """
 
-    def __init__(self, rows=1, cols=1, external_ax=None, **fig_kwargs):
+    def __init__(self, rows=1, cols=1, external_ax=None, layout_rect=None, layout_pad=None, **fig_kwargs):
         """
         Initialize the FigureManager in managed or external mode.
 
@@ -23,8 +23,13 @@ class FigureManager:
             rows: Number of subplot rows (ignored if external_ax provided)
             cols: Number of subplot columns (ignored if external_ax provided)
             external_ax: Use external axes instead of creating new figure
+            layout_rect: Optional custom rect parameter for tight_layout [left, bottom, right, top]
+            layout_pad: Optional padding value for tight_layout (default: 0.5)
             **fig_kwargs: Additional arguments for plt.subplots (ignored if external_ax provided)
         """
+        self._layout_rect = layout_rect  # Store for use in __exit__
+        self._layout_pad = layout_pad if layout_pad is not None else 0.5  # Default to proven value
+        
         if external_ax is not None:
             # External mode: work with provided axes
             self.fig = external_ax.get_figure()
@@ -48,15 +53,44 @@ class FigureManager:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exit the context manager and finalize layout."""
-        # Apply tight_layout for consistent spacing with make_axes_locatable approach
+        # Apply intelligent tight_layout with suptitle detection and user overrides
         try:
-            self.fig.tight_layout()
+            if self._layout_rect is not None:
+                # User-specified rect for edge cases
+                self.fig.tight_layout(rect=self._layout_rect, pad=self._layout_pad)
+            elif self.fig._suptitle is not None:
+                # Standard 5% top margin for suptitle - proven community value
+                self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
+            elif self._has_subplot_titles():
+                # Reserve space for subplot titles in single-subplot figures
+                self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
+            else:
+                # Standard layout with good padding
+                self.fig.tight_layout(pad=self._layout_pad)
         except ValueError as e:
             # Common tight_layout issues: overlapping elements, insufficient space
             warnings.warn(f"tight_layout failed: {e}. Layout may not be optimal.", UserWarning)
         except RuntimeError as e:
             # Runtime issues with layout computation
             warnings.warn(f"tight_layout runtime error: {e}. Layout may not be optimal.", UserWarning)
+        return False
+
+    def _has_subplot_titles(self):
+        """Check if any subplot has a title that needs space."""
+        # Handle both single axes and array of axes
+        if hasattr(self.axes, 'flat'):
+            # Multiple subplots - check all axes
+            axes_to_check = self.axes.flat
+        elif hasattr(self.axes, '__iter__') and not isinstance(self.axes, str):
+            # Array of axes
+            axes_to_check = self.axes
+        else:
+            # Single subplot
+            axes_to_check = [self.axes]
+        
+        for ax in axes_to_check:
+            if ax.get_title():  # Returns empty string if no title
+                return True
         return False
 
     def get_axes(self, row=None, col=None):
