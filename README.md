@@ -26,10 +26,12 @@ fig, ax = drp.scatter(data, x="x", y="y", title="Quickstart Scatter Plot")
 show_or_save_plot(fig, None, "01_quickstart")
 ```
 
+For many more increasingly complex examples see `examples/`.
+
 ## Installation
 
 ```bash
-# Coming soon to a pip near you!
+uv sync
 ```
 
 ## Design Philosophy
