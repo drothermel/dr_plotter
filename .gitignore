@@ -107,5 +107,3 @@ venv.bak/
 # Claude
 .claude/
 
-# Plots
-examples/plots/
