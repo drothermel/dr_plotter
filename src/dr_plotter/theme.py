@@ -81,7 +81,17 @@ SCATTER_THEME = Theme(
     alpha=0.7,
 )
 
-BAR_THEME = Theme(name="bar", parent=BASE_THEME, alpha=0.8)
+BAR_THEME = Theme(
+    name="bar",
+    parent=BASE_THEME,
+    alpha=0.8,
+    **{
+        "axes.axisbelow": False,  # Put axes on top of grid
+        "axes.grid": True,  # Enable grid
+        "axes.grid.axis": "y",  # Only show horizontal grid lines
+        "axes.spines.bottom": True,  # Ensure bottom spine is visible
+    },
+)
 
 HISTOGRAM_THEME = Theme(
     name="histogram",
@@ -93,6 +103,13 @@ VIOLIN_THEME = Theme(
     name="violin",
     parent=BASE_THEME,
     showmeans=True,  # A good default for violin plots
+    alpha=0.7,  # Semi-transparent for visibility of interior bars
+    **{
+        "axes.axisbelow": False,  # Put axes on top of grid
+        "axes.grid": True,  # Enable grid
+        "axes.grid.axis": "y",  # Only show horizontal grid lines
+        "axes.spines.bottom": True,  # Ensure bottom spine is visible
+    },
 )
 
 HEATMAP_THEME = Theme(
@@ -107,6 +124,7 @@ BUMP_PLOT_THEME = Theme(
     parent=LINE_THEME,  # It's a specialized line plot
     line_width=3.0,
     marker="o",  # Bumps should have markers
+    legend=False,  # Bump plots have direct labels, no legend needed
 )
 
 CONTOUR_THEME = Theme(

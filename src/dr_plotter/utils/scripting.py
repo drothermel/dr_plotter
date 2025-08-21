@@ -28,9 +28,6 @@ def show_or_save_plot(fig, args, filename: str):
     """
     Shows or saves a plot based on the provided arguments.
     """
-    # The layout is now handled by the constrained_layout engine at figure creation.
-    # No further adjustments are needed here.
-
     if args.save_dir:
         os.makedirs(args.save_dir, exist_ok=True)
         savename = os.path.join(args.save_dir, f"{filename}.png")

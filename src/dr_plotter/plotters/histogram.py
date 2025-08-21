@@ -3,35 +3,34 @@ Atomic plotter for histograms.
 """
 
 from .base import BasePlotter
-from ..theme import HISTOGRAM_THEME
+from dr_plotter.theme import HISTOGRAM_THEME
+from .plot_data import HistogramData
 
 
 class HistogramPlotter(BasePlotter):
     """
-    An atomic plotter for creating histograms.
+    An atomic plotter for creating histograms using declarative configuration.
     """
 
-    def __init__(self, data, x, **kwargs):
-        """
-        Initialize the HistogramPlotter.
-        """
-        super().__init__(data, **kwargs)
-        self.x = x
-        self.y = self._get_style(
-            "ylabel", "Density" if self.kwargs.get("density") else "Frequency"
-        )
-        self.theme = HISTOGRAM_THEME
+    # Declarative configuration
+    plotter_name = "histogram"
+    plotter_params = {"x"}
+    param_mapping = {"x": "x"}
+    enabled_channels = {}  # No grouping support for histograms
+    default_theme = HISTOGRAM_THEME
+    data_validator = HistogramData
 
-    def render(self, ax):
+    def _draw(self, ax, data, legend, **kwargs):
         """
-        Render the histogram on the given axes.
-        """
-        plot_kwargs = {
-            "alpha": self._get_style("alpha"),
-            "color": self._get_style("color", next(self.theme.get("color_cycle"))),
-            "edgecolor": self._get_style("edgecolor"),
-        }
-        plot_kwargs.update(self._filter_plot_kwargs())
+        Draw the histogram using matplotlib.
 
-        ax.hist(self.data[self.x], **plot_kwargs)
-        self._apply_styling(ax)
+        Args:
+            ax: Matplotlib axes
+            data: DataFrame with the data to plot
+            **kwargs: Plot-specific kwargs including color, alpha, edgecolor
+        """
+        # Add edgecolor if not in kwargs
+        if "edgecolor" not in kwargs:
+            kwargs["edgecolor"] = self._get_style("edgecolor")
+
+        ax.hist(data[self.x], **kwargs)

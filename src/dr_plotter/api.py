@@ -2,42 +2,18 @@
 High-level API for creating plots.
 """
 
-import matplotlib.pyplot as plt
 import pandas as pd
-
-from .plotters import (
-    ScatterPlotter,
-    LinePlotter,
-    BarPlotter,
-    HistogramPlotter,
-    ViolinPlotter,
-    HeatmapPlotter,
-    BumpPlotter,
-    ContourPlotter,
-    GroupedBarPlotter,
-)
-
-
-def _create_plot(plotter_class, plotter_args, ax=None, **kwargs):
-    """Generic factory for creating a figure and then rendering a plot."""
-    if ax is None:
-        fig, ax = plt.subplots(constrained_layout=True)
-    else:
-        fig = ax.get_figure()
-
-    plotter = plotter_class(*plotter_args, **kwargs)
-    plotter.render(ax)
-    return fig, ax
+from .figure import FigureManager
 
 
 def scatter(
     data: pd.DataFrame,
     x: str,
     y,
-    hue=None,
-    size=None,
-    marker=None,
-    alpha=None,
+    hue_by=None,
+    size_by=None,
+    marker_by=None,
+    alpha_by=None,
     ax=None,
     **kwargs,
 ):
@@ -48,10 +24,10 @@ def scatter(
         data: DataFrame containing the data
         x: Column name for x-axis
         y: Column name for y-axis, or list of column names for multiple metrics
-        hue: Column name or consts.METRICS for color grouping
-        size: Column name or consts.METRICS for marker size grouping
-        marker: Column name or consts.METRICS for marker style grouping
-        alpha: Column name or consts.METRICS for alpha/transparency grouping
+        hue_by: Column name or consts.METRICS for color grouping
+        size_by: Column name or consts.METRICS for marker size grouping
+        marker_by: Column name or consts.METRICS for marker style grouping
+        alpha_by: Column name or consts.METRICS for alpha/transparency grouping
         ax: Existing axes to plot on
         **kwargs: Additional styling parameters
     """
@@ -61,20 +37,37 @@ def scatter(
             "scatter() got an unexpected keyword argument 'style'. Use 'marker' instead for scatter plots."
         )
 
-    return _create_plot(
-        ScatterPlotter, (data, x, y, hue, size, marker, alpha), ax, **kwargs
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.plot(
+        "scatter",
+        0,
+        0,
+        data,
+        x=x,
+        y=y,
+        hue_by=hue_by,
+        size_by=size_by,
+        marker_by=marker_by,
+        alpha_by=alpha_by,
+        **kwargs,
     )
+    fm.finalize_layout()
+
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
 def line(
     data: pd.DataFrame,
     x: str,
     y,
-    hue=None,
-    style=None,
-    size=None,
-    marker=None,
-    alpha=None,
+    hue_by=None,
+    style_by=None,
+    size_by=None,
+    marker_by=None,
+    alpha_by=None,
     ax=None,
     **kwargs,
 ):
@@ -85,39 +78,100 @@ def line(
         data: DataFrame containing the data
         x: Column name for x-axis
         y: Column name for y-axis, or list of column names for multiple metrics
-        hue: Column name or consts.METRICS for color grouping
-        style: Column name or consts.METRICS for linestyle grouping
-        size: Column name or consts.METRICS for line width grouping
-        marker: Column name or consts.METRICS for marker grouping
-        alpha: Column name or consts.METRICS for alpha/transparency grouping
+        hue_by: Column name or consts.METRICS for color grouping
+        style_by: Column name or consts.METRICS for linestyle grouping
+        size_by: Column name or consts.METRICS for line width grouping
+        marker_by: Column name or consts.METRICS for marker grouping
+        alpha_by: Column name or consts.METRICS for alpha/transparency grouping
         ax: Existing axes to plot on
         **kwargs: Additional styling parameters
     """
-    return _create_plot(
-        LinePlotter, (data, x, y, hue, style, size, marker, alpha), ax, **kwargs
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.plot(
+        "line",
+        0,
+        0,
+        data,
+        x=x,
+        y=y,
+        hue_by=hue_by,
+        style_by=style_by,
+        size_by=size_by,
+        marker_by=marker_by,
+        alpha_by=alpha_by,
+        **kwargs,
     )
+    fm.finalize_layout()
+
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
-def bar(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
-    """Create a bar plot."""
-    return _create_plot(BarPlotter, (data, x, y), ax, **kwargs)
+def bar(data: pd.DataFrame, x: str, y: str, hue_by: str = None, ax=None, **kwargs):
+    """Create a bar plot with optional grouping."""
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.plot("bar", 0, 0, data, x=x, y=y, hue_by=hue_by, **kwargs)
+    fm.finalize_layout()
+
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
 def hist(data: pd.DataFrame, x: str, ax=None, **kwargs):
     """Create a histogram."""
-    return _create_plot(HistogramPlotter, (data, x), ax, **kwargs)
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.plot("histogram", 0, 0, data, x=x, **kwargs)
+    fm.finalize_layout()
+
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
 def violin(
-    data: pd.DataFrame, x: str = None, y: str = None, hue: str = None, ax=None, **kwargs
+    data: pd.DataFrame,
+    x: str = None,
+    y: str = None,
+    hue_by: str = None,
+    ax=None,
+    **kwargs,
 ):
     """Create a violin plot."""
-    return _create_plot(ViolinPlotter, (data, x, y, hue), ax, **kwargs)
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.plot("violin", 0, 0, data, x=x, y=y, hue_by=hue_by, **kwargs)
+    fm.finalize_layout()
+
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
-def heatmap(data: pd.DataFrame, ax=None, **kwargs):
-    """Create a heatmap."""
-    return _create_plot(HeatmapPlotter, (data,), ax, **kwargs)
+def heatmap(data: pd.DataFrame, x: str, y: str, values: str, ax=None, **kwargs):
+    """
+    Create a heatmap from tidy/long format data.
+
+    Args:
+        data: DataFrame containing the data in tidy/long format
+        x: Column name for heatmap columns (x-axis)
+        y: Column name for heatmap rows (y-axis)
+        values: Column name for cell values
+        ax: Optional matplotlib axes
+        **kwargs: Additional styling parameters
+    """
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.plot("heatmap", 0, 0, data, x=x, y=y, values=values, **kwargs)
+    fm.finalize_layout()
+
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
 def bump_plot(
@@ -129,16 +183,32 @@ def bump_plot(
     **kwargs,
 ):
     """Create a bump plot to visualize rankings over time."""
-    return _create_plot(
-        BumpPlotter, (data, time_col, category_col, value_col), ax, **kwargs
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.plot(
+        "bump",
+        0,
+        0,
+        data,
+        time_col=time_col,
+        category_col=category_col,
+        value_col=value_col,
+        **kwargs,
     )
+    fm.finalize_layout()
+
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
 
 
 def gmm_level_set(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
     """Create a GMM level set plot."""
-    return _create_plot(ContourPlotter, (data, x, y), ax, **kwargs)
+    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
+    fm.plot("contour", 0, 0, data, x=x, y=y, **kwargs)
+    fm.finalize_layout()
 
-
-def grouped_bar(data: pd.DataFrame, x: str, y: str, hue: str, ax=None, **kwargs):
-    """Create a grouped bar plot."""
-    return _create_plot(GroupedBarPlotter, (data, x, y, hue), ax, **kwargs)
+    if ax is not None:
+        return ax.get_figure(), ax
+    else:
+        return fm.fig, fm.get_axes(0, 0)
