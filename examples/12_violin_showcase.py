@@ -17,7 +17,13 @@ if __name__ == "__main__":
         # Simple violin plot
         simple_data = ExampleData.categorical_data()
         fm.plot(
-            "violin", 0, 0, simple_data, x="category", y="value", title="Simple Violin Plot"
+            "violin",
+            0,
+            0,
+            simple_data,
+            x="category",
+            y="value",
+            title="Simple Violin Plot",
         )
 
         # Grouped violin plot

@@ -21,14 +21,13 @@ class BumpPlotter(BasePlotter):
     default_theme = BUMP_PLOT_THEME
     data_validator = BumpPlotData
 
-
     def __init__(self, data, **kwargs):
         """Initialize with category_col mapped to hue_by for grouping."""
         # Map category_col to hue_by for proper grouping
-        if 'category_col' in kwargs and 'hue_by' not in kwargs:
-            kwargs['hue_by'] = kwargs.get('category_col')
+        if "category_col" in kwargs and "hue_by" not in kwargs:
+            kwargs["hue_by"] = kwargs.get("category_col")
         super().__init__(data, **kwargs)
-    
+
     def _prepare_specific_data(self):
         """Calculate ranks for each category at each time point."""
         # Add rank calculation

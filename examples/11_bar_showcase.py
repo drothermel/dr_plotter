@@ -18,7 +18,13 @@ if __name__ == "__main__":
         simple_data = ExampleData.categorical_data()
         simple_summary = simple_data.groupby("category")["value"].mean().reset_index()
         fm.plot(
-            "bar", 0, 0, simple_summary, x="category", y="value", title="Simple Bar Chart"
+            "bar",
+            0,
+            0,
+            simple_summary,
+            x="category",
+            y="value",
+            title="Simple Bar Chart",
         )
 
         # Grouped bar chart

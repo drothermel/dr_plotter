@@ -3,8 +3,7 @@ Atomic plotter for scatter plots with multi-series support.
 """
 
 from .base import BasePlotter
-from dr_plotter.theme import SCATTER_THEME, BASE_COLORS
-from dr_plotter.plotters.style_engine import StyleEngine
+from dr_plotter.theme import SCATTER_THEME
 from .plot_data import ScatterPlotData
 
 
@@ -21,7 +20,6 @@ class ScatterPlotter(BasePlotter):
     default_theme = SCATTER_THEME
     data_validator = ScatterPlotData
 
-
     def _draw(self, ax, data, legend, **kwargs):
         """
         Draw the scatter plot using matplotlib.
@@ -33,4 +31,3 @@ class ScatterPlotter(BasePlotter):
             **kwargs: Plot-specific kwargs including color, marker, s (size), alpha
         """
         ax.scatter(data[self.x], data[self.y], **kwargs)
-

@@ -23,7 +23,6 @@ class HeatmapPlotter(BasePlotter):
     default_theme = HEATMAP_THEME
     data_validator = HeatmapData
 
-
     def _prepare_specific_data(self):
         """
         Convert tidy/long format data to matrix format for heatmap visualization.
@@ -50,10 +49,11 @@ class HeatmapPlotter(BasePlotter):
         # Set default cmap if not provided
         if "cmap" not in kwargs:
             kwargs["cmap"] = self._get_style("cmap")
-        
+
         # Filter out parameters that imshow doesn't accept
-        imshow_kwargs = {k: v for k, v in kwargs.items() 
-                        if k not in ['color', 'label', 'alpha']}
+        imshow_kwargs = {
+            k: v for k, v in kwargs.items() if k not in ["color", "label", "alpha"]
+        }
 
         im = ax.imshow(data, **imshow_kwargs)
 

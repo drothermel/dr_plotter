@@ -45,12 +45,16 @@ if __name__ == "__main__":
         # For bar/violin plots, we need categorical data to show proper grouping
         # Create categorical data where each group appears in multiple categories
         categorical_data = ExampleData.grouped_categories(n_groups=3)
-        
+
         # IMPORTANT: Rename groups to match time series data for color coordination
         # Change "Group_1", "Group_2", "Group_3" to "Group_A", "Group_B", "Group_C"
-        group_mapping = {"Group_1": "Group_A", "Group_2": "Group_B", "Group_3": "Group_C"}
+        group_mapping = {
+            "Group_1": "Group_A",
+            "Group_2": "Group_B",
+            "Group_3": "Group_C",
+        }
         categorical_data["group"] = categorical_data["group"].map(group_mapping)
-        
+
         # Grouped bar plot - shows multiple groups per category
         fm.plot(
             "bar",
@@ -58,7 +62,7 @@ if __name__ == "__main__":
             0,
             categorical_data,
             x="category",
-            y="value", 
+            y="value",
             hue_by="group",
             title="Grouped Bar Plot",
         )
@@ -71,7 +75,7 @@ if __name__ == "__main__":
             categorical_data,
             x="category",
             y="value",
-            hue_by="group", 
+            hue_by="group",
             title="Grouped Violin Plot",
         )
 

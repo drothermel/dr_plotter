@@ -113,7 +113,10 @@ class BasePlotter:
         )
 
         # Initialize style engine if this plotter uses groupings
-        if hasattr(self.__class__, "enabled_channels") and self.__class__.enabled_channels:
+        if (
+            hasattr(self.__class__, "enabled_channels")
+            and self.__class__.enabled_channels
+        ):
             self.style_engine = StyleEngine(self.theme, self.__class__.enabled_channels)
 
     def prepare_data(self):
@@ -135,9 +138,7 @@ class BasePlotter:
             }
 
             self.plot_data, self.y, self.metric_column = (
-                self._prepare_multi_metric_data(
-                    self.y, self.x, auto_hue_groupings
-                )
+                self._prepare_multi_metric_data(self.y, self.x, auto_hue_groupings)
             )
 
             # Update hue_by if auto-set to METRICS
@@ -150,7 +151,7 @@ class BasePlotter:
         if hasattr(self.__class__, "data_validator") and self.__class__.data_validator:
             # Build validation args dynamically using param_mapping
             validation_kwargs = {"data": self.plot_data}
-            
+
             # Add parameters based on what the plotter declared, using mapped names
             if hasattr(self.__class__, "plotter_params"):
                 for param in self.__class__.plotter_params:
@@ -158,7 +159,7 @@ class BasePlotter:
                     if hasattr(self, mapped_name):
                         # Use the mapped name as the key for validation
                         validation_kwargs[mapped_name] = getattr(self, mapped_name)
-            
+
             validated = self.__class__.data_validator(**validation_kwargs)
             self.plot_data = validated.data
 
@@ -170,10 +171,19 @@ class BasePlotter:
         self.alpha_by = self._process_grouping_params(self.alpha_by)
 
         # Check if we have any groupings (only if channels are enabled)
-        if hasattr(self.__class__, "enabled_channels") and self.__class__.enabled_channels:
-            self._has_groups = any([
-                self.hue_by, self.style_by, self.size_by, self.marker_by, self.alpha_by
-            ])
+        if (
+            hasattr(self.__class__, "enabled_channels")
+            and self.__class__.enabled_channels
+        ):
+            self._has_groups = any(
+                [
+                    self.hue_by,
+                    self.style_by,
+                    self.size_by,
+                    self.marker_by,
+                    self.alpha_by,
+                ]
+            )
         else:
             self._has_groups = False
 
@@ -286,7 +296,6 @@ class BasePlotter:
         else:
             return param_value
 
-
     def _get_style(self, key, default_override=None):
         """Gets a style value, prioritizing user kwargs over theme defaults."""
         if key in self.kwargs:
@@ -307,11 +316,11 @@ class BasePlotter:
             "_figure_manager",  # Color coordination
             "_shared_hue_styles",  # Color coordination
         ]
-        
+
         # Also filter out plotter-specific parameters
         if hasattr(self.__class__, "plotter_params"):
             filter_keys.extend(self.__class__.plotter_params)
-        
+
         for key in filter_keys:
             plot_kwargs.pop(key, None)
         return plot_kwargs
@@ -341,12 +350,16 @@ class BasePlotter:
 
         if self._get_style("legend") is True or self._get_style("legend") is None:
             # Auto-show legend if we have groupings or custom legend entries
-            if (hasattr(self, "_has_groups") and self._has_groups) or legend.has_entries():
+            if (
+                hasattr(self, "_has_groups") and self._has_groups
+            ) or legend.has_entries():
                 if not ax.get_legend():
                     # Use custom legend handles if provided
                     if legend.has_entries():
-                        ax.legend(handles=legend.get_handles(), 
-                                fontsize=self.theme.get("legend_fontsize"))
+                        ax.legend(
+                            handles=legend.get_handles(),
+                            fontsize=self.theme.get("legend_fontsize"),
+                        )
                     else:
                         ax.legend(fontsize=self.theme.get("legend_fontsize"))
             elif self._get_style("legend") is True:
@@ -363,14 +376,14 @@ class BasePlotter:
         """
         # Prepare data
         self.prepare_data()
-        
+
         # Create legend builder
         legend = Legend()
 
         # Check if plotter implements the hybrid pattern
-        has_draw_simple = hasattr(self, '_draw_simple')
-        has_draw_grouped = hasattr(self, '_draw_grouped')
-        
+        has_draw_simple = hasattr(self, "_draw_simple")
+        has_draw_grouped = hasattr(self, "_draw_grouped")
+
         # Render based on grouping and available methods
         if not self._has_groups:
             # Simple single plot
@@ -394,7 +407,7 @@ class BasePlotter:
     def _draw(self, ax, data, legend, **kwargs):
         """
         Draw the actual plot. Must be implemented by concrete plotters.
-        
+
         Plotters can implement either:
         - _draw() for simple plotters
         - _draw_simple() and _draw_grouped() for plotters needing special grouped positioning
@@ -476,7 +489,7 @@ class BasePlotter:
 
                 # Call the concrete plotter's draw method
                 self._draw(ax, group_data, legend, **plot_kwargs)
-    
+
     def _render_with_grouped_method(self, ax, legend):
         """Render using plotter's _draw_grouped method with position information."""
         # Get group styles using style engine
@@ -502,12 +515,12 @@ class BasePlotter:
         # Group the data
         grouped = self.plot_data.groupby(group_cols)
         n_groups = len(grouped)
-        
+
         # Get all unique x categories for consistent positioning
         x_categories = None
-        if hasattr(self, 'x') and self.x:
+        if hasattr(self, "x") and self.x:
             x_categories = self.plot_data[self.x].unique()
-        
+
         # Iterate through groups and draw with position info
         for group_index, (name, group_data) in enumerate(grouped):
             # Handle multi-column grouping
@@ -521,24 +534,24 @@ class BasePlotter:
 
             # Build plot kwargs for this group
             plot_kwargs = self._build_group_plot_kwargs(styles, name, group_cols)
-            
+
             # Calculate group position info
             group_position = self._calculate_group_position(group_index, n_groups)
-            group_position['x_categories'] = x_categories
-            
+            group_position["x_categories"] = x_categories
+
             # Call the plotter's _draw_grouped method with position info
             self._draw_grouped(ax, group_data, group_position, legend, **plot_kwargs)
-    
+
     def _calculate_group_position(self, group_index, n_groups):
         """Calculate positioning information for grouped plots."""
         width = 0.8 / n_groups  # Total width divided by number of groups
         offset = width * (group_index - n_groups / 2 + 0.5)
-        
+
         return {
-            'index': group_index,
-            'total': n_groups,
-            'width': width,
-            'offset': offset
+            "index": group_index,
+            "total": n_groups,
+            "width": width,
+            "offset": offset,
         }
 
     def _build_group_plot_kwargs(self, styles, name, group_cols):

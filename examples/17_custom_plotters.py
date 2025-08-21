@@ -33,7 +33,7 @@ class ErrorBarPlotter(BasePlotter):
     Custom plotter for error bar plots.
     Demonstrates declarative pattern for custom plotters.
     """
-    
+
     plotter_name = "errorbar"
     plotter_params = {"x", "y", "error"}
     param_mapping = {"x": "x", "y": "y", "error": "error"}
@@ -51,7 +51,7 @@ class ErrorBarPlotter(BasePlotter):
     def _draw(self, ax, data, legend, **kwargs):
         """Render the error bar plot."""
         # Get error values
-        if hasattr(self, 'error') and self.error and self.error in data.columns:
+        if hasattr(self, "error") and self.error and self.error in data.columns:
             yerr = data[self.error]
         else:
             # Default: use 10% of absolute y values as error

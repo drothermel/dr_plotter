@@ -23,7 +23,6 @@ class ContourPlotter(BasePlotter):
     default_theme = CONTOUR_THEME
     data_validator = ContourPlotData
 
-
     def _prepare_specific_data(self):
         """Fit GMM and create a meshgrid for contour plotting."""
         # Fit GMM and create meshgrid

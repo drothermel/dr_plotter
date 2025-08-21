@@ -38,7 +38,19 @@ def scatter(
         )
 
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.plot("scatter", 0, 0, data, x=x, y=y, hue_by=hue_by, size_by=size_by, marker_by=marker_by, alpha_by=alpha_by, **kwargs)
+    fm.plot(
+        "scatter",
+        0,
+        0,
+        data,
+        x=x,
+        y=y,
+        hue_by=hue_by,
+        size_by=size_by,
+        marker_by=marker_by,
+        alpha_by=alpha_by,
+        **kwargs,
+    )
     fm.finalize_layout()
 
     if ax is not None:
@@ -172,7 +184,16 @@ def bump_plot(
 ):
     """Create a bump plot to visualize rankings over time."""
     fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.plot("bump", 0, 0, data, time_col=time_col, category_col=category_col, value_col=value_col, **kwargs)
+    fm.plot(
+        "bump",
+        0,
+        0,
+        data,
+        time_col=time_col,
+        category_col=category_col,
+        value_col=value_col,
+        **kwargs,
+    )
     fm.finalize_layout()
 
     if ax is not None:

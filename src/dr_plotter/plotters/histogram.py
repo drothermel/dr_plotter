@@ -20,7 +20,6 @@ class HistogramPlotter(BasePlotter):
     default_theme = HISTOGRAM_THEME
     data_validator = HistogramData
 
-
     def _draw(self, ax, data, legend, **kwargs):
         """
         Draw the histogram using matplotlib.

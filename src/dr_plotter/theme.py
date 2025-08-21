@@ -82,15 +82,15 @@ SCATTER_THEME = Theme(
 )
 
 BAR_THEME = Theme(
-    name="bar", 
-    parent=BASE_THEME, 
+    name="bar",
+    parent=BASE_THEME,
     alpha=0.8,
     **{
-        "axes.axisbelow": False,           # Put axes on top of grid
-        "axes.grid": True,                 # Enable grid
-        "axes.grid.axis": "y",             # Only show horizontal grid lines
-        "axes.spines.bottom": True,        # Ensure bottom spine is visible
-    }
+        "axes.axisbelow": False,  # Put axes on top of grid
+        "axes.grid": True,  # Enable grid
+        "axes.grid.axis": "y",  # Only show horizontal grid lines
+        "axes.spines.bottom": True,  # Ensure bottom spine is visible
+    },
 )
 
 HISTOGRAM_THEME = Theme(
@@ -105,11 +105,11 @@ VIOLIN_THEME = Theme(
     showmeans=True,  # A good default for violin plots
     alpha=0.7,  # Semi-transparent for visibility of interior bars
     **{
-        "axes.axisbelow": False,           # Put axes on top of grid
-        "axes.grid": True,                 # Enable grid
-        "axes.grid.axis": "y",             # Only show horizontal grid lines
-        "axes.spines.bottom": True,        # Ensure bottom spine is visible
-    }
+        "axes.axisbelow": False,  # Put axes on top of grid
+        "axes.grid": True,  # Enable grid
+        "axes.grid.axis": "y",  # Only show horizontal grid lines
+        "axes.spines.bottom": True,  # Ensure bottom spine is visible
+    },
 )
 
 HEATMAP_THEME = Theme(

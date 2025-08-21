@@ -3,8 +3,7 @@ Atomic plotter for line plots with multi-series support.
 """
 
 from .base import BasePlotter
-from dr_plotter.theme import LINE_THEME, BASE_COLORS
-from dr_plotter.plotters.style_engine import StyleEngine
+from dr_plotter.theme import LINE_THEME
 from .plot_data import LinePlotData
 
 
@@ -17,10 +16,15 @@ class LinePlotter(BasePlotter):
     plotter_name = "line"
     plotter_params = {"x", "y", "hue", "style", "size", "marker", "alpha"}
     param_mapping = {"x": "x", "y": "y"}
-    enabled_channels = {"hue": True, "style": True, "size": True, "marker": True, "alpha": True}
+    enabled_channels = {
+        "hue": True,
+        "style": True,
+        "size": True,
+        "marker": True,
+        "alpha": True,
+    }
     default_theme = LINE_THEME
     data_validator = LinePlotData
-
 
     def _draw(self, ax, data, legend, **kwargs):
         """
@@ -35,4 +39,3 @@ class LinePlotter(BasePlotter):
         # Sort data for proper line plotting
         data_sorted = data.sort_values(self.x)
         ax.plot(data_sorted[self.x], data_sorted[self.y], **kwargs)
-
