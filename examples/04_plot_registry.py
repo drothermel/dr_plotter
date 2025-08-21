@@ -25,19 +25,19 @@ if __name__ == "__main__":
 
         # Equivalent to fm.scatter(0, 0, ...)
         scatter_data = ExampleData.simple_scatter()
-        fm.plot("scatter", 0, 0, scatter_data, "x", "y", title="Generic scatter")
+        fm.plot("scatter", 0, 0, scatter_data, x="x", y="y", title="Generic scatter")
 
         # Equivalent to fm.line(0, 1, ...)
         line_data = ExampleData.time_series()
-        fm.plot("line", 0, 1, line_data, "time", "value", title="Generic line")
+        fm.plot("line", 0, 1, line_data, x="time", y="value", title="Generic line")
 
         # Equivalent to fm.bar(1, 0, ...)
         bar_data = ExampleData.categorical_data()
         bar_summary = bar_data.groupby("category")["value"].mean().reset_index()
-        fm.plot("bar", 1, 0, bar_summary, "category", "value", title="Generic bar")
+        fm.plot("bar", 1, 0, bar_summary, x="category", y="value", title="Generic bar")
 
         # Equivalent to fm.hist(1, 1, ...)
         hist_data = ExampleData.distribution_data()
-        fm.plot("histogram", 1, 1, hist_data, "values", title="Generic histogram")
+        fm.plot("histogram", 1, 1, hist_data, x="values", title="Generic histogram")
 
         show_or_save_plot(fm.fig, args, "04_plot_registry")

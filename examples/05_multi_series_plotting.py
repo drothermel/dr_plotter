@@ -1,5 +1,5 @@
 """
-Example 13: Multi-Series Plotting - Visual encoding channels.
+Example 5: Multi-Series Plotting - Visual encoding channels.
 Demonstrates all visual encoding options: hue, style, size, marker, alpha.
 """
 
@@ -23,8 +23,8 @@ if __name__ == "__main__":
             0,
             0,
             complex_data,
-            "x",
-            "y",
+            x="x",
+            y="y",
             hue_by="experiment",
             marker_by="condition",
             title="Scatter: hue + marker",
@@ -36,8 +36,8 @@ if __name__ == "__main__":
             0,
             1,
             complex_data,
-            "x",
-            "y",
+            x="x",
+            y="y",
             hue_by="condition",
             size_by="performance",
             title="Scatter: hue + size",
@@ -52,8 +52,8 @@ if __name__ == "__main__":
             1,
             0,
             grouped_ts,
-            "time",
-            "value",
+            x="time",
+            y="value",
             hue_by="group",
             style_by="group",
             title="Line: hue + style",
@@ -65,11 +65,11 @@ if __name__ == "__main__":
             1,
             1,
             complex_data,
-            "x",
-            "y",
+            x="x",
+            y="y",
             hue_by="experiment",
             alpha_by="algorithm",
             title="Scatter: hue + alpha",
         )
 
-        show_or_save_plot(fm.fig, args, "13_multi_series")
+        show_or_save_plot(fm.fig, args, "05_multi_series_plotting")

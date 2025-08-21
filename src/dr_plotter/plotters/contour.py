@@ -16,17 +16,13 @@ class ContourPlotter(BasePlotter):
     """
 
     # Declarative configuration
-    default_theme = CONTOUR_THEME
+    plotter_name = "contour"
+    plotter_params = {"x", "y"}
+    param_mapping = {"x": "x", "y": "y"}
     enabled_channels = {}  # No grouping support for contour plots
+    default_theme = CONTOUR_THEME
     data_validator = ContourPlotData
 
-    def __init__(self, data, x, y, **kwargs):
-        """
-        Initialize the ContourPlotter.
-        """
-        super().__init__(data, **kwargs)
-        self.x = x
-        self.y = y
 
     def _prepare_specific_data(self):
         """Fit GMM and create a meshgrid for contour plotting."""
@@ -52,7 +48,7 @@ class ContourPlotter(BasePlotter):
         self.xx, self.yy, self.Z = xx, yy, Z
         return self.plot_data
 
-    def _draw(self, ax, data, **kwargs):
+    def _draw(self, ax, data, legend, **kwargs):
         """
         Draw the compound contour plot using matplotlib.
 

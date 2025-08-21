@@ -20,35 +20,35 @@ mkdir -p "$PLOTS_DIR"
 # Change to project root for proper module imports
 cd "$PROJECT_ROOT"
 
-# Updated list of example files (new structure)
+# Updated list of example files (new thematic structure)
 EXAMPLES=(
-    # Basic API examples (01-04)
+    # Part 1: The Basics (01-04)
     "01_quickstart.py"
     "02_high_level_api.py"
     "03_figure_manager_basics.py"
     "04_plot_registry.py"
     
-    # Plotter showcase examples (05-12)
-    "05_scatter_showcase.py"
-    "06_line_showcase.py"
-    "07_bar_showcase.py"
-    "08_histogram_showcase.py"
-    "09_violin_showcase.py"
-    "10_heatmap_showcase.py"
-    "11_bump_showcase.py"
-    "12_contour_showcase.py"
+    # Part 2: Core Concepts (05-08)
+    "05_multi_series_plotting.py"
+    "06_multi_metric_plotting.py"
+    "07_grouped_plotting.py"
+    "08_color_coordination.py"
     
-    # Advanced features examples (13-16)
-    "13_multi_series.py"
-    "14_multi_metrics.py"
-    "15_layering.py"
-    "16_color_coordination.py"
+    # Part 3: Plotter Showcases (09-14)
+    "09_scatter_showcase.py"
+    "10_line_showcase.py"
+    "11_bar_showcase.py"
+    "12_violin_showcase.py"
+    "13_heatmap_showcase.py"
+    "14_contour_showcase.py"
     
-    # Real-world use cases (17-20)
-    "17_ml_experiment.py"
+    # Part 4: Advanced Usage (15-20)
+    "15_layering_plots.py"
+    "16_matplotlib_integration.py"
+    "17_custom_plotters.py"
     "18_scientific_figures.py"
-    "19_custom_plotter.py"
-    "20_matplotlib_integration.py"
+    "19_ml_dashboard.py"
+    "20_validation.py"
 )
 
 echo ""
@@ -93,19 +93,19 @@ echo "📁 Generated plots are in: $PLOTS_DIR"
 
 # List generated plots by category
 echo ""
-echo "📋 Generated plot files by category:"
+echo "📋 Generated plot files by thematic category:"
 
-echo "   📁 Basic API (01-04):"
+echo "   📁 Part 1: The Basics (01-04):"
 ls -1 "$PLOTS_DIR"/{01,02,03,04}_*.png 2>/dev/null | sed 's/.*\//      /' || echo "      No files found"
 
-echo "   📁 Plotter Showcase (05-12):"
-ls -1 "$PLOTS_DIR"/{05,06,07,08,09,10,11,12}_*.png 2>/dev/null | sed 's/.*\//      /' || echo "      No files found"
+echo "   📁 Part 2: Core Concepts (05-08):"
+ls -1 "$PLOTS_DIR"/{05,06,07,08}_*.png 2>/dev/null | sed 's/.*\//      /' || echo "      No files found"
 
-echo "   📁 Advanced Features (13-16):"
-ls -1 "$PLOTS_DIR"/{13,14,15,16}_*.png 2>/dev/null | sed 's/.*\//      /' || echo "      No files found"
+echo "   📁 Part 3: Plotter Showcases (09-14):"
+ls -1 "$PLOTS_DIR"/{09,10,11,12,13,14}_*.png 2>/dev/null | sed 's/.*\//      /' || echo "      No files found"
 
-echo "   📁 Real-World Use Cases (17-20):"
-ls -1 "$PLOTS_DIR"/{17,18,19,20}_*.png 2>/dev/null | sed 's/.*\//      /' || echo "      No files found"
+echo "   📁 Part 4: Advanced Usage (15-20):"
+ls -1 "$PLOTS_DIR"/{15,16,17,18,19,20}_*.png 2>/dev/null | sed 's/.*\//      /' || echo "      No files found"
 
 # Final count
 TOTAL_PLOTS=$(ls "$PLOTS_DIR"/*.png 2>/dev/null | wc -l || echo "0")

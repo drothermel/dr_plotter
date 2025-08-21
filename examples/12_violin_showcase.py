@@ -1,5 +1,5 @@
 """
-Example 9: Violin Plot Showcase - All violin plot features.
+Example 12: Violin Plot Showcase - All violin plot features.
 Demonstrates single and grouped violin plots.
 """
 
@@ -17,7 +17,7 @@ if __name__ == "__main__":
         # Simple violin plot
         simple_data = ExampleData.categorical_data()
         fm.plot(
-            "violin", 0, 0, simple_data, "category", "value", title="Simple Violin Plot"
+            "violin", 0, 0, simple_data, x="category", y="value", title="Simple Violin Plot"
         )
 
         # Grouped violin plot
@@ -27,10 +27,10 @@ if __name__ == "__main__":
             0,
             1,
             grouped_data,
-            "category",
-            "value",
+            x="category",
+            y="value",
             hue_by="group",
             title="Grouped Violin Plot",
         )
 
-        show_or_save_plot(fm.fig, args, "09_violin_showcase")
+        show_or_save_plot(fm.fig, args, "12_violin_showcase")

@@ -1,5 +1,5 @@
 """
-Example 5: Scatter Plot Showcase - All scatter plot features.
+Example 9: Scatter Plot Showcase - All scatter plot features.
 Demonstrates all visual encoding options for scatter plots.
 """
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
         # Basic scatter
         basic_data = ExampleData.simple_scatter()
-        fm.plot("scatter", 0, 0, basic_data, "x", "y", title="Basic Scatter")
+        fm.plot("scatter", 0, 0, basic_data, x="x", y="y", title="Basic Scatter")
 
         # Color encoding (hue)
         grouped_data = ExampleData.time_series_grouped(periods=30)
@@ -27,8 +27,8 @@ if __name__ == "__main__":
             0,
             1,
             grouped_data,
-            "time",
-            "value",
+            x="time",
+            y="value",
             hue_by="group",
             title="Color Encoding (hue)",
         )
@@ -40,8 +40,8 @@ if __name__ == "__main__":
             1,
             0,
             complex_data,
-            "x",
-            "y",
+            x="x",
+            y="y",
             hue_by="experiment",
             size_by="performance",
             title="Color + Size Encoding",
@@ -53,11 +53,11 @@ if __name__ == "__main__":
             1,
             1,
             complex_data,
-            "x",
-            "y",
+            x="x",
+            y="y",
             hue_by="condition",
             marker_by="algorithm",
             title="Color + Marker Encoding",
         )
 
-        show_or_save_plot(fm.fig, args, "05_scatter_showcase")
+        show_or_save_plot(fm.fig, args, "09_scatter_showcase")

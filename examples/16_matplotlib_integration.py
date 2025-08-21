@@ -1,5 +1,5 @@
 """
-Example 20: Matplotlib Integration - Direct matplotlib kwargs.
+Example 16: Matplotlib Integration - Direct matplotlib kwargs.
 Demonstrates seamless integration with matplotlib's parameter system.
 """
 
@@ -23,8 +23,8 @@ if __name__ == "__main__":
             0,
             0,
             scatter_data,
-            "x",
-            "y",
+            x="x",
+            y="y",
             title="Custom Scatter Styling",
             s=100,  # matplotlib: marker size
             alpha=0.6,  # matplotlib: transparency
@@ -39,8 +39,8 @@ if __name__ == "__main__":
             0,
             1,
             line_data,
-            "time",
-            "value",
+            x="time",
+            y="value",
             title="Advanced Line Styling",
             linewidth=3,  # matplotlib: line width
             linestyle="--",  # matplotlib: line style
@@ -58,7 +58,7 @@ if __name__ == "__main__":
             1,
             0,
             hist_data,
-            "values",
+            x="values",
             title="Custom Histogram",
             bins=25,  # matplotlib: number of bins
             alpha=0.7,  # matplotlib: transparency
@@ -75,8 +75,8 @@ if __name__ == "__main__":
             1,
             1,
             bar_summary,
-            "category",
-            "value",
+            x="category",
+            y="value",
             title="Custom Bar Styling",
             alpha=0.8,  # matplotlib: transparency
             color="orange",  # matplotlib: color
@@ -85,4 +85,4 @@ if __name__ == "__main__":
             width=0.6,
         )  # matplotlib: bar width
 
-        show_or_save_plot(fm.fig, args, "20_matplotlib_integration")
+        show_or_save_plot(fm.fig, args, "16_matplotlib_integration")

@@ -1,5 +1,5 @@
 """
-Example 14: Multi-Metrics Plotting - METRICS constant.
+Example 6: Multi-Metric Plotting - METRICS constant.
 Demonstrates plotting multiple y-columns with the METRICS constant.
 """
 
@@ -9,7 +9,7 @@ from dr_plotter import consts
 from plot_data import ExampleData
 
 if __name__ == "__main__":
-    parser = setup_arg_parser(description="Multi-Metrics Plotting Example")
+    parser = setup_arg_parser(description="Multi-Metric Plotting Example")
     args = parser.parse_args()
 
     with FigureManager(rows=2, cols=2, figsize=(15, 12)) as fm:
@@ -18,14 +18,15 @@ if __name__ == "__main__":
         # ML training data with multiple metrics
         ml_data = ExampleData.ml_training_curves()
 
-        # Basic multi-metrics: color by METRICS
+        # Basic multi-metrics: color by METRICS (filter to single learning rate for clarity)
+        single_lr_data = ml_data[ml_data["learning_rate"] == 0.01].copy()
         fm.plot(
             "line",
             0,
             0,
-            ml_data,
-            "epoch",
-            ["train_loss", "val_loss"],
+            single_lr_data,
+            x="epoch",
+            y=["train_loss", "val_loss"],
             hue_by=consts.METRICS,
             title="Loss Metrics (hue_by=METRICS)",
         )
@@ -36,8 +37,8 @@ if __name__ == "__main__":
             0,
             1,
             ml_data,
-            "epoch",
-            ["train_loss", "val_loss"],
+            x="epoch",
+            y=["train_loss", "val_loss"],
             hue_by=consts.METRICS,
             style_by="learning_rate",
             title="Loss + Learning Rate",
@@ -49,8 +50,8 @@ if __name__ == "__main__":
             1,
             0,
             ml_data,
-            "epoch",
-            ["train_accuracy", "val_accuracy"],
+            x="epoch",
+            y=["train_accuracy", "val_accuracy"],
             hue_by="learning_rate",
             style_by=consts.METRICS,
             title="Accuracy (style_by=METRICS)",
@@ -63,10 +64,10 @@ if __name__ == "__main__":
             1,
             1,
             multi_data,
-            "x",
-            ["metric_a", "metric_b", "metric_c"],
+            x="x",
+            y=["metric_a", "metric_b", "metric_c"],
             hue_by=consts.METRICS,
             title="Generic Multi-Metrics",
         )
 
-        show_or_save_plot(fm.fig, args, "14_multi_metrics")
+        show_or_save_plot(fm.fig, args, "06_multi_metric_plotting")

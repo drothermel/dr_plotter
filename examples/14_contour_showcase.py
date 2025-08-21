@@ -1,5 +1,5 @@
 """
-Example 12: Contour Plot Showcase - All contour plot features.
+Example 14: Contour Plot Showcase - All contour plot features.
 Demonstrates Gaussian Mixture Model level set visualizations.
 """
 
@@ -16,10 +16,10 @@ if __name__ == "__main__":
 
         # Basic contour plot
         mixture_data = ExampleData.gaussian_mixture(n_components=2)
-        fm.plot("contour", 0, 0, mixture_data, "x", "y", title="2-Component GMM")
+        fm.plot("contour", 0, 0, mixture_data, x="x", y="y", title="2-Component GMM")
 
         # More complex mixture
         complex_mixture = ExampleData.gaussian_mixture(n_components=3)
-        fm.plot("contour", 0, 1, complex_mixture, "x", "y", title="3-Component GMM")
+        fm.plot("contour", 0, 1, complex_mixture, x="x", y="y", title="3-Component GMM")
 
-        show_or_save_plot(fm.fig, args, "12_contour_showcase")
+        show_or_save_plot(fm.fig, args, "14_contour_showcase")

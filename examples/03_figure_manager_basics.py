@@ -17,19 +17,19 @@ if __name__ == "__main__":
 
         # Top left: Scatter plot
         scatter_data = ExampleData.simple_scatter()
-        fm.plot("scatter", 0, 0, scatter_data, "x", "y", title="Scatter Plot")
+        fm.plot("scatter", 0, 0, scatter_data, x="x", y="y", title="Scatter Plot")
 
         # Top right: Line plot
         line_data = ExampleData.time_series()
-        fm.plot("line", 0, 1, line_data, "time", "value", title="Line Plot")
+        fm.plot("line", 0, 1, line_data, x="time", y="value", title="Line Plot")
 
         # Bottom left: Bar plot
         bar_data = ExampleData.categorical_data()
         bar_summary = bar_data.groupby("category")["value"].mean().reset_index()
-        fm.plot("bar", 1, 0, bar_summary, "category", "value", title="Bar Plot")
+        fm.plot("bar", 1, 0, bar_summary, x="category", y="value", title="Bar Plot")
 
         # Bottom right: Histogram
         hist_data = ExampleData.distribution_data()
-        fm.plot("histogram", 1, 1, hist_data, "values", title="Histogram")
+        fm.plot("histogram", 1, 1, hist_data, x="values", title="Histogram")
 
         show_or_save_plot(fm.fig, args, "03_figure_manager_basics")

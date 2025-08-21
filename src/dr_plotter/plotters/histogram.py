@@ -13,27 +13,15 @@ class HistogramPlotter(BasePlotter):
     """
 
     # Declarative configuration
-    default_theme = HISTOGRAM_THEME
+    plotter_name = "histogram"
+    plotter_params = {"x"}
+    param_mapping = {"x": "x"}
     enabled_channels = {}  # No grouping support for histograms
+    default_theme = HISTOGRAM_THEME
     data_validator = HistogramData
 
-    def __init__(self, data, x, **kwargs):
-        """
-        Initialize the HistogramPlotter.
 
-        Args:
-            data: A pandas DataFrame
-            x: Column name for the data to histogram
-            **kwargs: Additional configuration and styling parameters
-        """
-        super().__init__(data, **kwargs)
-        self.x = x
-        # Set y label based on density parameter
-        self.y = self._get_style(
-            "ylabel", "Density" if self.kwargs.get("density") else "Frequency"
-        )
-
-    def _draw(self, ax, data, **kwargs):
+    def _draw(self, ax, data, legend, **kwargs):
         """
         Draw the histogram using matplotlib.
 

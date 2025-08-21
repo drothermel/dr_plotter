@@ -1,5 +1,5 @@
 """
-Example 17: ML Experiment Dashboard - Real-world use case.
+Example 19: ML Dashboard Dashboard - Real-world use case.
 Complete ML experiment visualization with multiple metrics and hyperparameters.
 """
 
@@ -26,8 +26,8 @@ if __name__ == "__main__":
             0,
             0,
             ml_data,
-            "epoch",
-            ["train_loss", "val_loss"],
+            x="epoch",
+            y=["train_loss", "val_loss"],
             hue_by=consts.METRICS,
             style_by="learning_rate",
             title="Loss Curves (color=metric, style=lr)",
@@ -39,8 +39,8 @@ if __name__ == "__main__":
             0,
             1,
             ml_data,
-            "epoch",
-            "val_loss",
+            x="epoch",
+            y="val_loss",
             hue_by="learning_rate",
             title="Validation Loss by Learning Rate",
         )
@@ -51,8 +51,8 @@ if __name__ == "__main__":
             1,
             0,
             ml_data,
-            "epoch",
-            ["train_accuracy", "val_accuracy"],
+            x="epoch",
+            y=["train_accuracy", "val_accuracy"],
             hue_by="learning_rate",
             style_by=consts.METRICS,
             title="Accuracy (color=lr, style=metric)",
@@ -97,10 +97,10 @@ if __name__ == "__main__":
             1,
             1,
             perf_df,
-            "learning_rate",
-            "value",
+            x="learning_rate",
+            y="value",
             hue_by="metric",
             title="Final Performance Summary",
         )
 
-        show_or_save_plot(fm.fig, args, "17_ml_experiment")
+        show_or_save_plot(fm.fig, args, "19_ml_dashboard")

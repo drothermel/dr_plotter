@@ -177,7 +177,7 @@ class FigureManager:
             **kwargs: Keyword arguments to pass to the plotter constructor
 
         Example:
-            fm.plot("scatter", 0, 0, data, "x_col", "y_col", hue="category")
+            fm.plot("scatter", 0, 0, data, x="x_col", y="y_col", hue_by="category")
             fm.plot("custom", 1, 0, data, custom_param=value)
         """
         plotter_class = BasePlotter.get_plotter(plot_type)

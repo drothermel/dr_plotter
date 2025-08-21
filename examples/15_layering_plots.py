@@ -1,5 +1,5 @@
 """
-Example 15: Layering - Combining multiple plot types.
+Example 15: Layering Plots - Combining multiple plot types.
 Demonstrates combining different plot types in the same subplot.
 """
 
@@ -56,4 +56,4 @@ if __name__ == "__main__":
     ax2.set_title("Histogram + Theoretical Curve")
     ax2.legend()
 
-    show_or_save_plot(fig, args, "15_layering")
+    show_or_save_plot(fig, args, "15_layering_plots")

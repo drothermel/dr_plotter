@@ -1,9 +1,10 @@
 """
-Example 19: Custom Plotter - Creating new plotters using the registry.
+Example 17: Custom Plotters - Creating new plotters using the registry.
 Demonstrates how to create and register a custom plotter class.
 """
 
 import pandas as pd
+import itertools
 from dr_plotter.plotters.base import BasePlotter
 from dr_plotter.plotters.plot_data import PlotData
 from dr_plotter.figure import FigureManager
@@ -14,7 +15,7 @@ from plot_data import ExampleData
 class CustomErrorBarPlotData(PlotData):
     """Validation for error bar plot data."""
 
-    def __init__(self, data: pd.DataFrame, x: str, y: str, error: str = None):
+    def __init__(self, data: pd.DataFrame, x: str, y: str, error: str = None, **kwargs):
         super().__init__(data)
         self.x = x
         self.y = y
@@ -30,55 +31,48 @@ class CustomErrorBarPlotData(PlotData):
 class ErrorBarPlotter(BasePlotter):
     """
     Custom plotter for error bar plots.
-    Automatically registers as 'errorbar' in the registry.
+    Demonstrates declarative pattern for custom plotters.
     """
+    
+    plotter_name = "errorbar"
+    plotter_params = {"x", "y", "error"}
+    param_mapping = {"x": "x", "y": "y", "error": "error"}
+    enabled_channels = {}
+    default_theme = {
+        "capsize": 5,
+        "capthick": 2,
+        "elinewidth": 1.5,
+        "alpha": 0.8,
+        "color": "blue",
+        "color_cycle": itertools.cycle(["blue", "red", "green", "orange", "purple"]),
+    }
+    data_validator = CustomErrorBarPlotData
 
-    def __init__(self, data, x, y, error=None, **kwargs):
-        super().__init__(data, **kwargs)
-        self.x = x
-        self.y = y
-        self.error = error
-
-    def prepare_data(self):
-        """Prepare and validate data for error bar plotting."""
-        self.plot_data = CustomErrorBarPlotData(
-            self.raw_data, self.x, self.y, self.error
-        ).data
-        return self.plot_data
-
-    def render(self, ax):
+    def _draw(self, ax, data, legend, **kwargs):
         """Render the error bar plot."""
-        self.prepare_data()
-
         # Get error values
-        if self.error:
-            yerr = self.plot_data[self.error]
+        if hasattr(self, 'error') and self.error and self.error in data.columns:
+            yerr = data[self.error]
         else:
             # Default: use 10% of absolute y values as error
-            yerr = abs(self.plot_data[self.y]) * 0.1 + 0.1  # Add small constant
+            yerr = abs(data[self.y]) * 0.1 + 0.1  # Add small constant
 
-        # Create error bar plot
+        # Create error bar plot with theme defaults
         plot_kwargs = {
-            "capsize": self._get_style("capsize", 5),
-            "capthick": self._get_style("capthick", 2),
-            "elinewidth": self._get_style("elinewidth", 1.5),
-            "alpha": self._get_style("alpha", 0.8),
-            "color": self._get_style("color", "blue"),
+            "capsize": kwargs.get("capsize", self.theme.get("capsize", 5)),
+            "capthick": kwargs.get("capthick", self.theme.get("capthick", 2)),
+            "elinewidth": kwargs.get("elinewidth", self.theme.get("elinewidth", 1.5)),
+            "alpha": kwargs.get("alpha", self.theme.get("alpha", 0.8)),
+            "color": kwargs.get("color", self.theme.get("color", "blue")),
         }
 
-        # Add any additional matplotlib kwargs
-        plot_kwargs.update(self._filter_plot_kwargs())
-
         ax.errorbar(
-            self.plot_data[self.x],
-            self.plot_data[self.y],
+            data[self.x],
+            data[self.y],
             yerr=yerr,
             fmt="o",
             **plot_kwargs,
         )
-
-        # Apply styling
-        self._apply_styling(ax)
 
 
 if __name__ == "__main__":
@@ -111,8 +105,8 @@ if __name__ == "__main__":
             0,
             0,
             error_data,
-            "category",
-            "mean_value",
+            x="category",
+            y="mean_value",
             error="error",
             title="Custom Error Bars (with std)",
         )
@@ -124,9 +118,9 @@ if __name__ == "__main__":
             0,
             1,
             simple_data,
-            "time",
-            "value",
+            x="time",
+            y="value",
             title="Custom Error Bars (default 10%)",
         )
 
-        show_or_save_plot(fm.fig, args, "19_custom_plotter")
+        show_or_save_plot(fm.fig, args, "17_custom_plotters")

@@ -1,5 +1,5 @@
 """
-Example 7: Bar Plot Showcase - All bar plot features.
+Example 11: Bar Plot Showcase - All bar plot features.
 Demonstrates single and grouped bar plots.
 """
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
         simple_data = ExampleData.categorical_data()
         simple_summary = simple_data.groupby("category")["value"].mean().reset_index()
         fm.plot(
-            "bar", 0, 0, simple_summary, "category", "value", title="Simple Bar Chart"
+            "bar", 0, 0, simple_summary, x="category", y="value", title="Simple Bar Chart"
         )
 
         # Grouped bar chart
@@ -31,10 +31,10 @@ if __name__ == "__main__":
             0,
             1,
             grouped_summary,
-            "category",
-            "value",
+            x="category",
+            y="value",
             hue_by="group",
             title="Grouped Bar Chart",
         )
 
-        show_or_save_plot(fm.fig, args, "07_bar_showcase")
+        show_or_save_plot(fm.fig, args, "11_bar_showcase")

@@ -1,5 +1,5 @@
 """
-Example 10: Heatmap Showcase - All heatmap features.
+Example 13: Heatmap Showcase - All heatmap features.
 Demonstrates heatmaps with different data patterns and styling.
 """
 
@@ -21,8 +21,8 @@ if __name__ == "__main__":
             0,
             0,
             heatmap_data,
-            "column",
-            "row",
+            x="column",
+            y="row",
             values="value",
             title="Basic Heatmap",
         )
@@ -33,11 +33,11 @@ if __name__ == "__main__":
             0,
             1,
             heatmap_data,
-            "column",
-            "row",
+            x="column",
+            y="row",
             values="value",
             title="Custom Colormap",
             cmap="viridis",
         )
 
-        show_or_save_plot(fm.fig, args, "10_heatmap_showcase")
+        show_or_save_plot(fm.fig, args, "13_heatmap_showcase")

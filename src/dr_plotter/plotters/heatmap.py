@@ -16,25 +16,13 @@ class HeatmapPlotter(BasePlotter):
     """
 
     # Declarative configuration
-    default_theme = HEATMAP_THEME
+    plotter_name = "heatmap"
+    plotter_params = {"x", "y", "values"}
+    param_mapping = {"x": "x", "y": "y", "values": "values"}
     enabled_channels = {}  # No grouping support for heatmaps
+    default_theme = HEATMAP_THEME
     data_validator = HeatmapData
 
-    def __init__(self, data, x, y, values, **kwargs):
-        """
-        Initialize the HeatmapPlotter.
-
-        Args:
-            data: A pandas DataFrame in tidy/long format
-            x: Column name for heatmap columns (x-axis)
-            y: Column name for heatmap rows (y-axis)
-            values: Column name for cell values
-            **kwargs: Additional styling parameters
-        """
-        super().__init__(data, **kwargs)
-        self.x = x
-        self.y = y
-        self.values = values
 
     def _prepare_specific_data(self):
         """
@@ -50,7 +38,7 @@ class HeatmapPlotter(BasePlotter):
         # Handle any missing values by filling with 0
         return plot_data.fillna(0)
 
-    def _draw(self, ax, data, **kwargs):
+    def _draw(self, ax, data, legend, **kwargs):
         """
         Draw the heatmap using matplotlib.
 
