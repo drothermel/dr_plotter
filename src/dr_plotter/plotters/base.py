@@ -56,9 +56,7 @@ class BasePlotter:
     plotter_name: str = "base"
     plotter_params: List[str] = []
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Dict[VisualChannel, bool] = {
-        channel: False for channel in consts.VISUAL_CHANNELS
-    }
+    enabled_channels: Dict[VisualChannel, bool] = consts.DEFAULT_ENABLED_CHANNELS
     default_theme: Theme = BASE_THEME
 
     def __init__(

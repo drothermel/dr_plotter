@@ -3,21 +3,18 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
+from dr_plotter import consts
 from dr_plotter.grouping import GroupingConfig
+from dr_plotter.theme import Theme
+from dr_plotter.types import VisualChannel
 
 
 class StyleEngine:
     def __init__(
-        self, theme: Any, enabled_channels: Optional[Dict[str, bool]] = None
+        self, theme: Theme, enabled_channels: Optional[Dict[VisualChannel, bool]] = None
     ) -> None:
         self.theme = theme
-        self.enabled_channels = enabled_channels or {
-            "hue": True,
-            "style": True,
-            "size": True,
-            "marker": True,
-            "alpha": True,
-        }
+        self.enabled_channels = enabled_channels or consts.DEFAULT_ENABLED_CHANNELS
 
         self._cycles = self._create_cycles()
         self._cycle_positions: Dict[str, int] = {k: 0 for k in self._cycles}
