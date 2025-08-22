@@ -18,5 +18,23 @@ class HistogramPlotter(BasePlotter):
     default_theme: Theme = HISTOGRAM_THEME
     use_style_applicator: bool = True
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        if self.use_style_applicator:
+            self.style_applicator.register_post_processor(
+                "histogram", "patches", self._style_histogram_patches
+            )
+
+    def _style_histogram_patches(self, patches: Any, styles: Dict[str, Any]) -> None:
+        for patch in patches:
+            for attr, value in styles.items():
+                if hasattr(patch, f"set_{attr}"):
+                    setter = getattr(patch, f"set_{attr}")
+                    setter(value)
+
     def _draw(self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any) -> None:
-        ax.hist(data[consts.X_COL_NAME], **kwargs)
+        n, bins, patches = ax.hist(data[consts.X_COL_NAME], **kwargs)
+
+        if self.use_style_applicator:
+            artists = {"patches": patches, "n": n, "bins": bins}
+            self.style_applicator.apply_post_processing("histogram", artists)
