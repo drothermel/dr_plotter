@@ -10,6 +10,7 @@ from dr_plotter.theme import BASE_COLORS, BASE_THEME, DR_PLOTTER_STYLE_KEYS, The
 from dr_plotter.types import (
     BasePlotterParamName,
     ColName,
+    StyleAttrName,
     SubPlotterParamName,
     VisualChannel,
 )
@@ -214,7 +215,7 @@ class BasePlotter:
         }
 
     def _build_group_plot_kwargs(
-        self, styles: Dict[str, Any], name: Any, group_cols: List[str]
+        self, styles: Dict[StyleAttrName, Any], name: Any, group_cols: List[str]
     ) -> Dict[str, Any]:
         default_color = styles.get("color", BASE_COLORS[0])
 

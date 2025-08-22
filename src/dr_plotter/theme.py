@@ -1,6 +1,8 @@
 import itertools
 from typing import Any, Dict, List, Optional
 
+from dr_plotter import consts
+
 DR_PLOTTER_STYLE_KEYS = [
     "title",
     "xlabel",
@@ -139,9 +141,15 @@ BASE_THEME = Theme(
     figure_styles=FigureStyles(
         title_fontsize=14,
     ),
-    color_cycle=itertools.cycle(BASE_COLORS),
-    linestyle_cycle=itertools.cycle(["-", "--", ":", "-."]),
-    marker_cycle=itertools.cycle(["o", "s", "^", "D", "v", "<", ">", "p"]),
+    **{
+        consts.get_cycle_key("hue"): itertools.cycle(BASE_COLORS),
+        consts.get_cycle_key("style"): itertools.cycle(["-", "--", ":", "-."]),
+        consts.get_cycle_key("marker"): itertools.cycle(
+            ["o", "s", "^", "D", "v", "<", ">", "p"]
+        ),
+        consts.get_cycle_key("size"): itertools.cycle([1.0, 1.5, 2.0, 2.5]),
+        consts.get_cycle_key("alpha"): itertools.cycle([1.0, 0.7, 0.5, 0.3]),
+    },
 )
 
 # --- Style Classes ---
