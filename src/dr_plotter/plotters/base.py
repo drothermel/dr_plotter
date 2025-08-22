@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -39,22 +39,19 @@ def ylabel_from_metrics(metrics: List[ColName]) -> str:
 
 
 class BasePlotter:
-    # === Plotter Registry Support ===
     _registry = {}
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs) -> None:
         super().__init_subclass__(**kwargs)
         BasePlotter._registry[cls.plotter_name] = cls
 
     @classmethod
-    def get_plotter(cls, plot_type):
+    def get_plotter(cls, plot_type: str) -> type:
         return cls._registry[plot_type]
 
     @classmethod
-    def list_plotters(cls):
+    def list_plotters(cls) -> List[str]:
         return sorted(cls._registry.keys())
-
-    # =================================
 
     plotter_name: str = "base"
     plotter_params: List[str] = []
@@ -64,7 +61,13 @@ class BasePlotter:
     }
     default_theme: Theme = BASE_THEME
 
-    def __init__(self, data, grouping_cfg, theme=None, **kwargs):
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        grouping_cfg: GroupingConfig,
+        theme: Optional[Theme] = None,
+        **kwargs: Any,
+    ) -> None:
         self.raw_data: pd.DataFrame = data
         self.kwargs: Dict[str, Any] = kwargs
         self.grouping_params: GroupingConfig = grouping_cfg
@@ -87,8 +90,7 @@ class BasePlotter:
         return len(self._get_y_metric_column_names()) > 1
 
     @property
-    def _filtered_plot_kwargs(self):
-        """Removes dr_plotter specific keys from self.kwargs."""
+    def _filtered_plot_kwargs(self) -> Dict[str, Any]:
         filter_keys = set(
             DR_PLOTTER_STYLE_KEYS
             + self.grouping_params.channel_strs
@@ -97,23 +99,14 @@ class BasePlotter:
         )
         return {k: v for k, v in self.kwargs.items() if k not in filter_keys}
 
-    # ====== Stubs to Override ======
-
-    # Subclass hook for updating any necessary data for plotting
     def _plot_specific_data_prep(self) -> None:
         pass
 
-    # Subclass hook for drawing the plot
-    def _draw(self, ax, data, legend, **kwargs) -> None:
+    def _draw(self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any) -> None:
         pass
 
-    # ================================
-
-    def render(self, ax):
-        # Prepare data
+    def render(self, ax: Any) -> None:
         self.prepare_data()
-
-        # Create legend builder
         legend = Legend()
         style_kwargs = {
             **self.theme.plot_styles,
@@ -128,15 +121,11 @@ class BasePlotter:
         self._apply_styling(ax, legend)
 
     def prepare_data(self) -> None:
-        # Plot data always starts as a copy of the raw data
         self.plot_data = self.raw_data.copy()
 
-        # Rename x_col if provided
         if self.x_col is not None:
             self.plot_data.rename(columns={self.x_col: consts.X_COL_NAME}, inplace=True)
 
-        # Melt metrics into a single values column (Y_COL_NAME) and metric name
-        # column (METRIC_COL_NAME)
         if len(self.y_cols) > 0:
             df_cols = set(self.plot_data.columns)
             value_cols = set(self.y_cols)
@@ -150,22 +139,16 @@ class BasePlotter:
                 value_name=consts.Y_COL_NAME,
             )
 
-        # Hook for subclass specific data prep
         self._plot_specific_data_prep()
 
-    # ========= Helpers =========
-
-    def _get_style(self, key, default_override=None):
-        """Gets a style value, prioritizing user kwargs over theme defaults."""
+    def _get_style(self, key: str, default_override: Optional[Any] = None) -> Any:
         return self.kwargs.get(key, self.theme.get(key, default_override))
 
-    def _apply_styling(self, ax, legend):
-        # ---- Axes title ----
+    def _apply_styling(self, ax: Any, legend: Legend) -> None:
         ax.set_title(
             self._get_style("title"), fontsize=self.theme.get("title_fontsize")
         )
 
-        # ---- Axes labels ----
         label_fontsize = self._get_style("label_fontsize")
         xlabel = self._get_style("xlabel", fmt_txt(self.x_col))
         ylabel = self._get_style(
@@ -175,19 +158,14 @@ class BasePlotter:
         ax.set_xlabel(xlabel, fontsize=label_fontsize)
         ax.set_ylabel(ylabel, fontsize=label_fontsize)
 
-        # ---- Grid ----
         if self._get_style("grid", True):
             ax.grid(True, alpha=self.theme.get("grid_alpha"))
         else:
             ax.grid(False)
 
-        # ---- Legend ----
-        # TODO: make the legend class handle this
         if self._get_style("legend") is None or self._get_style("legend"):
-            # Auto-show legend if we have groupings or custom legend entries
             if self._has_groups or legend.has_entries():
                 if not ax.get_legend():
-                    # Use custom legend handles if provided
                     if legend.has_entries():
                         ax.legend(
                             handles=legend.get_handles(),
@@ -199,8 +177,7 @@ class BasePlotter:
                 if not ax.get_legend():
                     ax.legend(fontsize=self.theme.get("legend_fontsize"))
 
-    def _get_group_styles_cols(self):
-        # Get group styles using style engine
+    def _get_group_styles_cols(self) -> Tuple[Dict[Any, Dict[str, Any]], List[ColName]]:
         active_dict = {
             self.grouping_params.channel_str(channel): col
             for channel, col in self.grouping_params.active.items()
@@ -211,48 +188,37 @@ class BasePlotter:
             **active_dict,
         )
 
-        # Get grouping columns
         group_cols = self.style_engine.get_grouping_columns(
             **active_dict,
         )
         return group_styles, group_cols
 
-    def _render_with_grouped_method(self, ax, legend):
-        """Render using plotter's _draw_grouped method with position information."""
-        # Group the data
+    def _render_with_grouped_method(self, ax: Any, legend: Legend) -> None:
         group_styles, group_cols = self._get_group_styles_cols()
         grouped = self.plot_data.groupby(group_cols)
         n_groups = len(grouped)
 
-        # Get all unique x categories for consistent positioning
         x_categories = None
         if hasattr(self, "x") and self.x_col:
             x_categories = self.plot_data[self.x_col].unique()
 
-        # Iterate through groups and draw with position info
         for group_index, (name, group_data) in enumerate(grouped):
-            # Handle multi-column grouping
             if isinstance(name, tuple):
                 group_key = tuple(zip(group_cols, name))
             else:
                 group_key = tuple([(group_cols[0], name)])
 
-            # Get styles for this group
             styles = group_styles.get(group_key, {})
-
-            # Build plot kwargs for this group
             plot_kwargs = self._build_group_plot_kwargs(styles, name, group_cols)
-
-            # Calculate group position info
             group_position = self._calculate_group_position(group_index, n_groups)
             group_position["x_categories"] = x_categories
 
-            # Call the plotter's _draw_grouped method with position info
             self._draw_grouped(ax, group_data, group_position, legend, **plot_kwargs)
 
-    def _calculate_group_position(self, group_index, n_groups):
-        """Calculate positioning information for grouped plots."""
-        width = 0.8 / n_groups  # Total width divided by number of groups
+    def _calculate_group_position(
+        self, group_index: int, n_groups: int
+    ) -> Dict[str, Any]:
+        width = 0.8 / n_groups
         offset = width * (group_index - n_groups / 2 + 0.5)
 
         return {
@@ -262,9 +228,9 @@ class BasePlotter:
             "offset": offset,
         }
 
-    def _build_group_plot_kwargs(self, styles, name, group_cols):
-        """Build kwargs for a grouped plot."""
-        # Use first color if not grouped by hue
+    def _build_group_plot_kwargs(
+        self, styles: Dict[str, Any], name: Any, group_cols: List[str]
+    ) -> Dict[str, Any]:
         default_color = styles.get("color", BASE_COLORS[0])
 
         plot_kwargs = {
@@ -272,13 +238,11 @@ class BasePlotter:
             "alpha": styles.get("alpha", self._get_style("alpha", 1.0)),
         }
 
-        # Add style-specific attributes based on what this plotter supports
         if "linestyle" in styles:
             plot_kwargs["linestyle"] = styles["linestyle"]
         if "marker" in styles:
             plot_kwargs["marker"] = styles["marker"]
         if "size_mult" in styles:
-            # Apply size multiplier to appropriate attribute
             if hasattr(self, "line_width"):
                 plot_kwargs["linewidth"] = (
                     self._get_style("line_width", 2.0) * styles["size_mult"]
@@ -288,20 +252,15 @@ class BasePlotter:
                     self._get_style("marker_size", 50) * styles["size_mult"]
                 )
 
-        # Add user-specified kwargs that aren't group-controlled
         user_kwargs = self._filtered_plot_kwargs
         for k, v in user_kwargs.items():
             if k not in plot_kwargs:
                 plot_kwargs[k] = v
 
-        # Create label - use simple value for single grouping (like hue)
         if isinstance(name, tuple):
-            # Check if it's a single-element tuple (single grouping column)
             if len(name) == 1:
-                # Single grouping column - just show the value
                 plot_kwargs["label"] = str(name[0])
             else:
-                # Multiple grouping columns - show which column each value is from
                 label_parts = []
                 for col, val in zip(group_cols, name):
                     if self.metric_col and col == self.metric_col:
@@ -310,12 +269,9 @@ class BasePlotter:
                         label_parts.append(f"{col}={val}")
                 plot_kwargs["label"] = ", ".join(label_parts)
         else:
-            # Single grouping column - just show the value
             plot_kwargs["label"] = str(name)
 
         return plot_kwargs
-
-    # ---- Init Helpers ----
 
     def _mapped_param(self, param: BasePlotterParamName) -> SubPlotterParamName:
         return self.__class__.param_mapping.get(param, param)
@@ -332,15 +288,9 @@ class BasePlotter:
         metric_col_name = self.kwargs.get(subplotter_y_metric)
         return as_list(metric_col_name if metric_col_name is not None else [])
 
-    # Each subplotter specifies the params it uses to avoid clashes with matplotlib
-    # so we need to extract them from kwargs and map them to the correct variable name
-    def _initialize_subplot_specific_params(self):
+    def _initialize_subplot_specific_params(self) -> None:
         for param in self.__class__.plotter_params:
             setattr(self, param, self.kwargs.get(param))
 
-    # ----------------------
-
-    # ---- Plotting Helpers ----
-    def _style_zero_line(self, ax):
-        """Add a thick, dark horizontal line at y=0 behind the bars."""
+    def _style_zero_line(self, ax: Any) -> None:
         ax.axhline(y=0, linewidth=2.0, color="#333333", zorder=0.5)
