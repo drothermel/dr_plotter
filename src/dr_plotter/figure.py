@@ -2,10 +2,16 @@
 Context manager for creating complex figures.
 """
 
-import matplotlib.pyplot as plt
 import itertools
 import warnings
+from typing import List, Optional
+
+import matplotlib.pyplot as plt
+
+from dr_plotter.grouping import GroupingConfig
+
 from .plotters import BasePlotter
+
 # Import all plotters to ensure they're registered
 
 
@@ -16,11 +22,11 @@ class FigureManager:
 
     def __init__(
         self,
-        rows=1,
-        cols=1,
-        external_ax=None,
-        layout_rect=None,
-        layout_pad=None,
+        rows: int = 1,
+        cols: int = 1,
+        external_ax: Optional[plt.Axes] = None,
+        layout_rect: Optional[List[float]] = None,
+        layout_pad: Optional[float] = 0.5,
         **fig_kwargs,
     ):
         """
@@ -161,6 +167,8 @@ class FigureManager:
         # Add shared style state for cross-subplot coordination
         kwargs["_figure_manager"] = self
         kwargs["_shared_hue_styles"] = self._shared_hue_styles
+        kwargs["grouping_cfg"] = GroupingConfig()
+        kwargs["grouping_cfg"].set_kwargs(kwargs)
 
         plotter = plotter_class(*plotter_args, **kwargs)
         plotter.render(ax)

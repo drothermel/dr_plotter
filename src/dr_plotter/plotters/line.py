@@ -2,40 +2,35 @@
 Atomic plotter for line plots with multi-series support.
 """
 
-from .base import BasePlotter
-from dr_plotter.theme import LINE_THEME
-from .plot_data import LinePlotData
+from typing import Dict, List
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+from dr_plotter import consts
+from dr_plotter.legend import Legend
+from dr_plotter.theme import LINE_THEME, Theme
+
+from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
+from .plot_data import LinePlotData, PlotData
 
 
 class LinePlotter(BasePlotter):
-    """
-    An atomic plotter for creating line plots with multi-series support.
-    """
-
-    # Declarative configuration
-    plotter_name = "line"
-    plotter_params = {"x", "y", "hue", "style", "size", "marker", "alpha"}
-    param_mapping = {"x": "x", "y": "y"}
-    enabled_channels = {
+    plotter_name: str = "line"
+    plotter_params: List[str] = []
+    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: Dict[str, bool] = {
         "hue": True,
         "style": True,
         "size": True,
         "marker": True,
         "alpha": True,
     }
-    default_theme = LINE_THEME
-    data_validator = LinePlotData
+    default_theme: Theme = LINE_THEME
+    data_validator: PlotData = LinePlotData
 
-    def _draw(self, ax, data, legend, **kwargs):
-        """
-        Draw the line plot using matplotlib.
-
-        Args:
-            ax: Matplotlib axes
-            data: DataFrame with the data to plot
-            legend: Legend builder object (unused for line plots as they create their own legend entries)
-            **kwargs: Plot-specific kwargs including color, linestyle, linewidth, marker, alpha
-        """
-        # Sort data for proper line plotting
-        data_sorted = data.sort_values(self.x)
-        ax.plot(data_sorted[self.x], data_sorted[self.y], **kwargs)
+    def _draw(self, ax: plt.Axes, data: pd.DataFrame, legend: Legend, **kwargs):
+        data_sorted = data.sort_values(consts.X_COL_NAME)
+        ax.plot(
+            data_sorted[consts.X_COL_NAME], data_sorted[consts.Y_COL_NAME], **kwargs
+        )

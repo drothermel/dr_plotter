@@ -2,50 +2,46 @@
 Atomic plotter for heatmaps.
 """
 
-import numpy as np
+from typing import Dict, List
+
 import matplotlib.pyplot as plt
+import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from .base import BasePlotter
-from dr_plotter.theme import HEATMAP_THEME
-from .plot_data import HeatmapData
+
+from dr_plotter import consts
+from dr_plotter.plotters.base import (
+    BasePlotter,
+    BasePlotterParamName,
+    SubPlotterParamName,
+)
+from dr_plotter.plotters.plot_data import HeatmapData, PlotData
+from dr_plotter.theme import HEATMAP_THEME, Theme
+from dr_plotter.types import VisualChannel
 
 
 class HeatmapPlotter(BasePlotter):
-    """
-    An atomic plotter for creating heatmaps using declarative configuration.
-    """
+    plotter_name: str = "heatmap"
+    plotter_params: List[str] = ["values"]
+    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: Dict[VisualChannel, bool] = {}
+    default_theme: Theme = HEATMAP_THEME
+    data_validator: PlotData = HeatmapData
 
-    # Declarative configuration
-    plotter_name = "heatmap"
-    plotter_params = {"x", "y", "values"}
-    param_mapping = {"x": "x", "y": "y", "values": "values"}
-    enabled_channels = {}  # No grouping support for heatmaps
-    default_theme = HEATMAP_THEME
-    data_validator = HeatmapData
-
-    def _prepare_specific_data(self):
+    def _plot_specific_data_prep(self):
         """
         Convert tidy/long format data to matrix format for heatmap visualization.
         """
         # Convert from tidy/long to matrix format using pivot
         plot_data = self.plot_data.pivot(
-            index=self.y,  # rows
-            columns=self.x,  # columns
+            index=consts.Y_COL_NAME,  # rows
+            columns=consts.X_COL_NAME,  # columns
             values=self.values,  # cell values
         )
 
         # Handle any missing values by filling with 0
-        return plot_data.fillna(0)
+        self.plot_data = plot_data.fillna(0)
 
     def _draw(self, ax, data, legend, **kwargs):
-        """
-        Draw the heatmap using matplotlib.
-
-        Args:
-            ax: Matplotlib axes
-            data: DataFrame in matrix format (pivoted data)
-            **kwargs: Plot-specific kwargs
-        """
         # Set default cmap if not provided
         if "cmap" not in kwargs:
             kwargs["cmap"] = self._get_style("cmap")

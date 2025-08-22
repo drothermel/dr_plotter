@@ -2,213 +2,75 @@
 High-level API for creating plots.
 """
 
+from typing import List, Optional
+
+import matplotlib.pyplot as plt
 import pandas as pd
+
+from dr_plotter.types import ColName
+
 from .figure import FigureManager
 
 
-def scatter(
+def _fm_plot(
+    plot_type: str,
     data: pd.DataFrame,
-    x: str,
-    y,
-    hue_by=None,
-    size_by=None,
-    marker_by=None,
-    alpha_by=None,
-    ax=None,
+    x: Optional[ColName] = None,
+    y: Optional[ColName | List[ColName]] = None,
+    ax: Optional[plt.Axes] = None,
     **kwargs,
 ):
-    """
-    Create a scatter plot with multi-series support.
-
-    Args:
-        data: DataFrame containing the data
-        x: Column name for x-axis
-        y: Column name for y-axis, or list of column names for multiple metrics
-        hue_by: Column name or consts.METRICS for color grouping
-        size_by: Column name or consts.METRICS for marker size grouping
-        marker_by: Column name or consts.METRICS for marker style grouping
-        alpha_by: Column name or consts.METRICS for alpha/transparency grouping
-        ax: Existing axes to plot on
-        **kwargs: Additional styling parameters
-    """
-    # Fail fast on removed parameters
-    if "style" in kwargs:
-        raise TypeError(
-            "scatter() got an unexpected keyword argument 'style'. Use 'marker' instead for scatter plots."
-        )
-
-    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.plot(
-        "scatter",
-        0,
-        0,
-        data,
-        x=x,
-        y=y,
-        hue_by=hue_by,
-        size_by=size_by,
-        marker_by=marker_by,
-        alpha_by=alpha_by,
-        **kwargs,
-    )
+    fm = FigureManager(external_ax=ax)
+    fm.plot(plot_type, 0, 0, data, x=x, y=y, **kwargs)
     fm.finalize_layout()
 
     if ax is not None:
         return ax.get_figure(), ax
-    else:
-        return fm.fig, fm.get_axes(0, 0)
+    return fm.fig, fm.get_axes(0, 0)
 
 
-def line(
-    data: pd.DataFrame,
-    x: str,
-    y,
-    hue_by=None,
-    style_by=None,
-    size_by=None,
-    marker_by=None,
-    alpha_by=None,
-    ax=None,
-    **kwargs,
-):
-    """
-    Create a line plot with multi-series support.
-
-    Args:
-        data: DataFrame containing the data
-        x: Column name for x-axis
-        y: Column name for y-axis, or list of column names for multiple metrics
-        hue_by: Column name or consts.METRICS for color grouping
-        style_by: Column name or consts.METRICS for linestyle grouping
-        size_by: Column name or consts.METRICS for line width grouping
-        marker_by: Column name or consts.METRICS for marker grouping
-        alpha_by: Column name or consts.METRICS for alpha/transparency grouping
-        ax: Existing axes to plot on
-        **kwargs: Additional styling parameters
-    """
-    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.plot(
-        "line",
-        0,
-        0,
-        data,
-        x=x,
-        y=y,
-        hue_by=hue_by,
-        style_by=style_by,
-        size_by=size_by,
-        marker_by=marker_by,
-        alpha_by=alpha_by,
-        **kwargs,
-    )
-    fm.finalize_layout()
-
-    if ax is not None:
-        return ax.get_figure(), ax
-    else:
-        return fm.fig, fm.get_axes(0, 0)
+def scatter(data, x, y, ax=None, **kwargs):
+    return _fm_plot("scatter", data, x=x, y=y, ax=ax, **kwargs)
 
 
-def bar(data: pd.DataFrame, x: str, y: str, hue_by: str = None, ax=None, **kwargs):
-    """Create a bar plot with optional grouping."""
-    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.plot("bar", 0, 0, data, x=x, y=y, hue_by=hue_by, **kwargs)
-    fm.finalize_layout()
-
-    if ax is not None:
-        return ax.get_figure(), ax
-    else:
-        return fm.fig, fm.get_axes(0, 0)
+def line(data, x, y, ax=None, **kwargs):
+    return _fm_plot("line", data, x=x, y=y, ax=ax, **kwargs)
 
 
-def hist(data: pd.DataFrame, x: str, ax=None, **kwargs):
-    """Create a histogram."""
-    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.plot("histogram", 0, 0, data, x=x, **kwargs)
-    fm.finalize_layout()
-
-    if ax is not None:
-        return ax.get_figure(), ax
-    else:
-        return fm.fig, fm.get_axes(0, 0)
+def bar(data, x, y, ax=None, **kwargs):
+    return _fm_plot("bar", data, x=x, y=y, ax=ax, **kwargs)
 
 
-def violin(
-    data: pd.DataFrame,
-    x: str = None,
-    y: str = None,
-    hue_by: str = None,
-    ax=None,
-    **kwargs,
-):
-    """Create a violin plot."""
-    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.plot("violin", 0, 0, data, x=x, y=y, hue_by=hue_by, **kwargs)
-    fm.finalize_layout()
-
-    if ax is not None:
-        return ax.get_figure(), ax
-    else:
-        return fm.fig, fm.get_axes(0, 0)
+def hist(data, x, ax=None, **kwargs):
+    return _fm_plot("histogram", data, x=x, ax=ax, **kwargs)
 
 
-def heatmap(data: pd.DataFrame, x: str, y: str, values: str, ax=None, **kwargs):
-    """
-    Create a heatmap from tidy/long format data.
+def violin(data, x, y, ax=None, **kwargs):
+    return _fm_plot("violin", data, x=x, y=y, ax=ax, **kwargs)
 
-    Args:
-        data: DataFrame containing the data in tidy/long format
-        x: Column name for heatmap columns (x-axis)
-        y: Column name for heatmap rows (y-axis)
-        values: Column name for cell values
-        ax: Optional matplotlib axes
-        **kwargs: Additional styling parameters
-    """
-    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.plot("heatmap", 0, 0, data, x=x, y=y, values=values, **kwargs)
-    fm.finalize_layout()
 
-    if ax is not None:
-        return ax.get_figure(), ax
-    else:
-        return fm.fig, fm.get_axes(0, 0)
+def heatmap(data, x, y, values, ax=None, **kwargs):
+    return _fm_plot("heatmap", data, x=x, y=y, ax=ax, values=values, **kwargs)
 
 
 def bump_plot(
-    data: pd.DataFrame,
-    time_col: str,
-    category_col: str,
-    value_col: str,
+    data,
+    time_col,
+    category_col,
+    value_col,
     ax=None,
     **kwargs,
 ):
-    """Create a bump plot to visualize rankings over time."""
-    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.plot(
+    return _fm_plot(
         "bump",
-        0,
-        0,
         data,
         time_col=time_col,
         category_col=category_col,
         value_col=value_col,
+        ax=ax,
         **kwargs,
     )
-    fm.finalize_layout()
-
-    if ax is not None:
-        return ax.get_figure(), ax
-    else:
-        return fm.fig, fm.get_axes(0, 0)
 
 
-def gmm_level_set(data: pd.DataFrame, x: str, y: str, ax=None, **kwargs):
-    """Create a GMM level set plot."""
-    fm = FigureManager(external_ax=ax) if ax is not None else FigureManager()
-    fm.plot("contour", 0, 0, data, x=x, y=y, **kwargs)
-    fm.finalize_layout()
-
-    if ax is not None:
-        return ax.get_figure(), ax
-    else:
-        return fm.fig, fm.get_axes(0, 0)
+def gmm_level_set(data, x, y, ax=None, **kwargs):
+    return _fm_plot("contour", data, x=x, y=y, ax=ax, **kwargs)
