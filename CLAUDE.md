@@ -75,13 +75,15 @@ This aligns with the "Minimalism", "Self-Documenting Code", and "Atomicity" prin
 - **Prefer explicit code** over clever code
 - **Follow "Leave No Trace"** - remove all legacy patterns when making changes
 
-### Dev Tools
+### Dev Tools (Only When Explicitly Requested)
 - `lint` and `lint_fix`: run linting (`uv run ruff check` with optional `--fix` flag)
 - `format`: run auto formatting (`uv run ruff format`)
 - `mp <path>`: run type checking and write errors to `.mypy_errors.jsonl`
 - `pt`: Run pytest
 - `us`: Install/update deps (`uv sync`)
 - `uv run python`: Python with uv
+
+**IMPORTANT**: Do NOT run tests, linting, type checking, or formatting unless explicitly requested by the user. Focus on the requested changes only.
 
 ### Git Shortcuts
 | Shortcut | Command | Use |
@@ -95,7 +97,7 @@ This aligns with the "Minimalism", "Self-Documenting Code", and "Atomicity" prin
 ## 📋 COMMIT STRATEGY
 - **Small, semantic commits**: 20-30 lines per commit with clear purpose
 - **Single line messages**: Succinct and clear, imperative mood
-- **Quality gates**: Run linting/formatting before commits
+- **Quality gates**: Run linting/formatting before commits only when explicitly requested
 - **Incremental building**: Each commit should be reviewable and complete
 
 ## ⚠️ CRITICAL REQUIREMENTS

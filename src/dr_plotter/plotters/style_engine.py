@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
+from dr_plotter.grouping import GroupingConfig
+
 
 class StyleEngine:
     def __init__(
@@ -33,28 +35,13 @@ class StyleEngine:
     def generate_styles(
         self,
         data: pd.DataFrame,
-        hue_by: Optional[str] = None,
-        style_by: Optional[str] = None,
-        size_by: Optional[str] = None,
-        marker_by: Optional[str] = None,
-        alpha_by: Optional[str] = None,
+        grouping_config: GroupingConfig,
         shared_context: Optional[Dict[str, Any]] = None,
     ) -> Dict[Any, Dict[str, Any]]:
-        if not self.enabled_channels.get("hue"):
-            hue_by = None
-        if not self.enabled_channels.get("style"):
-            style_by = None
-        if not self.enabled_channels.get("size"):
-            size_by = None
-        if not self.enabled_channels.get("marker"):
-            marker_by = None
-        if not self.enabled_channels.get("alpha"):
-            alpha_by = None
-
         styles = {}
 
-        column_to_channels = self._map_channels_to_columns(
-            hue_by, style_by, size_by, marker_by, alpha_by
+        column_to_channels = self._build_column_to_channels_from_grouping(
+            grouping_config
         )
 
         if not column_to_channels:
@@ -69,6 +56,19 @@ class StyleEngine:
         )
         return self._build_group_combinations(data, column_to_channels, value_mappings)
 
+    def _build_column_to_channels_from_grouping(
+        self, grouping_config: GroupingConfig
+    ) -> Dict[str, List[str]]:
+        column_to_channels = {}
+
+        for channel, column_name in grouping_config.active.items():
+            if self.enabled_channels.get(channel, False) and column_name is not None:
+                if column_name not in column_to_channels:
+                    column_to_channels[column_name] = []
+                column_to_channels[column_name].append(channel)
+
+        return column_to_channels
+
     def _has_figure_manager_context(
         self, shared_context: Optional[Dict[str, Any]]
     ) -> bool:
@@ -77,31 +77,6 @@ class StyleEngine:
             and hasattr(shared_context, "get")
             and "_figure_manager" in shared_context
         )
-
-    def _map_channels_to_columns(
-        self,
-        hue_by: Optional[str] = None,
-        style_by: Optional[str] = None,
-        size_by: Optional[str] = None,
-        marker_by: Optional[str] = None,
-        alpha_by: Optional[str] = None,
-    ) -> Dict[str, List[str]]:
-        column_to_channels = {}
-        channel_params = [
-            ("hue", hue_by),
-            ("style", style_by),
-            ("size", size_by),
-            ("marker", marker_by),
-            ("alpha", alpha_by),
-        ]
-
-        for channel_name, column_name in channel_params:
-            if column_name is not None:
-                if column_name not in column_to_channels:
-                    column_to_channels[column_name] = []
-                column_to_channels[column_name].append(channel_name)
-
-        return column_to_channels
 
     def _create_value_mappings(
         self,
@@ -176,30 +151,6 @@ class StyleEngine:
                 styles[group_key] = group_style
 
         return styles
-
-    def get_grouping_columns(
-        self,
-        hue_by: Optional[str] = None,
-        style_by: Optional[str] = None,
-        size_by: Optional[str] = None,
-        marker_by: Optional[str] = None,
-        alpha_by: Optional[str] = None,
-    ) -> List[str]:
-        columns = []
-
-        if hue_by is not None and self.enabled_channels.get("hue"):
-            columns.append(hue_by)
-        if style_by is not None and self.enabled_channels.get("style"):
-            columns.append(style_by)
-        if size_by is not None and self.enabled_channels.get("size"):
-            columns.append(size_by)
-        if marker_by is not None and self.enabled_channels.get("marker"):
-            columns.append(marker_by)
-        if alpha_by is not None and self.enabled_channels.get("alpha"):
-            columns.append(alpha_by)
-
-        seen = set()
-        return [x for x in columns if not (x in seen or seen.add(x))]
 
     def reset_cycles(self) -> None:
         self._cycles = self._create_cycles()

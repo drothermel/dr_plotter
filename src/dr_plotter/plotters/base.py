@@ -178,19 +178,13 @@ class BasePlotter:
                     ax.legend(fontsize=self.theme.get("legend_fontsize"))
 
     def _get_group_styles_cols(self) -> Tuple[Dict[Any, Dict[str, Any]], List[ColName]]:
-        active_dict = {
-            self.grouping_params.channel_str(channel): col
-            for channel, col in self.grouping_params.active.items()
-        }
         group_styles = self.style_engine.generate_styles(
             self.plot_data,
+            self.grouping_params,
             shared_context=self.kwargs,
-            **active_dict,
         )
 
-        group_cols = self.style_engine.get_grouping_columns(
-            **active_dict,
-        )
+        group_cols = list(self.grouping_params.active.values())
         return group_styles, group_cols
 
     def _render_with_grouped_method(self, ax: Any, legend: Legend) -> None:
@@ -263,7 +257,7 @@ class BasePlotter:
             else:
                 label_parts = []
                 for col, val in zip(group_cols, name):
-                    if self.metric_col and col == self.metric_col:
+                    if col == consts.METRIC_COL_NAME:
                         label_parts.append(str(val))
                     else:
                         label_parts.append(f"{col}={val}")
