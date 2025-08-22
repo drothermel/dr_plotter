@@ -22,14 +22,12 @@ if __name__ == "__main__":
     )
     show_or_save_plot(fig7, args, "02_bump")
 
-    """
     # === Contour Plot ===
     contour_data = ExampleData.gaussian_mixture()
     fig8, _ = drp.gmm_level_set(
         contour_data, x="x", y="y", title="High-Level API: Contour"
     )
     show_or_save_plot(fig8, args, "02_contour")
-    """
 
     # === Heatmap ===
     heatmap_data = ExampleData.heatmap_data()

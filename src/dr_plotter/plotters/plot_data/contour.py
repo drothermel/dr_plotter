@@ -9,7 +9,4 @@ from .base import PlotData
 class ContourPlotData(PlotData):
     """Validated contour plot data."""
 
-    x: str
-    y: str
-
-    _validation_rules = {"x": "numeric", "y": "numeric"}
+    _validation_rules = {}
