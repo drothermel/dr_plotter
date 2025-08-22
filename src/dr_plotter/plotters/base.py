@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Set
 import pandas as pd
 
 from dr_plotter import consts
-from dr_plotter.grouping import GroupingConfig
+from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.legend import Legend
 from dr_plotter.plotters.style_engine import StyleEngine
 from dr_plotter.theme import BASE_COLORS, BASE_THEME, DR_PLOTTER_STYLE_KEYS, Theme

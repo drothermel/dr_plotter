@@ -1,7 +1,7 @@
 from typing import Any, Dict, Optional
 
 from dr_plotter.cycle_config import CycleConfig
-from dr_plotter.grouping import GroupingConfig
+from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.theme import Theme
 
 

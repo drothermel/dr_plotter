@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 import matplotlib.pyplot as plt
 
 from dr_plotter.cycle_config import CycleConfig
-from dr_plotter.grouping import GroupingConfig
+from dr_plotter.grouping_config import GroupingConfig
 from .plotters import BasePlotter
 
 
