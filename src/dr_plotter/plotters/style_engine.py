@@ -1,30 +1,13 @@
-"""
-Unified style generation engine for all plotter types.
-
-This module provides a centralized approach to generating visual styles for grouped plots,
-replacing the scattered manual color cycling and complex _get_group_styles method.
-"""
-
 import itertools
+from typing import Any, Dict, List, Optional, Tuple
+
+import pandas as pd
 
 
 class StyleEngine:
-    """
-    Unified style generation for all grouped plotting.
-
-    Manages visual style assignment for data groups using configurable visual channels.
-    Supports both simple single-channel use (Bar/Violin) and complex multi-channel use (Line/Scatter).
-    """
-
-    def __init__(self, theme, enabled_channels=None):
-        """
-        Initialize the style engine.
-
-        Args:
-            theme: Theme object with style configuration
-            enabled_channels: Dict of which visual channels to enable
-                             Defaults to all channels enabled
-        """
+    def __init__(
+        self, theme: Any, enabled_channels: Optional[Dict[str, bool]] = None
+    ) -> None:
         self.theme = theme
         self.enabled_channels = enabled_channels or {
             "hue": True,
@@ -34,17 +17,11 @@ class StyleEngine:
             "alpha": True,
         }
 
-        # Create cycles ONCE and maintain state across calls
         self._cycles = self._create_cycles()
+        self._cycle_positions: Dict[str, int] = {k: 0 for k in self._cycles}
+        self._style_cache: Dict[Tuple[str, Any], Dict[str, Any]] = {}
 
-        # Track positions for debugging/reproducibility
-        self._cycle_positions = {k: 0 for k in self._cycles}
-
-        # Cache for consistent style assignment across calls
-        self._style_cache = {}
-
-    def _create_cycles(self):
-        """Create style cycles from theme configuration."""
+    def _create_cycles(self) -> Dict[str, Any]:
         return {
             "color": itertools.cycle(self.theme.get("color_cycle")),
             "linestyle": itertools.cycle(self.theme.get("linestyle_cycle")),
@@ -55,30 +32,14 @@ class StyleEngine:
 
     def generate_styles(
         self,
-        data,
-        hue_by=None,
-        style_by=None,
-        size_by=None,
-        marker_by=None,
-        alpha_by=None,
-        shared_context=None,
-    ):
-        """
-        Generate styles for grouped data based on visual encoding parameters.
-
-        Args:
-            data: DataFrame to generate styles for
-            hue_by: Column name for color grouping
-            style_by: Column name for linestyle grouping
-            size_by: Column name for size grouping
-            marker_by: Column name for marker grouping
-            alpha_by: Column name for alpha grouping
-            shared_context: Dict with shared styling context (e.g., figure manager)
-
-        Returns:
-            Dictionary mapping group keys to their visual properties
-        """
-        # Filter parameters based on enabled channels
+        data: pd.DataFrame,
+        hue_by: Optional[str] = None,
+        style_by: Optional[str] = None,
+        size_by: Optional[str] = None,
+        marker_by: Optional[str] = None,
+        alpha_by: Optional[str] = None,
+        shared_context: Optional[Dict[str, Any]] = None,
+    ) -> Dict[Any, Dict[str, Any]]:
         if not self.enabled_channels.get("hue"):
             hue_by = None
         if not self.enabled_channels.get("style"):
@@ -92,31 +53,39 @@ class StyleEngine:
 
         styles = {}
 
-        # Group visual channels by the column they encode
         column_to_channels = self._map_channels_to_columns(
             hue_by, style_by, size_by, marker_by, alpha_by
         )
 
         if not column_to_channels:
-            # No grouping, single series
             styles[None] = {
                 "color": next(self._cycles["color"]),
                 "linestyle": next(self._cycles["linestyle"]),
             }
             return styles
 
-        # Create value mappings for each column
         value_mappings = self._create_value_mappings(
             data, column_to_channels, shared_context
         )
-
-        # Build final group style combinations
         return self._build_group_combinations(data, column_to_channels, value_mappings)
 
+    def _has_figure_manager_context(
+        self, shared_context: Optional[Dict[str, Any]]
+    ) -> bool:
+        return (
+            shared_context is not None
+            and hasattr(shared_context, "get")
+            and "_figure_manager" in shared_context
+        )
+
     def _map_channels_to_columns(
-        self, hue_by=None, style_by=None, size_by=None, marker_by=None, alpha_by=None
-    ):
-        """Map visual channels to the data columns they encode."""
+        self,
+        hue_by: Optional[str] = None,
+        style_by: Optional[str] = None,
+        size_by: Optional[str] = None,
+        marker_by: Optional[str] = None,
+        alpha_by: Optional[str] = None,
+    ) -> Dict[str, List[str]]:
         column_to_channels = {}
         channel_params = [
             ("hue", hue_by),
@@ -134,36 +103,30 @@ class StyleEngine:
 
         return column_to_channels
 
-    def _create_value_mappings(self, data, column_to_channels, shared_context=None):
-        """Create style mappings for unique values in each column."""
+    def _create_value_mappings(
+        self,
+        data: pd.DataFrame,
+        column_to_channels: Dict[str, List[str]],
+        shared_context: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Dict[Any, Dict[str, Any]]]:
         value_mappings = {}
 
         for column_name, channels in column_to_channels.items():
             unique_values = data[column_name].unique()
 
-            # Generate styles for each unique value using cache for consistency
             column_mapping = {}
             for value in unique_values:
-                # Create cache key for this column-value pair
                 cache_key = (column_name, value)
 
                 if cache_key in self._style_cache:
-                    # Use cached styles for consistency
                     value_styles = self._style_cache[cache_key]
                 else:
-                    # Generate new styles and cache them
                     value_styles = {}
                     for channel in channels:
                         if channel == "hue":
-                            # Check for shared coordination first
-                            if (
-                                shared_context
-                                and hasattr(shared_context, "get")
-                                and "_figure_manager" in shared_context
-                            ):
+                            if self._has_figure_manager_context(shared_context):
                                 shared_styles = shared_context["_shared_hue_styles"]
                                 if value not in shared_styles:
-                                    # Get shared cycles from figure manager
                                     fm = shared_context["_figure_manager"]
                                     shared_cycles = fm._get_shared_style_cycles()
                                     shared_styles[value] = {
@@ -181,7 +144,6 @@ class StyleEngine:
                         elif channel == "alpha":
                             value_styles["alpha"] = next(self._cycles["alpha"])
 
-                    # Cache the generated styles
                     self._style_cache[cache_key] = value_styles
 
                 column_mapping[value] = value_styles
@@ -190,23 +152,23 @@ class StyleEngine:
 
         return value_mappings
 
-    def _build_group_combinations(self, data, column_to_channels, value_mappings):
-        """Build final style dictionary for all group combinations."""
+    def _build_group_combinations(
+        self,
+        data: pd.DataFrame,
+        column_to_channels: Dict[str, List[str]],
+        value_mappings: Dict[str, Dict[Any, Dict[str, Any]]],
+    ) -> Dict[Tuple[Tuple[str, Any], ...], Dict[str, Any]]:
         styles = {}
 
-        # Get unique grouping columns (deduplicated)
         unique_grouping_cols = list(column_to_channels.keys())
 
         if unique_grouping_cols:
-            # Get unique values for each unique column
             column_unique_values = [data[col].unique() for col in unique_grouping_cols]
 
             for combo in itertools.product(*column_unique_values):
-                # Create group key from unique columns
                 group_key = tuple(zip(unique_grouping_cols, combo))
                 group_style = {}
 
-                # Look up synchronized styles for each column in the combination
                 for column_name, value in group_key:
                     column_styles = value_mappings[column_name][value]
                     group_style.update(column_styles)
@@ -216,14 +178,13 @@ class StyleEngine:
         return styles
 
     def get_grouping_columns(
-        self, hue_by=None, style_by=None, size_by=None, marker_by=None, alpha_by=None
-    ):
-        """
-        Get list of columns used for grouping based on enabled channels.
-
-        Returns:
-            List of column names that will be used for groupby operations
-        """
+        self,
+        hue_by: Optional[str] = None,
+        style_by: Optional[str] = None,
+        size_by: Optional[str] = None,
+        marker_by: Optional[str] = None,
+        alpha_by: Optional[str] = None,
+    ) -> List[str]:
         columns = []
 
         if hue_by is not None and self.enabled_channels.get("hue"):
@@ -237,16 +198,13 @@ class StyleEngine:
         if alpha_by is not None and self.enabled_channels.get("alpha"):
             columns.append(alpha_by)
 
-        # Remove duplicates while preserving order
         seen = set()
         return [x for x in columns if not (x in seen or seen.add(x))]
 
-    def reset_cycles(self):
-        """Reset all style cycles to their starting positions."""
+    def reset_cycles(self) -> None:
         self._cycles = self._create_cycles()
         self._cycle_positions = {k: 0 for k in self._cycles}
-        self._style_cache = {}  # Clear cache when resetting
+        self._style_cache = {}
 
-    def get_cycle_positions(self):
-        """Get current positions of all cycles (for debugging/reproducibility)."""
+    def get_cycle_positions(self) -> Dict[str, int]:
         return self._cycle_positions.copy()
