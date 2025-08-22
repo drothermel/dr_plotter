@@ -1,9 +1,5 @@
-"""
-Defines the hierarchical theming system for dr_plotter.
-"""
-
 import itertools
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 DR_PLOTTER_STYLE_KEYS = [
     "title",
@@ -19,23 +15,27 @@ DR_PLOTTER_STYLE_KEYS = [
 class Style:
     style_type = "general"
 
-    def __init__(self, name=None, styles_to_merge: List["Style"] = [], **styles):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        styles_to_merge: List["Style"] = [],
+        **styles: Any,
+    ) -> None:
         self.name = name
-        self.styles = {**styles}
-
-        self.merged_names = []
+        self.styles: Dict[str, Any] = {**styles}
+        self.merged_names: List[str] = []
         for style in styles_to_merge:
             self.merge_style(style)
             if style.name is not None:
                 self.merged_names.append(style.name)
 
-    def add(self, key, value):
+    def add(self, key: str, value: Any) -> None:
         self.styles[key] = value
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Any = None) -> Any:
         return self.styles.get(key, default)
 
-    def merge_style(self, other: "Style"):
+    def merge_style(self, other: "Style") -> None:
         self.styles.update(other.styles)
 
 
@@ -54,16 +54,16 @@ class FigureStyles(Style):
 class Theme:
     def __init__(
         self,
-        name,
-        parent=None,
+        name: str,
+        parent: Optional["Theme"] = None,
         plot_styles: Optional[PlotStyles | Dict] = None,
         axes_styles: Optional[AxesStyles | Dict] = None,
         figure_styles: Optional[FigureStyles | Dict] = None,
-        **styles,
-    ):
+        **styles: Any,
+    ) -> None:
         self.name = name
         self.parent = parent
-        self.all_styles = {}
+        self.all_styles: Dict[str, Style] = {}
         for cls, cls_dict in [
             (PlotStyles, plot_styles),
             (AxesStyles, axes_styles),
@@ -78,29 +78,29 @@ class Theme:
                 self.all_styles[cls.style_type] = cls()
 
     @property
-    def general_styles(self):
+    def general_styles(self) -> Dict[str, Any]:
         return self.get_all_styles(Style)
 
     @property
-    def plot_styles(self):
+    def plot_styles(self) -> Dict[str, Any]:
         return self.get_all_styles(PlotStyles)
 
     @property
-    def axes_styles(self):
+    def axes_styles(self) -> Dict[str, Any]:
         return self.get_all_styles(AxesStyles)
 
     @property
-    def figure_styles(self):
+    def figure_styles(self) -> Dict[str, Any]:
         return self.get_all_styles(FigureStyles)
 
-    def get_all_styles(self, cls):
-        styles = {}
+    def get_all_styles(self, cls: type) -> Dict[str, Any]:
+        styles: Dict[str, Any] = {}
         if self.parent is not None:
             styles.update(self.parent.get_all_styles(cls))
         styles.update(self.all_styles[cls.style_type].styles)
         return styles
 
-    def get(self, key, default=None, source=None):
+    def get(self, key: str, default: Any = None, source: Optional[str] = None) -> Any:
         for source_type, source_styles in self.all_styles.items():
             if (source is None or source_type == source) and (
                 key in source_styles.styles
@@ -110,7 +110,7 @@ class Theme:
             return self.parent.get(key, default=default, source=source)
         return default
 
-    def add(self, key, value, source=None):
+    def add(self, key: str, value: Any, source: Optional[str] = None) -> None:
         source = source if source is not None else Style.style_type
         self.all_styles[source].add(key, value)
 
@@ -134,12 +134,11 @@ BASE_THEME = Theme(
         grid_alpha=0.3,
         label_fontsize=12,
         legend_fontsize=10,
-        cmap="viridis",  # Default colormap for heatmaps/contours
+        cmap="viridis",
     ),
     figure_styles=FigureStyles(
         title_fontsize=14,
     ),
-    # Cycles for multi-series plots
     color_cycle=itertools.cycle(BASE_COLORS),
     linestyle_cycle=itertools.cycle(["-", "--", ":", "-."]),
     marker_cycle=itertools.cycle(["o", "s", "^", "D", "v", "<", ">", "p"]),
@@ -161,7 +160,7 @@ LINE_THEME = Theme(
     name="line",
     parent=BASE_THEME,
     plot_styles=PlotStyles(
-        marker=None,  # Lines don't have markers by default
+        marker=None,
         linewidth=2.0,
     ),
 )
@@ -188,7 +187,7 @@ BAR_THEME = Theme(
 
 HISTOGRAM_THEME = Theme(
     name="histogram",
-    parent=BAR_THEME,  # Inherits from Bar theme
+    parent=BAR_THEME,
     plot_styles=PlotStyles(
         edgecolor="white",
     ),
@@ -201,13 +200,13 @@ VIOLIN_THEME = Theme(
     name="violin",
     parent=BASE_THEME,
     plot_styles=PlotStyles(
-        showmeans=True,  # A good default for violin plots
+        showmeans=True,
     ),
     axes_styles=AxesStyles(
         styles_to_merge=[DARK_X_AXIS_STYLE],
     ),
     general_styles=Style(
-        alpha=0.7,  # Semi-transparent for visibility of interior bars
+        alpha=0.7,
         linewidth=1.5,
         edgecolor="black",
     ),
@@ -217,20 +216,20 @@ HEATMAP_THEME = Theme(
     name="heatmap",
     parent=BASE_THEME,
     axes_styles=AxesStyles(
-        grid=False,  # Grids are distracting on heatmaps
+        grid=False,
         xlabel_pos="top",
     ),
 )
 
 BUMP_PLOT_THEME = Theme(
     name="bump",
-    parent=LINE_THEME,  # It's a specialized line plot
+    parent=LINE_THEME,
     plot_styles=PlotStyles(
         linewidth=3.0,
-        marker="o",  # Bumps should have markers
+        marker="o",
     ),
     axes_styles=AxesStyles(
-        legend=False,  # Bump plots have direct labels, no legend needed
+        legend=False,
         ylabel="Rank",
     ),
 )

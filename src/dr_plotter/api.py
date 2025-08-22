@@ -1,7 +1,3 @@
-"""
-High-level API for creating plots.
-"""
-
 from typing import List, Optional
 
 import matplotlib.pyplot as plt
