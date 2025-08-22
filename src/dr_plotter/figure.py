@@ -1,8 +1,8 @@
-import itertools
 from typing import Any, Dict, List, Optional
 
 import matplotlib.pyplot as plt
 
+from dr_plotter.cycle_config import CycleConfig
 from dr_plotter.grouping import GroupingConfig
 from .plotters import BasePlotter
 
@@ -31,7 +31,7 @@ class FigureManager:
             self.external_mode = False
 
         self._shared_hue_styles: Dict[Any, Any] = {}
-        self._shared_style_cycles: Optional[Dict[str, Any]] = None
+        self.shared_cycle_config: Optional[CycleConfig] = None
 
     def __enter__(self) -> "FigureManager":
         return self
@@ -81,17 +81,6 @@ class FigureManager:
         elif col is not None:
             return self.axes[:, col]
         return self.axes
-
-    def _get_shared_style_cycles(self) -> Dict[str, Any]:
-        if self._shared_style_cycles is None:
-            from .theme import BASE_THEME
-
-            self._shared_style_cycles = {
-                "color": itertools.cycle(BASE_THEME.get("color_cycle")),
-                "linestyle": itertools.cycle(BASE_THEME.get("linestyle_cycle")),
-                "marker": itertools.cycle(BASE_THEME.get("marker_cycle")),
-            }
-        return self._shared_style_cycles
 
     def _add_plot(
         self,

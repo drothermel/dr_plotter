@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set
 
 import pandas as pd
 
@@ -176,17 +176,12 @@ class BasePlotter:
                 if not ax.get_legend():
                     ax.legend(fontsize=self.theme.get("legend_fontsize"))
 
-    def _get_group_styles_cols(self) -> Tuple[Dict[Any, Dict[str, Any]], List[ColName]]:
-        group_styles = self.style_engine.generate_styles(
+    def _render_with_grouped_method(self, ax: Any, legend: Legend) -> None:
+        group_styles = self.style_engine.generate_grouped_styles(
             self.plot_data,
             self.grouping_params,
         )
-
         group_cols = list(self.grouping_params.active.values())
-        return group_styles, group_cols
-
-    def _render_with_grouped_method(self, ax: Any, legend: Legend) -> None:
-        group_styles, group_cols = self._get_group_styles_cols()
         grouped = self.plot_data.groupby(group_cols)
         n_groups = len(grouped)
 
