@@ -106,12 +106,10 @@ class FigureManager:
         else:
             ax = self.get_axes(row, col)
 
-        kwargs["_figure_manager"] = self
-        kwargs["_shared_hue_styles"] = self._shared_hue_styles
         kwargs["grouping_cfg"] = GroupingConfig()
         kwargs["grouping_cfg"].set_kwargs(kwargs)
 
-        plotter = plotter_class(*plotter_args, **kwargs)
+        plotter = plotter_class(*plotter_args, figure_manager=self, **kwargs)
         plotter.render(ax)
 
     def plot(

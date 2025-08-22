@@ -1,5 +1,5 @@
 from dataclasses import dataclass, fields
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from dr_plotter.types import ColName, VisualChannel
 
@@ -13,6 +13,10 @@ class GroupingConfig:
     alpha: Optional[ColName] = None
 
     @property
+    def any_active(self) -> bool:
+        return len(self.active_channels) > 0
+
+    @property
     def channels(self) -> List[VisualChannel]:
         return [field.name for field in fields(self)]
 
@@ -21,8 +25,8 @@ class GroupingConfig:
         return [self.channel_str(channel) for channel in self.channels]
 
     @property
-    def active_channels(self) -> List[VisualChannel]:
-        return [channel for channel in self.channels if self[channel] is not None]
+    def active_channels(self) -> Set[VisualChannel]:
+        return {channel for channel in self.channels if self[channel] is not None}
 
     @property
     def active(self) -> Dict[VisualChannel, ColName]:
@@ -45,3 +49,7 @@ class GroupingConfig:
 
     def __setitem__(self, channel: VisualChannel, value: Optional[ColName]):
         setattr(self, channel, value)
+
+    def validate_against_enabled(self, enabled_channels: Set[VisualChannel]) -> None:
+        unsupported = self.active_channels - enabled_channels
+        assert len(unsupported) == 0, f"Unsupported groupings: {unsupported}"

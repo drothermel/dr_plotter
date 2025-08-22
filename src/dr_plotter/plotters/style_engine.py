@@ -3,22 +3,27 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from dr_plotter import consts
 from dr_plotter.grouping import GroupingConfig
 from dr_plotter.theme import Theme
 from dr_plotter.types import VisualChannel
 
 
 class StyleEngine:
-    def __init__(
-        self, theme: Theme, enabled_channels: Optional[Dict[VisualChannel, bool]] = None
-    ) -> None:
+    def __init__(self, theme: Theme, figure_manager: Optional[Any] = None) -> None:
         self.theme = theme
-        self.enabled_channels = enabled_channels or consts.DEFAULT_ENABLED_CHANNELS
-
+        self.figure_manager = figure_manager
         self._cycles = self._create_cycles()
         self._cycle_positions: Dict[str, int] = {k: 0 for k in self._cycles}
         self._style_cache: Dict[Tuple[str, Any], Dict[str, Any]] = {}
+
+    @property
+    def _ungrouped_default_styles(self) -> Dict[None, Dict[str, Any]]:
+        return {
+            None: {
+                "color": next(self._cycles["color"]),
+                "linestyle": next(self._cycles["linestyle"]),
+            }
+        }
 
     def _create_cycles(self) -> Dict[str, Any]:
         return {
@@ -32,97 +37,113 @@ class StyleEngine:
     def generate_styles(
         self,
         data: pd.DataFrame,
-        grouping_config: GroupingConfig,
-        shared_context: Optional[Dict[str, Any]] = None,
+        grp_cfg: GroupingConfig,
     ) -> Dict[Any, Dict[str, Any]]:
-        styles = {}
+        if not grp_cfg.any_active:
+            return self._ungrouped_default_styles
+        col_to_viz = self._invert_groupings_to_column_mapping(grp_cfg.active)
+        value_mappings = self._create_value_mappings(data, col_to_viz)
+        return self._build_group_combinations(data, col_to_viz, value_mappings)
 
-        column_to_channels = self._build_column_to_channels_from_grouping(
-            grouping_config
-        )
-
-        if not column_to_channels:
-            styles[None] = {
-                "color": next(self._cycles["color"]),
-                "linestyle": next(self._cycles["linestyle"]),
-            }
-            return styles
-
-        value_mappings = self._create_value_mappings(
-            data, column_to_channels, shared_context
-        )
-        return self._build_group_combinations(data, column_to_channels, value_mappings)
-
-    def _build_column_to_channels_from_grouping(
-        self, grouping_config: GroupingConfig
+    def _invert_groupings_to_column_mapping(
+        self, active_groupings: Dict[VisualChannel, str]
     ) -> Dict[str, List[str]]:
-        column_to_channels = {}
-
-        for channel, column_name in grouping_config.active.items():
-            if self.enabled_channels.get(channel, False) and column_name is not None:
-                if column_name not in column_to_channels:
-                    column_to_channels[column_name] = []
-                column_to_channels[column_name].append(channel)
-
-        return column_to_channels
-
-    def _has_figure_manager_context(
-        self, shared_context: Optional[Dict[str, Any]]
-    ) -> bool:
-        return (
-            shared_context is not None
-            and hasattr(shared_context, "get")
-            and "_figure_manager" in shared_context
-        )
+        inverted = {}
+        for channel, column_name in active_groupings.items():
+            if column_name not in inverted:
+                inverted[column_name] = []
+            inverted[column_name].append(channel)
+        return inverted
 
     def _create_value_mappings(
         self,
         data: pd.DataFrame,
         column_to_channels: Dict[str, List[str]],
-        shared_context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Dict[Any, Dict[str, Any]]]:
         value_mappings = {}
 
         for column_name, channels in column_to_channels.items():
             unique_values = data[column_name].unique()
-
-            column_mapping = {}
-            for value in unique_values:
-                cache_key = (column_name, value)
-
-                if cache_key in self._style_cache:
-                    value_styles = self._style_cache[cache_key]
-                else:
-                    value_styles = {}
-                    for channel in channels:
-                        if channel == "hue":
-                            if self._has_figure_manager_context(shared_context):
-                                shared_styles = shared_context["_shared_hue_styles"]
-                                if value not in shared_styles:
-                                    fm = shared_context["_figure_manager"]
-                                    shared_cycles = fm._get_shared_style_cycles()
-                                    shared_styles[value] = {
-                                        "color": next(shared_cycles["color"])
-                                    }
-                                value_styles["color"] = shared_styles[value]["color"]
-                            else:
-                                value_styles["color"] = next(self._cycles["color"])
-                        elif channel == "style":
-                            value_styles["linestyle"] = next(self._cycles["linestyle"])
-                        elif channel == "marker":
-                            value_styles["marker"] = next(self._cycles["marker"])
-                        elif channel == "size":
-                            value_styles["size_mult"] = next(self._cycles["size"])
-                        elif channel == "alpha":
-                            value_styles["alpha"] = next(self._cycles["alpha"])
-
-                    self._style_cache[cache_key] = value_styles
-
-                column_mapping[value] = value_styles
-
+            column_mapping = self._create_column_value_mapping(
+                column_name, unique_values, channels
+            )
             value_mappings[column_name] = column_mapping
 
         return value_mappings
+
+    def _create_column_value_mapping(
+        self,
+        column_name: str,
+        unique_values: Any,
+        channels: List[str],
+    ) -> Dict[Any, Dict[str, Any]]:
+        column_mapping = {}
+
+        for value in unique_values:
+            value_styles = self._get_or_create_value_styles(
+                column_name, value, channels
+            )
+            column_mapping[value] = value_styles
+
+        return column_mapping
+
+    def _get_or_create_value_styles(
+        self,
+        column_name: str,
+        value: Any,
+        channels: List[str],
+    ) -> Dict[str, Any]:
+        cache_key = (column_name, value)
+
+        if cache_key in self._style_cache:
+            return self._style_cache[cache_key]
+
+        value_styles = self._generate_value_styles(channels, value)
+        self._style_cache[cache_key] = value_styles
+        return value_styles
+
+    def _generate_value_styles(
+        self,
+        channels: List[str],
+        value: Any,
+    ) -> Dict[str, Any]:
+        value_styles = {}
+
+        for channel in channels:
+            style_attribute = self._get_style_for_channel(channel, value)
+            value_styles.update(style_attribute)
+
+        return value_styles
+
+    def _get_style_for_channel(
+        self,
+        channel: str,
+        value: Any,
+    ) -> Dict[str, Any]:
+        if channel == "hue":
+            return {"color": self._get_hue_color(value)}
+        elif channel == "style":
+            return {"linestyle": next(self._cycles["linestyle"])}
+        elif channel == "marker":
+            return {"marker": next(self._cycles["marker"])}
+        elif channel == "size":
+            return {"size_mult": next(self._cycles["size"])}
+        elif channel == "alpha":
+            return {"alpha": next(self._cycles["alpha"])}
+        return {}
+
+    def _get_hue_color(self, value: Any) -> str:
+        if self.figure_manager is None:
+            return next(self._cycles["color"])
+
+        shared_styles = self.figure_manager._shared_hue_styles
+        if value in shared_styles:
+            return shared_styles[value]["color"]
+
+        shared_cycles = self.figure_manager._get_shared_style_cycles()
+        color = next(shared_cycles["color"])
+        shared_styles[value] = {"color": color}
+        return color
 
     def _build_group_combinations(
         self,

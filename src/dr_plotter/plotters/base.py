@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pandas as pd
 
@@ -56,7 +56,7 @@ class BasePlotter:
     plotter_name: str = "base"
     plotter_params: List[str] = []
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Dict[VisualChannel, bool] = consts.DEFAULT_ENABLED_CHANNELS
+    enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = BASE_THEME
 
     def __init__(
@@ -64,15 +64,16 @@ class BasePlotter:
         data: pd.DataFrame,
         grouping_cfg: GroupingConfig,
         theme: Optional[Theme] = None,
+        figure_manager: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         self.raw_data: pd.DataFrame = data
         self.kwargs: Dict[str, Any] = kwargs
+        self.figure_manager: Optional[Any] = figure_manager
+        grouping_cfg.validate_against_enabled(self.__class__.enabled_channels)
         self.grouping_params: GroupingConfig = grouping_cfg
         self.theme = self.__class__.default_theme if theme is None else theme
-        self.style_engine: StyleEngine = StyleEngine(
-            self.theme, self.__class__.enabled_channels
-        )
+        self.style_engine: StyleEngine = StyleEngine(self.theme, self.figure_manager)
         self.plot_data: Optional[pd.DataFrame] = None
         self._initialize_subplot_specific_params()
 
@@ -179,7 +180,6 @@ class BasePlotter:
         group_styles = self.style_engine.generate_styles(
             self.plot_data,
             self.grouping_params,
-            shared_context=self.kwargs,
         )
 
         group_cols = list(self.grouping_params.active.values())
