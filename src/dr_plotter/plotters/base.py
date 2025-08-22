@@ -177,10 +177,6 @@ class BasePlotter:
                     ax.legend(fontsize=self.theme.get("legend_fontsize"))
 
     def _render_with_grouped_method(self, ax: Any, legend: Legend) -> None:
-        group_styles = self.style_engine.generate_grouped_styles(
-            self.plot_data,
-            self.grouping_params,
-        )
         group_cols = list(self.grouping_params.active.values())
         grouped = self.plot_data.groupby(group_cols)
         n_groups = len(grouped)
@@ -191,11 +187,13 @@ class BasePlotter:
 
         for group_index, (name, group_data) in enumerate(grouped):
             if isinstance(name, tuple):
-                group_key = tuple(zip(group_cols, name))
+                group_values = dict(zip(group_cols, name))
             else:
-                group_key = tuple([(group_cols[0], name)])
+                group_values = {group_cols[0]: name}
 
-            styles = group_styles.get(group_key, {})
+            styles = self.style_engine.get_styles_for_group(
+                group_values, self.grouping_params
+            )
             plot_kwargs = self._build_group_plot_kwargs(styles, name, group_cols)
             group_position = self._calculate_group_position(group_index, n_groups)
             group_position["x_categories"] = x_categories

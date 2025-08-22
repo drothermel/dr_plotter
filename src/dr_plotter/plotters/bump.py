@@ -36,23 +36,19 @@ class BumpPlotter(BasePlotter):
         self.value_col = "rank"
 
     def _draw(self, ax, data, legend, **kwargs):
-        group_styles = self.style_engine.generate_grouped_styles(
-            self.plot_data,
-            self.grouping_params,
-        )
         group_cols = list(self.grouping_params.active.values())
         if group_cols:
             grouped = self.plot_data.groupby(group_cols)
 
             for name, group_data in grouped:
-                # Create group key for style lookup
                 if isinstance(name, tuple):
-                    group_key = tuple(zip(group_cols, name))
+                    group_values = dict(zip(group_cols, name))
                 else:
-                    group_key = tuple([(group_cols[0], name)])
+                    group_values = {group_cols[0]: name}
 
-                # Get styles for this group
-                styles = group_styles.get(group_key, {})
+                styles = self.style_engine.get_styles_for_group(
+                    group_values, self.grouping_params
+                )
 
                 # Build plot kwargs for this group
                 plot_kwargs = self._build_group_plot_kwargs(styles, name, group_cols)
