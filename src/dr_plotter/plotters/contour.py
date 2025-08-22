@@ -24,7 +24,9 @@ class ContourPlotter(BasePlotter):
     plotter_name: str = "contour"
     plotter_params: List[str] = []
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Dict[VisualChannel, bool] = {}  # No grouping support for contour plots
+    enabled_channels: Dict[
+        VisualChannel, bool
+    ] = {}  # No grouping support for contour plots
     default_theme = CONTOUR_THEME
     data_validator: PlotData = ContourPlotData
 
