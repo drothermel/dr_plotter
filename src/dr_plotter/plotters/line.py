@@ -12,7 +12,6 @@ from dr_plotter.legend import Legend
 from dr_plotter.theme import LINE_THEME, Theme
 
 from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
-from .plot_data import LinePlotData, PlotData
 
 
 class LinePlotter(BasePlotter):
@@ -27,7 +26,6 @@ class LinePlotter(BasePlotter):
         "alpha": True,
     }
     default_theme: Theme = LINE_THEME
-    data_validator: PlotData = LinePlotData
 
     def _draw(self, ax: plt.Axes, data: pd.DataFrame, legend: Legend, **kwargs):
         data_sorted = data.sort_values(consts.X_COL_NAME)

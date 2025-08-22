@@ -11,7 +11,6 @@ from dr_plotter.theme import VIOLIN_THEME, Theme
 from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
 
 from .base import BasePlotter
-from .plot_data import PlotData, ViolinPlotData
 
 
 class ViolinPlotter(BasePlotter):
@@ -25,7 +24,6 @@ class ViolinPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Dict[VisualChannel, bool] = {"hue": True}
     default_theme: Theme = VIOLIN_THEME
-    data_validator: PlotData = ViolinPlotData
 
     def _draw(self, ax, data, legend, **kwargs):
         kwargs["showmeans"] = kwargs.get("showmeans", self._get_style("showmeans"))

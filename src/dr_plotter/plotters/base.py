@@ -5,7 +5,6 @@ import pandas as pd
 from dr_plotter import consts
 from dr_plotter.grouping import GroupingConfig
 from dr_plotter.legend import Legend
-from dr_plotter.plotters.plot_data.base import PlotData
 from dr_plotter.plotters.style_engine import StyleEngine
 from dr_plotter.theme import BASE_COLORS, BASE_THEME, DR_PLOTTER_STYLE_KEYS, Theme
 from dr_plotter.types import (
@@ -64,7 +63,6 @@ class BasePlotter:
         channel: False for channel in consts.VISUAL_CHANNELS
     }
     default_theme: Theme = BASE_THEME
-    data_validator: PlotData = None
 
     def __init__(self, data, grouping_cfg, theme=None, **kwargs):
         self.raw_data: pd.DataFrame = data

@@ -12,7 +12,6 @@ from dr_plotter import consts
 from dr_plotter.theme import CONTOUR_THEME
 from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
 from .base import BasePlotter
-from .plot_data import ContourPlotData, PlotData
 
 
 class ContourPlotter(BasePlotter):
@@ -28,7 +27,6 @@ class ContourPlotter(BasePlotter):
         VisualChannel, bool
     ] = {}  # No grouping support for contour plots
     default_theme = CONTOUR_THEME
-    data_validator: PlotData = ContourPlotData
 
     def _plot_specific_data_prep(self):
         """Fit GMM and create a meshgrid for contour plotting."""

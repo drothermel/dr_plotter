@@ -9,7 +9,6 @@ from dr_plotter.theme import SCATTER_THEME, Theme
 from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
 
 from .base import BasePlotter
-from .plot_data import PlotData, ScatterPlotData
 
 
 class ScatterPlotter(BasePlotter):
@@ -28,7 +27,6 @@ class ScatterPlotter(BasePlotter):
         "alpha": True,
     }
     default_theme: Theme = SCATTER_THEME
-    data_validator: PlotData = ScatterPlotData
 
     def _draw(self, ax, data, legend, **kwargs):
         ax.scatter(data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **kwargs)

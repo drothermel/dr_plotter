@@ -14,7 +14,6 @@ from dr_plotter.plotters.base import (
     BasePlotterParamName,
     SubPlotterParamName,
 )
-from dr_plotter.plotters.plot_data import HeatmapData, PlotData
 from dr_plotter.theme import HEATMAP_THEME, Theme
 from dr_plotter.types import VisualChannel
 
@@ -25,7 +24,6 @@ class HeatmapPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Dict[VisualChannel, bool] = {}
     default_theme: Theme = HEATMAP_THEME
-    data_validator: PlotData = HeatmapData
 
     def _plot_specific_data_prep(self):
         """

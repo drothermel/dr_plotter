@@ -3,29 +3,11 @@ Example 17: Custom Plotters - Creating new plotters using the registry.
 Demonstrates how to create and register a custom plotter class.
 """
 
-import pandas as pd
 import itertools
 from dr_plotter.plotters.base import BasePlotter
-from dr_plotter.plotters.plot_data import PlotData
 from dr_plotter.figure import FigureManager
 from dr_plotter.utils import setup_arg_parser, show_or_save_plot
 from plot_data import ExampleData
-
-
-class CustomErrorBarPlotData(PlotData):
-    """Validation for error bar plot data."""
-
-    def __init__(self, data: pd.DataFrame, x: str, y: str, error: str = None, **kwargs):
-        super().__init__(data)
-        self.x = x
-        self.y = y
-        self.error = error
-
-        # Validate required columns
-        assert x in data.columns, f"Column '{x}' not found in data"
-        assert y in data.columns, f"Column '{y}' not found in data"
-        if error:
-            assert error in data.columns, f"Column '{error}' not found in data"
 
 
 class ErrorBarPlotter(BasePlotter):
@@ -46,7 +28,6 @@ class ErrorBarPlotter(BasePlotter):
         "color": "blue",
         "color_cycle": itertools.cycle(["blue", "red", "green", "orange", "purple"]),
     }
-    data_validator = CustomErrorBarPlotData
 
     def _draw(self, ax, data, legend, **kwargs):
         """Render the error bar plot."""

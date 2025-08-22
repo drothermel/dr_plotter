@@ -6,12 +6,10 @@ from typing import Dict, List
 
 import matplotlib.patheffects as path_effects
 
-from dr_plotter.plotters.plot_data import PlotData
 from dr_plotter.theme import BUMP_PLOT_THEME, Theme
 from dr_plotter.types import VisualChannel
 
 from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
-from .plot_data import BumpPlotData
 
 
 class BumpPlotter(BasePlotter):
@@ -20,7 +18,6 @@ class BumpPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Dict[VisualChannel, bool] = {"hue": True, "style": True}
     default_theme: Theme = BUMP_PLOT_THEME
-    data_validator: PlotData = BumpPlotData
 
     def _initialize_subplot_specific_params(self) -> None:
         self.time_col = self.kwargs.get("time_col")

@@ -11,7 +11,6 @@ from dr_plotter.theme import BAR_THEME, Theme
 from dr_plotter.types import VisualChannel
 
 from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
-from .plot_data import BarPlotData, PlotData
 
 
 class BarPlotter(BasePlotter):
@@ -22,7 +21,6 @@ class BarPlotter(BasePlotter):
         "hue": True,
     }
     default_theme: Theme = BAR_THEME
-    data_validator: PlotData = BarPlotData
 
     def _draw(self, ax, data, legend, **kwargs):
         if self._has_groups:
