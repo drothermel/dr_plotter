@@ -6,6 +6,7 @@ from dr_plotter import consts
 from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.legend import Legend
 from dr_plotter.plotters.style_engine import StyleEngine
+from dr_plotter.style_applicator import StyleApplicator
 from dr_plotter.theme import BASE_COLORS, BASE_THEME, DR_PLOTTER_STYLE_KEYS, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
@@ -59,6 +60,7 @@ class BasePlotter:
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = BASE_THEME
+    use_style_applicator: bool = False
 
     def __init__(
         self,
@@ -75,6 +77,9 @@ class BasePlotter:
         self.grouping_params: GroupingConfig = grouping_cfg
         self.theme = self.__class__.default_theme if theme is None else theme
         self.style_engine: StyleEngine = StyleEngine(self.theme, self.figure_manager)
+        self.style_applicator: StyleApplicator = StyleApplicator(
+            self.theme, self.kwargs, self.grouping_params
+        )
         self.plot_data: Optional[pd.DataFrame] = None
         self._initialize_subplot_specific_params()
 
@@ -105,19 +110,41 @@ class BasePlotter:
     def _draw(self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any) -> None:
         pass
 
+    def _draw_grouped(
+        self,
+        ax: Any,
+        data: pd.DataFrame,
+        group_position: Dict[str, Any],
+        legend: Legend,
+        **kwargs: Any,
+    ) -> None:
+        self._draw(ax, data, legend, **kwargs)
+
     def render(self, ax: Any) -> None:
         self.prepare_data()
         legend = Legend()
-        style_kwargs = {
-            **self.theme.plot_styles,
-            **self._filtered_plot_kwargs,
-        }
-        self._draw(
-            ax,
-            self.plot_data,
-            legend,
-            **style_kwargs,
-        )
+
+        if self._has_groups:
+            self._render_with_grouped_method(ax, legend)
+        else:
+            if self.__class__.use_style_applicator:
+                component_styles = self.style_applicator.get_component_styles(
+                    self.__class__.plotter_name
+                )
+                style_kwargs = component_styles.get("main", {})
+            else:
+                style_kwargs = {
+                    **self.theme.plot_styles,
+                    **self._filtered_plot_kwargs,
+                }
+
+            self._draw(
+                ax,
+                self.plot_data,
+                legend,
+                **style_kwargs,
+            )
+
         self._apply_styling(ax, legend)
 
     def prepare_data(self) -> None:
@@ -192,10 +219,32 @@ class BasePlotter:
             else:
                 group_values = {group_cols[0]: name}
 
-            styles = self.style_engine.get_styles_for_group(
-                group_values, self.grouping_params
-            )
-            plot_kwargs = self._build_group_plot_kwargs(styles, name, group_cols)
+            if self.__class__.use_style_applicator:
+                group_applicator = StyleApplicator(
+                    self.theme, self.kwargs, self.grouping_params, group_values
+                )
+                component_styles = group_applicator.get_component_styles(
+                    self.__class__.plotter_name
+                )
+                plot_kwargs = component_styles.get("main", {})
+                if isinstance(name, tuple) and len(name) == 1:
+                    plot_kwargs["label"] = str(name[0])
+                elif isinstance(name, tuple):
+                    label_parts = []
+                    for col, val in zip(group_cols, name):
+                        if col == consts.METRIC_COL_NAME:
+                            label_parts.append(str(val))
+                        else:
+                            label_parts.append(f"{col}={val}")
+                    plot_kwargs["label"] = ", ".join(label_parts)
+                else:
+                    plot_kwargs["label"] = str(name)
+            else:
+                styles = self.style_engine.get_styles_for_group(
+                    group_values, self.grouping_params
+                )
+                plot_kwargs = self._build_group_plot_kwargs(styles, name, group_cols)
+
             group_position = self._calculate_group_position(group_index, n_groups)
             group_position["x_categories"] = x_categories
 
