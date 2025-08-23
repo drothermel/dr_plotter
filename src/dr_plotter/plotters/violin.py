@@ -11,6 +11,9 @@ from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualCh
 
 from .base import BasePlotter
 
+type Phase = str
+type ComponentSchema = Dict[str, Set[str]]
+
 
 class ViolinPlotter(BasePlotter):
     plotter_name: str = "violin"
@@ -20,6 +23,22 @@ class ViolinPlotter(BasePlotter):
     default_theme: Theme = VIOLIN_THEME
     use_style_applicator: bool = True
     use_legend_manager: bool = True
+
+    component_schema: Dict[Phase, ComponentSchema] = {
+        "plot": {
+            "main": {
+                "showmeans",
+                "showmedians",
+                "showextrema",
+                "widths",
+                "points",
+            }
+        },
+        "post": {
+            "bodies": {"facecolor", "edgecolor", "alpha", "linewidth"},
+            "stats": {"color", "linewidth", "linestyle"},
+        },
+    }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

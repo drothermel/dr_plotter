@@ -10,6 +10,9 @@ from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualCh
 
 from .base import BasePlotter
 
+type Phase = str
+type ComponentSchema = Dict[str, Set[str]]
+
 
 class HistogramPlotter(BasePlotter):
     plotter_name: str = "histogram"
@@ -19,6 +22,26 @@ class HistogramPlotter(BasePlotter):
     default_theme: Theme = HISTOGRAM_THEME
     use_style_applicator: bool = True
     use_legend_manager: bool = True
+
+    component_schema: Dict[Phase, ComponentSchema] = {
+        "plot": {
+            "main": {
+                "color",
+                "alpha",
+                "edgecolor",
+                "linewidth",
+                "bins",
+                "label",
+                "histtype",
+                "cumulative",
+                "density",
+                "weights",
+                "bottom",
+                "rwidth",
+            }
+        },
+        "post": {"patches": {"facecolor", "edgecolor", "linewidth", "alpha"}},
+    }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

@@ -11,6 +11,9 @@ from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualCh
 
 from .base import BasePlotter
 
+type Phase = str
+type ComponentSchema = Dict[str, Set[str]]
+
 
 class ScatterPlotter(BasePlotter):
     plotter_name: str = "scatter"
@@ -20,6 +23,32 @@ class ScatterPlotter(BasePlotter):
     default_theme: Theme = SCATTER_THEME
     use_style_applicator: bool = True
     use_legend_manager: bool = True
+
+    component_schema: Dict[Phase, ComponentSchema] = {
+        "plot": {
+            "main": {
+                "s",
+                "alpha",
+                "color",
+                "marker",
+                "edgecolors",
+                "linewidths",
+                "c",
+                "cmap",
+                "vmin",
+                "vmax",
+            }
+        },
+        "post": {
+            "collection": {
+                "sizes",
+                "facecolors",
+                "edgecolors",
+                "linewidths",
+                "alpha",
+            }
+        },
+    }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

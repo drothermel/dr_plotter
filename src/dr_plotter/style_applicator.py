@@ -232,6 +232,15 @@ class StyleApplicator:
     def _get_component_schema(
         self, plot_type: str, phase: Phase = "plot"
     ) -> ComponentSchema:
+        from dr_plotter.plotters import BasePlotter
+
+        try:
+            plotter_cls = BasePlotter.get_plotter(plot_type)
+            if hasattr(plotter_cls, "component_schema"):
+                return plotter_cls.component_schema.get(phase, {})
+        except (KeyError, AttributeError):
+            pass
+
         plot_schemas = self._component_schemas.get(plot_type, {})
         if isinstance(plot_schemas, dict) and phase in plot_schemas:
             return plot_schemas[phase]
