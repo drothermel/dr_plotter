@@ -2,14 +2,14 @@
 Compound plotter for contour plots, specifically for GMM level sets.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import numpy as np
 from sklearn.mixture import GaussianMixture
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from dr_plotter import consts
-from dr_plotter.theme import CONTOUR_THEME
+from dr_plotter.theme import CONTOUR_THEME, BASE_COLORS
 from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
 from .base import BasePlotter
 
@@ -23,9 +23,9 @@ class ContourPlotter(BasePlotter):
     plotter_name: str = "contour"
     plotter_params: List[str] = []
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Dict[
-        VisualChannel, bool
-    ] = {}  # No grouping support for contour plots
+    enabled_channels: Set[VisualChannel] = (
+        set()
+    )  # No grouping support for contour plots
     default_theme = CONTOUR_THEME
 
     def _plot_specific_data_prep(self):
@@ -74,7 +74,7 @@ class ContourPlotter(BasePlotter):
         scatter_kwargs = {
             "s": self._get_style("scatter_size"),
             "alpha": self._get_style("scatter_alpha"),
-            "color": next(iter(self.theme.get("color_cycle"))),
+            "color": BASE_COLORS[0],
         }
         # Add user scatter kwargs
         if "s" in kwargs:
