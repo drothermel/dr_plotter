@@ -195,19 +195,20 @@ class BasePlotter:
         else:
             ax.grid(False)
 
-        if self._get_style("legend") is None or self._get_style("legend"):
-            if self._has_groups or legend.has_entries():
-                if not ax.get_legend():
-                    if legend.has_entries():
-                        ax.legend(
-                            handles=legend.get_handles(),
-                            fontsize=self.theme.get("legend_fontsize"),
-                        )
-                    else:
+        if not self.use_legend_manager:
+            if self._get_style("legend") is None or self._get_style("legend"):
+                if self._has_groups or legend.has_entries():
+                    if not ax.get_legend():
+                        if legend.has_entries():
+                            ax.legend(
+                                handles=legend.get_handles(),
+                                fontsize=self.theme.get("legend_fontsize"),
+                            )
+                        else:
+                            ax.legend(fontsize=self.theme.get("legend_fontsize"))
+                elif self._get_style("legend") is True:
+                    if not ax.get_legend():
                         ax.legend(fontsize=self.theme.get("legend_fontsize"))
-            elif self._get_style("legend") is True:
-                if not ax.get_legend():
-                    ax.legend(fontsize=self.theme.get("legend_fontsize"))
 
     def _render_with_grouped_method(self, ax: Any, legend: Legend) -> None:
         group_cols = list(self.grouping_params.active.values())
@@ -237,18 +238,7 @@ class BasePlotter:
                     self.__class__.plotter_name
                 )
                 plot_kwargs = component_styles.get("main", {})
-                if isinstance(name, tuple) and len(name) == 1:
-                    plot_kwargs["label"] = str(name[0])
-                elif isinstance(name, tuple):
-                    label_parts = []
-                    for col, val in zip(group_cols, name):
-                        if col == consts.METRIC_COL_NAME:
-                            label_parts.append(str(val))
-                        else:
-                            label_parts.append(f"{col}={val}")
-                    plot_kwargs["label"] = ", ".join(label_parts)
-                else:
-                    plot_kwargs["label"] = str(name)
+                plot_kwargs["label"] = self._build_group_label(name, group_cols)
             else:
                 styles = self.style_engine.get_styles_for_group(
                     group_values, self.grouping_params
@@ -302,19 +292,7 @@ class BasePlotter:
             if k not in plot_kwargs:
                 plot_kwargs[k] = v
 
-        if isinstance(name, tuple):
-            if len(name) == 1:
-                plot_kwargs["label"] = str(name[0])
-            else:
-                label_parts = []
-                for col, val in zip(group_cols, name):
-                    if col == consts.METRIC_COL_NAME:
-                        label_parts.append(str(val))
-                    else:
-                        label_parts.append(f"{col}={val}")
-                plot_kwargs["label"] = ", ".join(label_parts)
-        else:
-            plot_kwargs["label"] = str(name)
+        plot_kwargs["label"] = self._build_group_label(name, group_cols)
 
         return plot_kwargs
 
@@ -339,3 +317,16 @@ class BasePlotter:
 
     def _style_zero_line(self, ax: Any) -> None:
         ax.axhline(y=0, linewidth=2.0, color="#333333", zorder=0.5)
+
+    def _build_group_label(self, name: Any, group_cols: List[str]) -> str:
+        if isinstance(name, tuple):
+            if len(name) == 1:
+                return str(name[0])
+            label_parts = []
+            for col, val in zip(group_cols, name):
+                if col == consts.METRIC_COL_NAME:
+                    label_parts.append(str(val))
+                else:
+                    label_parts.append(f"{col}={val}")
+            return ", ".join(label_parts)
+        return str(name)

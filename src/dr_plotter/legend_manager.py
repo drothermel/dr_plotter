@@ -109,7 +109,7 @@ class LegendManager:
         elif strategy == "grouped_by_channel":
             self._create_grouped_legends()
         elif strategy == "per_axes":
-            pass
+            self._create_per_axes_legends()
 
     def _determine_strategy(self) -> str:
         if self.config.mode != "auto":
@@ -161,6 +161,28 @@ class LegendManager:
                     legend = ax.get_legend()
                     if legend:
                         legend.remove()
+
+    def _create_per_axes_legends(self) -> None:
+        entries = self.registry.get_unique_entries()
+        if not entries:
+            return
+
+        handles = []
+        labels = []
+
+        for entry in entries:
+            proxy = ProxyArtistFactory.create_for_channel(entry)
+            handles.append(proxy)
+            labels.append(entry.label)
+
+        if hasattr(self.fm, "axes"):
+            if hasattr(self.fm.axes, "flat"):
+                for ax in self.fm.axes.flat:
+                    if handles:
+                        ax.legend(handles, labels)
+            else:
+                if handles:
+                    self.fm.axes.legend(handles, labels)
 
     def _create_grouped_legends(self) -> None:
         channels = self._get_unique_channels()
