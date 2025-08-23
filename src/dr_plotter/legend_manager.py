@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Optional, Set
 
 from matplotlib.lines import Line2D
 
+from dr_plotter.channel_metadata import ChannelRegistry
+
 
 @dataclass
 class LegendEntry:
@@ -137,10 +139,81 @@ class LegendManager:
                 channels.add(entry.visual_channel)
         return channels
 
+    def _process_entries_by_channel_type(
+        self, entries: List[LegendEntry]
+    ) -> List[LegendEntry]:
+        processed = []
+        continuous_channels = {}
+
+        for entry in entries:
+            if not entry.visual_channel:
+                processed.append(entry)
+                continue
+
+            spec = ChannelRegistry.get_spec(entry.visual_channel)
+
+            if spec.channel_type == "continuous":
+                if entry.visual_channel not in continuous_channels:
+                    continuous_channels[entry.visual_channel] = []
+                continuous_channels[entry.visual_channel].append(entry)
+            else:
+                processed.append(entry)
+
+        for channel, channel_entries in continuous_channels.items():
+            spec = ChannelRegistry.get_spec(channel)
+
+            if spec.legend_behavior == "min_max":
+                processed.extend(self._create_min_max_entries(channel, channel_entries))
+            elif spec.legend_behavior == "none":
+                pass
+
+        return processed
+
+    def _create_min_max_entries(
+        self, channel: str, entries: List[LegendEntry]
+    ) -> List[LegendEntry]:
+        values = [
+            float(e.channel_value) for e in entries if e.channel_value is not None
+        ]
+        if not values:
+            return []
+
+        min_val = min(values)
+        max_val = max(values)
+
+        sample_entry = entries[0]
+        channel_name = channel.title()
+
+        min_entry = LegendEntry(
+            artist=sample_entry.artist,
+            label=f"Min {channel_name} ({min_val:.2f})",
+            axis=sample_entry.axis,
+            visual_channel=channel,
+            channel_value=min_val,
+            group_key=sample_entry.group_key,
+            plotter_type=sample_entry.plotter_type,
+            artist_type=sample_entry.artist_type,
+        )
+
+        max_entry = LegendEntry(
+            artist=sample_entry.artist,
+            label=f"Max {channel_name} ({max_val:.2f})",
+            axis=sample_entry.axis,
+            visual_channel=channel,
+            channel_value=max_val,
+            group_key=sample_entry.group_key,
+            plotter_type=sample_entry.plotter_type,
+            artist_type=sample_entry.artist_type,
+        )
+
+        return [min_entry, max_entry]
+
     def _create_figure_legend(self) -> None:
         entries = self.registry.get_unique_entries()
         if not entries:
             return
+
+        entries = self._process_entries_by_channel_type(entries)
 
         handles = []
         labels = []
@@ -171,6 +244,8 @@ class LegendManager:
         entries = self.registry.get_unique_entries()
         if not entries:
             return
+
+        entries = self._process_entries_by_channel_type(entries)
 
         # Group entries by axis
         entries_by_axis = {}
@@ -204,6 +279,8 @@ class LegendManager:
             entries = self.registry.get_by_channel(channel)
             if not entries:
                 continue
+
+            entries = self._process_entries_by_channel_type(entries)
 
             handles = []
             labels = []

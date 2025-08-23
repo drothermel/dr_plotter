@@ -77,6 +77,26 @@ class ScatterPlotter(BasePlotter):
 
     def _draw(self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any) -> None:
         label = kwargs.pop("label", None)
+
+        # Handle continuous size channel
+        if "size" in self.grouping_params.active_channels:
+            size_col = self.grouping_params.size
+            if size_col and size_col in data.columns:
+                # Calculate sizes for each point based on continuous mapping
+                sizes = []
+                for value in data[size_col]:
+                    style = self.style_engine._get_continuous_style(
+                        "size", size_col, value
+                    )
+                    size_mult = style.get("size_mult", 1.0)
+                    base_size = kwargs.get("s", 50)
+                    sizes.append(
+                        base_size * size_mult
+                        if isinstance(base_size, (int, float))
+                        else 50 * size_mult
+                    )
+                kwargs["s"] = sizes
+
         collection = ax.scatter(
             data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **kwargs
         )
@@ -93,11 +113,13 @@ class ScatterPlotter(BasePlotter):
         if self.use_legend_manager and self.figure_manager and label and collection:
             proxy = self._create_proxy_artist_from_collection(collection)
             if proxy:
-                entry = self.style_applicator.create_legend_entry(
-                    proxy, label, self.current_axis
-                )
-                if entry:
-                    self.figure_manager.register_legend_entry(entry)
+                # Create legend entries for each active channel
+                for channel in self.grouping_params.active_channels_ordered:
+                    entry = self.style_applicator.create_legend_entry(
+                        proxy, label, self.current_axis, explicit_channel=channel
+                    )
+                    if entry:
+                        self.figure_manager.register_legend_entry(entry)
         elif label and collection:
             proxy = self._create_proxy_artist_from_collection(collection)
             if proxy:

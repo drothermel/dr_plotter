@@ -25,8 +25,14 @@ class GroupingConfig:
         }
 
     @property
+    def active_channels_ordered(self) -> List[VisualChannel]:
+        return sorted(self.active_channels)
+
+    @property
     def active(self) -> Dict[VisualChannel, ColName]:
-        return {channel: getattr(self, channel) for channel in self.active_channels}
+        return {
+            channel: getattr(self, channel) for channel in self.active_channels_ordered
+        }
 
     def set_kwargs(self, kwargs: Dict[str, Any]) -> None:
         for field in fields(self):
