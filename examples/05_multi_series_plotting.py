@@ -5,11 +5,27 @@ Demonstrates all visual encoding options: hue, style, size, marker, alpha.
 
 from dr_plotter.figure import FigureManager
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_example
+from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
 from plot_data import ExampleData
 
+EXPECTED_CHANNELS = {
+    (0, 0): ["hue", "marker"],
+    (0, 1): ["hue", "size"],
+    (1, 1): ["hue", "alpha"],
+}
 
-@verify_example(expected_legends=4)
+
+@verify_plot_properties(expected_channels=EXPECTED_CHANNELS)
+@verify_example(
+    expected_legends=4,
+    verify_legend_consistency=True,
+    expected_channels=EXPECTED_CHANNELS,
+    expected_legend_entries={
+        (0, 0): {"hue": 3, "marker": 2},
+        (0, 1): {"hue": 2, "size": "min_max"},
+        (1, 1): {"hue": 3, "alpha": 2},
+    },
+)
 def main(args):
     with FigureManager(rows=2, cols=2, figsize=(15, 12)) as fm:
         fm.fig.suptitle("Multi-Series: All Visual Encoding Channels", fontsize=16)

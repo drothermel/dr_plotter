@@ -5,11 +5,27 @@ Demonstrates all visual encoding options for scatter plots.
 
 from dr_plotter.figure import FigureManager
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_example
+from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
 from plot_data import ExampleData
 
+EXPECTED_CHANNELS = {
+    (0, 1): ["hue"],
+    (1, 0): ["hue", "size"],
+    (1, 1): ["hue", "marker"],
+}
 
-@verify_example(expected_legends=3)
+
+@verify_plot_properties(expected_channels=EXPECTED_CHANNELS)
+@verify_example(
+    expected_legends=3,
+    verify_legend_consistency=True,
+    expected_channels=EXPECTED_CHANNELS,
+    expected_legend_entries={
+        (0, 1): {"hue": 4},
+        (1, 0): {"hue": 3, "size": "min_max"},
+        (1, 1): {"hue": 2, "marker": 2},
+    },
+)
 def main(args):
     with FigureManager(rows=2, cols=2, figsize=(15, 12)) as fm:
         fm.fig.suptitle(
