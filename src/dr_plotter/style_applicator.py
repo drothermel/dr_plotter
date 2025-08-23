@@ -80,7 +80,7 @@ class StyleApplicator:
 
         channel = None
         if self.grouping_cfg and self.grouping_cfg.active_channels:
-            channel = list(self.grouping_cfg.active_channels.keys())[0]
+            channel = list(self.grouping_cfg.active_channels)[0]
 
         channel_value = self.group_values.get(channel) if channel else None
 

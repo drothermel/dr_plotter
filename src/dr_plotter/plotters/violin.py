@@ -1,7 +1,8 @@
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 
 import numpy as np
 import pandas as pd
+from matplotlib.patches import Patch
 
 from dr_plotter import consts
 from dr_plotter.legend import Legend
@@ -18,6 +19,7 @@ class ViolinPlotter(BasePlotter):
     enabled_channels: Set[VisualChannel] = {"hue"}
     default_theme: Theme = VIOLIN_THEME
     use_style_applicator: bool = True
+    use_legend_manager: bool = True
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -61,67 +63,78 @@ class ViolinPlotter(BasePlotter):
         self._style_zero_line(ax)
 
     def _apply_post_processing(
-        self, parts: Dict[str, Any], legend: Legend, label: str = None
+        self, parts: Dict[str, Any], legend: Legend, label: Optional[str] = None
     ) -> None:
-        if not self.use_style_applicator:
-            return
+        if self.use_style_applicator:
+            artists = {}
+            if "bodies" in parts:
+                artists["bodies"] = parts["bodies"]
 
-        artists = {}
-        if "bodies" in parts:
-            artists["bodies"] = parts["bodies"]
+            stats_parts = []
+            for part_name in ("cbars", "cmins", "cmaxes", "cmeans"):
+                if part_name in parts:
+                    stats_parts.append(parts[part_name])
 
-        stats_parts = []
-        for part_name in ("cbars", "cmins", "cmaxes", "cmeans"):
-            if part_name in parts:
-                stats_parts.append(parts[part_name])
+            if stats_parts:
+                for stats in stats_parts:
+                    artists["stats"] = stats
+                    self.style_applicator.apply_post_processing(
+                        "violin", {"stats": stats}
+                    )
 
-        if stats_parts:
-            for stats in stats_parts:
-                artists["stats"] = stats
-                self.style_applicator.apply_post_processing("violin", {"stats": stats})
-
-        if artists:
-            self.style_applicator.apply_post_processing("violin", artists)
+            if artists:
+                self.style_applicator.apply_post_processing("violin", artists)
 
         if label and "bodies" in parts and parts["bodies"]:
-            first_body = parts["bodies"][0]
-            try:
-                import numpy as np
+            proxy = self._create_proxy_artist_from_bodies(parts["bodies"])
 
-                facecolor = first_body.get_facecolor()
-                if hasattr(facecolor, "__len__") and len(facecolor) > 0:
-                    fc = facecolor[0]
-                    if isinstance(fc, np.ndarray) and fc.size >= 3:
-                        facecolor = tuple(
-                            fc[:4] if fc.size >= 4 else list(fc[:3]) + [1.0]
-                        )
-                    else:
-                        facecolor = "blue"
+            if self.use_legend_manager and self.figure_manager and proxy:
+                entry = self.style_applicator.create_legend_entry(proxy, label)
+                if entry:
+                    self.figure_manager.register_legend_entry(entry)
+            elif proxy:
+                facecolor = proxy.get_facecolor()
+                edgecolor = proxy.get_edgecolor()
+                alpha = proxy.get_alpha()
+                legend.add_patch(
+                    label=label, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha
+                )
+
+    def _create_proxy_artist_from_bodies(self, bodies: List[Any]) -> Optional[Patch]:
+        if not bodies:
+            return None
+
+        first_body = bodies[0]
+
+        try:
+            facecolor = first_body.get_facecolor()
+            if hasattr(facecolor, "__len__") and len(facecolor) > 0:
+                fc = facecolor[0]
+                if isinstance(fc, np.ndarray) and fc.size >= 3:
+                    facecolor = tuple(fc[:4] if fc.size >= 4 else list(fc[:3]) + [1.0])
                 else:
                     facecolor = "blue"
-            except:
+            else:
                 facecolor = "blue"
+        except:
+            facecolor = "blue"
 
-            try:
-                edgecolor = first_body.get_edgecolor()
-                if hasattr(edgecolor, "__len__") and len(edgecolor) > 0:
-                    ec = edgecolor[0]
-                    if isinstance(ec, np.ndarray) and ec.size >= 3:
-                        edgecolor = tuple(
-                            ec[:4] if ec.size >= 4 else list(ec[:3]) + [1.0]
-                        )
-                    else:
-                        edgecolor = "black"
+        try:
+            edgecolor = first_body.get_edgecolor()
+            if hasattr(edgecolor, "__len__") and len(edgecolor) > 0:
+                ec = edgecolor[0]
+                if isinstance(ec, np.ndarray) and ec.size >= 3:
+                    edgecolor = tuple(ec[:4] if ec.size >= 4 else list(ec[:3]) + [1.0])
                 else:
                     edgecolor = "black"
-            except:
+            else:
                 edgecolor = "black"
+        except:
+            edgecolor = "black"
 
-            alpha = first_body.get_alpha() if hasattr(first_body, "get_alpha") else 1.0
+        alpha = first_body.get_alpha() if hasattr(first_body, "get_alpha") else 1.0
 
-            legend.add_patch(
-                label=label, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha
-            )
+        return Patch(facecolor=facecolor, edgecolor=edgecolor, alpha=alpha)
 
     def _draw_simple(
         self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any
