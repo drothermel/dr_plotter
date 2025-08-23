@@ -62,6 +62,12 @@ class StyleApplicator:
         key = f"{plot_type}.{component}"
         self._post_processors[key] = processor
 
+    def set_group_context(self, group_values: Dict[str, Any]) -> None:
+        self.group_values = group_values if group_values is not None else {}
+
+    def clear_group_context(self) -> None:
+        self.group_values = {}
+
     def apply_post_processing(self, plot_type: str, artists: Dict[str, Any]) -> None:
         post_styles = self.get_component_styles(plot_type, phase="post")
 

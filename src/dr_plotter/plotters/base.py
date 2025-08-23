@@ -151,6 +151,9 @@ class BasePlotter:
                 **style_kwargs,
             )
 
+        if self._has_groups and self.__class__.use_style_applicator:
+            self.style_applicator.clear_group_context()
+
         self._apply_styling(ax, legend)
 
     def prepare_data(self) -> None:
@@ -227,15 +230,8 @@ class BasePlotter:
                 group_values = {group_cols[0]: name}
 
             if self.__class__.use_style_applicator:
-                group_applicator = StyleApplicator(
-                    self.theme,
-                    self.kwargs,
-                    self.grouping_params,
-                    group_values,
-                    self.figure_manager,
-                    plot_type=self.__class__.plotter_name,
-                )
-                component_styles = group_applicator.get_component_styles(
+                self.style_applicator.set_group_context(group_values)
+                component_styles = self.style_applicator.get_component_styles(
                     self.__class__.plotter_name
                 )
                 plot_kwargs = component_styles.get("main", {})
