@@ -1,8 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
-from matplotlib.lines import Line2D
-
 from dr_plotter.channel_metadata import ChannelRegistry
 
 
@@ -48,49 +46,6 @@ class LegendConfig:
     ncol: Optional[int] = None
     spacing: float = 0.1
     remove_axes_legends: bool = True
-
-
-class ProxyArtistFactory:
-    @staticmethod
-    def create_for_channel(entry: LegendEntry) -> Any:
-        if entry.visual_channel == "hue":
-            if hasattr(entry.artist, "get_color"):
-                return Line2D(
-                    [0],
-                    [0],
-                    color=entry.artist.get_color(),
-                    linewidth=2,
-                    linestyle="-",
-                    label=entry.label,
-                )
-        elif entry.visual_channel == "style":
-            if hasattr(entry.artist, "get_linestyle"):
-                return Line2D(
-                    [0],
-                    [0],
-                    color="black",
-                    linestyle=entry.artist.get_linestyle(),
-                    linewidth=2,
-                    label=entry.label,
-                )
-        elif entry.visual_channel == "size":
-            marker_size = 8
-            if entry.channel_value is not None:
-                try:
-                    marker_size = float(entry.channel_value) * 2
-                except (ValueError, TypeError):
-                    pass
-            return Line2D(
-                [0],
-                [0],
-                marker="o",
-                markersize=marker_size,
-                color="black",
-                linestyle="",
-                label=entry.label,
-            )
-
-        return entry.artist
 
 
 class LegendManager:
@@ -219,8 +174,7 @@ class LegendManager:
         labels = []
 
         for entry in entries:
-            proxy = ProxyArtistFactory.create_for_channel(entry)
-            handles.append(proxy)
+            handles.append(entry.artist)
             labels.append(entry.label)
 
         if hasattr(self.fm, "figure") and self.fm.figure:
@@ -264,9 +218,8 @@ class LegendManager:
             handles = []
             labels = []
             for entry in axis_entries:
-                proxy = ProxyArtistFactory.create_for_channel(entry)
-                if proxy:
-                    handles.append(proxy)
+                if entry.artist:
+                    handles.append(entry.artist)
                     labels.append(entry.label)
 
             if handles:
@@ -286,8 +239,7 @@ class LegendManager:
             labels = []
 
             for entry in entries:
-                proxy = ProxyArtistFactory.create_for_channel(entry)
-                handles.append(proxy)
+                handles.append(entry.artist)
                 labels.append(entry.label)
 
             if hasattr(self.fm, "figure") and self.fm.figure and self.fm.figure.axes:
