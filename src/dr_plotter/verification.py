@@ -29,7 +29,9 @@ def is_legend_actually_visible(
     result["marked_visible"] = True
 
     handles = (
-        legend.legendHandles if hasattr(legend, "legendHandles") else legend.get_lines()
+        legend.legend_handles
+        if hasattr(legend, "legend_handles")
+        else legend.get_lines()
     )
     labels = [t.get_text() for t in legend.get_texts()]
 
@@ -145,14 +147,23 @@ def verify_legend_visibility(
     print("=" * 50)
     print(f"Total subplots: {total_count}")
     print(f"Legends visible: {visible_count}")
+    if expected_visible_count is not None:
+        print(f"Expected visible: {expected_visible_count}")
     print(f"Legends missing: {total_count - visible_count}")
     print()
 
     for i, result in results.items():
-        status = "✅" if result["visible"] else "❌"
-        print(f"Subplot {i}: {status} {result['reason']}")
+        if expected_visible_count is not None and expected_visible_count == 0:
+            status = "✅" if not result["visible"] else "❌"
+            if result["visible"]:
+                print(f"Subplot {i}: {status} Unexpected legend found")
+            else:
+                print(f"Subplot {i}: {status} No legend (expected)")
+        else:
+            status = "✅" if result["visible"] else "❌"
+            print(f"Subplot {i}: {status} {result['reason']}")
 
-        if not result["visible"]:
+        if not result["visible"] and expected_visible_count != 0:
             summary["issues"].append(
                 {
                     "subplot": i,
@@ -162,20 +173,48 @@ def verify_legend_visibility(
                     "has_content": result["has_content"],
                 }
             )
+        elif result["visible"] and expected_visible_count == 0:
+            summary["issues"].append(
+                {
+                    "subplot": i,
+                    "reason": "Unexpected legend found",
+                    "exists": result["exists"],
+                    "marked_visible": result["marked_visible"],
+                    "has_content": result["has_content"],
+                }
+            )
 
-    if expected_visible_count is not None and visible_count != expected_visible_count:
-        summary["success"] = False
-        print(
-            f"\n❌ EXPECTED {expected_visible_count} visible legends, but found {visible_count}"
-        )
-
-    if visible_count == 0:
-        summary["success"] = False
-        print("\n❌ CRITICAL: No legends are visible in any subplot!")
-    elif visible_count < total_count:
-        if fail_on_missing:
+    if expected_visible_count is not None:
+        if visible_count != expected_visible_count:
             summary["success"] = False
-        print(f"\n⚠️  WARNING: {total_count - visible_count} subplot(s) missing legends")
+            if expected_visible_count == 0:
+                print(
+                    f"\n❌ EXPECTED no legends, but found {visible_count} unexpected legend(s)"
+                )
+            else:
+                print(
+                    f"\n❌ EXPECTED {expected_visible_count} visible legends, but found {visible_count}"
+                )
+        else:
+            if expected_visible_count == 0:
+                print("\n✅ EXPECTED no legends and found none - perfect!")
+            else:
+                print(
+                    f"\n✅ EXPECTED {expected_visible_count} legends and found {visible_count} - perfect!"
+                )
+    else:
+        if visible_count == 0:
+            if not fail_on_missing:
+                print("\n✅ No legends found (not treated as failure)")
+            else:
+                summary["success"] = False
+                print("\n❌ CRITICAL: No legends are visible in any subplot!")
+        elif visible_count < total_count:
+            if fail_on_missing:
+                summary["success"] = False
+            print(
+                f"\n⚠️  WARNING: {total_count - visible_count} subplot(s) missing legends"
+            )
 
     if summary["success"]:
         print("\n✅ All legend visibility checks passed!")
