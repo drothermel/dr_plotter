@@ -73,7 +73,7 @@ class StyleApplicator:
                     processor(artists[component], styles)
 
     def create_legend_entry(
-        self, artist: Any, label: str, artist_type: str = "main"
+        self, artist: Any, label: str, axis: Any = None, artist_type: str = "main"
     ) -> Optional[LegendEntry]:
         if not label:
             return None
@@ -87,6 +87,7 @@ class StyleApplicator:
         return LegendEntry(
             artist=artist,
             label=label,
+            axis=axis,
             visual_channel=channel,
             channel_value=channel_value,
             group_key=self.group_values.copy(),

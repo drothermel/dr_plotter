@@ -8,6 +8,7 @@ from matplotlib.lines import Line2D
 class LegendEntry:
     artist: Any
     label: str
+    axis: Any = None
     visual_channel: Optional[str] = None
     channel_value: Any = None
     group_key: Dict[str, Any] = field(default_factory=dict)
@@ -115,11 +116,15 @@ class LegendManager:
         if self.config.mode != "auto":
             return self.config.mode
 
+        unique_channels = self._get_unique_channels()
+
         if hasattr(self.fm, "rows") and hasattr(self.fm, "cols"):
             if self.fm.rows > 1 or self.fm.cols > 1:
-                return "figure_below"
+                if len(unique_channels) > 1:
+                    return "per_axes"
+                else:
+                    return "figure_below"
 
-        unique_channels = self._get_unique_channels()
         if len(unique_channels) > 1:
             return "grouped_by_channel"
 
@@ -167,22 +172,30 @@ class LegendManager:
         if not entries:
             return
 
-        handles = []
-        labels = []
-
+        # Group entries by axis
+        entries_by_axis = {}
         for entry in entries:
-            proxy = ProxyArtistFactory.create_for_channel(entry)
-            handles.append(proxy)
-            labels.append(entry.label)
+            axis = entry.axis
+            if axis is not None:
+                if axis not in entries_by_axis:
+                    entries_by_axis[axis] = []
+                entries_by_axis[axis].append(entry)
 
-        if hasattr(self.fm, "axes"):
-            if hasattr(self.fm.axes, "flat"):
-                for ax in self.fm.axes.flat:
-                    if handles:
-                        ax.legend(handles, labels)
-            else:
-                if handles:
-                    self.fm.axes.legend(handles, labels)
+        # Create legend for each axis with its specific entries
+        for axis, axis_entries in entries_by_axis.items():
+            if not axis_entries:
+                continue
+
+            handles = []
+            labels = []
+            for entry in axis_entries:
+                proxy = ProxyArtistFactory.create_for_channel(entry)
+                if proxy:
+                    handles.append(proxy)
+                    labels.append(entry.label)
+
+            if handles:
+                axis.legend(handles, labels)
 
     def _create_grouped_legends(self) -> None:
         channels = self._get_unique_channels()

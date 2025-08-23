@@ -127,6 +127,7 @@ class BasePlotter:
 
     def render(self, ax: Any) -> None:
         self.prepare_data()
+        self.current_axis = ax
         legend = Legend(self.figure_manager if self.use_legend_manager else None)
 
         if self._has_groups:

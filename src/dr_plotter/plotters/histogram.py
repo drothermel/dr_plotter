@@ -84,7 +84,9 @@ class HistogramPlotter(BasePlotter):
                     alpha=first_patch.get_alpha(),
                 )
 
-                entry = self.style_applicator.create_legend_entry(proxy, label)
+                entry = self.style_applicator.create_legend_entry(
+                    proxy, label, self.current_axis
+                )
                 if entry:
                     self.figure_manager.register_legend_entry(entry)
         elif label and "patches" in parts:
