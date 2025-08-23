@@ -29,7 +29,7 @@ if __name__ == "__main__":
             single_lr_data,
             x="epoch",
             y=["train_loss", "val_loss"],
-            hue_by=consts.METRICS,
+            hue_by=consts.METRIC_COL_NAME,
             title="Loss Metrics (hue_by=METRICS)",
         )
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
             ml_data,
             x="epoch",
             y=["train_loss", "val_loss"],
-            hue_by=consts.METRICS,
+            hue_by=consts.METRIC_COL_NAME,
             style_by="learning_rate",
             title="Loss + Learning Rate",
         )
@@ -55,7 +55,7 @@ if __name__ == "__main__":
             x="epoch",
             y=["train_accuracy", "val_accuracy"],
             hue_by="learning_rate",
-            style_by=consts.METRICS,
+            style_by=consts.METRIC_COL_NAME,
             title="Accuracy (style_by=METRICS)",
         )
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
             multi_data,
             x="x",
             y=["metric_a", "metric_b", "metric_c"],
-            hue_by=consts.METRICS,
+            hue_by=consts.METRIC_COL_NAME,
             title="Generic Multi-Metrics",
         )
 

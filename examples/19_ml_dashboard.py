@@ -30,7 +30,7 @@ if __name__ == "__main__":
             ml_data,
             x="epoch",
             y=["train_loss", "val_loss"],
-            hue_by=consts.METRICS,
+            hue_by=consts.METRIC_COL_NAME,
             style_by="learning_rate",
             title="Loss Curves (color=metric, style=lr)",
         )
@@ -56,7 +56,7 @@ if __name__ == "__main__":
             x="epoch",
             y=["train_accuracy", "val_accuracy"],
             hue_by="learning_rate",
-            style_by=consts.METRICS,
+            style_by=consts.METRIC_COL_NAME,
             title="Accuracy (color=lr, style=metric)",
         )
 

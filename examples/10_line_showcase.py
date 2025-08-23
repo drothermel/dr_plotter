@@ -56,7 +56,7 @@ if __name__ == "__main__":
             ml_data,
             x="epoch",
             y=["train_loss", "val_loss"],
-            hue_by=consts.METRICS,
+            hue_by=consts.METRIC_COL_NAME,
             style_by="learning_rate",
             title="Multi-Metrics (METRICS)",
         )
