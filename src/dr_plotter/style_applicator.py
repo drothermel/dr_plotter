@@ -18,11 +18,13 @@ class StyleApplicator:
         kwargs: Dict[str, Any],
         grouping_cfg: Optional[GroupingConfig] = None,
         group_values: Optional[Dict[str, Any]] = None,
+        figure_manager: Optional[Any] = None,
     ) -> None:
         self.theme = theme
         self.kwargs = kwargs
         self.grouping_cfg = grouping_cfg
         self.group_values = group_values or {}
+        self.figure_manager = figure_manager
         self._component_schemas = self._load_component_schemas()
         self._post_processors: Dict[str, Callable] = {}
 
@@ -199,7 +201,7 @@ class StyleApplicator:
 
         from dr_plotter.plotters.style_engine import StyleEngine
 
-        style_engine = StyleEngine(self.theme)
+        style_engine = StyleEngine(self.theme, self.figure_manager)
         return style_engine.get_styles_for_group(self.group_values, self.grouping_cfg)
 
     def _get_component_schema(

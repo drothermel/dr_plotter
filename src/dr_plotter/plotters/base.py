@@ -78,7 +78,10 @@ class BasePlotter:
         self.theme = self.__class__.default_theme if theme is None else theme
         self.style_engine: StyleEngine = StyleEngine(self.theme, self.figure_manager)
         self.style_applicator: StyleApplicator = StyleApplicator(
-            self.theme, self.kwargs, self.grouping_params
+            self.theme,
+            self.kwargs,
+            self.grouping_params,
+            figure_manager=self.figure_manager,
         )
         self.plot_data: Optional[pd.DataFrame] = None
         self._initialize_subplot_specific_params()
@@ -221,7 +224,11 @@ class BasePlotter:
 
             if self.__class__.use_style_applicator:
                 group_applicator = StyleApplicator(
-                    self.theme, self.kwargs, self.grouping_params, group_values
+                    self.theme,
+                    self.kwargs,
+                    self.grouping_params,
+                    group_values,
+                    self.figure_manager,
                 )
                 component_styles = group_applicator.get_component_styles(
                     self.__class__.plotter_name
