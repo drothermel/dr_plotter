@@ -5,15 +5,13 @@ Demonstrates combining different plot types in the same subplot.
 
 import dr_plotter.api as drp
 import matplotlib.pyplot as plt
-from dr_plotter.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.verification import verify_legend_visibility
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import verify_example
 from plot_data import ExampleData
-import sys
 
-if __name__ == "__main__":
-    parser = setup_arg_parser(description="Layering Example")
-    args = parser.parse_args()
 
+@verify_example(expected_legends=2)
+def main(args):
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
     fig.suptitle("Layering: Combining Multiple Plot Types", fontsize=16)
 
@@ -58,43 +56,11 @@ if __name__ == "__main__":
     ax2.set_title("Histogram + Theoretical Curve")
     ax2.legend()
 
-    # Always show/save the plot first for debugging purposes
     show_or_save_plot(fig, args, "15_layering_plots")
+    return fig
 
-    # Then verify legend visibility and fail if issues are found
-    print("\n" + "=" * 60)
-    print("LEGEND VISIBILITY VERIFICATION")
-    print("=" * 60)
 
-    verification_result = verify_legend_visibility(
-        fig,
-        expected_visible_count=2,  # We expect 2 subplots to have visible legends
-        fail_on_missing=True,
-    )
-
-    if not verification_result["success"]:
-        print("\n💥 EXAMPLE 15 FAILED: Legend visibility issues detected!")
-        print("   - Expected both subplots to have visible legends")
-        print(
-            f"   - Only {verification_result['visible_legends']} legends are actually visible"
-        )
-        print(f"   - {verification_result['missing_legends']} legends are missing")
-
-        print("\n📋 Detailed Issues:")
-        for issue in verification_result["issues"]:
-            print(f"   • Subplot {issue['subplot']}: {issue['reason']}")
-            print(
-                f"     (exists: {issue['exists']}, marked_visible: {issue['marked_visible']}, has_content: {issue['has_content']})"
-            )
-
-        print("\n🔧 This indicates a bug in the legend management system.")
-        print(
-            "   The layering plots should show manual legends created with ax.legend() calls."
-        )
-        print("   Please check that manual legend calls are working properly.")
-        print("   📊 Plot has been saved for visual debugging.")
-
-        # Exit with error code to fail the example
-        sys.exit(1)
-
-    print("\n🎉 SUCCESS: All legends are visible and properly positioned!")
+if __name__ == "__main__":
+    parser = setup_arg_parser(description="Layering Example")
+    args = parser.parse_args()
+    main(args)

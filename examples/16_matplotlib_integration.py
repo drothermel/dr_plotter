@@ -4,15 +4,13 @@ Demonstrates seamless integration with matplotlib's parameter system.
 """
 
 from dr_plotter.figure import FigureManager
-from dr_plotter.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.verification import verify_legend_visibility
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import verify_example
 from plot_data import ExampleData
-import sys
 
-if __name__ == "__main__":
-    parser = setup_arg_parser(description="Matplotlib Integration Example")
-    args = parser.parse_args()
 
+@verify_example(expected_legends=0)
+def main(args):
     with FigureManager(rows=2, cols=2, figsize=(15, 12)) as fm:
         fm.fig.suptitle(
             "Matplotlib Integration: Direct Parameter Pass-Through", fontsize=16
@@ -87,45 +85,11 @@ if __name__ == "__main__":
             width=0.6,
         )  # matplotlib: bar width
 
-        # Always show/save the plot first for debugging purposes
-        show_or_save_plot(fm.fig, args, "16_matplotlib_integration")
+    show_or_save_plot(fm.fig, args, "16_matplotlib_integration")
+    return fm.fig
 
-        # Then verify legend visibility and fail if issues are found
-        print("\n" + "=" * 60)
-        print("LEGEND VISIBILITY VERIFICATION")
-        print("=" * 60)
 
-        verification_result = verify_legend_visibility(
-            fm.fig,
-            expected_visible_count=0,  # We expect 0 legends (styling demo with no grouping variables)
-            fail_on_missing=False,  # Don't fail for missing legends since we expect 0
-        )
-
-        if verification_result["visible_legends"] > 0:
-            print("\n💥 EXAMPLE 16 FAILED: Unexpected legends detected!")
-            print(
-                "   - Expected 0 legends (matplotlib integration demo with no grouping variables)"
-            )
-            print(
-                f"   - Found {verification_result['visible_legends']} unexpected legends"
-            )
-
-            print("\n📋 Detailed Issues:")
-            for i, result in verification_result["details"].items():
-                if result["visible"]:
-                    print(f"   • Subplot {i}: Unexpected legend detected")
-
-            print(
-                "\n🔧 This indicates the legend management system is creating legends when it shouldn't."
-            )
-            print(
-                "   Matplotlib integration demos without grouping should not have legends."
-            )
-            print("   📊 Plot has been saved for visual debugging.")
-
-            # Exit with error code to fail the example
-            sys.exit(1)
-
-        print(
-            "\n🎉 SUCCESS: No unexpected legends found - styling demo is clean as expected!"
-        )
+if __name__ == "__main__":
+    parser = setup_arg_parser(description="Matplotlib Integration Example")
+    args = parser.parse_args()
+    main(args)
