@@ -2,6 +2,7 @@ from typing import Any, Callable, Dict, Optional, Set
 
 from dr_plotter.consts import VISUAL_CHANNELS
 from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.legend_manager import LegendEntry
 from dr_plotter.theme import Theme
 
 type ComponentName = str
@@ -19,12 +20,14 @@ class StyleApplicator:
         grouping_cfg: Optional[GroupingConfig] = None,
         group_values: Optional[Dict[str, Any]] = None,
         figure_manager: Optional[Any] = None,
+        plot_type: Optional[str] = None,
     ) -> None:
         self.theme = theme
         self.kwargs = kwargs
         self.grouping_cfg = grouping_cfg
         self.group_values = group_values or {}
         self.figure_manager = figure_manager
+        self.plot_type = plot_type
         self._component_schemas = self._load_component_schemas()
         self._post_processors: Dict[str, Callable] = {}
 
@@ -68,6 +71,28 @@ class StyleApplicator:
                 processor = self._post_processors[processor_key]
                 if component in artists:
                     processor(artists[component], styles)
+
+    def create_legend_entry(
+        self, artist: Any, label: str, artist_type: str = "main"
+    ) -> Optional[LegendEntry]:
+        if not label:
+            return None
+
+        channel = None
+        if self.grouping_cfg and self.grouping_cfg.active_channels:
+            channel = list(self.grouping_cfg.active_channels.keys())[0]
+
+        channel_value = self.group_values.get(channel) if channel else None
+
+        return LegendEntry(
+            artist=artist,
+            label=label,
+            visual_channel=channel,
+            channel_value=channel_value,
+            group_key=self.group_values.copy(),
+            plotter_type=self.plot_type or "unknown",
+            artist_type=artist_type,
+        )
 
     def _resolve_component_styles(
         self, plot_type: str, component: str, attrs: Set[str], phase: Phase = "plot"

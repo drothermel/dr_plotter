@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 from dr_plotter.cycle_config import CycleConfig
 from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.legend_manager import LegendConfig, LegendEntry, LegendManager
 from .plotters import BasePlotter
 
 
@@ -15,10 +16,14 @@ class FigureManager:
         external_ax: Optional[plt.Axes] = None,
         layout_rect: Optional[List[float]] = None,
         layout_pad: Optional[float] = 0.5,
+        legend_config: Optional[LegendConfig] = None,
+        theme: Optional[Any] = None,
         **fig_kwargs: Any,
     ) -> None:
         self._layout_rect = layout_rect
         self._layout_pad = layout_pad if layout_pad is not None else 0.5
+        self.rows = rows
+        self.cols = cols
 
         if external_ax is not None:
             self.fig = external_ax.get_figure()
@@ -30,13 +35,32 @@ class FigureManager:
             )
             self.external_mode = False
 
+        self.figure = self.fig
+
         self._shared_hue_styles: Dict[Any, Any] = {}
         self.shared_cycle_config: Optional[CycleConfig] = None
+
+        if legend_config:
+            self.legend_config = legend_config
+        elif theme and hasattr(theme, "legend_config"):
+            self.legend_config = theme.legend_config
+        else:
+            self.legend_config = LegendConfig()
+
+        self.legend_manager = LegendManager(self, self.legend_config)
 
     def __enter__(self) -> "FigureManager":
         return self
 
+    def register_legend_entry(self, entry: LegendEntry) -> None:
+        self.legend_manager.registry.add_entry(entry)
+
+    def finalize_legends(self) -> None:
+        self.legend_manager.finalize()
+
     def finalize_layout(self) -> None:
+        self.finalize_legends()
+
         if self._layout_rect is not None:
             self.fig.tight_layout(rect=self._layout_rect, pad=self._layout_pad)
         elif self.fig._suptitle is not None:

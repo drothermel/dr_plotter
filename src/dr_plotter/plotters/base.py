@@ -61,6 +61,7 @@ class BasePlotter:
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = BASE_THEME
     use_style_applicator: bool = False
+    use_legend_manager: bool = False
 
     def __init__(
         self,
@@ -82,6 +83,7 @@ class BasePlotter:
             self.kwargs,
             self.grouping_params,
             figure_manager=self.figure_manager,
+            plot_type=self.__class__.plotter_name,
         )
         self.plot_data: Optional[pd.DataFrame] = None
         self._initialize_subplot_specific_params()
@@ -125,7 +127,7 @@ class BasePlotter:
 
     def render(self, ax: Any) -> None:
         self.prepare_data()
-        legend = Legend()
+        legend = Legend(self.figure_manager if self.use_legend_manager else None)
 
         if self._has_groups:
             self._render_with_grouped_method(ax, legend)
@@ -229,6 +231,7 @@ class BasePlotter:
                     self.grouping_params,
                     group_values,
                     self.figure_manager,
+                    plot_type=self.__class__.plotter_name,
                 )
                 component_styles = group_applicator.get_component_styles(
                     self.__class__.plotter_name
