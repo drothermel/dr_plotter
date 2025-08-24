@@ -5,7 +5,6 @@ import pandas as pd
 from matplotlib.patches import Patch
 
 from dr_plotter import consts
-from dr_plotter.legend import Legend
 from dr_plotter.theme import VIOLIN_THEME, Theme
 from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
 
@@ -22,7 +21,6 @@ class ViolinPlotter(BasePlotter):
     enabled_channels: Set[VisualChannel] = {"hue"}
     default_theme: Theme = VIOLIN_THEME
     use_style_applicator: bool = True
-    use_legend_manager: bool = True
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -74,15 +72,18 @@ class ViolinPlotter(BasePlotter):
                 setter = getattr(stats, f"set_{attr}")
                 setter(value)
 
-    def _draw(self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any) -> None:
+    def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         if self._has_groups:
             pass
         else:
-            self._draw_simple(ax, data, legend, **kwargs)
+            self._draw_simple(ax, data, **kwargs)
 
     def _apply_post_processing(
-        self, parts: Dict[str, Any], legend: Legend, label: Optional[str] = None
+        self, parts: Dict[str, Any], label: Optional[str] = None
     ) -> None:
+        if not self._should_create_legend():
+            return
+
         if self.use_style_applicator:
             artists = {}
             if "bodies" in parts:
@@ -106,19 +107,12 @@ class ViolinPlotter(BasePlotter):
         if label and "bodies" in parts and parts["bodies"]:
             proxy = self._create_proxy_artist_from_bodies(parts["bodies"])
 
-            if self.use_legend_manager and self.figure_manager and proxy:
+            if self.figure_manager and proxy:
                 entry = self.style_applicator.create_legend_entry(
                     proxy, label, self.current_axis
                 )
                 if entry:
                     self.figure_manager.register_legend_entry(entry)
-            elif proxy:
-                facecolor = proxy.get_facecolor()
-                edgecolor = proxy.get_edgecolor()
-                alpha = proxy.get_alpha()
-                legend.add_patch(
-                    label=label, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha
-                )
 
     def _create_proxy_artist_from_bodies(self, bodies: List[Any]) -> Optional[Patch]:
         if not bodies:
@@ -156,9 +150,7 @@ class ViolinPlotter(BasePlotter):
 
         return Patch(facecolor=facecolor, edgecolor=edgecolor, alpha=alpha)
 
-    def _draw_simple(
-        self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any
-    ) -> None:
+    def _draw_simple(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         groups = []
         group_data = [data]
         if consts.X_COL_NAME in data.columns:
@@ -173,14 +165,13 @@ class ViolinPlotter(BasePlotter):
             ax.set_xticks(np.arange(1, len(groups) + 1))
             ax.set_xticklabels(groups)
 
-        self._apply_post_processing(parts, legend, label)
+        self._apply_post_processing(parts, label)
 
     def _draw_grouped(
         self,
         ax: Any,
         data: pd.DataFrame,
         group_position: Dict[str, Any],
-        legend: Legend,
         **kwargs: Any,
     ) -> None:
         label = kwargs.pop("label", None)
@@ -221,4 +212,4 @@ class ViolinPlotter(BasePlotter):
                 **kwargs,
             )
 
-        self._apply_post_processing(parts, legend, label)
+        self._apply_post_processing(parts, label)

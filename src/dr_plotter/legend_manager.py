@@ -1,5 +1,13 @@
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, Dict, List, Optional, Set
+
+
+class LegendStrategy(Enum):
+    PER_AXES = "per_axes"
+    FIGURE_BELOW = "figure_below"
+    GROUPED_BY_CHANNEL = "grouped_by_channel"
+    NONE = "none"
 
 
 @dataclass
@@ -37,7 +45,7 @@ class LegendRegistry:
 
 @dataclass
 class LegendConfig:
-    mode: str = "auto"
+    strategy: LegendStrategy = LegendStrategy.PER_AXES
     collect_strategy: str = "smart"
     position: str = "best"
     deduplication: bool = True
@@ -55,42 +63,26 @@ class LegendManager:
         self.registry = LegendRegistry()
 
     def finalize(self) -> None:
-        if self.config.mode == "none":
+        print("LEGEND MANAGER: finalize() called")
+        print(f"  config.strategy: {self.config.strategy}")
+        print(f"  entries count: {len(self.registry.get_unique_entries())}")
+
+        if self.config.strategy == LegendStrategy.NONE:
+            print("LEGEND MANAGER: strategy is 'none', returning")
             return
 
-        strategy = self._determine_strategy()
+        strategy = self.config.strategy.value
+        print(f"LEGEND MANAGER: strategy = {strategy}")
 
         if strategy == "figure_below":
+            print("LEGEND MANAGER: calling _create_figure_legend()")
             self._create_figure_legend()
         elif strategy == "grouped_by_channel":
+            print("LEGEND MANAGER: calling _create_grouped_legends()")
             self._create_grouped_legends()
         elif strategy == "per_axes":
+            print("LEGEND MANAGER: calling _create_per_axes_legends()")
             self._create_per_axes_legends()
-
-    def _determine_strategy(self) -> str:
-        if self.config.mode != "auto":
-            return self.config.mode
-
-        unique_channels = self._get_unique_channels()
-
-        if hasattr(self.fm, "rows") and hasattr(self.fm, "cols"):
-            if self.fm.rows > 1 or self.fm.cols > 1:
-                if len(unique_channels) > 1:
-                    return "per_axes"
-                else:
-                    return "figure_below"
-
-        if len(unique_channels) > 1:
-            return "grouped_by_channel"
-
-        return "per_axes"
-
-    def _get_unique_channels(self) -> Set[str]:
-        channels = set()
-        for entry in self.registry.get_unique_entries():
-            if entry.visual_channel:
-                channels.add(entry.visual_channel)
-        return channels
 
     def _process_entries_by_channel_type(
         self, entries: List[LegendEntry]
@@ -99,7 +91,10 @@ class LegendManager:
 
     def _create_figure_legend(self) -> None:
         entries = self.registry.get_unique_entries()
+        print(f"LEGEND MANAGER: _create_figure_legend entries: {len(entries)}")
+
         if not entries:
+            print("LEGEND MANAGER: No entries, returning")
             return
 
         entries = self._process_entries_by_channel_type(entries)
@@ -110,8 +105,10 @@ class LegendManager:
         for entry in entries:
             handles.append(entry.artist)
             labels.append(entry.label)
+            print(f"  Entry: {entry.label} -> {entry.artist}")
 
         if hasattr(self.fm, "figure") and self.fm.figure:
+            print(f"LEGEND MANAGER: Creating figure legend with {len(handles)} handles")
             ncol = self.config.ncol or min(4, len(handles))
             self.fm.figure.legend(
                 handles,
@@ -160,7 +157,10 @@ class LegendManager:
                 axis.legend(handles, labels)
 
     def _create_grouped_legends(self) -> None:
-        channels = self._get_unique_channels()
+        channels = set()
+        for entry in self.registry.get_unique_entries():
+            if entry.visual_channel:
+                channels.add(entry.visual_channel)
 
         for i, channel in enumerate(channels):
             entries = self.registry.get_by_channel(channel)

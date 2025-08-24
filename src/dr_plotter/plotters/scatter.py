@@ -5,7 +5,6 @@ import pandas as pd
 from matplotlib.lines import Line2D
 
 from dr_plotter import consts
-from dr_plotter.legend import Legend
 from dr_plotter.theme import SCATTER_THEME, Theme
 from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
 
@@ -22,7 +21,6 @@ class ScatterPlotter(BasePlotter):
     enabled_channels: Set[VisualChannel] = {"hue", "size", "marker", "alpha"}
     default_theme: Theme = SCATTER_THEME
     use_style_applicator: bool = True
-    use_legend_manager: bool = True
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -75,7 +73,7 @@ class ScatterPlotter(BasePlotter):
                 setter = getattr(collection, f"set_{attr}")
                 setter(value)
 
-    def _draw(self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any) -> None:
+    def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         label = kwargs.pop("label", None)
 
         # Handle continuous size channel
@@ -105,12 +103,15 @@ class ScatterPlotter(BasePlotter):
             artists = {"collection": collection}
             self.style_applicator.apply_post_processing("scatter", artists)
 
-        self._apply_post_processing(collection, legend, label)
+        self._apply_post_processing(collection, label)
 
     def _apply_post_processing(
-        self, collection: Any, legend: Legend, label: Optional[str] = None
+        self, collection: Any, label: Optional[str] = None
     ) -> None:
-        if self.use_legend_manager and self.figure_manager and label and collection:
+        if not self._should_create_legend():
+            return
+
+        if self.figure_manager and label and collection:
             # Create separate proxy for each channel to show correct styling
             for channel in self.grouping_params.active_channels_ordered:
                 proxy = self._create_channel_specific_proxy(collection, channel)
@@ -120,10 +121,6 @@ class ScatterPlotter(BasePlotter):
                     )
                     if entry:
                         self.figure_manager.register_legend_entry(entry)
-        elif label and collection:
-            proxy = self._create_proxy_artist_from_collection(collection)
-            if proxy:
-                legend.handles.append(proxy)
 
     def _create_proxy_artist_from_collection(self, collection: Any) -> Optional[Any]:
         facecolors = collection.get_facecolors()
