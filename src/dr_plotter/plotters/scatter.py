@@ -6,12 +6,9 @@ from matplotlib.lines import Line2D
 
 from dr_plotter import consts
 from dr_plotter.theme import SCATTER_THEME, Theme
-from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
+from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel, Phase, ComponentSchema
 
 from .base import BasePlotter
-
-type Phase = str
-type ComponentSchema = Dict[str, Set[str]]
 
 
 class ScatterPlotter(BasePlotter):

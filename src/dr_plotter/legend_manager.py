@@ -63,25 +63,16 @@ class LegendManager:
         self.registry = LegendRegistry()
 
     def finalize(self) -> None:
-        print("LEGEND MANAGER: finalize() called")
-        print(f"  config.strategy: {self.config.strategy}")
-        print(f"  entries count: {len(self.registry.get_unique_entries())}")
-
         if self.config.strategy == LegendStrategy.NONE:
-            print("LEGEND MANAGER: strategy is 'none', returning")
             return
 
         strategy = self.config.strategy.value
-        print(f"LEGEND MANAGER: strategy = {strategy}")
 
         if strategy == "figure_below":
-            print("LEGEND MANAGER: calling _create_figure_legend()")
             self._create_figure_legend()
         elif strategy == "grouped_by_channel":
-            print("LEGEND MANAGER: calling _create_grouped_legends()")
             self._create_grouped_legends()
         elif strategy == "per_axes":
-            print("LEGEND MANAGER: calling _create_per_axes_legends()")
             self._create_per_axes_legends()
 
     def _process_entries_by_channel_type(
@@ -91,10 +82,8 @@ class LegendManager:
 
     def _create_figure_legend(self) -> None:
         entries = self.registry.get_unique_entries()
-        print(f"LEGEND MANAGER: _create_figure_legend entries: {len(entries)}")
 
         if not entries:
-            print("LEGEND MANAGER: No entries, returning")
             return
 
         entries = self._process_entries_by_channel_type(entries)
@@ -105,10 +94,8 @@ class LegendManager:
         for entry in entries:
             handles.append(entry.artist)
             labels.append(entry.label)
-            print(f"  Entry: {entry.label} -> {entry.artist}")
 
         if hasattr(self.fm, "figure") and self.fm.figure:
-            print(f"LEGEND MANAGER: Creating figure legend with {len(handles)} handles")
             ncol = self.config.ncol or min(4, len(handles))
             self.fm.figure.legend(
                 handles,
@@ -132,7 +119,6 @@ class LegendManager:
 
         entries = self._process_entries_by_channel_type(entries)
 
-        # Group entries by axis
         entries_by_axis = {}
         for entry in entries:
             axis = entry.axis
@@ -141,7 +127,6 @@ class LegendManager:
                     entries_by_axis[axis] = []
                 entries_by_axis[axis].append(entry)
 
-        # Create legend for each axis with its specific entries
         for axis, axis_entries in entries_by_axis.items():
             if not axis_entries:
                 continue

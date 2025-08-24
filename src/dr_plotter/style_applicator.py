@@ -4,15 +4,12 @@ from dr_plotter.consts import VISUAL_CHANNELS
 from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.legend_manager import LegendEntry
 from dr_plotter.theme import Theme
+from dr_plotter.types import ComponentSchema, Phase
 
 if TYPE_CHECKING:
     from dr_plotter.plotters.style_engine import StyleEngine
 
-type ComponentName = str
-type AttributeName = str
-type ComponentSchema = Dict[ComponentName, Set[AttributeName]]
-type ComponentStyles = Dict[ComponentName, Dict[str, Any]]
-type Phase = str
+type ComponentStyles = Dict[str, Dict[str, Any]]
 
 
 class StyleApplicator:
@@ -96,7 +93,6 @@ class StyleApplicator:
 
         if explicit_channel:
             channel = explicit_channel
-            # Get the actual column name for this channel
             column_name = (
                 getattr(self.grouping_cfg, channel, None) if self.grouping_cfg else None
             )
@@ -166,7 +162,6 @@ class StyleApplicator:
                 resolved_styles[attr] = plot_styles[attr]
             elif attr in base_theme_styles:
                 resolved_styles[attr] = base_theme_styles[attr]
-            # Special case: convert size_mult to s for scatter plots
             elif attr == "s" and "size_mult" in group_styles and plot_type == "scatter":
                 base_size = base_theme_styles.get("marker_size", 50)
                 resolved_styles[attr] = base_size * group_styles["size_mult"]
@@ -175,7 +170,6 @@ class StyleApplicator:
             if key not in attrs:
                 resolved_styles[key] = value
 
-        # Special handling: don't include cmap unless c is also present
         if "cmap" in resolved_styles and "c" not in resolved_styles:
             del resolved_styles["cmap"]
 
@@ -209,13 +203,8 @@ class StyleApplicator:
         return extracted
 
     def _is_reserved_kwarg(self, key: str) -> bool:
-        # Build visual channel names dynamically from constants
         visual_channel_names = set(VISUAL_CHANNELS)
         visual_channel_by_names = {f"{ch}_by" for ch in VISUAL_CHANNELS}
-
-        # Note: We DON'T include raw visual channel names (hue, style, etc.)
-        # when they're used as style values (e.g., alpha=0.6 for transparency)
-        # Only the "_by" versions are reserved for grouping
         reserved = {
             "x",
             "y",
@@ -234,14 +223,10 @@ class StyleApplicator:
         }
         reserved.update(visual_channel_by_names)
 
-        # Special case: if the value is a string, it might be a column name for grouping
-        # If it's a number (like alpha=0.6), it's a style value
         if key in visual_channel_names and key in self.kwargs:
             value = self.kwargs[key]
             if isinstance(value, str):
-                # It's a column name for grouping, so it's reserved
                 return True
-            # It's a numeric value for styling, so it's not reserved
             return False
 
         return key in reserved
@@ -270,18 +255,14 @@ class StyleApplicator:
     ) -> ComponentSchema:
         from dr_plotter.plotters import BasePlotter
 
-        try:
-            plotter_cls = BasePlotter.get_plotter(plot_type)
-            if hasattr(plotter_cls, "component_schema"):
-                return plotter_cls.component_schema.get(phase, {})
-        except (KeyError, AttributeError):
-            pass
+        plotter_cls = BasePlotter.get_plotter(plot_type)
+        if plotter_cls and hasattr(plotter_cls, "component_schema"):
+            return plotter_cls.component_schema.get(phase, {})
 
         plot_schemas = self._component_schemas.get(plot_type, {})
         if isinstance(plot_schemas, dict) and phase in plot_schemas:
             return plot_schemas[phase]
         elif phase == "plot" and isinstance(plot_schemas, dict):
-            # For backward compatibility, if no phase specified, treat as plot phase
             if "plot" not in plot_schemas and "main" in plot_schemas:
                 return plot_schemas
         return {"main": set()}
@@ -391,10 +372,7 @@ class StyleApplicator:
                         "rwidth",
                     }
                 },
-                "post": {
-                    # Histogram returns patches, we could style them post-creation if needed
-                    "patches": {"facecolor", "edgecolor", "linewidth", "alpha"}
-                },
+                "post": {"patches": {"facecolor", "edgecolor", "linewidth", "alpha"}},
                 "axes": {"properties": {"xlim", "ylim", "xlabel", "ylabel", "title"}},
             },
             "violin": {

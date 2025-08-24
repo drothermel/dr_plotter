@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 import matplotlib.pyplot as plt
 
@@ -37,7 +37,6 @@ class FigureManager:
 
         self.figure = self.fig
 
-        self._shared_hue_styles: Dict[Any, Any] = {}
         self.shared_cycle_config: Optional[CycleConfig] = None
 
         if legend_config:

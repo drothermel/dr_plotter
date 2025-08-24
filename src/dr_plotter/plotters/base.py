@@ -130,9 +130,7 @@ class BasePlotter:
                 column = getattr(self.grouping_params, channel)
                 if column and column in self.plot_data.columns:
                     values = self.plot_data[column].dropna().tolist()
-                    # Check if values are actually numeric before treating as continuous
                     try:
-                        # Try to convert first few values to float
                         [float(v) for v in values[:5]]
                         if values:
                             self.style_engine.set_continuous_range(
@@ -140,7 +138,6 @@ class BasePlotter:
                             )
                         pass
                     except (ValueError, TypeError):
-                        # Skip non-numeric data for continuous channels
                         pass
 
     def render(self, ax: Any) -> None:
@@ -217,7 +214,6 @@ class BasePlotter:
             ax.grid(False)
 
     def _render_with_grouped_method(self, ax: Any) -> None:
-        # Only group by categorical channels, not continuous ones
         categorical_cols = []
         for channel, column in self.grouping_params.active.items():
             spec = ChannelRegistry.get_spec(channel)
@@ -228,7 +224,6 @@ class BasePlotter:
             grouped = self.plot_data.groupby(categorical_cols)
             n_groups = len(grouped)
         else:
-            # No categorical grouping, treat as single group
             grouped = [(None, self.plot_data)]
             n_groups = 1
 
@@ -238,7 +233,6 @@ class BasePlotter:
 
         for group_index, (name, group_data) in enumerate(grouped):
             if name is None:
-                # Single group case (no categorical grouping)
                 group_values = {}
             elif isinstance(name, tuple):
                 group_values = dict(zip(categorical_cols, name))
@@ -252,7 +246,6 @@ class BasePlotter:
             plot_kwargs = component_styles.get("main", {})
             plot_kwargs["label"] = self._build_group_label(name, categorical_cols)
 
-            # Handle continuous size arrays for scatter plots
             if (
                 self.__class__.plotter_name == "scatter"
                 and "size" in self.grouping_params.active_channels

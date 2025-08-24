@@ -50,7 +50,6 @@ class StyleEngine:
                     if continuous_styles:
                         styles.update(continuous_styles)
                     else:
-                        # Fallback to categorical if continuous failed
                         styles.update(
                             self.cycle_cfg.get_styled_value_for_channel(channel, value)
                         )
@@ -74,11 +73,9 @@ class StyleEngine:
             normalized = (float(value) - range_info["min"]) / range_info["range"]
 
         if channel == "size":
-            # Map to size multiplier range (0.5 to 3.0)
             size_mult = 0.5 + normalized * 2.5
             return {"size_mult": size_mult}
         elif channel == "alpha":
-            # Map to alpha range (0.3 to 1.0)
             alpha = 0.3 + normalized * 0.7
             return {"alpha": alpha}
 
