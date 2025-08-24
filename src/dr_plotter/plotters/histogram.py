@@ -40,7 +40,7 @@ class HistogramPlotter(BasePlotter):
                 "rwidth",
             }
         },
-        "post": {"patches": {"facecolor", "edgecolor", "linewidth", "alpha"}},
+        "axes": {"patches": {"facecolor", "edgecolor", "linewidth", "alpha"}},
     }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

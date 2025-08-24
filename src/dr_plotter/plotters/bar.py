@@ -37,7 +37,7 @@ class BarPlotter(BasePlotter):
                 "label",
             }
         },
-        "post": {"patches": {"facecolor", "edgecolor", "alpha", "linewidth"}},
+        "axes": {"patches": {"facecolor", "edgecolor", "alpha", "linewidth"}},
     }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

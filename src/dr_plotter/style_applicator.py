@@ -71,9 +71,9 @@ class StyleApplicator:
         self.group_values = {}
 
     def apply_post_processing(self, plot_type: str, artists: Dict[str, Any]) -> None:
-        post_styles = self.get_component_styles(plot_type, phase="post")
+        axes_styles = self.get_component_styles(plot_type, phase="axes")
 
-        for component, styles in post_styles.items():
+        for component, styles in axes_styles.items():
             processor_key = f"{plot_type}.{component}"
             if processor_key in self._post_processors:
                 processor = self._post_processors[processor_key]

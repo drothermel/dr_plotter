@@ -34,7 +34,7 @@ class ViolinPlotter(BasePlotter):
                 "points",
             }
         },
-        "post": {
+        "axes": {
             "bodies": {"facecolor", "edgecolor", "alpha", "linewidth"},
             "stats": {"color", "linewidth", "linestyle"},
         },

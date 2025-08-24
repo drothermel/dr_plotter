@@ -39,7 +39,7 @@ class ScatterPlotter(BasePlotter):
                 "vmax",
             }
         },
-        "post": {
+        "axes": {
             "collection": {
                 "sizes",
                 "facecolors",
