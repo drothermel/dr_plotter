@@ -140,12 +140,80 @@ def extract_legend_labels(handles: List[Line2D]) -> List[str]:
     return [handle.get_label() for handle in handles]
 
 
+def extract_legend_styles(handles: List[Line2D]) -> List[str]:
+    styles = []
+    for handle in handles:
+        try:
+            style = handle.get_linestyle()
+            if style is None:
+                style = "-"
+            styles.append(str(style))
+        except (ValueError, TypeError):
+            styles.append("-")
+    return styles
+
+
 def extract_pathcollections_from_axis(ax: Any) -> List[PathCollection]:
     collections = []
     for collection in ax.collections:
         if isinstance(collection, PathCollection):
             collections.append(collection)
     return collections
+
+
+def extract_barcontainers_from_axis(ax: Any) -> List[Any]:
+    try:
+        from matplotlib.container import BarContainer
+
+        return [c for c in getattr(ax, "containers", []) if isinstance(c, BarContainer)]
+    except ImportError:
+        return []
+
+
+def extract_bar_colors(container: Any) -> List[Tuple[float, float, float, float]]:
+    return [mcolors.to_rgba(patch.get_facecolor()) for patch in container.patches]
+
+
+def extract_lines_from_axis(ax: Any) -> List[Any]:
+    return [line for line in getattr(ax, "lines", []) if hasattr(line, "get_color")]
+
+
+def extract_line_colors(lines: List[Any]) -> List[Tuple[float, float, float, float]]:
+    colors = []
+    for line in lines:
+        color = line.get_color()
+        alpha = line.get_alpha() if line.get_alpha() is not None else 1.0
+        rgba = mcolors.to_rgba(color)
+        if len(rgba) == 3:
+            rgba = (*rgba, alpha)
+        elif len(rgba) == 4:
+            rgba = (*rgba[:3], alpha)
+        colors.append(rgba)
+    return colors
+
+
+def extract_line_styles(lines: List[Any]) -> List[str]:
+    return [line.get_linestyle() for line in lines]
+
+
+def extract_line_markers(lines: List[Any]) -> List[str]:
+    markers = []
+    for line in lines:
+        marker = line.get_marker()
+        if marker is None or marker == "None":
+            marker = ""
+        markers.append(str(marker))
+    return markers
+
+
+def extract_line_alphas(lines: List[Any]) -> List[float]:
+    alphas = []
+    for line in lines:
+        alpha = line.get_alpha()
+        if alpha is None:
+            alpha = 1.0
+        alphas.append(float(alpha))
+    return alphas
 
 
 def convert_scatter_size_to_legend_size(scatter_size: float) -> float:
@@ -180,7 +248,9 @@ def debug_legend_detection(ax: Any) -> Dict[str, Any]:
 
 
 def extract_subplot_properties(ax: Any) -> Dict[str, Any]:
-    collections = extract_pathcollections_from_axis(ax)
+    path_collections = extract_pathcollections_from_axis(ax)
+    bar_containers = extract_barcontainers_from_axis(ax)
+    lines = extract_lines_from_axis(ax)
     legend_handles = extract_legend_handles(ax)
     legend_debug = debug_legend_detection(ax)
 
@@ -192,17 +262,45 @@ def extract_subplot_properties(ax: Any) -> Dict[str, Any]:
             "colors": extract_legend_colors(legend_handles),
             "sizes": extract_legend_sizes(legend_handles),
             "labels": extract_legend_labels(legend_handles),
+            "styles": extract_legend_styles(legend_handles),
             "debug": legend_debug,
         },
     }
 
-    for i, collection in enumerate(collections):
+    for i, collection in enumerate(path_collections):
         collection_props = {
             "index": i,
             "positions": extract_scatter_positions(collection),
             "colors": extract_scatter_colors(collection),
             "sizes": extract_scatter_sizes(collection),
             "markers": extract_scatter_markers(collection),
+        }
+        result["collections"].append(collection_props)
+
+    for i, container in enumerate(bar_containers):
+        collection_props = {
+            "index": len(path_collections) + i,
+            "positions": [],
+            "colors": extract_bar_colors(container),
+            "sizes": [],
+            "markers": [],
+        }
+        result["collections"].append(collection_props)
+
+    if lines:
+        line_colors = extract_line_colors(lines)
+        line_styles = extract_line_styles(lines)
+        line_markers = extract_line_markers(lines)
+        line_alphas = extract_line_alphas(lines)
+
+        collection_props = {
+            "index": len(path_collections) + len(bar_containers),
+            "positions": [],
+            "colors": line_colors,
+            "sizes": [],
+            "markers": line_markers,
+            "styles": line_styles,
+            "alphas": line_alphas,
         }
         result["collections"].append(collection_props)
 
