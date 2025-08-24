@@ -11,7 +11,7 @@ from .base import BasePlotter
 # Import all concrete plotters - this triggers their registration
 from .scatter import ScatterPlotter
 
-# from .line import LinePlotter  # BROKEN: needs migration to legend manager
+from .line import LinePlotter
 from .bar import BarPlotter
 from .histogram import HistogramPlotter
 from .violin import ViolinPlotter
@@ -22,7 +22,7 @@ from .violin import ViolinPlotter
 __all__ = [
     "BasePlotter",  # Expose for registry access
     "ScatterPlotter",
-    # "LinePlotter",  # BROKEN: needs migration
+    "LinePlotter",
     "BarPlotter",
     "HistogramPlotter",
     "ViolinPlotter",

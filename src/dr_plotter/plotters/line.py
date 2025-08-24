@@ -2,17 +2,20 @@
 Atomic plotter for line plots with multi-series support.
 """
 
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter import consts
-from dr_plotter.legend import Legend
 from dr_plotter.theme import LINE_THEME, Theme
 from dr_plotter.types import VisualChannel
 
 from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
+
+
+type Phase = str
+type ComponentSchema = Dict[str, Set[str]]
 
 
 class LinePlotter(BasePlotter):
@@ -21,9 +24,44 @@ class LinePlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = {"hue", "style", "size", "marker", "alpha"}
     default_theme: Theme = LINE_THEME
+    use_style_applicator: bool = True
 
-    def _draw(self, ax: plt.Axes, data: pd.DataFrame, legend: Legend, **kwargs):
+    component_schema: Dict[Phase, ComponentSchema] = {
+        "plot": {
+            "main": {
+                "color",
+                "linestyle",
+                "linewidth",
+                "marker",
+                "markersize",
+                "alpha",
+                "label",
+            }
+        }
+    }
+
+    def _draw(self, ax: plt.Axes, data: pd.DataFrame, **kwargs: Any) -> None:
+        label = kwargs.pop("label", None)
         data_sorted = data.sort_values(consts.X_COL_NAME)
-        ax.plot(
+        lines = ax.plot(
             data_sorted[consts.X_COL_NAME], data_sorted[consts.Y_COL_NAME], **kwargs
         )
+
+        if self.use_style_applicator:
+            # Apply any post-processing if needed
+            pass
+
+        self._apply_post_processing(lines, label)
+
+    def _apply_post_processing(self, lines: Any, label: Optional[str] = None) -> None:
+        if not self._should_create_legend():
+            return
+
+        if self.figure_manager and label and lines:
+            line = lines[0] if isinstance(lines, list) else lines
+            # Line2D artists can be used directly as legend handles
+            entry = self.style_applicator.create_legend_entry(
+                line, label, self.current_axis
+            )
+            if entry:
+                self.figure_manager.register_legend_entry(entry)
