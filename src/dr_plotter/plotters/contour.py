@@ -76,7 +76,7 @@ class ContourPlotter(BasePlotter):
         scatter_kwargs = {
             "s": self._get_style("scatter_size"),
             "alpha": self._get_style("scatter_alpha"),
-            "color": BASE_COLORS[0],
+            "color": self._get_style("scatter_color", BASE_COLORS[0]),
         }
         # Add user scatter kwargs
         if "s" in kwargs:

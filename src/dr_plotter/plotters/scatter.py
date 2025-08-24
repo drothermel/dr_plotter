@@ -126,13 +126,15 @@ class ScatterPlotter(BasePlotter):
         edgecolors = collection.get_edgecolors()
         sizes = collection.get_sizes()
 
-        face_color = "blue"
         if len(facecolors) > 0:
             face_color = facecolors[0]
+        else:
+            face_color = self.figure_manager.legend_manager.get_error_color("face")
 
-        edge_color = "none"
         if len(edgecolors) > 0:
             edge_color = edgecolors[0]
+        else:
+            edge_color = self.figure_manager.legend_manager.get_error_color("edge")
 
         marker_size = 8
         if len(sizes) > 0:

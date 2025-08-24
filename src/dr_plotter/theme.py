@@ -156,6 +156,9 @@ BASE_THEME = Theme(
     figure_styles=FigureStyles(
         title_fontsize=14,
     ),
+    error_color="#FF0000",
+    error_edge_color="#FF0000",
+    default_color=BASE_COLORS[0],
     **{
         consts.get_cycle_key("hue"): itertools.cycle(BASE_COLORS),
         consts.get_cycle_key("style"): itertools.cycle(["-", "--", ":", "-."]),

@@ -62,6 +62,18 @@ class LegendManager:
         self.config = config or LegendConfig()
         self.registry = LegendRegistry()
 
+    def get_error_color(self, color_type: str = "face") -> str:
+        import warnings
+
+        warnings.warn(
+            f"Legend proxy creation failed - using error color for {color_type}"
+        )
+
+        if color_type == "edge":
+            return self.fm.theme.general_styles.get("error_edge_color", "#FF0000")
+        else:
+            return self.fm.theme.general_styles.get("error_color", "#FF0000")
+
     def finalize(self) -> None:
         if self.config.strategy == LegendStrategy.NONE:
             return

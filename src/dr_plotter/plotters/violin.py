@@ -125,11 +125,13 @@ class ViolinPlotter(BasePlotter):
                 if isinstance(fc, np.ndarray) and fc.size >= 3:
                     facecolor = tuple(fc[:4] if fc.size >= 4 else list(fc[:3]) + [1.0])
                 else:
-                    facecolor = "blue"
+                    facecolor = self.figure_manager.legend_manager.get_error_color(
+                        "face"
+                    )
             else:
-                facecolor = "blue"
+                facecolor = self.figure_manager.legend_manager.get_error_color("face")
         except:
-            facecolor = "blue"
+            facecolor = self.figure_manager.legend_manager.get_error_color("face")
 
         try:
             edgecolor = first_body.get_edgecolor()
@@ -138,11 +140,13 @@ class ViolinPlotter(BasePlotter):
                 if isinstance(ec, np.ndarray) and ec.size >= 3:
                     edgecolor = tuple(ec[:4] if ec.size >= 4 else list(ec[:3]) + [1.0])
                 else:
-                    edgecolor = "black"
+                    edgecolor = self.figure_manager.legend_manager.get_error_color(
+                        "edge"
+                    )
             else:
-                edgecolor = "black"
+                edgecolor = self.figure_manager.legend_manager.get_error_color("edge")
         except:
-            edgecolor = "black"
+            edgecolor = self.figure_manager.legend_manager.get_error_color("edge")
 
         alpha = first_body.get_alpha() if hasattr(first_body, "get_alpha") else 1.0
 

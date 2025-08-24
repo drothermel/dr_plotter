@@ -287,7 +287,9 @@ class BasePlotter:
     def _build_group_plot_kwargs(
         self, styles: Dict[StyleAttrName, Any], name: Any, group_cols: List[str]
     ) -> Dict[str, Any]:
-        default_color = styles.get("color", BASE_COLORS[0])
+        default_color = styles.get("color") or self.theme.general_styles.get(
+            "default_color", BASE_COLORS[0]
+        )
 
         plot_kwargs = {
             "color": default_color,
