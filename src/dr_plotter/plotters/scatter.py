@@ -192,15 +192,12 @@ class ScatterPlotter(BasePlotter):
         # Get marker style from group context if available
         marker_style = "o"
         if self.use_style_applicator and self.style_applicator.group_values:
-            # Get the actual styling applied to this group for this channel
-            if channel == "marker":
-                marker_col = self.grouping_params.marker
-                if marker_col and marker_col in self.style_applicator.group_values:
-                    # Get marker from style engine
-                    styles = self.style_engine.get_styles_for_group(
-                        self.style_applicator.group_values, self.grouping_params
-                    )
-                    marker_style = styles.get("marker", "o")
+            # Always get the marker from style engine, regardless of channel
+            # because we want the proxy to show the actual marker used
+            styles = self.style_engine.get_styles_for_group(
+                self.style_applicator.group_values, self.grouping_params
+            )
+            marker_style = styles.get("marker", "o")
 
         proxy = Line2D(
             [0],

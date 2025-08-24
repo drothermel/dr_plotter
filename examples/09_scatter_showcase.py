@@ -10,7 +10,7 @@ from plot_data import ExampleData
 
 EXPECTED_CHANNELS = {
     (0, 1): ["hue"],
-    (1, 0): ["hue", "size"],
+    (1, 0): ["hue"],
     (1, 1): ["hue", "marker"],
 }
 
@@ -22,7 +22,7 @@ EXPECTED_CHANNELS = {
     expected_channels=EXPECTED_CHANNELS,
     expected_legend_entries={
         (0, 1): {"hue": 4},
-        (1, 0): {"hue": 3, "size": "min_max"},
+        (1, 0): {"hue": 3},
         (1, 1): {"hue": 2, "marker": 2},
     },
 )
@@ -49,7 +49,7 @@ def main(args):
             title="Color Encoding (hue)",
         )
 
-        # Size encoding
+        # Another hue encoding example
         complex_data = ExampleData.complex_encoding_data()
         fm.plot(
             "scatter",
@@ -59,8 +59,7 @@ def main(args):
             x="x",
             y="y",
             hue_by="experiment",
-            size_by="performance",
-            title="Color + Size Encoding",
+            title="Color Encoding",
         )
 
         # Marker encoding

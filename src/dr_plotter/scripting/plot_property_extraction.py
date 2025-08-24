@@ -46,16 +46,11 @@ def identify_marker_from_path(path: Any) -> str:
     elif num_vertices == 3:
         return "^"
     elif num_vertices == 4:
-        return "s"
+        return "D"  # diamond
     elif num_vertices == 5:
-        # Could be triangle with base or pentagon
-        if _is_triangle_like(vertices):
-            return "^"
-        else:
-            return "p"  # pentagon
+        return "s"  # square (4 corners + closing point)
     elif num_vertices == 6:
-        # Could be hexagon or triangle marker
-        return "^"  # Often triangles in matplotlib
+        return "p"  # pentagon (5 corners + closing point)
     elif num_vertices > 10 and _is_circle_approximation(vertices):
         return "o"
     else:
