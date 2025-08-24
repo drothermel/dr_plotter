@@ -14,6 +14,8 @@ from dr_plotter.types import (
     StyleAttrName,
     SubPlotterParamName,
     VisualChannel,
+    Phase,
+    ComponentSchema,
 )
 
 BASE_PLOTTER_PARAMS = [
@@ -61,6 +63,16 @@ class BasePlotter:
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = BASE_THEME
 
+    component_schema: Dict[Phase, ComponentSchema] = {
+        "plot": {"main": set()},
+        "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
+        },
+    }
+
     def __init__(
         self,
         data: pd.DataFrame,
@@ -86,6 +98,19 @@ class BasePlotter:
         )
         self.plot_data: Optional[pd.DataFrame] = None
         self._initialize_subplot_specific_params()
+
+        self.style_applicator.register_post_processor(
+            self.__class__.plotter_name, "title", self._style_title
+        )
+        self.style_applicator.register_post_processor(
+            self.__class__.plotter_name, "xlabel", self._style_xlabel
+        )
+        self.style_applicator.register_post_processor(
+            self.__class__.plotter_name, "ylabel", self._style_ylabel
+        )
+        self.style_applicator.register_post_processor(
+            self.__class__.plotter_name, "grid", self._style_grid
+        )
 
         self.x_col: Optional[ColName] = self._get_x_metric_column_name()
         self.y_cols: List[ColName] = self._get_y_metric_column_names()
@@ -195,23 +220,15 @@ class BasePlotter:
         return True
 
     def _apply_styling(self, ax: Any) -> None:
-        ax.set_title(
-            self._get_style("title"), fontsize=self.theme.get("title_fontsize")
+        artists = {
+            "title": ax,
+            "xlabel": ax,
+            "ylabel": ax,
+            "grid": ax,
+        }
+        self.style_applicator.apply_post_processing(
+            self.__class__.plotter_name, artists
         )
-
-        label_fontsize = self._get_style("label_fontsize")
-        xlabel = self._get_style("xlabel", fmt_txt(self.x_col))
-        ylabel = self._get_style(
-            "ylabel",
-            fmt_txt(ylabel_from_metrics(self.y_cols)),
-        )
-        ax.set_xlabel(xlabel, fontsize=label_fontsize)
-        ax.set_ylabel(ylabel, fontsize=label_fontsize)
-
-        if self._get_style("grid", True):
-            ax.grid(True, alpha=self.theme.get("grid_alpha"))
-        else:
-            ax.grid(False)
 
     def _render_with_grouped_method(self, ax: Any) -> None:
         categorical_cols = []
@@ -350,3 +367,46 @@ class BasePlotter:
                     label_parts.append(f"{col}={val}")
             return ", ".join(label_parts)
         return str(name)
+
+    def _style_title(self, ax: Any, styles: Dict[str, Any]) -> None:
+        title_text = styles.get("text", self._get_style("title"))
+        if title_text:
+            ax.set_title(
+                title_text,
+                fontsize=styles.get("fontsize", self.theme.get("title_fontsize")),
+                color=styles.get("color", self.theme.get("title_color")),
+            )
+
+    def _style_xlabel(self, ax: Any, styles: Dict[str, Any]) -> None:
+        xlabel_text = styles.get("text", self._get_style("xlabel", fmt_txt(self.x_col)))
+        if xlabel_text:
+            ax.set_xlabel(
+                xlabel_text,
+                fontsize=styles.get("fontsize", self._get_style("label_fontsize")),
+                color=styles.get("color", self.theme.get("label_color")),
+            )
+
+    def _style_ylabel(self, ax: Any, styles: Dict[str, Any]) -> None:
+        ylabel_text = styles.get(
+            "text", self._get_style("ylabel", fmt_txt(ylabel_from_metrics(self.y_cols)))
+        )
+        if ylabel_text:
+            ax.set_ylabel(
+                ylabel_text,
+                fontsize=styles.get("fontsize", self._get_style("label_fontsize")),
+                color=styles.get("color", self.theme.get("label_color")),
+            )
+
+    def _style_grid(self, ax: Any, styles: Dict[str, Any]) -> None:
+        grid_visible = styles.get("visible", self._get_style("grid", True))
+        if grid_visible:
+            ax.grid(
+                True,
+                alpha=styles.get("alpha", self.theme.get("grid_alpha")),
+                color=styles.get("color", self.theme.get("grid_color")),
+                linestyle=styles.get(
+                    "linestyle", self.theme.get("grid_linestyle", "-")
+                ),
+            )
+        else:
+            ax.grid(False)

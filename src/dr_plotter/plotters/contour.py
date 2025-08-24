@@ -37,7 +37,13 @@ class ContourPlotter(BasePlotter):
                 "s",
                 "alpha",
             },
-        }
+        },
+        "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
+        },
     }
 
     def _plot_specific_data_prep(self) -> pd.DataFrame:

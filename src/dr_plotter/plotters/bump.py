@@ -27,7 +27,13 @@ class BumpPlotter(BasePlotter):
                 "alpha",
                 "label",
             }
-        }
+        },
+        "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
+        },
     }
 
     def _initialize_subplot_specific_params(self) -> None:

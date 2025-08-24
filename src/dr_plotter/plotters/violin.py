@@ -35,6 +35,10 @@ class ViolinPlotter(BasePlotter):
             }
         },
         "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
             "bodies": {"facecolor", "edgecolor", "alpha", "linewidth"},
             "stats": {"color", "linewidth", "linestyle"},
         },

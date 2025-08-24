@@ -40,13 +40,17 @@ class ScatterPlotter(BasePlotter):
             }
         },
         "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
             "collection": {
                 "sizes",
                 "facecolors",
                 "edgecolors",
                 "linewidths",
                 "alpha",
-            }
+            },
         },
     }
 

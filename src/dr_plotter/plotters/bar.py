@@ -37,7 +37,13 @@ class BarPlotter(BasePlotter):
                 "label",
             }
         },
-        "axes": {"patches": {"facecolor", "edgecolor", "alpha", "linewidth"}},
+        "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
+            "patches": {"facecolor", "edgecolor", "alpha", "linewidth"},
+        },
     }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

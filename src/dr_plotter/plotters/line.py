@@ -28,7 +28,13 @@ class LinePlotter(BasePlotter):
                 "alpha",
                 "label",
             }
-        }
+        },
+        "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
+        },
     }
 
     def _draw(self, ax: plt.Axes, data: pd.DataFrame, **kwargs: Any) -> None:

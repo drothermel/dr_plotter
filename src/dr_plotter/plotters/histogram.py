@@ -40,7 +40,13 @@ class HistogramPlotter(BasePlotter):
                 "rwidth",
             }
         },
-        "axes": {"patches": {"facecolor", "edgecolor", "linewidth", "alpha"}},
+        "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
+            "patches": {"facecolor", "edgecolor", "linewidth", "alpha"},
+        },
     }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
