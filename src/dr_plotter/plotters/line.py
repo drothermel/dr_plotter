@@ -24,7 +24,6 @@ class LinePlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = {"hue", "style", "size", "marker", "alpha"}
     default_theme: Theme = LINE_THEME
-    use_style_applicator: bool = True
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -47,9 +46,8 @@ class LinePlotter(BasePlotter):
             data_sorted[consts.X_COL_NAME], data_sorted[consts.Y_COL_NAME], **kwargs
         )
 
-        if self.use_style_applicator:
-            # Apply any post-processing if needed
-            pass
+        # Apply any post-processing if needed
+        pass
 
         self._apply_post_processing(lines, label)
 

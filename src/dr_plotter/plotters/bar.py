@@ -20,7 +20,6 @@ class BarPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = {"hue"}
     default_theme: Theme = BAR_THEME
-    use_style_applicator: bool = True
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -40,10 +39,9 @@ class BarPlotter(BasePlotter):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        if self.use_style_applicator:
-            self.style_applicator.register_post_processor(
-                "bar", "patches", self._style_bar_patches
-            )
+        self.style_applicator.register_post_processor(
+            "bar", "patches", self._style_bar_patches
+        )
 
     def _style_bar_patches(self, patches: Any, styles: Dict[str, Any]) -> None:
         for patch in patches:
@@ -60,9 +58,8 @@ class BarPlotter(BasePlotter):
         label = kwargs.pop("label", None)
         patches = ax.bar(data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **kwargs)
 
-        if self.use_style_applicator:
-            artists = {"patches": patches}
-            self.style_applicator.apply_post_processing("bar", artists)
+        artists = {"patches": patches}
+        self.style_applicator.apply_post_processing("bar", artists)
 
         self._apply_post_processing(patches, label)
 

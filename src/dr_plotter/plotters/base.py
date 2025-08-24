@@ -60,7 +60,6 @@ class BasePlotter:
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = BASE_THEME
-    use_style_applicator: bool = False
 
     def __init__(
         self,
@@ -152,16 +151,10 @@ class BasePlotter:
         if self._has_groups:
             self._render_with_grouped_method(ax)
         else:
-            if self.__class__.use_style_applicator:
-                component_styles = self.style_applicator.get_component_styles(
-                    self.__class__.plotter_name
-                )
-                style_kwargs = component_styles.get("main", {})
-            else:
-                style_kwargs = {
-                    **self.theme.plot_styles,
-                    **self._filtered_plot_kwargs,
-                }
+            component_styles = self.style_applicator.get_component_styles(
+                self.__class__.plotter_name
+            )
+            style_kwargs = component_styles.get("main", {})
 
             self._draw(
                 ax,
@@ -169,7 +162,7 @@ class BasePlotter:
                 **style_kwargs,
             )
 
-        if self._has_groups and self.__class__.use_style_applicator:
+        if self._has_groups:
             self.style_applicator.clear_group_context()
 
         self._apply_styling(ax)
@@ -252,41 +245,33 @@ class BasePlotter:
             else:
                 group_values = {categorical_cols[0]: name} if categorical_cols else {}
 
-            if self.__class__.use_style_applicator:
-                self.style_applicator.set_group_context(group_values)
-                component_styles = self.style_applicator.get_component_styles(
-                    self.__class__.plotter_name
-                )
-                plot_kwargs = component_styles.get("main", {})
-                plot_kwargs["label"] = self._build_group_label(name, categorical_cols)
+            self.style_applicator.set_group_context(group_values)
+            component_styles = self.style_applicator.get_component_styles(
+                self.__class__.plotter_name
+            )
+            plot_kwargs = component_styles.get("main", {})
+            plot_kwargs["label"] = self._build_group_label(name, categorical_cols)
 
-                # Handle continuous size arrays for scatter plots
-                if (
-                    self.__class__.plotter_name == "scatter"
-                    and "size" in self.grouping_params.active_channels
-                ):
-                    size_col = self.grouping_params.size
-                    if size_col and size_col in group_data.columns:
-                        sizes = []
-                        for value in group_data[size_col]:
-                            style = self.style_engine._get_continuous_style(
-                                "size", size_col, value
-                            )
-                            size_mult = style.get("size_mult", 1.0)
-                            base_size = plot_kwargs.get("s", 50)
-                            sizes.append(
-                                base_size * size_mult
-                                if isinstance(base_size, (int, float))
-                                else 50 * size_mult
-                            )
-                        plot_kwargs["s"] = sizes
-            else:
-                styles = self.style_engine.get_styles_for_group(
-                    group_values, self.grouping_params
-                )
-                plot_kwargs = self._build_group_plot_kwargs(
-                    styles, name, categorical_cols
-                )
+            # Handle continuous size arrays for scatter plots
+            if (
+                self.__class__.plotter_name == "scatter"
+                and "size" in self.grouping_params.active_channels
+            ):
+                size_col = self.grouping_params.size
+                if size_col and size_col in group_data.columns:
+                    sizes = []
+                    for value in group_data[size_col]:
+                        style = self.style_engine._get_continuous_style(
+                            "size", size_col, value
+                        )
+                        size_mult = style.get("size_mult", 1.0)
+                        base_size = plot_kwargs.get("s", 50)
+                        sizes.append(
+                            base_size * size_mult
+                            if isinstance(base_size, (int, float))
+                            else 50 * size_mult
+                        )
+                    plot_kwargs["s"] = sizes
 
             group_position = self._calculate_group_position(group_index, n_groups)
             group_position["x_categories"] = x_categories

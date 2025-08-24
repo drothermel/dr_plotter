@@ -20,7 +20,6 @@ class ViolinPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = {"hue"}
     default_theme: Theme = VIOLIN_THEME
-    use_style_applicator: bool = True
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -40,13 +39,12 @@ class ViolinPlotter(BasePlotter):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        if self.use_style_applicator:
-            self.style_applicator.register_post_processor(
-                "violin", "bodies", self._style_violin_bodies
-            )
-            self.style_applicator.register_post_processor(
-                "violin", "stats", self._style_violin_stats
-            )
+        self.style_applicator.register_post_processor(
+            "violin", "bodies", self._style_violin_bodies
+        )
+        self.style_applicator.register_post_processor(
+            "violin", "stats", self._style_violin_stats
+        )
 
     def _style_violin_bodies(self, bodies: Any, styles: Dict[str, Any]) -> None:
         for pc in bodies:
@@ -84,25 +82,22 @@ class ViolinPlotter(BasePlotter):
         if not self._should_create_legend():
             return
 
-        if self.use_style_applicator:
-            artists = {}
-            if "bodies" in parts:
-                artists["bodies"] = parts["bodies"]
+        artists = {}
+        if "bodies" in parts:
+            artists["bodies"] = parts["bodies"]
 
-            stats_parts = []
-            for part_name in ("cbars", "cmins", "cmaxes", "cmeans"):
-                if part_name in parts:
-                    stats_parts.append(parts[part_name])
+        stats_parts = []
+        for part_name in ("cbars", "cmins", "cmaxes", "cmeans"):
+            if part_name in parts:
+                stats_parts.append(parts[part_name])
 
-            if stats_parts:
-                for stats in stats_parts:
-                    artists["stats"] = stats
-                    self.style_applicator.apply_post_processing(
-                        "violin", {"stats": stats}
-                    )
+        if stats_parts:
+            for stats in stats_parts:
+                artists["stats"] = stats
+                self.style_applicator.apply_post_processing("violin", {"stats": stats})
 
-            if artists:
-                self.style_applicator.apply_post_processing("violin", artists)
+        if artists:
+            self.style_applicator.apply_post_processing("violin", artists)
 
         if label and "bodies" in parts and parts["bodies"]:
             proxy = self._create_proxy_artist_from_bodies(parts["bodies"])

@@ -19,7 +19,6 @@ class HistogramPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = HISTOGRAM_THEME
-    use_style_applicator: bool = True
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -43,10 +42,9 @@ class HistogramPlotter(BasePlotter):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        if self.use_style_applicator:
-            self.style_applicator.register_post_processor(
-                "histogram", "patches", self._style_histogram_patches
-            )
+        self.style_applicator.register_post_processor(
+            "histogram", "patches", self._style_histogram_patches
+        )
 
     def _style_histogram_patches(self, patches: Any, styles: Dict[str, Any]) -> None:
         for patch in patches:
@@ -59,9 +57,8 @@ class HistogramPlotter(BasePlotter):
         label = kwargs.pop("label", None)
         n, bins, patches = ax.hist(data[consts.X_COL_NAME], **kwargs)
 
-        if self.use_style_applicator:
-            artists = {"patches": patches, "n": n, "bins": bins}
-            self.style_applicator.apply_post_processing("histogram", artists)
+        artists = {"patches": patches, "n": n, "bins": bins}
+        self.style_applicator.apply_post_processing("histogram", artists)
 
         self._apply_post_processing({"patches": patches}, label)
 

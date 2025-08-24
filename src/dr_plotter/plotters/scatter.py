@@ -20,7 +20,6 @@ class ScatterPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = {"hue", "size", "marker", "alpha"}
     default_theme: Theme = SCATTER_THEME
-    use_style_applicator: bool = True
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -50,10 +49,9 @@ class ScatterPlotter(BasePlotter):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        if self.use_style_applicator:
-            self.style_applicator.register_post_processor(
-                "scatter", "collection", self._style_scatter_collection
-            )
+        self.style_applicator.register_post_processor(
+            "scatter", "collection", self._style_scatter_collection
+        )
 
     def _style_scatter_collection(
         self, collection: Any, styles: Dict[str, Any]
@@ -99,9 +97,8 @@ class ScatterPlotter(BasePlotter):
             data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **kwargs
         )
 
-        if self.use_style_applicator:
-            artists = {"collection": collection}
-            self.style_applicator.apply_post_processing("scatter", artists)
+        artists = {"collection": collection}
+        self.style_applicator.apply_post_processing("scatter", artists)
 
         self._apply_post_processing(collection, label)
 
@@ -188,7 +185,7 @@ class ScatterPlotter(BasePlotter):
 
         # Get marker style from group context if available
         marker_style = "o"
-        if self.use_style_applicator and self.style_applicator.group_values:
+        if self.style_applicator.group_values:
             # Always get the marker from style engine, regardless of channel
             # because we want the proxy to show the actual marker used
             styles = self.style_engine.get_styles_for_group(
