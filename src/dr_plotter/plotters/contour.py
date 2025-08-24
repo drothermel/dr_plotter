@@ -1,36 +1,45 @@
-"""
-Compound plotter for contour plots, specifically for GMM level sets.
-"""
-
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Set
 
 import numpy as np
+import pandas as pd
 from sklearn.mixture import GaussianMixture
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from dr_plotter import consts
-from dr_plotter.theme import CONTOUR_THEME, BASE_COLORS
+from dr_plotter.theme import CONTOUR_THEME, BASE_COLORS, Theme
 from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
 from .base import BasePlotter
 
 
-class ContourPlotter(BasePlotter):
-    """
-    A compound plotter for creating contour plots of GMM level sets using declarative configuration.
-    """
+type Phase = str
+type ComponentSchema = Dict[str, Set[str]]
 
-    # Declarative configuration
+
+class ContourPlotter(BasePlotter):
     plotter_name: str = "contour"
     plotter_params: List[str] = []
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = (
-        set()
-    )  # No grouping support for contour plots
-    default_theme = CONTOUR_THEME
+    enabled_channels: Set[VisualChannel] = set()
+    default_theme: Theme = CONTOUR_THEME
+    use_style_applicator: bool = True
 
-    def _plot_specific_data_prep(self):
-        """Fit GMM and create a meshgrid for contour plotting."""
-        # Fit GMM and create meshgrid
+    component_schema: Dict[Phase, ComponentSchema] = {
+        "plot": {
+            "contour": {
+                "levels",
+                "cmap",
+                "alpha",
+                "linewidths",
+            },
+            "scatter": {
+                "color",
+                "s",
+                "alpha",
+            },
+        }
+    }
+
+    def _plot_specific_data_prep(self) -> pd.DataFrame:
         gmm = GaussianMixture(n_components=3, random_state=0).fit(
             self.plot_data[[consts.X_COL_NAME, consts.Y_COL_NAME]]
         )
@@ -52,15 +61,7 @@ class ContourPlotter(BasePlotter):
         self.xx, self.yy, self.Z = xx, yy, Z
         return self.plot_data
 
-    def _draw(self, ax, data, legend, **kwargs):
-        """
-        Draw the compound contour plot using matplotlib.
-
-        Args:
-            ax: Matplotlib axes
-            data: DataFrame with the data to plot
-            **kwargs: Plot-specific kwargs
-        """
+    def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         contour_kwargs = {
             "levels": self._get_style("levels"),
             "cmap": self._get_style("cmap"),
