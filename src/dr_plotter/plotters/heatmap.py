@@ -1,10 +1,7 @@
-"""
-Atomic plotter for heatmaps.
-"""
-
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Set
 
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -17,6 +14,9 @@ from dr_plotter.plotters.base import (
 from dr_plotter.theme import HEATMAP_THEME, Theme
 from dr_plotter.types import VisualChannel
 
+type Phase = str
+type ComponentSchema = Dict[str, Set[str]]
+
 
 class HeatmapPlotter(BasePlotter):
     plotter_name: str = "heatmap"
@@ -24,11 +24,22 @@ class HeatmapPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = HEATMAP_THEME
+    use_style_applicator: bool = True
 
-    def _plot_specific_data_prep(self):
-        """
-        Convert tidy/long format data to matrix format for heatmap visualization.
-        """
+    component_schema: Dict[Phase, ComponentSchema] = {
+        "plot": {
+            "main": {
+                "cmap",
+                "vmin",
+                "vmax",
+                "aspect",
+                "interpolation",
+                "origin",
+            }
+        }
+    }
+
+    def _plot_specific_data_prep(self) -> None:
         # Convert from tidy/long to matrix format using pivot
         plot_data = self.plot_data.pivot(
             index=consts.Y_COL_NAME,  # rows
@@ -39,7 +50,7 @@ class HeatmapPlotter(BasePlotter):
         # Handle any missing values by filling with 0
         self.plot_data = plot_data.fillna(0)
 
-    def _draw(self, ax, data, legend, **kwargs):
+    def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         # Set default cmap if not provided
         if "cmap" not in kwargs:
             kwargs["cmap"] = self._get_style("cmap")

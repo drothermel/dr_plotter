@@ -15,7 +15,7 @@ from .line import LinePlotter
 from .bar import BarPlotter
 from .histogram import HistogramPlotter
 from .violin import ViolinPlotter
-# from .heatmap import HeatmapPlotter  # BROKEN: needs migration to legend manager
+from .heatmap import HeatmapPlotter
 # from .bump import BumpPlotter  # BROKEN: needs migration to legend manager
 # from .contour import ContourPlotter  # BROKEN: needs migration to legend manager
 
@@ -26,7 +26,7 @@ __all__ = [
     "BarPlotter",
     "HistogramPlotter",
     "ViolinPlotter",
-    # "HeatmapPlotter",  # BROKEN: needs migration
+    "HeatmapPlotter",
     # "BumpPlotter",  # BROKEN: needs migration
     # "ContourPlotter",  # BROKEN: needs migration
 ]
