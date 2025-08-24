@@ -372,9 +372,6 @@ class BasePlotter:
         for param in self.__class__.plotter_params:
             setattr(self, param, self.kwargs.get(param))
 
-    def _style_zero_line(self, ax: Any) -> None:
-        ax.axhline(y=0, linewidth=2.0, color="#333333", zorder=0.5)
-
     def _build_group_label(self, name: Any, group_cols: List[str]) -> str:
         if isinstance(name, tuple):
             if len(name) == 1:

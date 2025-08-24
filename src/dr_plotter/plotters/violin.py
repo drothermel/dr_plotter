@@ -79,7 +79,6 @@ class ViolinPlotter(BasePlotter):
             pass
         else:
             self._draw_simple(ax, data, legend, **kwargs)
-        self._style_zero_line(ax)
 
     def _apply_post_processing(
         self, parts: Dict[str, Any], legend: Legend, label: Optional[str] = None

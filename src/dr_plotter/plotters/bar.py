@@ -55,8 +55,8 @@ class BarPlotter(BasePlotter):
                     setter(value)
 
     def _draw(self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any) -> None:
-        self._draw_simple(ax, data, legend, **kwargs)
-        self._style_zero_line(ax)
+        if not self._has_groups:
+            self._draw_simple(ax, data, legend, **kwargs)
 
     def _draw_simple(
         self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any
