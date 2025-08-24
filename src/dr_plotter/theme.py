@@ -134,8 +134,6 @@ class Theme:
         self.all_styles[source].add(key, value)
 
 
-# --- Base Theme Definition ---
-# Using a professional, colorblind-friendly palette inspired by seaborn's 'deep' palette.
 BASE_COLORS = [
     "#4C72B0",
     "#55A868",
@@ -169,17 +167,15 @@ BASE_THEME = Theme(
     },
 )
 
-# --- Style Classes ---
 DARK_X_AXIS_STYLE = AxesStyles(
     name="dark_x_axis",
     **{
-        "axes.axisbelow": False,  # Put axes on top of grid
-        "axes.grid": True,  # Enable grid
-        "axes.grid.axis": "y",  # Only show horizontal grid lines
-        "axes.spines.bottom": True,  # Ensure bottom spine is visible
+        "axes.axisbelow": False,
+        "axes.grid": True,
+        "axes.grid.axis": "y",
+        "axes.spines.bottom": True,
     },
 )
-# --- Plot-Specific Themes ---
 
 LINE_THEME = Theme(
     name="line",
