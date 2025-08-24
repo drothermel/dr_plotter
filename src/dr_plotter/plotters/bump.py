@@ -1,15 +1,15 @@
-"""
-Compound plotter for bump plots.
-"""
-
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 
 import matplotlib.patheffects as path_effects
+import pandas as pd
 
 from dr_plotter.theme import BUMP_PLOT_THEME, Theme
 from dr_plotter.types import VisualChannel
 
 from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
+
+type Phase = str
+type ComponentSchema = Dict[str, Set[str]]
 
 
 class BumpPlotter(BasePlotter):
@@ -18,6 +18,21 @@ class BumpPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = {"hue", "style"}
     default_theme: Theme = BUMP_PLOT_THEME
+    use_style_applicator: bool = True
+
+    component_schema: Dict[Phase, ComponentSchema] = {
+        "plot": {
+            "main": {
+                "color",
+                "linestyle",
+                "linewidth",
+                "marker",
+                "markersize",
+                "alpha",
+                "label",
+            }
+        }
+    }
 
     def _initialize_subplot_specific_params(self) -> None:
         self.time_col = self.kwargs.get("time_col")
@@ -26,16 +41,14 @@ class BumpPlotter(BasePlotter):
         # Ensure that the coloring is based on the category column
         self.grouping_params.hue = self.category_col
 
-    def _plot_specific_data_prep(self) -> None:
-        """Calculate ranks for each category at each time point."""
-        # Add rank calculation
+    def _plot_specific_data_prep(self) -> pd.DataFrame:
         self.plot_data["rank"] = self.plot_data.groupby(self.time_col)[
             self.value_col
         ].rank(method="first", ascending=False)
-        # Update y to point to rank column for plotting
         self.value_col = "rank"
+        return self.plot_data
 
-    def _draw(self, ax, data, legend, **kwargs):
+    def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         group_cols = list(self.grouping_params.active.values())
         if group_cols:
             grouped = self.plot_data.groupby(group_cols)
@@ -53,16 +66,19 @@ class BumpPlotter(BasePlotter):
                 # Build plot kwargs for this group
                 plot_kwargs = self._build_group_plot_kwargs(styles, name, group_cols)
 
-                # Call the concrete plotter's draw method
-                self._draw_simple(ax, group_data, legend, **plot_kwargs)
+                self._draw_simple(ax, group_data, **plot_kwargs)
         ax.set_ylabel(self._get_style("ylabel", "Rank"))
 
-    def _draw_simple(self, ax, data, legend, **kwargs):
+    def _draw_simple(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         # Sort data by time for proper line drawing
         category_data = data.sort_values(by=self.time_col)
 
-        # Draw the line for this category
-        ax.plot(category_data[self.time_col], category_data[self.value_col], **kwargs)
+        label = kwargs.pop("label", None)
+        lines = ax.plot(
+            category_data[self.time_col], category_data[self.value_col], **kwargs
+        )
+
+        self._apply_post_processing(lines, label)
 
         # Add category label at the end of the line
         if not category_data.empty:
@@ -93,3 +109,15 @@ class BumpPlotter(BasePlotter):
             ax.set_yticks(range(1, max_rank + 1))
             ax.margins(x=0.15)
             ax._bump_configured = True
+
+    def _apply_post_processing(self, lines: Any, label: Optional[str] = None) -> None:
+        if not self._should_create_legend():
+            return
+
+        if self.figure_manager and label and lines:
+            line = lines[0] if isinstance(lines, list) else lines
+            entry = self.style_applicator.create_legend_entry(
+                line, label, self.current_axis
+            )
+            if entry:
+                self.figure_manager.register_legend_entry(entry)

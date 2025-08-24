@@ -17,7 +17,7 @@ from .histogram import HistogramPlotter
 from .violin import ViolinPlotter
 from .heatmap import HeatmapPlotter
 
-# from .bump import BumpPlotter  # BROKEN: needs migration to legend manager
+from .bump import BumpPlotter
 from .contour import ContourPlotter
 
 __all__ = [
@@ -28,6 +28,6 @@ __all__ = [
     "HistogramPlotter",
     "ViolinPlotter",
     "HeatmapPlotter",
-    # "BumpPlotter",  # BROKEN: needs migration
+    "BumpPlotter",
     "ContourPlotter",
 ]
