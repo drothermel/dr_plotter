@@ -31,7 +31,8 @@ class HeatmapPlotter(BasePlotter):
                 "aspect",
                 "interpolation",
                 "origin",
-            }
+            },
+            "text": {"color", "fontsize", "ha", "va"},
         }
     }
 
@@ -86,14 +87,17 @@ class HeatmapPlotter(BasePlotter):
             )
 
         if self._get_style("display_values", True):
+            text_styles = self.style_applicator.get_single_component_styles(
+                "heatmap", "text"
+            )
             for i in range(len(data.index)):
                 for j in range(len(data.columns)):
                     ax.text(
                         j,
                         i,
                         f"{data.iloc[i, j]:.2f}",
-                        ha="center",
-                        va="center",
-                        color="w",
-                        fontsize=8,
+                        ha=text_styles.get("ha", "center"),
+                        va=text_styles.get("va", "center"),
+                        color=text_styles.get("color", "w"),
+                        fontsize=text_styles.get("fontsize", 8),
                     )

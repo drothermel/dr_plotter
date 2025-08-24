@@ -136,7 +136,7 @@ class ScatterPlotter(BasePlotter):
         else:
             edge_color = self.figure_manager.legend_manager.get_error_color("edge")
 
-        marker_size = 8
+        marker_size = self._get_style("marker_size", 8)
         if len(sizes) > 0:
             marker_size = np.sqrt(sizes[0] / np.pi) * 2
 
@@ -151,7 +151,7 @@ class ScatterPlotter(BasePlotter):
             [0],
             [0],
             marker=marker_style,
-            color="w",
+            color="none",
             markerfacecolor=face_color,
             markeredgecolor=edge_color,
             markersize=marker_size,

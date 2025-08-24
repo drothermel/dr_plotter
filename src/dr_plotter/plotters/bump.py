@@ -88,8 +88,8 @@ class BumpPlotter(BasePlotter):
                 last_point[self.value_col],
                 f" {category_name}",
                 va="center",
-                color=kwargs.get("color", "black"),
-                fontweight="bold",
+                color=self._get_style("text_color", "black"),
+                fontweight=self._get_style("fontweight", "bold"),
             )
             text.set_path_effects(
                 [

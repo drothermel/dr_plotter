@@ -159,6 +159,12 @@ BASE_THEME = Theme(
     error_color="#FF0000",
     error_edge_color="#FF0000",
     default_color=BASE_COLORS[0],
+    text_color="#000000",
+    text_fontsize=10,
+    text_ha="center",
+    text_va="center",
+    alpha_min=0.3,
+    alpha_max=1.0,
     **{
         consts.get_cycle_key("hue"): itertools.cycle(BASE_COLORS),
         consts.get_cycle_key("style"): itertools.cycle(["-", "--", ":", "-."]),
@@ -239,6 +245,8 @@ VIOLIN_THEME = Theme(
 HEATMAP_THEME = Theme(
     name="heatmap",
     parent=BASE_THEME,
+    text_color="#FFFFFF",
+    text_fontsize=8,
     axes_styles=AxesStyles(
         grid=False,
         xlabel_pos="top",
