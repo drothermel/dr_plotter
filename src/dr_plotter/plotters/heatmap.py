@@ -12,10 +12,7 @@ from dr_plotter.plotters.base import (
     SubPlotterParamName,
 )
 from dr_plotter.theme import HEATMAP_THEME, Theme
-from dr_plotter.types import VisualChannel
-
-type Phase = str
-type ComponentSchema = Dict[str, Set[str]]
+from dr_plotter.types import VisualChannel, Phase, ComponentSchema
 
 
 class HeatmapPlotter(BasePlotter):

@@ -6,12 +6,15 @@ from matplotlib.patches import Patch
 
 from dr_plotter import consts
 from dr_plotter.theme import BAR_THEME, Theme
-from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
+from dr_plotter.types import (
+    BasePlotterParamName,
+    SubPlotterParamName,
+    VisualChannel,
+    Phase,
+    ComponentSchema,
+)
 
 from .base import BasePlotter
-
-type Phase = str
-type ComponentSchema = Dict[str, Set[str]]
 
 
 class BarPlotter(BasePlotter):

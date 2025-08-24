@@ -4,12 +4,9 @@ import matplotlib.patheffects as path_effects
 import pandas as pd
 
 from dr_plotter.theme import BUMP_PLOT_THEME, Theme
-from dr_plotter.types import VisualChannel
+from dr_plotter.types import VisualChannel, Phase, ComponentSchema
 
 from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
-
-type Phase = str
-type ComponentSchema = Dict[str, Set[str]]
 
 
 class BumpPlotter(BasePlotter):

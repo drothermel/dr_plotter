@@ -7,12 +7,14 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from dr_plotter import consts
 from dr_plotter.theme import CONTOUR_THEME, BASE_COLORS, Theme
-from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
+from dr_plotter.types import (
+    BasePlotterParamName,
+    SubPlotterParamName,
+    VisualChannel,
+    Phase,
+    ComponentSchema,
+)
 from .base import BasePlotter
-
-
-type Phase = str
-type ComponentSchema = Dict[str, Set[str]]
 
 
 class ContourPlotter(BasePlotter):

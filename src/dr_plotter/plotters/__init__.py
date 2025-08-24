@@ -1,14 +1,4 @@
-"""
-This file makes the plotters package a Python package and exposes the plotters.
-
-All plotters are automatically registered when imported via the BasePlotter
-registry mechanism using __init_subclass__.
-"""
-
-# Import BasePlotter first to set up the registry
 from .base import BasePlotter
-
-# Import all concrete plotters - this triggers their registration
 from .scatter import ScatterPlotter
 
 from .line import LinePlotter
@@ -21,7 +11,7 @@ from .bump import BumpPlotter
 from .contour import ContourPlotter
 
 __all__ = [
-    "BasePlotter",  # Expose for registry access
+    "BasePlotter",
     "ScatterPlotter",
     "LinePlotter",
     "BarPlotter",

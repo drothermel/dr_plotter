@@ -1,7 +1,3 @@
-"""
-Atomic plotter for line plots with multi-series support.
-"""
-
 from typing import Any, Dict, List, Optional, Set
 
 import matplotlib.pyplot as plt
@@ -9,13 +5,9 @@ import pandas as pd
 
 from dr_plotter import consts
 from dr_plotter.theme import LINE_THEME, Theme
-from dr_plotter.types import VisualChannel
+from dr_plotter.types import VisualChannel, Phase, ComponentSchema
 
 from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
-
-
-type Phase = str
-type ComponentSchema = Dict[str, Set[str]]
 
 
 class LinePlotter(BasePlotter):
@@ -46,9 +38,6 @@ class LinePlotter(BasePlotter):
             data_sorted[consts.X_COL_NAME], data_sorted[consts.Y_COL_NAME], **kwargs
         )
 
-        # Apply any post-processing if needed
-        pass
-
         self._apply_post_processing(lines, label)
 
     def _apply_post_processing(self, lines: Any, label: Optional[str] = None) -> None:
@@ -57,7 +46,6 @@ class LinePlotter(BasePlotter):
 
         if self.figure_manager and label and lines:
             line = lines[0] if isinstance(lines, list) else lines
-            # Line2D artists can be used directly as legend handles
             entry = self.style_applicator.create_legend_entry(
                 line, label, self.current_axis
             )
