@@ -53,10 +53,11 @@ class LinePlotter(BasePlotter):
 
         if self.figure_manager and label and lines:
             line = lines[0] if isinstance(lines, list) else lines
-            entry = self.style_applicator.create_legend_entry(
-                line, label, self.current_axis
-            )
-            if entry:
-                self.figure_manager.register_legend_entry(entry)
+            for channel in self.grouping_params.active_channels_ordered:
+                entry = self.style_applicator.create_legend_entry(
+                    line, label, self.current_axis, explicit_channel=channel
+                )
+                if entry:
+                    self.figure_manager.register_legend_entry(entry)
 
         self._apply_styling(self.current_axis)

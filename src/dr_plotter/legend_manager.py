@@ -25,12 +25,13 @@ class LegendEntry:
 class LegendRegistry:
     def __init__(self) -> None:
         self._entries: List[LegendEntry] = []
-        self._seen_labels: Set[str] = set()
+        self._seen_keys: Set[tuple] = set()
 
     def add_entry(self, entry: LegendEntry) -> None:
-        if entry.label not in self._seen_labels:
+        key = (entry.label, id(entry.axis))
+        if key not in self._seen_keys:
             self._entries.append(entry)
-            self._seen_labels.add(entry.label)
+            self._seen_keys.add(key)
 
     def get_unique_entries(self) -> List[LegendEntry]:
         return self._entries.copy()
@@ -40,14 +41,14 @@ class LegendRegistry:
 
     def clear(self) -> None:
         self._entries.clear()
-        self._seen_labels.clear()
+        self._seen_keys.clear()
 
 
 @dataclass
 class LegendConfig:
     strategy: LegendStrategy = LegendStrategy.PER_AXES
     collect_strategy: str = "smart"
-    position: str = "best"
+    position: str = "lower center"
     deduplication: bool = True
     ncol: Optional[int] = None
     spacing: float = 0.1
@@ -114,7 +115,7 @@ class LegendManager:
             self.fm.figure.legend(
                 handles,
                 labels,
-                loc="lower center",
+                loc=self.config.position,
                 bbox_to_anchor=(0.5, -0.05),
                 ncol=ncol,
                 frameon=False,
@@ -153,7 +154,8 @@ class LegendManager:
                     labels.append(entry.label)
 
             if handles:
-                axis.legend(handles, labels)
+                legend_position = "best" if self.config.position == "lower center" else self.config.position
+                axis.legend(handles, labels, loc=legend_position)
 
     def _create_grouped_legends(self) -> None:
         channels = set()
@@ -161,7 +163,9 @@ class LegendManager:
             if entry.visual_channel:
                 channels.add(entry.visual_channel)
 
-        for i, channel in enumerate(channels):
+        channel_list = sorted(list(channels))
+        
+        for i, channel in enumerate(channel_list):
             entries = self.registry.get_by_channel(channel)
             if not entries:
                 continue
@@ -176,15 +180,23 @@ class LegendManager:
                 labels.append(entry.label)
 
             if hasattr(self.fm, "figure") and self.fm.figure and self.fm.figure.axes:
-                ax = self.fm.figure.axes[0]
-
-                y_offset = -0.15 - (i * self.config.spacing)
-                legend = ax.legend(
+                if len(channel_list) == 1:
+                    bbox_to_anchor = (0.5, -0.1)
+                elif len(channel_list) == 2:
+                    if i == 0:
+                        bbox_to_anchor = (0.25, -0.1)
+                    else:
+                        bbox_to_anchor = (0.75, -0.1)
+                else:
+                    bbox_x = 0.15 + (i * 0.35)
+                    bbox_to_anchor = (bbox_x, -0.1)
+                
+                legend = self.fm.figure.legend(
                     handles,
                     labels,
                     title=channel.title() if channel else None,
                     loc="upper center",
-                    bbox_to_anchor=(0.5, y_offset),
+                    bbox_to_anchor=bbox_to_anchor,
                     ncol=min(4, len(handles)),
-                    frameon=False,
+                    frameon=True,
                 )

@@ -97,6 +97,10 @@ class StyleApplicator:
                 getattr(self.grouping_cfg, channel, None) if self.grouping_cfg else None
             )
             channel_value = self.group_values.get(column_name) if column_name else None
+            
+            if self._should_use_split_legend_label():
+                label = str(channel_value) if channel_value is not None else label
+                
         else:
             channel = None
             if self.grouping_cfg and self.grouping_cfg.active_channels:
@@ -185,6 +189,13 @@ class StyleApplicator:
             del resolved_styles["cmap"]
 
         return resolved_styles
+
+    def _should_use_split_legend_label(self) -> bool:
+        return (
+            self.figure_manager 
+            and hasattr(self.figure_manager, 'legend_config')
+            and self.figure_manager.legend_config.strategy.value == "grouped_by_channel"
+        )
 
     def _extract_component_kwargs(
         self, component: str, attrs: Set[str], phase: Phase = "plot"

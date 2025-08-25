@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 from dr_plotter.cycle_config import CycleConfig
 from dr_plotter.grouping_config import GroupingConfig
-from dr_plotter.legend_manager import LegendConfig, LegendEntry, LegendManager
+from dr_plotter.legend_manager import LegendConfig, LegendEntry, LegendManager, LegendStrategy
 from .plotters import BasePlotter
 
 
@@ -17,6 +17,10 @@ class FigureManager:
         layout_rect: Optional[List[float]] = None,
         layout_pad: Optional[float] = 0.5,
         legend_config: Optional[LegendConfig] = None,
+        legend_strategy: Optional[str] = None,
+        legend_position: Optional[str] = None,
+        legend_ncol: Optional[int] = None,
+        legend_spacing: Optional[float] = None,
         theme: Optional[Any] = None,
         **fig_kwargs: Any,
     ) -> None:
@@ -39,14 +43,58 @@ class FigureManager:
 
         self.shared_cycle_config: Optional[CycleConfig] = None
 
+        base_config = None
         if legend_config:
-            self.legend_config = legend_config
+            base_config = legend_config
         elif theme and hasattr(theme, "legend_config"):
-            self.legend_config = theme.legend_config
-        else:
-            self.legend_config = LegendConfig()
+            base_config = theme.legend_config
+
+        self.legend_config = self._build_legend_config(
+            base_config, legend_strategy, legend_position, legend_ncol, legend_spacing
+        )
 
         self.legend_manager = LegendManager(self, self.legend_config)
+
+    def _build_legend_config(
+        self,
+        base_config: Optional[LegendConfig],
+        legend_strategy: Optional[str],
+        legend_position: Optional[str], 
+        legend_ncol: Optional[int],
+        legend_spacing: Optional[float]
+    ) -> LegendConfig:
+        if base_config:
+            config = LegendConfig(
+                strategy=base_config.strategy,
+                position=base_config.position,
+                ncol=base_config.ncol,
+                spacing=base_config.spacing,
+                collect_strategy=base_config.collect_strategy,
+                deduplication=base_config.deduplication,
+                remove_axes_legends=base_config.remove_axes_legends
+            )
+        else:
+            config = LegendConfig()
+        
+        if legend_strategy:
+            strategy_map = {
+                "figure_below": LegendStrategy.FIGURE_BELOW,
+                "split": LegendStrategy.GROUPED_BY_CHANNEL,
+                "per_axes": LegendStrategy.PER_AXES,
+                "none": LegendStrategy.NONE
+            }
+            config.strategy = strategy_map.get(legend_strategy, LegendStrategy.PER_AXES)
+        
+        if legend_position:
+            config.position = legend_position
+        
+        if legend_ncol is not None:
+            config.ncol = legend_ncol
+            
+        if legend_spacing is not None:
+            config.spacing = legend_spacing
+        
+        return config
 
     def __enter__(self) -> "FigureManager":
         return self

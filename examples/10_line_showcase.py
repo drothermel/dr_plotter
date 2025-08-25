@@ -11,8 +11,8 @@ from plot_data import ExampleData
 
 EXPECTED_CHANNELS = {
     (0, 1): ["hue"],
-    (1, 0): ["hue"],
-    (1, 1): ["hue"],
+    (1, 0): ["hue", "style"],
+    (1, 1): ["hue", "style"],
 }
 
 
