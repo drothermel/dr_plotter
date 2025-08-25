@@ -152,6 +152,8 @@ BASE_THEME = Theme(
         label_fontsize=12,
         legend_fontsize=10,
         cmap="viridis",
+        colorbar_size="5%",
+        colorbar_pad=0.1,
     ),
     figure_styles=FigureStyles(
         title_fontsize=14,

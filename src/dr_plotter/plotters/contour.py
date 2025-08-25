@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Optional
 
 import numpy as np
 import pandas as pd
@@ -15,6 +15,7 @@ from dr_plotter.types import (
     ComponentSchema,
 )
 from .base import BasePlotter
+from dr_plotter.grouping_config import GroupingConfig
 
 
 class ContourPlotter(BasePlotter):
@@ -43,8 +44,22 @@ class ContourPlotter(BasePlotter):
             "xlabel": {"text", "fontsize", "color"},
             "ylabel": {"text", "fontsize", "color"},
             "grid": {"visible", "alpha", "color", "linestyle"},
+            "colorbar": {"label", "fontsize", "color", "size", "pad"},
         },
     }
+
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        grouping_cfg: GroupingConfig,
+        theme: Optional[Theme] = None,
+        figure_manager: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
+        self.style_applicator.register_post_processor(
+            self.plotter_name, "colorbar", self._style_colorbar
+        )
 
     def _plot_specific_data_prep(self) -> pd.DataFrame:
         gmm = GaussianMixture(n_components=3, random_state=0).fit(
@@ -94,14 +109,39 @@ class ContourPlotter(BasePlotter):
 
         contour = ax.contour(self.xx, self.yy, self.Z, **contour_kwargs)
 
-        # Use axes_grid1 for precise colorbar layout control
-        divider = make_axes_locatable(ax)
-        cax = divider.append_axes("right", size="5%", pad=0.1)
-
-        fig = ax.get_figure()
-        cbar = fig.colorbar(contour, cax=cax)
-        # Use custom colorbar label if provided, otherwise default to "Density"
-        colorbar_label = self.kwargs.get("colorbar_label", "Density")
-        cbar.set_label(colorbar_label)
-
         ax.scatter(data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **scatter_kwargs)
+
+        # Store colorbar info for post-processing
+        artists = {
+            "colorbar": {
+                "plot_object": contour,
+                "ax": ax,
+                "fig": ax.get_figure(),
+            }
+        }
+        self.style_applicator.apply_post_processing(self.plotter_name, artists)
+
+        # Apply base post-processing for title, xlabel, ylabel, grid
+        self._apply_styling(ax)
+
+    def _style_colorbar(
+        self, colorbar_info: Dict[str, Any], styles: Dict[str, Any]
+    ) -> None:
+        plot_object = colorbar_info["plot_object"]
+        ax = colorbar_info["ax"]
+        fig = colorbar_info["fig"]
+
+        divider = make_axes_locatable(ax)
+        size = styles.get("size", "5%")
+        pad = styles.get("pad", 0.1)
+        cax = divider.append_axes("right", size=size, pad=pad)
+
+        cbar = fig.colorbar(plot_object, cax=cax)
+
+        label_text = styles.get("label", self.kwargs.get("colorbar_label", "Density"))
+        if label_text:
+            cbar.set_label(
+                label_text,
+                fontsize=styles.get("fontsize", self._get_style("label_fontsize")),
+                color=styles.get("color", self.theme.get("label_color")),
+            )
