@@ -19,7 +19,7 @@ from .base import BasePlotter
 
 class ViolinPlotter(BasePlotter):
     plotter_name: str = "violin"
-    plotter_params: List[str] = []
+    plotter_params: List[str] = ["alpha", "color", "label", "hue_by", "marker_by", "style_by", "size_by"]
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = {"hue"}
     default_theme: Theme = VIOLIN_THEME
@@ -130,12 +130,12 @@ class ViolinPlotter(BasePlotter):
                     facecolor = tuple(fc[:4] if fc.size >= 4 else list(fc[:3]) + [1.0])
                 else:
                     facecolor = self.figure_manager.legend_manager.get_error_color(
-                        "face"
+                        "face", self.theme
                     )
             else:
-                facecolor = self.figure_manager.legend_manager.get_error_color("face")
+                facecolor = self.figure_manager.legend_manager.get_error_color("face", self.theme)
         except:
-            facecolor = self.figure_manager.legend_manager.get_error_color("face")
+            facecolor = self.figure_manager.legend_manager.get_error_color("face", self.theme)
 
         try:
             edgecolor = first_body.get_edgecolor()
@@ -145,12 +145,12 @@ class ViolinPlotter(BasePlotter):
                     edgecolor = tuple(ec[:4] if ec.size >= 4 else list(ec[:3]) + [1.0])
                 else:
                     edgecolor = self.figure_manager.legend_manager.get_error_color(
-                        "edge"
+                        "edge", self.theme
                     )
             else:
-                edgecolor = self.figure_manager.legend_manager.get_error_color("edge")
+                edgecolor = self.figure_manager.legend_manager.get_error_color("edge", self.theme)
         except:
-            edgecolor = self.figure_manager.legend_manager.get_error_color("edge")
+            edgecolor = self.figure_manager.legend_manager.get_error_color("edge", self.theme)
 
         alpha = first_body.get_alpha() if hasattr(first_body, "get_alpha") else 1.0
 
@@ -165,7 +165,7 @@ class ViolinPlotter(BasePlotter):
         datasets = [gd[consts.Y_COL_NAME].dropna() for gd in group_data]
 
         label = kwargs.pop("label", None)
-        parts = ax.violinplot(datasets, **kwargs)
+        parts = ax.violinplot(datasets, **self._filtered_plot_kwargs)
 
         if len(groups) > 0:
             ax.set_xticks(np.arange(1, len(groups) + 1))
@@ -202,7 +202,7 @@ class ViolinPlotter(BasePlotter):
                     dataset,
                     positions=positions,
                     widths=group_position["width"],
-                    **kwargs,
+                    **self._filtered_plot_kwargs,
                 )
             else:
                 parts = {}
@@ -215,7 +215,7 @@ class ViolinPlotter(BasePlotter):
                 [data[consts.Y_COL_NAME].dropna()],
                 positions=[group_position["offset"]],
                 widths=group_position["width"],
-                **kwargs,
+                **self._filtered_plot_kwargs,
             )
 
         self._apply_post_processing(parts, label)

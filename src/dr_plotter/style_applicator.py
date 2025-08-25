@@ -165,13 +165,16 @@ class StyleApplicator:
             elif attr == "s" and "size_mult" in group_styles and plot_type == "scatter":
                 base_size = base_theme_styles.get("marker_size", 50)
                 resolved_styles[attr] = base_size * group_styles["size_mult"]
-            elif attr == "color" and "text_color" in base_theme_styles:
-                resolved_styles[attr] = base_theme_styles["text_color"]
-            elif attr == "fontsize" and "text_fontsize" in base_theme_styles:
+            elif attr == "color":
+                if component == "main":
+                    resolved_styles[attr] = base_theme_styles["default_color"]
+                else:
+                    resolved_styles[attr] = base_theme_styles["text_color"]
+            elif attr == "fontsize":
                 resolved_styles[attr] = base_theme_styles["text_fontsize"]
-            elif attr == "ha" and "text_ha" in base_theme_styles:
+            elif attr == "ha":
                 resolved_styles[attr] = base_theme_styles["text_ha"]
-            elif attr == "va" and "text_va" in base_theme_styles:
+            elif attr == "va":
                 resolved_styles[attr] = base_theme_styles["text_va"]
 
         for key, value in component_kwargs.items():
@@ -281,7 +284,7 @@ class StyleApplicator:
             "line": {"main"},
             "bar": {"main"},
             "histogram": {"main"},
-            "violin": {"violin_body"},
+            "violin": {"bodies"},
             "heatmap": {"main"},
             "contour": {"scatter"},
             "bump": {"line"},

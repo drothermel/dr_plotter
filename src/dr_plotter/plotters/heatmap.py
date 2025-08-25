@@ -18,7 +18,7 @@ from dr_plotter.grouping_config import GroupingConfig
 
 class HeatmapPlotter(BasePlotter):
     plotter_name: str = "heatmap"
-    plotter_params: List[str] = ["values"]
+    plotter_params: List[str] = ["values", "annot"]
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = HEATMAP_THEME
@@ -84,12 +84,7 @@ class HeatmapPlotter(BasePlotter):
         if "cmap" not in kwargs:
             kwargs["cmap"] = self._get_style("cmap")
 
-        # Filter out parameters that imshow doesn't accept
-        imshow_kwargs = {
-            k: v for k, v in kwargs.items() if k not in ["color", "label", "alpha"]
-        }
-
-        im = ax.imshow(data, **imshow_kwargs)
+        im = ax.imshow(data, **self._filtered_plot_kwargs)
 
         if self._get_style("display_values", True):
             text_styles = self.style_applicator.get_single_component_styles(

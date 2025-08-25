@@ -237,11 +237,9 @@ VIOLIN_THEME = Theme(
     axes_styles=AxesStyles(
         styles_to_merge=[DARK_X_AXIS_STYLE],
     ),
-    general_styles=Style(
-        alpha=0.7,
-        linewidth=1.5,
-        edgecolor="black",
-    ),
+    alpha=0.7,
+    linewidth=1.5,
+    edgecolor="black",
 )
 
 HEATMAP_THEME = Theme(
@@ -271,11 +269,9 @@ BUMP_PLOT_THEME = Theme(
 CONTOUR_THEME = Theme(
     name="contour",
     parent=BASE_THEME,
-    general_styles=Style(
-        levels=14,
-        scatter_alpha=0.5,
-        scatter_size=10,
-    ),
+    levels=14,
+    scatter_alpha=0.5,
+    scatter_size=10,
 )
 
 GROUPED_BAR_THEME = Theme(

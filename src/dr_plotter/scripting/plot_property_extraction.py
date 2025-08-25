@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Tuple
 import numpy as np
 import matplotlib.colors as mcolors
-from matplotlib.collections import PathCollection
+from matplotlib.collections import PathCollection, PolyCollection
 from matplotlib.lines import Line2D
 
 
@@ -161,6 +161,49 @@ def extract_pathcollections_from_axis(ax: Any) -> List[PathCollection]:
     return collections
 
 
+def extract_polycollections_from_axis(ax: Any) -> List[PolyCollection]:
+    collections = []
+    for collection in ax.collections:
+        if isinstance(collection, PolyCollection):
+            collections.append(collection)
+    return collections
+
+
+def extract_violin_colors(collection: PolyCollection) -> List[Tuple[float, float, float, float]]:
+    facecolors = collection.get_facecolors()
+    if len(facecolors) == 0:
+        return [(0.0, 0.0, 0.0, 1.0)]
+    return [mcolors.to_rgba(color) for color in facecolors]
+
+
+def extract_violin_markers(collection: PolyCollection) -> List[str]:
+    return ["violin"]
+
+
+def extract_violin_sizes(collection: PolyCollection) -> List[float]:
+    return [1.0]
+
+
+def extract_violin_alphas(collection: PolyCollection) -> List[float]:
+    alpha = collection.get_alpha()
+    if alpha is None:
+        facecolors = collection.get_facecolors()
+        if len(facecolors) > 0 and len(facecolors[0]) >= 4:
+            return [float(facecolors[0][3])]
+        return [1.0]
+    return [float(alpha)]
+
+
+def extract_violin_styles(collection: PolyCollection) -> List[str]:
+    edgecolors = collection.get_edgecolors()
+    linewidths = collection.get_linewidths()
+    if len(edgecolors) > 0 and len(linewidths) > 0:
+        edge_rgba = mcolors.to_rgba(edgecolors[0])
+        if edge_rgba[3] > 0 and linewidths[0] > 0:
+            return ["-"]
+    return [""]
+
+
 def extract_barcontainers_from_axis(ax: Any) -> List[Any]:
     try:
         from matplotlib.container import BarContainer
@@ -249,6 +292,7 @@ def debug_legend_detection(ax: Any) -> Dict[str, Any]:
 
 def extract_subplot_properties(ax: Any) -> Dict[str, Any]:
     path_collections = extract_pathcollections_from_axis(ax)
+    poly_collections = extract_polycollections_from_axis(ax)
     bar_containers = extract_barcontainers_from_axis(ax)
     lines = extract_lines_from_axis(ax)
     legend_handles = extract_legend_handles(ax)
@@ -277,9 +321,21 @@ def extract_subplot_properties(ax: Any) -> Dict[str, Any]:
         }
         result["collections"].append(collection_props)
 
-    for i, container in enumerate(bar_containers):
+    for i, collection in enumerate(poly_collections):
         collection_props = {
             "index": len(path_collections) + i,
+            "positions": [],
+            "colors": extract_violin_colors(collection),
+            "sizes": extract_violin_sizes(collection),
+            "markers": extract_violin_markers(collection),
+            "alphas": extract_violin_alphas(collection),
+            "styles": extract_violin_styles(collection),
+        }
+        result["collections"].append(collection_props)
+
+    for i, container in enumerate(bar_containers):
+        collection_props = {
+            "index": len(path_collections) + len(poly_collections) + i,
             "positions": [],
             "colors": extract_bar_colors(container),
             "sizes": [],
@@ -294,7 +350,7 @@ def extract_subplot_properties(ax: Any) -> Dict[str, Any]:
         line_alphas = extract_line_alphas(lines)
 
         collection_props = {
-            "index": len(path_collections) + len(bar_containers),
+            "index": len(path_collections) + len(poly_collections) + len(bar_containers),
             "positions": [],
             "colors": line_colors,
             "sizes": [],

@@ -160,7 +160,7 @@ def verify_plot_properties_for_subplot(
 
     if not props["collections"]:
         result["overall_passed"] = False
-        result["summary_message"] = "🔴 No PathCollections found in subplot"
+        result["summary_message"] = "🔴 No collections found in subplot"
         result["suggestions"].append("Check if plot was created successfully")
         return result
 
