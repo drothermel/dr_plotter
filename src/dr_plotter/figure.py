@@ -10,6 +10,7 @@ from dr_plotter.legend_manager import (
     LegendManager,
     LegendStrategy,
 )
+from dr_plotter.theme import BASE_THEME
 from .plotters import BasePlotter
 
 
@@ -26,10 +27,11 @@ class FigureManager:
         legend_position: Optional[str] = None,
         legend_ncol: Optional[int] = None,
         legend_spacing: Optional[float] = None,
-        legend_bottom_margin: Optional[float] = None,
+        plot_margin_bottom: Optional[float] = None,
         legend_y_offset: Optional[float] = None,
         legend_max_col: Optional[int] = None,
         theme: Optional[Any] = None,
+        shared_styling: Optional[bool] = None,
         **fig_kwargs: Any,
     ) -> None:
         self._layout_rect = layout_rect
@@ -63,12 +65,30 @@ class FigureManager:
             legend_position,
             legend_ncol,
             legend_spacing,
-            legend_bottom_margin,
+            plot_margin_bottom,
             legend_y_offset,
             legend_max_col,
         )
 
+        self.shared_styling = shared_styling
+
+        if self._should_use_shared_cycle_config():
+            theme_for_cycle = theme if theme else BASE_THEME
+            self.shared_cycle_config = CycleConfig(theme_for_cycle)
+        else:
+            self.shared_cycle_config = None
+
         self.legend_manager = LegendManager(self, self.legend_config)
+
+    def _should_use_shared_cycle_config(self) -> bool:
+        if self.shared_styling is not None:
+            return self.shared_styling
+
+        coordination_strategies = {
+            LegendStrategy.GROUPED_BY_CHANNEL,
+            LegendStrategy.FIGURE_BELOW,
+        }
+        return self.legend_config.strategy in coordination_strategies
 
     def _build_legend_config(
         self,
@@ -77,7 +97,7 @@ class FigureManager:
         legend_position: Optional[str],
         legend_ncol: Optional[int],
         legend_spacing: Optional[float],
-        legend_bottom_margin: Optional[float],
+        plot_margin_bottom: Optional[float],
         legend_y_offset: Optional[float],
         legend_max_col: Optional[int],
     ) -> LegendConfig:
@@ -112,8 +132,8 @@ class FigureManager:
         if legend_spacing is not None:
             config.spacing = legend_spacing
 
-        if legend_bottom_margin is not None:
-            config.layout_bottom_margin = legend_bottom_margin
+        if plot_margin_bottom is not None:
+            config.layout_bottom_margin = plot_margin_bottom
 
         if legend_y_offset is not None:
             config.bbox_y_offset = legend_y_offset

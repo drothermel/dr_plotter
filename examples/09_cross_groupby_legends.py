@@ -1,23 +1,15 @@
 from typing import Any
 from dr_plotter.figure import FigureManager
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
+from dr_plotter.scripting.verif_decorators import verify_figure_legends
 from plot_data import ExampleData
 
-EXPECTED_CHANNELS = {
-    (0, 0): ["hue", "marker"],
-    (0, 1): ["hue", "marker"],
-}
 
-
-@verify_plot_properties(expected_channels=EXPECTED_CHANNELS)
-@verify_example(
-    expected_legends=2,
-    expected_channels=EXPECTED_CHANNELS,
-    expected_legend_entries={
-        (0, 0): {"hue": 2, "marker": 2},
-        (0, 1): {"hue": 2, "marker": 2},
-    },
+@verify_figure_legends(
+    expected_legend_count=2,
+    legend_strategy="split",
+    expected_channels=["hue", "marker"],
+    expected_channel_entries={"hue": 2, "marker": 2},
 )
 def main(args: Any) -> Any:
     complex_data = ExampleData.get_cross_groupby_legends_data()
@@ -39,8 +31,8 @@ def main(args: Any) -> Any:
         cols=2,
         figsize=(16, 6),
         legend_strategy="split",
-        legend_bottom_margin=0.2,
-        legend_y_offset=0.2,
+        plot_margin_bottom=0.1,
+        legend_y_offset=0.1,
         legend_max_col=2,
     ) as fm:
         fm.fig.suptitle(

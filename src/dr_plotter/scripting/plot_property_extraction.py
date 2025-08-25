@@ -292,6 +292,108 @@ def debug_legend_detection(ax: Any) -> Dict[str, Any]:
     return debug_info
 
 
+def extract_figure_legend_properties(fig: Any) -> Dict[str, Any]:
+    import matplotlib.legend
+
+    legends = []
+    for child in fig.get_children():
+        if isinstance(child, matplotlib.legend.Legend):
+            legends.append(child)
+
+    result = {
+        "legend_count": len(legends),
+        "legends": [],
+        "total_entries": 0,
+    }
+
+    for i, legend in enumerate(legends):
+        handles = []
+        # Try different methods to get legend handles
+        if hasattr(legend, "legend_handles"):
+            handles.extend(legend.legend_handles)
+        elif hasattr(legend, "legendHandles"):
+            handles.extend(legend.legendHandles)
+        elif hasattr(legend, "get_lines") and hasattr(legend, "get_patches"):
+            handles.extend(legend.get_lines())
+            handles.extend(legend.get_patches())
+        else:
+            # Fallback - try to get handles from _legend_handles
+            if hasattr(legend, "_legend_handles"):
+                handles.extend(legend._legend_handles)
+
+        legend_props = {
+            "index": i,
+            "title": legend.get_title().get_text() if legend.get_title() else None,
+            "handles": handles,
+            "labels": [text.get_text() for text in legend.get_texts()],
+            "entry_count": len(legend.get_texts()),
+            "ncol": getattr(legend, "_ncols", getattr(legend, "_ncol", 1)),
+            "position": getattr(legend, "_loc", None),
+        }
+
+        legend_props.update(
+            {
+                "colors": extract_legend_colors_from_handles(handles),
+                "markers": extract_legend_markers_from_handles(handles),
+                "sizes": extract_legend_sizes_from_handles(handles),
+            }
+        )
+
+        result["legends"].append(legend_props)
+        result["total_entries"] += legend_props["entry_count"]
+
+    return result
+
+
+def extract_legend_colors_from_handles(handles: List[Any]) -> List[Tuple[float, ...]]:
+    colors = []
+    for handle in handles:
+        try:
+            if hasattr(handle, "get_markerfacecolor"):
+                color = handle.get_markerfacecolor()
+                if color == "none" or color is None:
+                    color = handle.get_color()
+            elif hasattr(handle, "get_facecolor"):
+                color = handle.get_facecolor()
+            else:
+                color = "black"
+
+            colors.append(mcolors.to_rgba(color))
+        except (ValueError, TypeError):
+            colors.append((0.0, 0.0, 0.0, 1.0))
+
+    return colors
+
+
+def extract_legend_markers_from_handles(handles: List[Any]) -> List[str]:
+    markers = []
+    for handle in handles:
+        try:
+            if hasattr(handle, "get_marker"):
+                marker = handle.get_marker()
+                markers.append(str(marker) if marker else "None")
+            else:
+                markers.append("patch")
+        except (ValueError, TypeError):
+            markers.append("unknown")
+
+    return markers
+
+
+def extract_legend_sizes_from_handles(handles: List[Any]) -> List[float]:
+    sizes = []
+    for handle in handles:
+        try:
+            if hasattr(handle, "get_markersize"):
+                sizes.append(float(handle.get_markersize()))
+            else:
+                sizes.append(1.0)
+        except (ValueError, TypeError):
+            sizes.append(1.0)
+
+    return sizes
+
+
 def extract_subplot_properties(ax: Any) -> Dict[str, Any]:
     path_collections = extract_pathcollections_from_axis(ax)
     poly_collections = extract_polycollections_from_axis(ax)

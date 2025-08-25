@@ -1,30 +1,16 @@
 from typing import Any
 from dr_plotter.figure import FigureManager
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
+from dr_plotter.scripting.verif_decorators import verify_figure_legends
 from plot_data import ExampleData
 
-EXPECTED_CHANNELS = {
-    (0, 0): ["hue"],
-    (0, 1): ["hue"],
-    (1, 0): ["hue"],
-    (1, 1): ["hue"],
-}
 
-
-@verify_plot_properties(expected_channels=EXPECTED_CHANNELS)
-@verify_example(
-    expected_legends=1,
-    expected_channels=EXPECTED_CHANNELS,
-    expected_legend_entries={
-        (0, 0): {"hue": 4},
-        (0, 1): {"hue": 4},
-        (1, 0): {"hue": 4},
-        (1, 1): {"hue": 4},
-    },
+@verify_figure_legends(
+    expected_legend_count=1, legend_strategy="figure_below", expected_total_entries=4
 )
 def main(args: Any) -> Any:
     shared_data = ExampleData.get_legend_positioning_data()
+    time_series_data = ExampleData.get_category_time_series()
 
     assert "category_group" in shared_data.columns
     assert "performance" in shared_data.columns
@@ -36,8 +22,10 @@ def main(args: Any) -> Any:
         cols=2,
         figsize=(16, 12),
         legend_strategy="figure_below",
-        legend_position="lower center",
         legend_ncol=4,
+        plot_margin_bottom=0.08,
+        legend_y_offset=0.025,
+        legend_max_col=2,
     ) as fm:
         fm.fig.suptitle(
             "Example 10: Legend Positioning + Management - Shared Figure Legend",
@@ -61,9 +49,9 @@ def main(args: Any) -> Any:
             "line",
             0,
             1,
-            shared_data.sort_values("performance"),
-            x="performance",
-            y="accuracy",
+            time_series_data,
+            x="time_point",
+            y="performance",
             hue_by="category_group",
             linewidth=2,
             alpha=0.8,

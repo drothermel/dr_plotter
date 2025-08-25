@@ -556,6 +556,41 @@ class ExampleData:
 
         return pd.DataFrame(records)
 
+    @staticmethod
+    def get_category_time_series(time_points=15, seed=502) -> pd.DataFrame:
+        np.random.seed(seed)
+
+        categories = ["Alpha", "Beta", "Gamma", "Delta"]
+
+        records = []
+        for category in categories:
+            base_performance = np.random.uniform(0.4, 0.8)
+            performance_trend = np.random.randn() * 0.03
+            noise_level = 0.04
+
+            for t in range(time_points):
+                trend_component = performance_trend * t
+                seasonal_component = 0.06 * np.sin(2 * np.pi * t / 8)
+                noise_component = np.random.randn() * noise_level
+
+                performance = (
+                    base_performance
+                    + trend_component
+                    + seasonal_component
+                    + noise_component
+                )
+                performance = np.clip(performance, 0.2, 1.0)
+
+                records.append(
+                    {
+                        "category_group": category,
+                        "time_point": t,
+                        "performance": performance,
+                    }
+                )
+
+        return pd.DataFrame(records)
+
 
 # Validation to ensure all data generators work
 if __name__ == "__main__":

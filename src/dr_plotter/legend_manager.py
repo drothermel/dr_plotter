@@ -23,15 +23,29 @@ class LegendEntry:
 
 
 class LegendRegistry:
-    def __init__(self) -> None:
+    def __init__(self, strategy: Optional[LegendStrategy] = None) -> None:
         self._entries: List[LegendEntry] = []
         self._seen_keys: Set[tuple] = set()
+        self.strategy = strategy
 
     def add_entry(self, entry: LegendEntry) -> None:
-        key = (entry.label, id(entry.axis))
+        if self._should_use_channel_based_deduplication():
+            key = (entry.visual_channel, entry.channel_value)
+        else:
+            key = (entry.label, id(entry.axis))
+
         if key not in self._seen_keys:
             self._entries.append(entry)
             self._seen_keys.add(key)
+
+    def _should_use_channel_based_deduplication(self) -> bool:
+        if self.strategy is None:
+            return False
+        shared_strategies = {
+            LegendStrategy.GROUPED_BY_CHANNEL,
+            LegendStrategy.FIGURE_BELOW,
+        }
+        return self.strategy in shared_strategies
 
     def get_unique_entries(self) -> List[LegendEntry]:
         return self._entries.copy()
@@ -75,7 +89,7 @@ class LegendManager:
     ) -> None:
         self.fm = figure_manager
         self.config = config or LegendConfig()
-        self.registry = LegendRegistry()
+        self.registry = LegendRegistry(self.config.strategy)
 
     def _calculate_ncol(self, num_handles: int) -> int:
         if self.config.ncol is not None:
@@ -133,11 +147,12 @@ class LegendManager:
 
         if hasattr(self.fm, "figure") and self.fm.figure:
             ncol = self._calculate_ncol(len(handles))
+            bbox_to_anchor = (self.config.single_legend_x, self.config.bbox_y_offset)
             self.fm.figure.legend(
                 handles,
                 labels,
                 loc=self.config.position,
-                bbox_to_anchor=(0.5, -0.05),
+                bbox_to_anchor=bbox_to_anchor,
                 ncol=ncol,
                 frameon=False,
             )
