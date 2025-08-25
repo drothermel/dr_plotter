@@ -124,16 +124,8 @@ class BumpPlotter(BasePlotter):
             ax._bump_configured = True
 
     def _apply_post_processing(self, lines: Any, label: Optional[str] = None) -> None:
-        if not self._should_create_legend():
-            self._apply_styling(self.current_axis)
-            return
-
-        if self.figure_manager and label and lines:
+        if lines:
             line = lines[0] if isinstance(lines, list) else lines
-            entry = self.style_applicator.create_legend_entry(
-                line, label, self.current_axis
-            )
-            if entry:
-                self.figure_manager.register_legend_entry(entry)
+            self._register_legend_entry_if_valid(line, label)
 
         self._apply_styling(self.current_axis)

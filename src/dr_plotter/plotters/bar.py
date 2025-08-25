@@ -81,22 +81,14 @@ class BarPlotter(BasePlotter):
         self._apply_post_processing(patches, label)
 
     def _apply_post_processing(self, patches: Any, label: Optional[str] = None) -> None:
-        if not self._should_create_legend():
-            return
-
-        if self.figure_manager and label and patches:
+        if patches:
             first_patch = patches[0]
             proxy = Patch(
                 facecolor=first_patch.get_facecolor(),
                 edgecolor=first_patch.get_edgecolor(),
                 alpha=first_patch.get_alpha(),
             )
-
-            entry = self.style_applicator.create_legend_entry(
-                proxy, label, self.current_axis
-            )
-            if entry:
-                self.figure_manager.register_legend_entry(entry)
+            self._register_legend_entry_if_valid(proxy, label)
 
     def _draw_grouped(
         self,

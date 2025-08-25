@@ -62,6 +62,7 @@ class BasePlotter:
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = BASE_THEME
+    supports_legend: bool = True
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {"main": set()},
@@ -217,10 +218,24 @@ class BasePlotter:
         return self.kwargs.get(key, self.theme.get(key, default_override))
 
     def _should_create_legend(self) -> bool:
+        if not self.supports_legend:
+            return False
         legend_param = self._get_style("legend")
         if legend_param is False:
             return False
         return True
+
+    def _register_legend_entry_if_valid(
+        self, artist: Any, label: Optional[str]
+    ) -> None:
+        if not self._should_create_legend():
+            return
+        if self.figure_manager and label and artist:
+            entry = self.style_applicator.create_legend_entry(
+                artist, label, self.current_axis
+            )
+            if entry:
+                self.figure_manager.register_legend_entry(entry)
 
     def _apply_styling(self, ax: Any) -> None:
         artists = {

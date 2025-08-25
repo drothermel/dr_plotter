@@ -82,20 +82,11 @@ class HistogramPlotter(BasePlotter):
     def _apply_post_processing(
         self, parts: Dict[str, Any], label: Optional[str] = None
     ) -> None:
-        if not self._should_create_legend():
-            return
-
-        if self.figure_manager and label and "patches" in parts:
-            if parts["patches"]:
-                first_patch = parts["patches"][0]
-                proxy = Patch(
-                    facecolor=first_patch.get_facecolor(),
-                    edgecolor=first_patch.get_edgecolor(),
-                    alpha=first_patch.get_alpha(),
-                )
-
-                entry = self.style_applicator.create_legend_entry(
-                    proxy, label, self.current_axis
-                )
-                if entry:
-                    self.figure_manager.register_legend_entry(entry)
+        if "patches" in parts and parts["patches"]:
+            first_patch = parts["patches"][0]
+            proxy = Patch(
+                facecolor=first_patch.get_facecolor(),
+                edgecolor=first_patch.get_edgecolor(),
+                alpha=first_patch.get_alpha(),
+            )
+            self._register_legend_entry_if_valid(proxy, label)

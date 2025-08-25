@@ -124,13 +124,7 @@ class ViolinPlotter(BasePlotter):
 
         if label and "bodies" in parts and parts["bodies"]:
             proxy = self._create_proxy_artist_from_bodies(parts["bodies"])
-
-            if self.figure_manager and proxy:
-                entry = self.style_applicator.create_legend_entry(
-                    proxy, label, self.current_axis
-                )
-                if entry:
-                    self.figure_manager.register_legend_entry(entry)
+            self._register_legend_entry_if_valid(proxy, label)
 
     def _create_proxy_artist_from_bodies(self, bodies: List[Any]) -> Optional[Patch]:
         if not bodies:
