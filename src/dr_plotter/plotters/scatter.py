@@ -152,7 +152,7 @@ class ScatterPlotter(BasePlotter):
                 "edge", self.theme
             )
 
-        marker_size = self._get_style("marker_size", 8)
+        marker_size = self.style_applicator.get_style_with_fallback("marker_size", 8)
         if len(sizes) > 0:
             marker_size = np.sqrt(sizes[0] / np.pi) * 2
 

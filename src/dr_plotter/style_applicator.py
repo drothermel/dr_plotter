@@ -122,6 +122,28 @@ class StyleApplicator:
             artist_type=artist_type,
         )
 
+    def get_style_with_fallback(self, key: str, default: Any = None) -> Any:
+        """
+        Get style with enhanced fallback resolution.
+        Priority: kwargs → theme → default
+        """
+        return self.kwargs.get(key, self.theme.get(key, default))
+
+    def get_computed_style(self, base_key: str, operation: str, factor: float) -> Any:
+        """
+        Get computed style value (e.g., size multiplication).
+        """
+        base_value = self.get_style_with_fallback(
+            base_key, 1.0 if "size" in base_key else 0.0
+        )
+
+        if operation == "multiply":
+            return base_value * factor
+        elif operation == "add":
+            return base_value + factor
+        else:
+            raise ValueError(f"Unsupported computation operation: {operation}")
+
     def _resolve_component_styles(
         self, plot_type: str, component: str, attrs: Set[str], phase: Phase = "plot"
     ) -> Dict[str, Any]:
@@ -201,11 +223,24 @@ class StyleApplicator:
         self, component: str, attrs: Set[str], phase: Phase = "plot"
     ) -> Dict[str, Any]:
         if component == "main":
+            # Axes-specific settings should not flow to main component
+            axes_specific = {"title", "xlabel", "ylabel", "grid"}
+            # Also block axes-specific prefixed settings
+            axes_prefixed = {
+                k
+                for k in self.kwargs.keys()
+                if any(k.startswith(f"{axis}_") for axis in axes_specific)
+            }
             extracted = {}
             for k, v in self.kwargs.items():
                 if k in attrs and not self._is_reserved_kwarg(k):
                     extracted[k] = v
-                elif not self._is_reserved_kwarg(k) and not k.endswith("_by"):
+                elif (
+                    not self._is_reserved_kwarg(k)
+                    and not k.endswith("_by")
+                    and k not in axes_specific
+                    and k not in axes_prefixed
+                ):
                     extracted[k] = v
             return extracted
 
@@ -222,6 +257,10 @@ class StyleApplicator:
             ):
                 extracted[key] = value
 
+        # Backward compatibility: map display_values to cell_text_visible
+        if component == "cell_text" and "display_values" in self.kwargs:
+            extracted["visible"] = self.kwargs["display_values"]
+
         return extracted
 
     def _is_reserved_kwarg(self, key: str) -> bool:
@@ -232,11 +271,7 @@ class StyleApplicator:
             "y",
             "data",
             "theme",
-            "title",
-            "xlabel",
-            "ylabel",
             "legend",
-            "grid",
             "colorbar_label",
             "time_col",
             "category_col",

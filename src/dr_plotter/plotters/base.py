@@ -63,6 +63,7 @@ class BasePlotter:
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = BASE_THEME
     supports_legend: bool = True
+    supports_grouped: bool = True
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {"main": set()},
@@ -147,7 +148,12 @@ class BasePlotter:
         group_position: Dict[str, Any],
         **kwargs: Any,
     ) -> None:
-        self._draw(ax, data, **kwargs)
+        if not self.supports_grouped:
+            # Single-purpose plotters ignore group_position and process all data
+            self._draw(ax, self.plot_data, **kwargs)
+        else:
+            # Default behavior for coordinate-sharing plotters (Line, Scatter)
+            self._draw(ax, data, **kwargs)
 
     def _setup_continuous_channels(self) -> None:
         for channel in self.grouping_params.active_channels_ordered:
@@ -214,13 +220,10 @@ class BasePlotter:
 
         self._plot_specific_data_prep()
 
-    def _get_style(self, key: str, default_override: Optional[Any] = None) -> Any:
-        return self.kwargs.get(key, self.theme.get(key, default_override))
-
     def _should_create_legend(self) -> bool:
         if not self.supports_legend:
             return False
-        legend_param = self._get_style("legend")
+        legend_param = self.kwargs.get("legend", self.theme.get("legend"))
         if legend_param is False:
             return False
         return True
@@ -328,7 +331,9 @@ class BasePlotter:
 
         plot_kwargs = {
             "color": default_color,
-            "alpha": styles.get("alpha", self._get_style("alpha", 1.0)),
+            "alpha": styles.get(
+                "alpha", self.style_applicator.get_style_with_fallback("alpha", 1.0)
+            ),
         }
 
         if "linestyle" in styles:
@@ -337,12 +342,12 @@ class BasePlotter:
             plot_kwargs["marker"] = styles["marker"]
         if "size_mult" in styles:
             if hasattr(self, "line_width"):
-                plot_kwargs["linewidth"] = (
-                    self._get_style("line_width", 2.0) * styles["size_mult"]
+                plot_kwargs["linewidth"] = self.style_applicator.get_computed_style(
+                    "line_width", "multiply", styles["size_mult"]
                 )
             elif hasattr(self, "marker_size"):
-                plot_kwargs["s"] = (
-                    self._get_style("marker_size", 50) * styles["size_mult"]
+                plot_kwargs["s"] = self.style_applicator.get_computed_style(
+                    "marker_size", "multiply", styles["size_mult"]
                 )
 
         user_kwargs = self._filtered_plot_kwargs
@@ -387,7 +392,9 @@ class BasePlotter:
         return str(name)
 
     def _style_title(self, ax: Any, styles: Dict[str, Any]) -> None:
-        title_text = styles.get("text", self._get_style("title"))
+        title_text = styles.get(
+            "text", self.style_applicator.get_style_with_fallback("title")
+        )
         if title_text:
             ax.set_title(
                 title_text,
@@ -396,27 +403,43 @@ class BasePlotter:
             )
 
     def _style_xlabel(self, ax: Any, styles: Dict[str, Any]) -> None:
-        xlabel_text = styles.get("text", self._get_style("xlabel", fmt_txt(self.x_col)))
+        xlabel_text = styles.get(
+            "text",
+            self.style_applicator.get_style_with_fallback(
+                "xlabel", fmt_txt(self.x_col)
+            ),
+        )
         if xlabel_text:
             ax.set_xlabel(
                 xlabel_text,
-                fontsize=styles.get("fontsize", self._get_style("label_fontsize")),
+                fontsize=styles.get(
+                    "fontsize",
+                    self.style_applicator.get_style_with_fallback("label_fontsize"),
+                ),
                 color=styles.get("color", self.theme.get("label_color")),
             )
 
     def _style_ylabel(self, ax: Any, styles: Dict[str, Any]) -> None:
         ylabel_text = styles.get(
-            "text", self._get_style("ylabel", fmt_txt(ylabel_from_metrics(self.y_cols)))
+            "text",
+            self.style_applicator.get_style_with_fallback(
+                "ylabel", fmt_txt(ylabel_from_metrics(self.y_cols))
+            ),
         )
         if ylabel_text:
             ax.set_ylabel(
                 ylabel_text,
-                fontsize=styles.get("fontsize", self._get_style("label_fontsize")),
+                fontsize=styles.get(
+                    "fontsize",
+                    self.style_applicator.get_style_with_fallback("label_fontsize"),
+                ),
                 color=styles.get("color", self.theme.get("label_color")),
             )
 
     def _style_grid(self, ax: Any, styles: Dict[str, Any]) -> None:
-        grid_visible = styles.get("visible", self._get_style("grid", True))
+        grid_visible = styles.get(
+            "visible", self.style_applicator.get_style_with_fallback("grid", True)
+        )
         if grid_visible:
             ax.grid(
                 True,

@@ -16,6 +16,7 @@ class BumpPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = {"hue", "style"}
     default_theme: Theme = BUMP_PLOT_THEME
+    supports_grouped: bool = False
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -51,69 +52,76 @@ class BumpPlotter(BasePlotter):
         self.time_col = self.kwargs.get("time_col")
         self.value_col = self.kwargs.get("value_col")
         self.category_col = self.kwargs.get("category_col")
-        # Ensure that the coloring is based on the category column
-        self.grouping_params.hue = self.category_col
 
-    def _plot_specific_data_prep(self) -> pd.DataFrame:
+    def _plot_specific_data_prep(self) -> None:
+        # 1. Calculate rankings (existing logic)
         self.plot_data["rank"] = self.plot_data.groupby(self.time_col)[
             self.value_col
         ].rank(method="first", ascending=False)
         self.value_col = "rank"
-        return self.plot_data
+
+        # 2. Prepare category trajectories with styles
+        categories = self.plot_data[self.category_col].unique()
+        self.trajectory_data = []
+
+        for i, category in enumerate(categories):
+            cat_data = self.plot_data[self.plot_data[self.category_col] == category]
+            cat_data = cat_data.sort_values(by=self.time_col).copy()
+
+            # Assign consistent styling per category
+            style = self._get_category_style(category, i, len(categories))
+            cat_data["_bump_color"] = style["color"]
+            cat_data["_bump_linestyle"] = style.get("linestyle", "-")
+            cat_data["_bump_label"] = str(category)
+
+            self.trajectory_data.append(cat_data)
+
+    def _get_category_style(
+        self, category: Any, index: int, total_categories: int
+    ) -> Dict[str, Any]:
+        # Create consistent category styling using theme colors
+        base_colors = self.theme.get(
+            "base_colors", ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
+        )
+        color = base_colors[index % len(base_colors)]
+        return {"color": color, "linestyle": "-"}
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
-        group_cols = list(self.grouping_params.active.values())
-        if group_cols:
-            grouped = self.plot_data.groupby(group_cols)
-
-            for name, group_data in grouped:
-                if isinstance(name, tuple):
-                    group_values = dict(zip(group_cols, name))
-                else:
-                    group_values = {group_cols[0]: name}
-
-                styles = self.style_engine.get_styles_for_group(
-                    group_values, self.grouping_params
+        # Process all trajectories in single unified method
+        for traj_data in self.trajectory_data:
+            if not traj_data.empty:
+                lines = ax.plot(
+                    traj_data[self.time_col],
+                    traj_data[self.value_col],
+                    color=traj_data["_bump_color"].iloc[0],
+                    linestyle=traj_data["_bump_linestyle"].iloc[0],
+                    **self._filtered_plot_kwargs,
                 )
 
-                # Build plot kwargs for this group
-                plot_kwargs = self._build_group_plot_kwargs(styles, name, group_cols)
+                # Add category labels at end of trajectories
+                last_point = traj_data.iloc[-1]
+                category_name = traj_data["_bump_label"].iloc[0]
+                text = ax.text(
+                    last_point[self.time_col],
+                    last_point[self.value_col],
+                    f" {category_name}",
+                    va="center",
+                    color=self.style_applicator.get_style_with_fallback(
+                        "text_color", "black"
+                    ),
+                    fontweight=self.style_applicator.get_style_with_fallback(
+                        "fontweight", "bold"
+                    ),
+                )
+                text.set_path_effects(
+                    [
+                        path_effects.Stroke(linewidth=2, foreground="white"),
+                        path_effects.Normal(),
+                    ]
+                )
 
-                self._draw_simple(ax, group_data, **plot_kwargs)
-        ax.set_ylabel(self._get_style("ylabel", "Rank"))
-
-    def _draw_simple(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
-        # Sort data by time for proper line drawing
-        category_data = data.sort_values(by=self.time_col)
-
-        label = kwargs.pop("label", None)
-        lines = ax.plot(
-            category_data[self.time_col], category_data[self.value_col], **kwargs
-        )
-
-        self._apply_post_processing(lines, label)
-
-        # Add category label at the end of the line
-        if not category_data.empty:
-            last_point = category_data.iloc[-1]
-            category_name = kwargs.get("label", "Unknown")
-            # Extract just the category name from "category=Cat_A" format if present
-            if "=" in category_name:
-                category_name = category_name.split("=")[1]
-            text = ax.text(
-                last_point[self.time_col],
-                last_point[self.value_col],
-                f" {category_name}",
-                va="center",
-                color=self._get_style("text_color", "black"),
-                fontweight=self._get_style("fontweight", "bold"),
-            )
-            text.set_path_effects(
-                [
-                    path_effects.Stroke(linewidth=2, foreground="white"),
-                    path_effects.Normal(),
-                ]
-            )
+                # Register legend entries
+                self._register_legend_entry_if_valid(lines[0], category_name)
 
         # Configure bump plot specific axes (only set once)
         if not hasattr(ax, "_bump_configured"):
@@ -121,11 +129,7 @@ class BumpPlotter(BasePlotter):
             max_rank = int(self.plot_data["rank"].max())
             ax.set_yticks(range(1, max_rank + 1))
             ax.margins(x=0.15)
+            ax.set_ylabel(
+                self.style_applicator.get_style_with_fallback("ylabel", "Rank")
+            )
             ax._bump_configured = True
-
-    def _apply_post_processing(self, lines: Any, label: Optional[str] = None) -> None:
-        if lines:
-            line = lines[0] if isinstance(lines, list) else lines
-            self._register_legend_entry_if_valid(line, label)
-
-        self._apply_styling(self.current_axis)
