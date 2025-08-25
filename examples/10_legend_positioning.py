@@ -25,7 +25,6 @@ def main(args: Any) -> Any:
         legend_ncol=4,
         plot_margin_bottom=0.08,
         legend_y_offset=0.025,
-        legend_max_col=2,
     ) as fm:
         fm.fig.suptitle(
             "Example 10: Legend Positioning + Management - Shared Figure Legend",

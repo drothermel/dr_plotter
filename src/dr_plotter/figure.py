@@ -29,7 +29,6 @@ class FigureManager:
         legend_spacing: Optional[float] = None,
         plot_margin_bottom: Optional[float] = None,
         legend_y_offset: Optional[float] = None,
-        legend_max_col: Optional[int] = None,
         theme: Optional[Any] = None,
         shared_styling: Optional[bool] = None,
         **fig_kwargs: Any,
@@ -67,7 +66,6 @@ class FigureManager:
             legend_spacing,
             plot_margin_bottom,
             legend_y_offset,
-            legend_max_col,
         )
 
         self.shared_styling = shared_styling
@@ -99,7 +97,6 @@ class FigureManager:
         legend_spacing: Optional[float],
         plot_margin_bottom: Optional[float],
         legend_y_offset: Optional[float],
-        legend_max_col: Optional[int],
     ) -> LegendConfig:
         if base_config:
             config = LegendConfig(
@@ -137,9 +134,6 @@ class FigureManager:
 
         if legend_y_offset is not None:
             config.bbox_y_offset = legend_y_offset
-
-        if legend_max_col is not None:
-            config.max_col = legend_max_col
 
         return config
 

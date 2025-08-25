@@ -31,9 +31,9 @@ def main(args: Any) -> Any:
         cols=2,
         figsize=(16, 6),
         legend_strategy="split",
+        legend_ncol=2,
         plot_margin_bottom=0.1,
         legend_y_offset=0.1,
-        legend_max_col=2,
     ) as fm:
         fm.fig.suptitle(
             "Example 9: Cross Group-By + Legend Types - Split Legend System",
