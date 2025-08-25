@@ -5,6 +5,7 @@ import pandas as pd
 from matplotlib.lines import Line2D
 
 from dr_plotter import consts
+from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.theme import SCATTER_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
@@ -54,8 +55,15 @@ class ScatterPlotter(BasePlotter):
         },
     }
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        grouping_cfg: GroupingConfig,
+        theme: Optional[Theme] = None,
+        figure_manager: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
         self.style_applicator.register_post_processor(
             "scatter", "collection", self._style_scatter_collection
         )

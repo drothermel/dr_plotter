@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Set
 import matplotlib.patheffects as path_effects
 import pandas as pd
 
+from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.theme import BUMP_PLOT_THEME, Theme
 from dr_plotter.types import VisualChannel, Phase, ComponentSchema
 
@@ -35,6 +36,16 @@ class BumpPlotter(BasePlotter):
             "grid": {"visible", "alpha", "color", "linestyle"},
         },
     }
+
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        grouping_cfg: GroupingConfig,
+        theme: Optional[Theme] = None,
+        figure_manager: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
 
     def _initialize_subplot_specific_params(self) -> None:
         self.time_col = self.kwargs.get("time_col")
