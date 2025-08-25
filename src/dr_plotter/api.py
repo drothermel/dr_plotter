@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -14,8 +14,8 @@ def _fm_plot(
     x: Optional[ColName] = None,
     y: Optional[ColName | List[ColName]] = None,
     ax: Optional[plt.Axes] = None,
-    **kwargs,
-):
+    **kwargs: Any,
+) -> Tuple[plt.Figure, plt.Axes]:
     fm = FigureManager(external_ax=ax)
     fm.plot(plot_type, 0, 0, data, x=x, y=y, **kwargs)
     fm.finalize_layout()
@@ -25,38 +25,74 @@ def _fm_plot(
     return fm.fig, fm.get_axes(0, 0)
 
 
-def scatter(data, x, y, ax=None, **kwargs):
+def scatter(
+    data: pd.DataFrame,
+    x: ColName,
+    y: ColName,
+    ax: Optional[plt.Axes] = None,
+    **kwargs: Any,
+) -> Tuple[plt.Figure, plt.Axes]:
     return _fm_plot("scatter", data, x=x, y=y, ax=ax, **kwargs)
 
 
-def line(data, x, y, ax=None, **kwargs):
+def line(
+    data: pd.DataFrame,
+    x: ColName,
+    y: ColName,
+    ax: Optional[plt.Axes] = None,
+    **kwargs: Any,
+) -> Tuple[plt.Figure, plt.Axes]:
     return _fm_plot("line", data, x=x, y=y, ax=ax, **kwargs)
 
 
-def bar(data, x, y, ax=None, **kwargs):
+def bar(
+    data: pd.DataFrame,
+    x: ColName,
+    y: ColName,
+    ax: Optional[plt.Axes] = None,
+    **kwargs: Any,
+) -> Tuple[plt.Figure, plt.Axes]:
     return _fm_plot("bar", data, x=x, y=y, ax=ax, **kwargs)
 
 
-def hist(data, x, ax=None, **kwargs):
+def hist(
+    data: pd.DataFrame,
+    x: ColName,
+    ax: Optional[plt.Axes] = None,
+    **kwargs: Any,
+) -> Tuple[plt.Figure, plt.Axes]:
     return _fm_plot("histogram", data, x=x, ax=ax, **kwargs)
 
 
-def violin(data, x, y, ax=None, **kwargs):
+def violin(
+    data: pd.DataFrame,
+    x: ColName,
+    y: ColName,
+    ax: Optional[plt.Axes] = None,
+    **kwargs: Any,
+) -> Tuple[plt.Figure, plt.Axes]:
     return _fm_plot("violin", data, x=x, y=y, ax=ax, **kwargs)
 
 
-def heatmap(data, x, y, values, ax=None, **kwargs):
+def heatmap(
+    data: pd.DataFrame,
+    x: ColName,
+    y: ColName,
+    values: ColName,
+    ax: Optional[plt.Axes] = None,
+    **kwargs: Any,
+) -> Tuple[plt.Figure, plt.Axes]:
     return _fm_plot("heatmap", data, x=x, y=y, ax=ax, values=values, **kwargs)
 
 
 def bump_plot(
-    data,
-    time_col,
-    category_col,
-    value_col,
-    ax=None,
-    **kwargs,
-):
+    data: pd.DataFrame,
+    time_col: ColName,
+    category_col: ColName,
+    value_col: ColName,
+    ax: Optional[plt.Axes] = None,
+    **kwargs: Any,
+) -> Tuple[plt.Figure, plt.Axes]:
     return _fm_plot(
         "bump",
         data,
@@ -68,5 +104,11 @@ def bump_plot(
     )
 
 
-def gmm_level_set(data, x, y, ax=None, **kwargs):
+def gmm_level_set(
+    data: pd.DataFrame,
+    x: ColName,
+    y: ColName,
+    ax: Optional[plt.Axes] = None,
+    **kwargs: Any,
+) -> Tuple[plt.Figure, plt.Axes]:
     return _fm_plot("contour", data, x=x, y=y, ax=ax, **kwargs)
