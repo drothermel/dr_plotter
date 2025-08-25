@@ -36,7 +36,7 @@ def fmt_txt(text: str) -> str:
         return text.replace("_", " ").title()
 
 
-def ylabel_from_metrics(metrics: List[ColName]) -> str:
+def ylabel_from_metrics(metrics: List[ColName]) -> Optional[str]:
     if len(metrics) != 1:
         return None
     return metrics[0]
@@ -155,15 +155,18 @@ class BasePlotter:
                 column = getattr(self.grouping_params, channel)
                 if column and column in self.plot_data.columns:
                     values = self.plot_data[column].dropna().tolist()
-                    try:
-                        [float(v) for v in values[:5]]
-                        if values:
-                            self.style_engine.set_continuous_range(
-                                channel, column, values
-                            )
-                        pass
-                    except (ValueError, TypeError):
-                        pass
+                    sample_values = values[:5]
+                    assert all(
+                        isinstance(v, (int, float))
+                        or (
+                            isinstance(v, str)
+                            and v.replace(".", "").replace("-", "").isdigit()
+                        )
+                        for v in sample_values
+                    ), f"Column {column} contains non-numeric values"
+
+                    if values:
+                        self.style_engine.set_continuous_range(channel, column, values)
 
     def render(self, ax: Any) -> None:
         self.prepare_data()
