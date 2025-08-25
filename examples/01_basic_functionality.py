@@ -15,6 +15,7 @@ EXPECTED_CHANNELS = {
     (1, 1): [],  # No encoding - basic histogram
 }
 
+
 @verify_plot_properties(expected_channels=EXPECTED_CHANNELS)
 @verify_example(expected_legends=0, expected_channels=EXPECTED_CHANNELS)
 def main(args):
@@ -23,50 +24,71 @@ def main(args):
 
         # Scatter Plot (0,0)
         scatter_data = ExampleData.simple_scatter(n=80, seed=101)
-        assert 'x' in scatter_data.columns
-        assert 'y' in scatter_data.columns
+        assert "x" in scatter_data.columns
+        assert "y" in scatter_data.columns
 
-        fm.plot("scatter", 0, 0, scatter_data,
-            x="x", y="y",                       # REQUIRED: data mapping
-            s=50,                              # DEFAULT: marker size (theme default)
-            alpha=0.8,                         # CUSTOM: transparency override
-            title="Basic Scatter Plot"         # STYLING: plot identification
+        fm.plot(
+            "scatter",
+            0,
+            0,
+            scatter_data,
+            x="x",
+            y="y",  # REQUIRED: data mapping
+            s=50,  # DEFAULT: marker size (theme default)
+            alpha=0.8,  # CUSTOM: transparency override
+            title="Basic Scatter Plot",  # STYLING: plot identification
         )
 
         # Line Plot (0,1)
         line_data = ExampleData.time_series(periods=50, seed=102)
-        assert 'time' in line_data.columns
-        assert 'value' in line_data.columns
+        assert "time" in line_data.columns
+        assert "value" in line_data.columns
 
-        fm.plot("line", 0, 1, line_data,
-            x="time", y="value",               # REQUIRED: data mapping
-            linewidth=2,                       # DEFAULT: line width (theme default)
-            alpha=0.9,                         # CUSTOM: transparency override
-            title="Basic Time Series"          # STYLING: plot identification
+        fm.plot(
+            "line",
+            0,
+            1,
+            line_data,
+            x="time",
+            y="value",  # REQUIRED: data mapping
+            linewidth=2,  # DEFAULT: line width (theme default)
+            alpha=0.9,  # CUSTOM: transparency override
+            title="Basic Time Series",  # STYLING: plot identification
         )
 
         # Bar Plot (1,0)
-        bar_data = ExampleData.categorical_data(n_categories=4, n_per_category=15, seed=103)
+        bar_data = ExampleData.categorical_data(
+            n_categories=4, n_per_category=15, seed=103
+        )
         bar_summary = bar_data.groupby("category")["value"].mean().reset_index()
-        assert 'category' in bar_summary.columns
-        assert 'value' in bar_summary.columns
+        assert "category" in bar_summary.columns
+        assert "value" in bar_summary.columns
 
-        fm.plot("bar", 1, 0, bar_summary,
-            x="category", y="value",           # REQUIRED: data mapping
-            width=0.8,                         # DEFAULT: bar width (theme default)
-            alpha=0.9,                         # CUSTOM: transparency override
-            title="Basic Bar Chart"            # STYLING: plot identification
+        fm.plot(
+            "bar",
+            1,
+            0,
+            bar_summary,
+            x="category",
+            y="value",  # REQUIRED: data mapping
+            width=0.8,  # DEFAULT: bar width (theme default)
+            alpha=0.9,  # CUSTOM: transparency override
+            title="Basic Bar Chart",  # STYLING: plot identification
         )
 
         # Histogram (1,1)
         hist_data = ExampleData.distribution_data(n_samples=300, seed=104)
-        assert 'values' in hist_data.columns
+        assert "values" in hist_data.columns
 
-        fm.plot("histogram", 1, 1, hist_data,
-            x="values",                        # REQUIRED: data mapping
-            bins=20,                           # DEFAULT: bin count (theme default)
-            alpha=0.7,                         # CUSTOM: transparency override
-            title="Basic Histogram"            # STYLING: plot identification
+        fm.plot(
+            "histogram",
+            1,
+            1,
+            hist_data,
+            x="values",  # REQUIRED: data mapping
+            bins=20,  # DEFAULT: bin count (theme default)
+            alpha=0.7,  # CUSTOM: transparency override
+            title="Basic Histogram",  # STYLING: plot identification
         )
 
     show_or_save_plot(fm.fig, args, "01_basic_functionality")

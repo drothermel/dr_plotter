@@ -133,12 +133,16 @@ class ScatterPlotter(BasePlotter):
         if len(facecolors) > 0:
             face_color = facecolors[0]
         else:
-            face_color = self.figure_manager.legend_manager.get_error_color("face", self.theme)
+            face_color = self.figure_manager.legend_manager.get_error_color(
+                "face", self.theme
+            )
 
         if len(edgecolors) > 0:
             edge_color = edgecolors[0]
         else:
-            edge_color = self.figure_manager.legend_manager.get_error_color("edge", self.theme)
+            edge_color = self.figure_manager.legend_manager.get_error_color(
+                "edge", self.theme
+            )
 
         marker_size = self._get_style("marker_size", 8)
         if len(sizes) > 0:

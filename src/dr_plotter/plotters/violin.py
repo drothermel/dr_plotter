@@ -19,7 +19,15 @@ from .base import BasePlotter
 
 class ViolinPlotter(BasePlotter):
     plotter_name: str = "violin"
-    plotter_params: List[str] = ["alpha", "color", "label", "hue_by", "marker_by", "style_by", "size_by"]
+    plotter_params: List[str] = [
+        "alpha",
+        "color",
+        "label",
+        "hue_by",
+        "marker_by",
+        "style_by",
+        "size_by",
+    ]
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = {"hue"}
     default_theme: Theme = VIOLIN_THEME
@@ -133,9 +141,13 @@ class ViolinPlotter(BasePlotter):
                         "face", self.theme
                     )
             else:
-                facecolor = self.figure_manager.legend_manager.get_error_color("face", self.theme)
+                facecolor = self.figure_manager.legend_manager.get_error_color(
+                    "face", self.theme
+                )
         except:
-            facecolor = self.figure_manager.legend_manager.get_error_color("face", self.theme)
+            facecolor = self.figure_manager.legend_manager.get_error_color(
+                "face", self.theme
+            )
 
         try:
             edgecolor = first_body.get_edgecolor()
@@ -148,9 +160,13 @@ class ViolinPlotter(BasePlotter):
                         "edge", self.theme
                     )
             else:
-                edgecolor = self.figure_manager.legend_manager.get_error_color("edge", self.theme)
+                edgecolor = self.figure_manager.legend_manager.get_error_color(
+                    "edge", self.theme
+                )
         except:
-            edgecolor = self.figure_manager.legend_manager.get_error_color("edge", self.theme)
+            edgecolor = self.figure_manager.legend_manager.get_error_color(
+                "edge", self.theme
+            )
 
         alpha = first_body.get_alpha() if hasattr(first_body, "get_alpha") else 1.0
 

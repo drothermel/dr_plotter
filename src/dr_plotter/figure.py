@@ -4,7 +4,12 @@ import matplotlib.pyplot as plt
 
 from dr_plotter.cycle_config import CycleConfig
 from dr_plotter.grouping_config import GroupingConfig
-from dr_plotter.legend_manager import LegendConfig, LegendEntry, LegendManager, LegendStrategy
+from dr_plotter.legend_manager import (
+    LegendConfig,
+    LegendEntry,
+    LegendManager,
+    LegendStrategy,
+)
 from .plotters import BasePlotter
 
 
@@ -21,6 +26,9 @@ class FigureManager:
         legend_position: Optional[str] = None,
         legend_ncol: Optional[int] = None,
         legend_spacing: Optional[float] = None,
+        legend_bottom_margin: Optional[float] = None,
+        legend_y_offset: Optional[float] = None,
+        legend_max_col: Optional[int] = None,
         theme: Optional[Any] = None,
         **fig_kwargs: Any,
     ) -> None:
@@ -50,7 +58,14 @@ class FigureManager:
             base_config = theme.legend_config
 
         self.legend_config = self._build_legend_config(
-            base_config, legend_strategy, legend_position, legend_ncol, legend_spacing
+            base_config,
+            legend_strategy,
+            legend_position,
+            legend_ncol,
+            legend_spacing,
+            legend_bottom_margin,
+            legend_y_offset,
+            legend_max_col,
         )
 
         self.legend_manager = LegendManager(self, self.legend_config)
@@ -59,9 +74,12 @@ class FigureManager:
         self,
         base_config: Optional[LegendConfig],
         legend_strategy: Optional[str],
-        legend_position: Optional[str], 
+        legend_position: Optional[str],
         legend_ncol: Optional[int],
-        legend_spacing: Optional[float]
+        legend_spacing: Optional[float],
+        legend_bottom_margin: Optional[float],
+        legend_y_offset: Optional[float],
+        legend_max_col: Optional[int],
     ) -> LegendConfig:
         if base_config:
             config = LegendConfig(
@@ -71,29 +89,38 @@ class FigureManager:
                 spacing=base_config.spacing,
                 collect_strategy=base_config.collect_strategy,
                 deduplication=base_config.deduplication,
-                remove_axes_legends=base_config.remove_axes_legends
+                remove_axes_legends=base_config.remove_axes_legends,
             )
         else:
             config = LegendConfig()
-        
+
         if legend_strategy:
             strategy_map = {
                 "figure_below": LegendStrategy.FIGURE_BELOW,
                 "split": LegendStrategy.GROUPED_BY_CHANNEL,
                 "per_axes": LegendStrategy.PER_AXES,
-                "none": LegendStrategy.NONE
+                "none": LegendStrategy.NONE,
             }
             config.strategy = strategy_map.get(legend_strategy, LegendStrategy.PER_AXES)
-        
+
         if legend_position:
             config.position = legend_position
-        
+
         if legend_ncol is not None:
             config.ncol = legend_ncol
-            
+
         if legend_spacing is not None:
             config.spacing = legend_spacing
-        
+
+        if legend_bottom_margin is not None:
+            config.layout_bottom_margin = legend_bottom_margin
+
+        if legend_y_offset is not None:
+            config.bbox_y_offset = legend_y_offset
+
+        if legend_max_col is not None:
+            config.max_col = legend_max_col
+
         return config
 
     def __enter__(self) -> "FigureManager":
@@ -108,8 +135,21 @@ class FigureManager:
     def finalize_layout(self) -> None:
         self.finalize_legends()
 
+        needs_legend_space = (
+            self.legend_config.strategy == LegendStrategy.GROUPED_BY_CHANNEL
+            or self.legend_config.strategy == LegendStrategy.FIGURE_BELOW
+        )
+
         if self._layout_rect is not None:
             self.fig.tight_layout(rect=self._layout_rect, pad=self._layout_pad)
+        elif needs_legend_space:
+            rect = [
+                self.legend_config.layout_left_margin,
+                self.legend_config.layout_bottom_margin,
+                self.legend_config.layout_right_margin,
+                self.legend_config.layout_top_margin,
+            ]
+            self.fig.tight_layout(rect=rect, pad=self._layout_pad)
         elif self.fig._suptitle is not None:
             self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
         elif self._has_subplot_titles():

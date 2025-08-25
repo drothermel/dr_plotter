@@ -169,7 +169,9 @@ def extract_polycollections_from_axis(ax: Any) -> List[PolyCollection]:
     return collections
 
 
-def extract_violin_colors(collection: PolyCollection) -> List[Tuple[float, float, float, float]]:
+def extract_violin_colors(
+    collection: PolyCollection,
+) -> List[Tuple[float, float, float, float]]:
     facecolors = collection.get_facecolors()
     if len(facecolors) == 0:
         return [(0.0, 0.0, 0.0, 1.0)]
@@ -350,7 +352,9 @@ def extract_subplot_properties(ax: Any) -> Dict[str, Any]:
         line_alphas = extract_line_alphas(lines)
 
         collection_props = {
-            "index": len(path_collections) + len(poly_collections) + len(bar_containers),
+            "index": len(path_collections)
+            + len(poly_collections)
+            + len(bar_containers),
             "positions": [],
             "colors": line_colors,
             "sizes": [],

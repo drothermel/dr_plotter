@@ -98,7 +98,7 @@ class BarPlotter(BasePlotter):
         **kwargs: Any,
     ) -> None:
         label = kwargs.pop("label", None)
-        
+
         # Use shared x_categories from all groups if available
         x_categories = group_position.get("x_categories")
         if x_categories is None:
@@ -116,11 +116,13 @@ class BarPlotter(BasePlotter):
         # Draw bars at offset positions
         patches = None
         if x_positions:
-            patches = ax.bar(x_positions, y_values, width=group_position["width"], **kwargs)
+            patches = ax.bar(
+                x_positions, y_values, width=group_position["width"], **kwargs
+            )
 
         # Set x-axis labels (only on first group to avoid duplication)
         if group_position["index"] == 0:
             ax.set_xticks(np.arange(len(x_categories)))
             ax.set_xticklabels(x_categories)
-            
+
         self._apply_post_processing(patches, label)

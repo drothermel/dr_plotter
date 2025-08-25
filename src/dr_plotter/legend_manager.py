@@ -51,8 +51,22 @@ class LegendConfig:
     position: str = "lower center"
     deduplication: bool = True
     ncol: Optional[int] = None
+    max_col: int = 4
     spacing: float = 0.1
     remove_axes_legends: bool = True
+
+    layout_left_margin: float = 0.0
+    layout_bottom_margin: float = 0.15
+    layout_right_margin: float = 1.0
+    layout_top_margin: float = 0.95
+
+    bbox_y_offset: float = 0.08
+
+    single_legend_x: float = 0.5
+    two_legend_left_x: float = 0.25
+    two_legend_right_x: float = 0.75
+    multi_legend_start_x: float = 0.15
+    multi_legend_spacing: float = 0.35
 
 
 class LegendManager:
@@ -63,7 +77,14 @@ class LegendManager:
         self.config = config or LegendConfig()
         self.registry = LegendRegistry()
 
-    def get_error_color(self, color_type: str = "face", theme: Optional[Any] = None) -> str:
+    def _calculate_ncol(self, num_handles: int) -> int:
+        if self.config.ncol is not None:
+            return self.config.ncol
+        return min(self.config.max_col, num_handles)
+
+    def get_error_color(
+        self, color_type: str = "face", theme: Optional[Any] = None
+    ) -> str:
         import warnings
 
         warnings.warn(
@@ -71,7 +92,7 @@ class LegendManager:
         )
 
         assert theme is not None, "Theme must be provided for error color access"
-        
+
         if color_type == "edge":
             return theme.general_styles.get("error_edge_color", "#FF0000")
         else:
@@ -111,7 +132,7 @@ class LegendManager:
             labels.append(entry.label)
 
         if hasattr(self.fm, "figure") and self.fm.figure:
-            ncol = self.config.ncol or min(4, len(handles))
+            ncol = self._calculate_ncol(len(handles))
             self.fm.figure.legend(
                 handles,
                 labels,
@@ -154,7 +175,11 @@ class LegendManager:
                     labels.append(entry.label)
 
             if handles:
-                legend_position = "best" if self.config.position == "lower center" else self.config.position
+                legend_position = (
+                    "best"
+                    if self.config.position == "lower center"
+                    else self.config.position
+                )
                 axis.legend(handles, labels, loc=legend_position)
 
     def _create_grouped_legends(self) -> None:
@@ -164,9 +189,22 @@ class LegendManager:
                 channels.add(entry.visual_channel)
 
         channel_list = sorted(list(channels))
-        
-        for i, channel in enumerate(channel_list):
-            entries = self.registry.get_by_channel(channel)
+
+        if self.config.strategy == LegendStrategy.GROUPED_BY_CHANNEL:
+            num_legends = len(channel_list)
+            legends_to_create = [(i, channel) for i, channel in enumerate(channel_list)]
+        elif self.config.strategy == LegendStrategy.FIGURE_BELOW:
+            num_legends = 1
+            legends_to_create = [(0, None)]
+        else:
+            return
+
+        for legend_index, channel in legends_to_create:
+            if channel is not None:
+                entries = self.registry.get_by_channel(channel)
+            else:
+                entries = self.registry.get_unique_entries()
+
             if not entries:
                 continue
 
@@ -180,23 +218,34 @@ class LegendManager:
                 labels.append(entry.label)
 
             if hasattr(self.fm, "figure") and self.fm.figure and self.fm.figure.axes:
-                if len(channel_list) == 1:
-                    bbox_to_anchor = (0.5, -0.1)
-                elif len(channel_list) == 2:
-                    if i == 0:
-                        bbox_to_anchor = (0.25, -0.1)
+                if num_legends == 1:
+                    bbox_to_anchor = (
+                        self.config.single_legend_x,
+                        self.config.bbox_y_offset,
+                    )
+                elif num_legends == 2:
+                    if legend_index == 0:
+                        bbox_to_anchor = (
+                            self.config.two_legend_left_x,
+                            self.config.bbox_y_offset,
+                        )
                     else:
-                        bbox_to_anchor = (0.75, -0.1)
+                        bbox_to_anchor = (
+                            self.config.two_legend_right_x,
+                            self.config.bbox_y_offset,
+                        )
                 else:
-                    bbox_x = 0.15 + (i * 0.35)
-                    bbox_to_anchor = (bbox_x, -0.1)
-                
+                    bbox_x = self.config.multi_legend_start_x + (
+                        legend_index * self.config.multi_legend_spacing
+                    )
+                    bbox_to_anchor = (bbox_x, self.config.bbox_y_offset)
+
                 legend = self.fm.figure.legend(
                     handles,
                     labels,
                     title=channel.title() if channel else None,
                     loc="upper center",
                     bbox_to_anchor=bbox_to_anchor,
-                    ncol=min(4, len(handles)),
+                    ncol=self._calculate_ncol(len(handles)),
                     frameon=True,
                 )
