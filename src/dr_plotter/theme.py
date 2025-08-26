@@ -45,6 +45,10 @@ class PlotStyles(Style):
     style_type = "plot"
 
 
+class PostStyles(Style):
+    style_type = "post"
+
+
 class AxesStyles(Style):
     style_type = "axes"
 
@@ -59,6 +63,7 @@ class Theme:
         name: str,
         parent: Optional["Theme"] = None,
         plot_styles: Optional[PlotStyles | Dict] = None,
+        post_styles: Optional[PostStyles | Dict] = None,
         axes_styles: Optional[AxesStyles | Dict] = None,
         figure_styles: Optional[FigureStyles | Dict] = None,
         **styles: Any,
@@ -68,6 +73,7 @@ class Theme:
         self.all_styles: Dict[str, Style] = {}
         for cls, cls_dict in [
             (PlotStyles, plot_styles),
+            (PostStyles, post_styles),
             (AxesStyles, axes_styles),
             (FigureStyles, figure_styles),
             (Style, styles),
@@ -86,6 +92,10 @@ class Theme:
     @property
     def plot_styles(self) -> Dict[str, Any]:
         return self.get_all_styles(PlotStyles)
+
+    @property
+    def post_styles(self) -> Dict[str, Any]:
+        return self.get_all_styles(PostStyles)
 
     @property
     def axes_styles(self) -> Dict[str, Any]:

@@ -1,12 +1,10 @@
-"""
-Atomic plotter for violin plots.
-"""
-
-from typing import Dict, List
+from typing import Any, Dict, List, Set
 
 import numpy as np
+import pandas as pd
 
 from dr_plotter import consts
+from dr_plotter.legend import Legend
 from dr_plotter.theme import VIOLIN_THEME, Theme
 from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
 
@@ -14,80 +12,151 @@ from .base import BasePlotter
 
 
 class ViolinPlotter(BasePlotter):
-    """
-    An atomic plotter for creating violin plots using declarative configuration.
-    """
-
-    # Required Configuration
     plotter_name: str = "violin"
     plotter_params: List[str] = []
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Dict[VisualChannel, bool] = {"hue": True}
+    enabled_channels: Set[VisualChannel] = {"hue"}
     default_theme: Theme = VIOLIN_THEME
+    use_style_applicator: bool = True
 
-    def _draw(self, ax, data, legend, **kwargs):
-        kwargs["showmeans"] = kwargs.get("showmeans", self._get_style("showmeans"))
-        self.theme.add("color", kwargs.pop("color", None), source="general")
-        self.theme.add("label", kwargs.pop("label", None), source="general")
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        if self.use_style_applicator:
+            self.style_applicator.register_post_processor(
+                "violin", "bodies", self._style_violin_bodies
+            )
+            self.style_applicator.register_post_processor(
+                "violin", "stats", self._style_violin_stats
+            )
 
+    def _style_violin_bodies(self, bodies: Any, styles: Dict[str, Any]) -> None:
+        for pc in bodies:
+            for attr, value in styles.items():
+                if attr == "facecolor" and hasattr(pc, "set_facecolor"):
+                    pc.set_facecolor(value)
+                elif attr == "edgecolor" and hasattr(pc, "set_edgecolor"):
+                    pc.set_edgecolor(value)
+                elif attr == "alpha" and hasattr(pc, "set_alpha"):
+                    pc.set_alpha(value)
+                elif attr == "linewidth" and hasattr(pc, "set_linewidth"):
+                    pc.set_linewidth(value)
+
+    def _style_violin_stats(self, stats: Any, styles: Dict[str, Any]) -> None:
+        for attr, value in styles.items():
+            if attr == "color" and hasattr(stats, "set_edgecolor"):
+                stats.set_edgecolor(value)
+            elif attr == "linewidth" and hasattr(stats, "set_linewidth"):
+                stats.set_linewidth(value)
+            elif attr == "linestyle" and hasattr(stats, "set_linestyle"):
+                stats.set_linestyle(value)
+            elif hasattr(stats, f"set_{attr}"):
+                setter = getattr(stats, f"set_{attr}")
+                setter(value)
+
+    def _draw(self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any) -> None:
         if self._has_groups:
-            self._render_with_grouped_method(ax, legend)
+            pass
         else:
             self._draw_simple(ax, data, legend, **kwargs)
         self._style_zero_line(ax)
 
-    def style_parts(self, parts, legend):
-        # Apply color and alpha to violin parts
-        color_val = self.theme.get("color")
-        alpha_val = self.theme.get("alpha")
-        label_val = self.theme.get("label")
-        edgecolor_val = self.theme.get("edgecolor")
+    def _apply_post_processing(
+        self, parts: Dict[str, Any], legend: Legend, label: str = None
+    ) -> None:
+        if not self.use_style_applicator:
+            return
 
-        if color_val and "bodies" in parts:
-            for pc in parts["bodies"]:
-                pc.set_facecolor(color_val)
-                pc.set_edgecolor(edgecolor_val)  # Black edge for better definition
-                pc.set_alpha(alpha_val)
+        artists = {}
+        if "bodies" in parts:
+            artists["bodies"] = parts["bodies"]
 
-            # Also color the interior bars to match the violin body
-            for part_name in ("cbars", "cmins", "cmaxes", "cmeans"):
-                if part_name in parts:
-                    vp = parts[part_name]
-                    vp.set_edgecolor(color_val)
-                    vp.set_linewidth(self.theme.general_styles.get("linewidth"))
+        stats_parts = []
+        for part_name in ("cbars", "cmins", "cmaxes", "cmeans"):
+            if part_name in parts:
+                stats_parts.append(parts[part_name])
 
-            # Create a proxy artist for the legend if label is provided
-            if label_val:
-                legend.add_patch(
-                    label=label_val,
-                    facecolor=color_val,
-                    edgecolor=edgecolor_val,
-                    alpha=alpha_val,
-                )
+        if stats_parts:
+            for stats in stats_parts:
+                artists["stats"] = stats
+                self.style_applicator.apply_post_processing("violin", {"stats": stats})
 
-    def _draw_simple(self, ax, data, legend, **kwargs):
+        if artists:
+            self.style_applicator.apply_post_processing("violin", artists)
+
+        if label and "bodies" in parts and parts["bodies"]:
+            first_body = parts["bodies"][0]
+            try:
+                import numpy as np
+
+                facecolor = first_body.get_facecolor()
+                if hasattr(facecolor, "__len__") and len(facecolor) > 0:
+                    fc = facecolor[0]
+                    if isinstance(fc, np.ndarray) and fc.size >= 3:
+                        facecolor = tuple(
+                            fc[:4] if fc.size >= 4 else list(fc[:3]) + [1.0]
+                        )
+                    else:
+                        facecolor = "blue"
+                else:
+                    facecolor = "blue"
+            except:
+                facecolor = "blue"
+
+            try:
+                edgecolor = first_body.get_edgecolor()
+                if hasattr(edgecolor, "__len__") and len(edgecolor) > 0:
+                    ec = edgecolor[0]
+                    if isinstance(ec, np.ndarray) and ec.size >= 3:
+                        edgecolor = tuple(
+                            ec[:4] if ec.size >= 4 else list(ec[:3]) + [1.0]
+                        )
+                    else:
+                        edgecolor = "black"
+                else:
+                    edgecolor = "black"
+            except:
+                edgecolor = "black"
+
+            alpha = first_body.get_alpha() if hasattr(first_body, "get_alpha") else 1.0
+
+            legend.add_patch(
+                label=label, facecolor=facecolor, edgecolor=edgecolor, alpha=alpha
+            )
+
+    def _draw_simple(
+        self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any
+    ) -> None:
         groups = []
         group_data = [data]
-        if consts.X_COL_NAME in data.columns:  # multiple violins
+        if consts.X_COL_NAME in data.columns:
             groups = data[consts.X_COL_NAME].unique()
             group_data = [data[data[consts.X_COL_NAME] == group] for group in groups]
         datasets = [gd[consts.Y_COL_NAME].dropna() for gd in group_data]
+
+        label = kwargs.pop("label", None)
         parts = ax.violinplot(datasets, **kwargs)
-        # If multipe, plot the xtick labels
+
         if len(groups) > 0:
             ax.set_xticks(np.arange(1, len(groups) + 1))
             ax.set_xticklabels(groups)
-        self.style_parts(parts, legend)
 
-    def _draw_grouped(self, ax, data, group_position, legend, **kwargs):
+        self._apply_post_processing(parts, legend, label)
+
+    def _draw_grouped(
+        self,
+        ax: Any,
+        data: pd.DataFrame,
+        group_position: Dict[str, Any],
+        legend: Legend,
+        **kwargs: Any,
+    ) -> None:
+        label = kwargs.pop("label", None)
+
         if consts.X_COL_NAME in data.columns:
-            # Get x categories from the data
-            # Use shared x_categories from all groups if available
             x_categories = group_position.get("x_categories")
             if x_categories is None:
                 x_categories = data[consts.X_COL_NAME].unique()
 
-            # Build dataset only for categories present in this group
             dataset = []
             positions = []
             for i, cat in enumerate(x_categories):
@@ -98,7 +167,6 @@ class ViolinPlotter(BasePlotter):
                     dataset.append(cat_data)
                     positions.append(i + group_position["offset"])
 
-            # Draw violins at offset positions with adjusted width
             if dataset:
                 parts = ax.violinplot(
                     dataset,
@@ -109,16 +177,15 @@ class ViolinPlotter(BasePlotter):
             else:
                 parts = {}
 
-            # Set x-axis labels (only on first group to avoid duplication)
             if group_position["index"] == 0:
                 ax.set_xticks(np.arange(len(x_categories)))
                 ax.set_xticklabels(x_categories)
         else:
-            # Single violin for all y data
             parts = ax.violinplot(
                 [data[consts.Y_COL_NAME].dropna()],
                 positions=[group_position["offset"]],
                 widths=group_position["width"],
                 **kwargs,
             )
-        self.style_parts(parts, legend)
+
+        self._apply_post_processing(parts, legend, label)
