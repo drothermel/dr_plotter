@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
@@ -17,154 +17,172 @@ from .plotters import BasePlotter
 class FigureManager:
     def __init__(
         self,
-        rows: int = 1,
-        cols: int = 1,
-        external_ax: Optional[plt.Axes] = None,
-        layout_rect: Optional[List[float]] = None,
-        layout_pad: Optional[float] = 0.5,
-        legend_config: Optional[LegendConfig] = None,
-        legend_strategy: Optional[str] = None,
-        legend_position: Optional[str] = None,
-        legend_ncol: Optional[int] = None,
-        legend_spacing: Optional[float] = None,
-        plot_margin_bottom: Optional[float] = None,
-        plot_margin_top: Optional[float] = None,
-        legend_y_offset: Optional[float] = None,
+        figure: Optional["FigureConfig"] = None,
+        legend: Optional[LegendConfig] = None,
         theme: Optional[Any] = None,
-        shared_styling: Optional[bool] = None,
-        **fig_kwargs: Any,
+        faceting: Optional["SubplotFacetingConfig"] = None,
+        **kwargs: Any,
     ) -> None:
         from dr_plotter.figure_config import (
-            SubplotLayoutConfig,
-            FigureCoordinationConfig,
+            FigureConfig,
         )
 
-        layout_pad_final = layout_pad if layout_pad is not None else 0.5
-        layout = SubplotLayoutConfig(
-            rows=rows,
-            cols=cols,
-            layout_rect=layout_rect,
-            layout_pad=layout_pad_final,
-        )
+        if kwargs:
+            figure = self._build_figure_config_from_kwargs(figure, kwargs)
+            legend = self._build_legend_config_from_kwargs(legend, kwargs)
 
-        coordination = FigureCoordinationConfig(
-            theme=theme,
-            shared_styling=shared_styling,
-            external_ax=external_ax,
-            fig_kwargs=fig_kwargs,
-        )
+        figure = figure or FigureConfig()
+        legend = legend or LegendConfig()
 
-        legacy_legend_config = self._convert_legacy_legend_params(
-            legend_config,
-            legend_strategy,
-            legend_position,
-            legend_ncol,
-            legend_spacing,
-            plot_margin_bottom,
-            plot_margin_top,
-            legend_y_offset,
-            theme,
-        )
+        if theme and hasattr(theme, "legend_config") and theme.legend_config:
+            legend = theme.legend_config
 
-        self._init_from_configs(layout, legacy_legend_config, coordination)
+        figure.validate()
+        legend.validate() if hasattr(legend, "validate") else None
+        if faceting:
+            faceting.validate()
 
-    def _convert_legacy_legend_params(
-        self,
-        legend_config: Optional[LegendConfig],
-        legend_strategy: Optional[str],
-        legend_position: Optional[str],
-        legend_ncol: Optional[int],
-        legend_spacing: Optional[float],
-        plot_margin_bottom: Optional[float],
-        plot_margin_top: Optional[float],
-        legend_y_offset: Optional[float],
-        theme: Optional[Any],
+        self._init_from_configs(figure, legend, theme, faceting)
+
+    def _build_figure_config_from_kwargs(
+        self, figure: Optional["FigureConfig"], kwargs: Dict[str, Any]
+    ) -> "FigureConfig":
+        from dr_plotter.figure_config import FigureConfig
+
+        figure = figure or FigureConfig()
+
+        if "rows" in kwargs:
+            figure.rows = kwargs.pop("rows")
+        if "cols" in kwargs:
+            figure.cols = kwargs.pop("cols")
+        if "figsize" in kwargs:
+            figure.figsize = kwargs.pop("figsize")
+        if "layout_pad" in kwargs:
+            figure.tight_layout_pad = kwargs.pop("layout_pad")
+        if "external_ax" in kwargs:
+            figure.external_ax = kwargs.pop("external_ax")
+        if "shared_styling" in kwargs:
+            figure.shared_styling = kwargs.pop("shared_styling")
+
+        subplot_kwargs = {}
+        matplotlib_params = ["sharey", "sharex", "constrained_layout"]
+        for param in matplotlib_params:
+            if param in kwargs:
+                subplot_kwargs[param] = kwargs.pop(param)
+        if subplot_kwargs:
+            figure.subplot_kwargs.update(subplot_kwargs)
+
+        return figure
+
+    def _build_legend_config_from_kwargs(
+        self, legend: Optional[LegendConfig], kwargs: Dict[str, Any]
     ) -> Optional[LegendConfig]:
-        if not any(
-            [
-                legend_strategy,
-                legend_position,
-                legend_ncol,
-                legend_spacing,
-                plot_margin_bottom,
-                plot_margin_top,
-                legend_y_offset,
-            ]
-        ):
-            return legend_config
+        from dr_plotter.legend_manager import LegendConfig, LegendStrategy
 
-        return self._build_legend_config(
-            legend_config
-            or (
-                theme.legend_config
-                if theme and hasattr(theme, "legend_config")
-                else None
-            ),
-            legend_strategy,
-            legend_position,
-            legend_ncol,
-            legend_spacing,
-            plot_margin_bottom,
-            plot_margin_top,
-            legend_y_offset,
-        )
+        legend_kwargs = {}
+        if "legend_strategy" in kwargs:
+            strategy_str = kwargs.pop("legend_strategy")
+            if strategy_str == "figure_below":
+                legend_kwargs["strategy"] = LegendStrategy.FIGURE_BELOW
+            elif strategy_str == "grouped_by_channel":
+                legend_kwargs["strategy"] = LegendStrategy.GROUPED_BY_CHANNEL
+
+        legend_params = [
+            "legend_ncol",
+            "legend_y_offset",
+            "plot_margin_top",
+            "plot_margin_bottom",
+        ]
+        for param in legend_params:
+            if param in kwargs:
+                value = kwargs.pop(param)
+                if param == "legend_ncol":
+                    legend_kwargs["ncol"] = value
+                elif param == "legend_y_offset":
+                    legend_kwargs["y_offset"] = value
+                elif param == "plot_margin_bottom":
+                    legend_kwargs["layout_bottom_margin"] = value
+                elif param == "plot_margin_top":
+                    legend_kwargs["layout_top_margin"] = value
+
+        if legend_kwargs:
+            if legend:
+                for key, value in legend_kwargs.items():
+                    setattr(legend, key, value)
+                return legend
+            else:
+                return LegendConfig(**legend_kwargs)
+
+        return legend
 
     def _init_from_configs(
         self,
-        layout: "SubplotLayoutConfig",
+        figure: "FigureConfig",
         legend: Optional[LegendConfig],
-        coordination: "FigureCoordinationConfig",
+        theme: Optional[Any] = None,
+        faceting: Optional["SubplotFacetingConfig"] = None,
     ) -> None:
-        layout.validate()
-        coordination.validate()
+        figure.validate()
 
-        self._setup_layout_configuration(layout)
+        self._setup_layout_configuration(figure)
 
         fig, axes, external_mode = self._create_figure_axes(
-            layout, coordination.external_ax, coordination.fig_kwargs
+            figure.external_ax,
+            figure.figure_kwargs,
+            figure.subplot_kwargs,
+            figure.figsize,
+            figure.rows,
+            figure.cols,
         )
         self.fig = fig
         self.figure = fig
         self.axes = axes
         self.external_mode = external_mode
 
-        legend_manager = self._build_legend_system(legend, coordination.theme)
+        legend_manager = self._build_legend_system(legend, theme)
         self.legend_config = legend_manager.config
         self.legend_manager = legend_manager
 
-        self._coordinate_styling(coordination.theme, coordination.shared_styling)
+        self._coordinate_styling(theme, figure.shared_styling)
 
     @classmethod
     def _create_from_configs(
         cls,
-        layout: "SubplotLayoutConfig",
+        figure: "FigureConfig",
         legend: Optional[LegendConfig],
-        coordination: "FigureCoordinationConfig",
+        theme: Optional[Any] = None,
         faceting: Optional["SubplotFacetingConfig"] = None,
     ) -> "FigureManager":
         instance = cls.__new__(cls)
-        instance._init_from_configs(layout, legend, coordination)
+        instance._init_from_configs(figure, legend, theme, faceting)
         return instance
 
     def _create_figure_axes(
         self,
-        layout: "SubplotLayoutConfig",
         external_ax: Optional[plt.Axes],
-        fig_kwargs: Any,
+        figure_kwargs: Dict[str, Any],
+        subplot_kwargs: Dict[str, Any],
+        figsize: Tuple[int, int],
+        rows: int,
+        cols: int,
     ) -> Tuple[plt.Figure, plt.Axes, bool]:
         if external_ax is not None:
             return external_ax.get_figure(), external_ax, True
 
+        combined_kwargs = {**figure_kwargs, **subplot_kwargs}
+        if "figsize" not in combined_kwargs:
+            combined_kwargs["figsize"] = figsize
+
         fig, axes = plt.subplots(
-            layout.rows, layout.cols, constrained_layout=False, **fig_kwargs
+            rows, cols, constrained_layout=False, **combined_kwargs
         )
         return fig, axes, False
 
-    def _setup_layout_configuration(self, layout: "SubplotLayoutConfig") -> None:
-        self._layout_rect = layout.layout_rect
-        self._layout_pad = layout.layout_pad
-        self.rows = layout.rows
-        self.cols = layout.cols
+    def _setup_layout_configuration(self, figure: "FigureConfig") -> None:
+        self._layout_rect = None
+        self._layout_pad = figure.tight_layout_pad
+        self.rows = figure.rows
+        self.cols = figure.cols
 
     def _build_legend_system(
         self,
@@ -205,59 +223,6 @@ class FigureManager:
             LegendStrategy.FIGURE_BELOW,
         }
         return self.legend_config.strategy in coordination_strategies
-
-    def _build_legend_config(
-        self,
-        base_config: Optional[LegendConfig],
-        legend_strategy: Optional[str],
-        legend_position: Optional[str],
-        legend_ncol: Optional[int],
-        legend_spacing: Optional[float],
-        plot_margin_bottom: Optional[float],
-        plot_margin_top: Optional[float],
-        legend_y_offset: Optional[float],
-    ) -> LegendConfig:
-        if base_config:
-            config = LegendConfig(
-                strategy=base_config.strategy,
-                position=base_config.position,
-                ncol=base_config.ncol,
-                spacing=base_config.spacing,
-                collect_strategy=base_config.collect_strategy,
-                deduplication=base_config.deduplication,
-                remove_axes_legends=base_config.remove_axes_legends,
-            )
-        else:
-            config = LegendConfig()
-
-        if legend_strategy:
-            strategy_map = {
-                "figure_below": LegendStrategy.FIGURE_BELOW,
-                "split": LegendStrategy.GROUPED_BY_CHANNEL,
-                "per_axes": LegendStrategy.PER_AXES,
-                "none": LegendStrategy.NONE,
-            }
-            config.strategy = strategy_map.get(legend_strategy, LegendStrategy.PER_AXES)
-
-        if legend_position:
-            config.position = legend_position
-
-        if legend_ncol is not None:
-            config.ncol = legend_ncol
-
-        if legend_spacing is not None:
-            config.spacing = legend_spacing
-
-        if plot_margin_bottom is not None:
-            config.layout_bottom_margin = plot_margin_bottom
-
-        if plot_margin_top is not None:
-            config.layout_top_margin = plot_margin_top
-
-        if legend_y_offset is not None:
-            config.bbox_y_offset = legend_y_offset
-
-        return config
 
     def __enter__(self) -> "FigureManager":
         return self
