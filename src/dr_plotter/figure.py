@@ -28,6 +28,7 @@ class FigureManager:
         legend_ncol: Optional[int] = None,
         legend_spacing: Optional[float] = None,
         plot_margin_bottom: Optional[float] = None,
+        plot_margin_top: Optional[float] = None,
         legend_y_offset: Optional[float] = None,
         theme: Optional[Any] = None,
         shared_styling: Optional[bool] = None,
@@ -60,6 +61,7 @@ class FigureManager:
             legend_ncol,
             legend_spacing,
             plot_margin_bottom,
+            plot_margin_top,
             legend_y_offset,
             theme,
         )
@@ -74,6 +76,7 @@ class FigureManager:
         legend_ncol: Optional[int],
         legend_spacing: Optional[float],
         plot_margin_bottom: Optional[float],
+        plot_margin_top: Optional[float],
         legend_y_offset: Optional[float],
         theme: Optional[Any],
     ) -> Optional[LegendConfig]:
@@ -84,6 +87,7 @@ class FigureManager:
                 legend_ncol,
                 legend_spacing,
                 plot_margin_bottom,
+                plot_margin_top,
                 legend_y_offset,
             ]
         ):
@@ -101,6 +105,7 @@ class FigureManager:
             legend_ncol,
             legend_spacing,
             plot_margin_bottom,
+            plot_margin_top,
             legend_y_offset,
         )
 
@@ -209,6 +214,7 @@ class FigureManager:
         legend_ncol: Optional[int],
         legend_spacing: Optional[float],
         plot_margin_bottom: Optional[float],
+        plot_margin_top: Optional[float],
         legend_y_offset: Optional[float],
     ) -> LegendConfig:
         if base_config:
@@ -244,6 +250,9 @@ class FigureManager:
 
         if plot_margin_bottom is not None:
             config.layout_bottom_margin = plot_margin_bottom
+
+        if plot_margin_top is not None:
+            config.layout_top_margin = plot_margin_top
 
         if legend_y_offset is not None:
             config.bbox_y_offset = legend_y_offset

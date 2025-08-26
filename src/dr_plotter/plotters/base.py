@@ -277,7 +277,7 @@ class BasePlotter:
                 categorical_cols.append(column)
 
         if categorical_cols:
-            grouped = self.plot_data.groupby(categorical_cols)
+            grouped = self.plot_data.groupby(categorical_cols, observed=False)
             return list(grouped)
         else:
             return [(None, self.plot_data)]
