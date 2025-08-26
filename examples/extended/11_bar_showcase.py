@@ -4,6 +4,7 @@ Demonstrates single and grouped bar plots.
 """
 
 from dr_plotter.figure import FigureManager
+from dr_plotter.figure_config import FigureConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
 from plot_data import ExampleData
@@ -25,7 +26,7 @@ EXPECTED_CHANNELS = {
     },
 )
 def main(args):
-    with FigureManager(rows=1, cols=2, figsize=(15, 6)) as fm:
+    with FigureManager(figure=FigureConfig(rows=1, cols=2, figsize=(15, 6))) as fm:
         fm.fig.suptitle("Bar Plot Showcase: Single and Grouped Bars", fontsize=16)
 
         # Simple bar chart

@@ -1,6 +1,7 @@
 from typing import Any, Dict
 import pandas as pd
 from dr_plotter.figure import FigureManager
+from dr_plotter.figure_config import FigureConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
 from plot_data import ExampleData
@@ -32,7 +33,7 @@ EXPECTED_CHANNELS = {
 def main(args: Any) -> Any:
     data_dict: Dict[str, pd.DataFrame] = ExampleData.get_all_plot_types_data()
 
-    with FigureManager(rows=3, cols=3, figsize=(24, 18)) as fm:
+    with FigureManager(figure=FigureConfig(rows=3, cols=3, figsize=(24, 18))) as fm:
         fm.fig.suptitle(
             "Example 5: All Plot Types - Systematic Verification of 8 Plotters",
             fontsize=20,

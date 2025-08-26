@@ -78,7 +78,7 @@ def create_faceted_grid(
             ncol=min(num_model_sizes, 8),
             layout_top_margin=0.1,
             layout_bottom_margin=0.5,
-            y_offset=0.02,
+            bbox_y_offset=0.02,
         ),
     )
     fm.fig.suptitle(

@@ -12,103 +12,123 @@ Systematic reorganization of FigureManager parameter architecture to resolve par
 - **Theme Conflicts**: Theme system cannot properly integrate due to overlapping parameter responsibilities  
 - **Broken Controls**: Visual evidence that margin parameters don't work as expected
 - **Poor Developer UX**: 15+ separate parameters with unclear relationships and priorities
+- **Data Ordering Override**: Internal data processing (e.g., `pandas.pivot()` in HeatmapPlotter) overrides user data ordering intentions, requiring categorical workarounds
+- **Parameter Routing Failures**: Plotter-specific parameters (e.g., `format='int'`, `xlabel_pos='bottom'` in heatmap) cannot be passed through API due to poor parameter routing architecture
+- **Theme-Behavior Misalignment**: `GROUPED_BAR_THEME` doesn't control bar grouping behavior - themes only affect styling, not fundamental plot structure/layout
+
+### Architecture Inventory Findings (Phase 1a Complete)
+- **Rich Configuration Infrastructure Exists**: 6 config classes already implemented (LegendConfig, SubplotLayoutConfig, SubplotFacetingConfig, etc.)
+- **Legacy Bridge Pattern**: FigureManager converts individual parameters to config objects internally via `_convert_legacy_*()` methods
+- **SubplotFacetingConfig Ready**: Infrastructure for Phase 3 faceted plotting already exists but unused
+- **80% Complete Architecture**: Most parameter organization infrastructure already built, just needs proper integration
 
 ### Strategic Impact
-- **Blocks Advanced Features**: Can't build robust faceting on unstable foundation
-- **Limits Theme System**: Conflicts prevent full themification of layouts
-- **Technical Debt**: Parameter proliferation makes maintenance and testing difficult
+- **Foundation Already Exists**: Need refactoring, not redesign - remove legacy bridges and use existing config infrastructure
+- **Faceted Plotting Ready**: SubplotFacetingConfig provides immediate foundation for advanced features
+- **Clean Config-First API Possible**: `create_figure_manager()` factory function already exists for config-based construction
 
 ## Systematic Process
 
-### Phase 1: Current State Analysis
-**Objective**: Complete audit of FigureManager parameter architecture and theme system conflicts
+### Phase 1: Architecture Analysis ✅ COMPLETE
+**Phase 1a**: Existing architecture inventory - discovered rich config infrastructure already exists
+**Phase 1b**: Parameter mapping to existing configs - identify what needs new homes vs what can use existing infrastructure
 
-**Deliverables**:
-- Comprehensive parameter inventory and categorization
-- Theme-FigureManager conflict analysis with specific examples
-- Identification of broken/non-functional parameters
-- Current parameter dependency mapping
+### Phase 2: Clean Slate Implementation 
+**Objective**: Remove legacy bridges completely and implement clean config-first FigureManager
 
-**Success Criteria**:
-- Complete catalog of all FigureManager parameters
-- Clear documentation of theme integration failure points
-- Evidence-based priority ranking of parameter issues
-
-### Phase 2: Design Clean Architecture
-**Objective**: Design logical parameter organization and theme integration architecture
-
-**Design Decisions**:
-- Parameter grouping strategy (layout vs legend vs styling)
-- Theme system boundaries and responsibilities  
-- Backwards compatibility approach
-- Migration path for existing code
-
-**Deliverables**:
-- New FigureManager parameter architecture design
-- Theme integration specification
-- Backwards compatibility strategy
-- Implementation roadmap with risk assessment
-
-**Success Criteria**:
-- Logical parameter grouping that eliminates conflicts
-- Clear theme vs manager responsibility boundaries
-- Minimal breaking changes for existing users
-
-### Phase 3: Implementation & Migration
-**Objective**: Implement new architecture with systematic migration approach
+**No Backwards Compatibility Decision**: Remove all legacy parameter support and `_convert_legacy_*()` methods for clean API
 
 **Implementation Strategy**:
-- Maintain backwards compatibility during transition
-- Deprecate old parameters with clear warnings
-- Add new organized parameter interfaces
-- Fix broken functionality during refactoring
+1. **Remove Legacy Bridges**: Delete all `_convert_legacy_*()` methods and individual parameter handling
+2. **Expand Existing Configs**: Extend FigureCoordinationConfig → FigureConfig with organized kwargs
+3. **Config-First Constructor**: Make FigureManager accept only config objects
+4. **Factory Function Primary**: Make `create_figure_manager()` the main interface
+
+**Target Architecture**:
+```python
+FigureManager(
+    layout=SubplotLayoutConfig(...),
+    legend=LegendConfig(...),
+    figure=FigureConfig(
+        figsize=(12, 8), 
+        plot_margin_top=0.1,
+        figure_kwargs={'dpi': 150},  # → plt.figure()
+        subplot_kwargs={'sharex': True},  # → plt.subplots()
+        axes_kwargs={'axisbelow': True}  # → individual axes
+    ),
+    theme=Theme(...),
+    faceting=SubplotFacetingConfig(...)  # Ready for Phase 3!
+)
+```
 
 **Deliverables**:
-- New parameter architecture implemented
-- Theme integration working correctly
-- All layout controls functional and tested
-- Migration guide and deprecation warnings
+- FigureConfig class with organized kwargs (figure_kwargs, subplot_kwargs, axes_kwargs)
+- Clean FigureManager constructor accepting only config objects
+- All legacy bridge code removed
+- Data ordering preservation system for plotter pipeline
+- Parameter routing system enabling plotter-specific parameters to reach their destinations
+- Examples updated to use new config-first API
 
 **Success Criteria**:
-- All existing examples work without modification
-- Theme system integrates cleanly with layout controls
-- Layout parameters work correctly (margin controls fixed)
-- Clear migration path for future parameter additions
+- Clean config-first API with no individual parameters
+- All layout controls working correctly via proper config routing
+- Theme integration seamless with config objects
+- Data ordering preserved through entire plotting pipeline
+- Plotter-specific parameters (format, positioning, etc.) successfully routed to correct destinations
+- Theme system clearly separated from behavioral parameters (themes control styling, configs control behavior)
+- Foundation ready for faceted plotting features
 
-### Phase 4: Validation & Documentation
-**Objective**: Validate improvements and create comprehensive documentation
+### Phase 3: Example Migration & Testing
+**Objective**: Update all examples to use new config-first API and validate functionality
+
+**Migration Strategy**:
+- Update all examples/ to use config objects
+- Verify all visual outputs remain identical
+- Test that broken margin controls now work correctly
+- Validate data ordering preservation in heatmaps and other plotters
+- Validate theme integration improvements
+
+**Deliverables**:
+- All examples using new config-first FigureManager
+- Visual regression testing showing identical outputs
+- Documentation of config-first API patterns
+- Performance validation
+
+**Success Criteria**:
+- All examples work with new API
+- Previously broken functionality now works
+- Clean foundation established for advanced features
+- No functional regressions from refactoring
+
+### Phase 4: Faceting Integration Readiness
+**Objective**: Validate that clean architecture enables SubplotFacetingConfig integration
 
 **Validation Approach**:
-- Test all faceted plotting examples work better with new architecture
-- Verify theme system integration eliminates previous conflicts
-- Benchmark parameter usability improvements
-
-**Deliverables**:
-- Complete parameter reference documentation
-- Theme integration examples and best practices
-- Performance and usability validation
-- Foundation ready for advanced features (faceting)
+- Test SubplotFacetingConfig integration with new FigureManager
+- Verify config-first approach enables faceted plotting API
+- Confirm foundation ready for Phase 3 faceted plotting project
 
 **Success Criteria**:
-- Demonstrable improvement in developer experience
-- All theme-manager conflicts resolved
-- Clean foundation established for faceted plotting Phase 3b
+- SubplotFacetingConfig integrates cleanly with new architecture
+- Config-first approach proven to enable advanced features
+- Clean handoff to Phase 3 faceted plotting development
 
-## Key Architectural Questions
+## Key Architectural Decisions ✅ RESOLVED
 
-1. **Parameter Grouping Strategy**: How should parameters be logically organized? (LayoutConfig, LegendConfig, etc.)
-2. **Theme Integration Boundary**: What parameters belong to themes vs FigureManager?
-3. **Backwards Compatibility**: How to minimize breaking changes while fixing architecture?
-4. **Migration Strategy**: How to transition existing codebase without disruption?
+1. **Parameter Grouping Strategy**: Use existing config classes (LegendConfig, SubplotLayoutConfig) + new FigureConfig for figure-level parameters
+2. **Theme Integration Boundary**: Theme system already well-defined, integrates cleanly with config objects
+3. **Backwards Compatibility**: REMOVED - clean slate implementation with no legacy support
+4. **Kwargs Organization**: FigureConfig with `figure_kwargs`, `subplot_kwargs`, `axes_kwargs` for organized matplotlib parameter routing
 
 ## Success Metrics
 
-**Immediate**: Organized parameter architecture with working layout controls
-**Strategic**: Clean theme integration enabling full styling consistency
-**Long-term**: Solid foundation for advanced features like faceted plotting
+**Immediate**: Clean config-first API with all layout controls working correctly
+**Strategic**: Seamless theme integration with organized parameter architecture  
+**Long-term**: SubplotFacetingConfig ready for immediate use in faceted plotting Phase 3
 
-## Risk Mitigation
+## Implementation Philosophy
 
-**Breaking Changes Risk**: Maintain backwards compatibility with deprecation warnings
-**Theme System Risk**: Careful boundary definition to prevent future conflicts  
-**Testing Risk**: Comprehensive validation across all existing examples and use cases
+**Clean Slate Approach**: Remove all legacy bridges and individual parameter handling for clean, maintainable API
+**Build on Existing**: Leverage 80% complete config infrastructure rather than redesigning
+**Organized Flexibility**: Explicit parameters for common use cases + organized kwargs for matplotlib power users
+**Faceting Ready**: Clean foundation immediately enables advanced features

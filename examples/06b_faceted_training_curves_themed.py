@@ -4,6 +4,8 @@ import itertools
 import pandas as pd
 import matplotlib.pyplot as plt
 from dr_plotter.figure import FigureManager
+from dr_plotter.figure_config import FigureConfig
+from dr_plotter.legend_manager import LegendConfig, LegendStrategy
 from dr_plotter.theme import Theme, PlotStyles, AxesStyles, FigureStyles, BASE_THEME
 
 
@@ -115,17 +117,21 @@ def create_faceted_grid_with_theme(
     figwidth = max(12, num_recipes * 3.5)
 
     fm = FigureManager(
-        rows=2,
-        cols=num_recipes,
-        figsize=(figwidth, 9),
+        figure=FigureConfig(
+            rows=2,
+            cols=num_recipes,
+            figsize=(figwidth, 9),
+            tight_layout_pad=0.3,
+            subplot_kwargs={"sharey": "row"},
+        ),
+        legend=LegendConfig(
+            strategy=LegendStrategy.FIGURE_BELOW,
+            ncol=min(num_model_sizes, 8),
+            layout_top_margin=0.1,
+            layout_bottom_margin=0.12,
+            bbox_y_offset=0.02,
+        ),
         theme=custom_theme,
-        legend_strategy="figure_below",
-        legend_ncol=min(num_model_sizes, 8),
-        plot_margin_top=0.1,
-        plot_margin_bottom=0.12,
-        legend_y_offset=0.02,
-        layout_pad=0.3,
-        sharey="row",
     )
     fm.fig.suptitle(
         f"Themed Faceted Training Curves: 2 Metrics × {num_recipes} Data Recipes",

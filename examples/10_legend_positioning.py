@@ -1,5 +1,7 @@
 from typing import Any
 from dr_plotter.figure import FigureManager
+from dr_plotter.figure_config import FigureConfig
+from dr_plotter.legend_manager import LegendConfig, LegendStrategy
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_figure_legends
 from plot_data import ExampleData
@@ -18,13 +20,13 @@ def main(args: Any) -> Any:
     assert len(shared_data.groupby("category_group")) == 4
 
     with FigureManager(
-        rows=2,
-        cols=2,
-        figsize=(16, 12),
-        legend_strategy="figure_below",
-        legend_ncol=4,
-        plot_margin_bottom=0.08,
-        legend_y_offset=0.025,
+        figure=FigureConfig(rows=2, cols=2, figsize=(16, 12)),
+        legend=LegendConfig(
+            strategy=LegendStrategy.FIGURE_BELOW,
+            ncol=4,
+            layout_bottom_margin=0.08,
+            bbox_y_offset=0.025,
+        ),
     ) as fm:
         fm.fig.suptitle(
             "Example 10: Legend Positioning + Management - Shared Figure Legend",

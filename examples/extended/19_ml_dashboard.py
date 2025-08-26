@@ -4,6 +4,7 @@ Complete ML experiment visualization with multiple metrics and hyperparameters.
 """
 
 from dr_plotter.figure import FigureManager
+from dr_plotter.figure_config import FigureConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_example
 from dr_plotter import consts
@@ -17,7 +18,7 @@ def main(args):
         epochs=100, learning_rates=[0.001, 0.01, 0.1]
     )
 
-    with FigureManager(rows=2, cols=2, figsize=(16, 12)) as fm:
+    with FigureManager(figure=FigureConfig(rows=2, cols=2, figsize=(16, 12))) as fm:
         fm.fig.suptitle("ML Experiment Dashboard: Training Analysis", fontsize=16)
 
         # Loss curves by metric type

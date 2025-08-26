@@ -4,6 +4,7 @@ Demonstrates heatmaps with different data patterns and styling.
 """
 
 from dr_plotter.figure import FigureManager
+from dr_plotter.figure_config import FigureConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_example
 from plot_data import ExampleData
@@ -11,7 +12,7 @@ from plot_data import ExampleData
 
 @verify_example(expected_legends=0)
 def main(args):
-    with FigureManager(rows=1, cols=2, figsize=(15, 6)) as fm:
+    with FigureManager(figure=FigureConfig(rows=1, cols=2, figsize=(15, 6))) as fm:
         fm.fig.suptitle("Heatmap Showcase: Matrix Visualization", fontsize=16)
 
         # Basic heatmap

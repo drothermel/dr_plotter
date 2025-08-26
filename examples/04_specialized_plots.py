@@ -4,6 +4,7 @@ Demonstrates dr_plotter's handling of specialized plot types with unique data re
 """
 
 from dr_plotter.figure import FigureManager
+from dr_plotter.figure_config import FigureConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
 from plot_data import ExampleData
@@ -25,7 +26,7 @@ EXPECTED_CHANNELS = {
     },
 )
 def main(args):
-    with FigureManager(rows=2, cols=2, figsize=(16, 12)) as fm:
+    with FigureManager(figure=FigureConfig(rows=2, cols=2, figsize=(16, 12))) as fm:
         fm.fig.suptitle(
             "Example 4: Specialized Plots - Heatmap, Contour, and Distribution Types",
             fontsize=16,
