@@ -2,35 +2,22 @@
 Atomic plotter for histograms.
 """
 
+from typing import Dict, List
+
+from dr_plotter import consts
+from dr_plotter.theme import HISTOGRAM_THEME, Theme
+from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
+
 from .base import BasePlotter
-from dr_plotter.theme import HISTOGRAM_THEME
-from .plot_data import HistogramData
 
 
 class HistogramPlotter(BasePlotter):
-    """
-    An atomic plotter for creating histograms using declarative configuration.
-    """
-
-    # Declarative configuration
-    plotter_name = "histogram"
-    plotter_params = {"x"}
-    param_mapping = {"x": "x"}
-    enabled_channels = {}  # No grouping support for histograms
-    default_theme = HISTOGRAM_THEME
-    data_validator = HistogramData
+    plotter_name: str = "histogram"
+    plotter_params: List[str] = []
+    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: Dict[VisualChannel, bool] = {}
+    default_theme: Theme = HISTOGRAM_THEME
 
     def _draw(self, ax, data, legend, **kwargs):
-        """
-        Draw the histogram using matplotlib.
-
-        Args:
-            ax: Matplotlib axes
-            data: DataFrame with the data to plot
-            **kwargs: Plot-specific kwargs including color, alpha, edgecolor
-        """
-        # Add edgecolor if not in kwargs
-        if "edgecolor" not in kwargs:
-            kwargs["edgecolor"] = self._get_style("edgecolor")
-
-        ax.hist(data[self.x], **kwargs)
+        ax.hist(data[consts.X_COL_NAME], **kwargs)
+        ax.set_ylabel(self.theme.axes_styles.get("ylabel"))

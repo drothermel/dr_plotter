@@ -1,125 +1,71 @@
-"""
-Context manager for creating complex figures.
-"""
+from typing import Any, Dict, List, Optional
 
 import matplotlib.pyplot as plt
-import itertools
-import warnings
+
+from dr_plotter.cycle_config import CycleConfig
+from dr_plotter.grouping_config import GroupingConfig
 from .plotters import BasePlotter
-# Import all plotters to ensure they're registered
 
 
 class FigureManager:
-    """
-    A context manager for creating complex figures with multiple subplots.
-    """
-
     def __init__(
         self,
-        rows=1,
-        cols=1,
-        external_ax=None,
-        layout_rect=None,
-        layout_pad=None,
-        **fig_kwargs,
-    ):
-        """
-        Initialize the FigureManager in managed or external mode.
-
-        Args:
-            rows: Number of subplot rows (ignored if external_ax provided)
-            cols: Number of subplot columns (ignored if external_ax provided)
-            external_ax: Use external axes instead of creating new figure
-            layout_rect: Optional custom rect parameter for tight_layout [left, bottom, right, top]
-            layout_pad: Optional padding value for tight_layout (default: 0.5)
-            **fig_kwargs: Additional arguments for plt.subplots (ignored if external_ax provided)
-        """
-        self._layout_rect = layout_rect  # Store for use in __exit__
-        self._layout_pad = (
-            layout_pad if layout_pad is not None else 0.5
-        )  # Default to proven value
+        rows: int = 1,
+        cols: int = 1,
+        external_ax: Optional[plt.Axes] = None,
+        layout_rect: Optional[List[float]] = None,
+        layout_pad: Optional[float] = 0.5,
+        **fig_kwargs: Any,
+    ) -> None:
+        self._layout_rect = layout_rect
+        self._layout_pad = layout_pad if layout_pad is not None else 0.5
 
         if external_ax is not None:
-            # External mode: work with provided axes
             self.fig = external_ax.get_figure()
             self.axes = external_ax
             self.external_mode = True
         else:
-            # Managed mode: create own figure
-            # Use tight_layout approach consistently with make_axes_locatable
             self.fig, self.axes = plt.subplots(
                 rows, cols, constrained_layout=False, **fig_kwargs
             )
             self.external_mode = False
 
-        # Cross-subplot style coordination
-        self._shared_hue_styles = {}  # Maps hue values to consistent colors
-        self._shared_style_cycles = None  # Lazy initialization
+        self._shared_hue_styles: Dict[Any, Any] = {}
+        self.shared_cycle_config: Optional[CycleConfig] = None
 
-    def __enter__(self):
-        """Enter the context manager."""
+    def __enter__(self) -> "FigureManager":
         return self
 
-    def finalize_layout(self):
-        """
-        Apply intelligent tight_layout with suptitle detection and user overrides.
+    def finalize_layout(self) -> None:
+        if self._layout_rect is not None:
+            self.fig.tight_layout(rect=self._layout_rect, pad=self._layout_pad)
+        elif self.fig._suptitle is not None:
+            self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
+        elif self._has_subplot_titles():
+            self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
+        else:
+            self.fig.tight_layout(pad=self._layout_pad)
 
-        This method is idempotent and can be called multiple times safely.
-        """
-        # Apply intelligent tight_layout with suptitle detection and user overrides
-        try:
-            if self._layout_rect is not None:
-                # User-specified rect for edge cases
-                self.fig.tight_layout(rect=self._layout_rect, pad=self._layout_pad)
-            elif self.fig._suptitle is not None:
-                # Standard 5% top margin for suptitle - proven community value
-                self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
-            elif self._has_subplot_titles():
-                # Reserve space for subplot titles in single-subplot figures
-                self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
-            else:
-                # Standard layout with good padding
-                self.fig.tight_layout(pad=self._layout_pad)
-        except ValueError as e:
-            # Common tight_layout issues: overlapping elements, insufficient space
-            warnings.warn(
-                f"tight_layout failed: {e}. Layout may not be optimal.", UserWarning
-            )
-        except RuntimeError as e:
-            # Runtime issues with layout computation
-            warnings.warn(
-                f"tight_layout runtime error: {e}. Layout may not be optimal.",
-                UserWarning,
-            )
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Exit the context manager and finalize layout."""
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
         self.finalize_layout()
         return False
 
-    def _has_subplot_titles(self):
-        """Check if any subplot has a title that needs space."""
-        # Handle both single axes and array of axes
+    def _has_subplot_titles(self) -> bool:
         if hasattr(self.axes, "flat"):
-            # Multiple subplots - check all axes
             axes_to_check = self.axes.flat
         elif hasattr(self.axes, "__iter__") and not isinstance(self.axes, str):
-            # Array of axes
             axes_to_check = self.axes
         else:
-            # Single subplot
             axes_to_check = [self.axes]
 
         for ax in axes_to_check:
-            if ax.get_title():  # Returns empty string if no title
+            if ax.get_title():
                 return True
         return False
 
-    def get_axes(self, row=None, col=None):
-        """
-        Get the axes object for a specific subplot for manual manipulation.
-        In external mode, returns the external axes regardless of row/col.
-        """
+    def get_axes(
+        self, row: Optional[int] = None, col: Optional[int] = None
+    ) -> plt.Axes:
         if self.external_mode:
             return self.axes
 
@@ -136,49 +82,27 @@ class FigureManager:
             return self.axes[:, col]
         return self.axes
 
-    def _get_shared_style_cycles(self):
-        """Initialize shared style cycles once, reuse across subplots."""
-        if self._shared_style_cycles is None:
-            # Use BASE_THEME to create consistent cycles across subplots
-            from .theme import BASE_THEME
-
-            self._shared_style_cycles = {
-                "color": itertools.cycle(BASE_THEME.get("color_cycle")),
-                "linestyle": itertools.cycle(BASE_THEME.get("linestyle_cycle")),
-                "marker": itertools.cycle(BASE_THEME.get("marker_cycle")),
-            }
-        return self._shared_style_cycles
-
-    def _add_plot(self, plotter_class, plotter_args, row, col, **kwargs):
-        """Private helper to add any plot type to a subplot with style coordination."""
+    def _add_plot(
+        self,
+        plotter_class: type,
+        plotter_args: tuple,
+        row: int,
+        col: int,
+        **kwargs: Any,
+    ) -> None:
         if self.external_mode:
-            # In external mode, ignore row/col and use the external axes
             ax = self.axes
         else:
-            # In managed mode, use row/col to get the correct subplot
             ax = self.get_axes(row, col)
 
-        # Add shared style state for cross-subplot coordination
-        kwargs["_figure_manager"] = self
-        kwargs["_shared_hue_styles"] = self._shared_hue_styles
+        kwargs["grouping_cfg"] = GroupingConfig()
+        kwargs["grouping_cfg"].set_kwargs(kwargs)
 
-        plotter = plotter_class(*plotter_args, **kwargs)
+        plotter = plotter_class(*plotter_args, figure_manager=self, **kwargs)
         plotter.render(ax)
 
-    def plot(self, plot_type, row, col, *args, **kwargs):
-        """
-        Generic plot method that uses the registry to create any plot type.
-
-        Args:
-            plot_type: String name of the plot type (e.g., "scatter", "line")
-            row: Row position in subplot grid
-            col: Column position in subplot grid
-            *args: Positional arguments to pass to the plotter constructor
-            **kwargs: Keyword arguments to pass to the plotter constructor
-
-        Example:
-            fm.plot("scatter", 0, 0, data, x="x_col", y="y_col", hue_by="category")
-            fm.plot("custom", 1, 0, data, custom_param=value)
-        """
+    def plot(
+        self, plot_type: str, row: int, col: int, *args: Any, **kwargs: Any
+    ) -> None:
         plotter_class = BasePlotter.get_plotter(plot_type)
         self._add_plot(plotter_class, args, row, col, **kwargs)

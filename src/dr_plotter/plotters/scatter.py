@@ -2,9 +2,13 @@
 Atomic plotter for scatter plots with multi-series support.
 """
 
+from typing import Dict, List
+
+from dr_plotter import consts
+from dr_plotter.theme import SCATTER_THEME, Theme
+from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
+
 from .base import BasePlotter
-from dr_plotter.theme import SCATTER_THEME
-from .plot_data import ScatterPlotData
 
 
 class ScatterPlotter(BasePlotter):
@@ -13,21 +17,16 @@ class ScatterPlotter(BasePlotter):
     """
 
     # Declarative configuration
-    plotter_name = "scatter"
-    plotter_params = {"x", "y", "hue", "size", "marker", "alpha"}
-    param_mapping = {"x": "x", "y": "y"}
-    enabled_channels = {"hue": True, "size": True, "marker": True, "alpha": True}
-    default_theme = SCATTER_THEME
-    data_validator = ScatterPlotData
+    plotter_name: str = "scatter"
+    plotter_params: List[str] = []
+    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: Dict[VisualChannel, bool] = {
+        "hue": True,
+        "size": True,
+        "marker": True,
+        "alpha": True,
+    }
+    default_theme: Theme = SCATTER_THEME
 
     def _draw(self, ax, data, legend, **kwargs):
-        """
-        Draw the scatter plot using matplotlib.
-
-        Args:
-            ax: Matplotlib axes
-            data: DataFrame with the data to plot
-            legend: Legend builder object (unused for scatter plots as they create their own legend entries)
-            **kwargs: Plot-specific kwargs including color, marker, s (size), alpha
-        """
-        ax.scatter(data[self.x], data[self.y], **kwargs)
+        ax.scatter(data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **kwargs)

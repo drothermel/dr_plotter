@@ -2,64 +2,67 @@
 Compound plotter for bump plots.
 """
 
+from typing import Dict, List
+
 import matplotlib.patheffects as path_effects
-from .base import BasePlotter
-from dr_plotter.theme import BUMP_PLOT_THEME
-from .plot_data import BumpPlotData
+
+from dr_plotter.theme import BUMP_PLOT_THEME, Theme
+from dr_plotter.types import VisualChannel
+
+from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
 
 
 class BumpPlotter(BasePlotter):
-    """
-    A compound plotter for creating bump plots using declarative configuration.
-    """
+    plotter_name: str = "bump"
+    plotter_params: List[str] = ["time_col", "category_col", "value_col"]
+    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: Dict[VisualChannel, bool] = {"hue": True, "style": True}
+    default_theme: Theme = BUMP_PLOT_THEME
 
-    # Declarative configuration
-    plotter_name = "bump"
-    plotter_params = {"time_col", "category_col", "value_col", "hue", "style"}
-    param_mapping = {"time_col": "x", "category_col": "group", "value_col": "y"}
-    enabled_channels = {"hue": True, "style": True}
-    default_theme = BUMP_PLOT_THEME
-    data_validator = BumpPlotData
+    def _initialize_subplot_specific_params(self) -> None:
+        self.time_col = self.kwargs.get("time_col")
+        self.value_col = self.kwargs.get("value_col")
+        self.category_col = self.kwargs.get("category_col")
+        # Ensure that the coloring is based on the category column
+        self.grouping_params.hue = self.category_col
 
-    def __init__(self, data, **kwargs):
-        """Initialize with category_col mapped to hue_by for grouping."""
-        # Map category_col to hue_by for proper grouping
-        if "category_col" in kwargs and "hue_by" not in kwargs:
-            kwargs["hue_by"] = kwargs.get("category_col")
-        super().__init__(data, **kwargs)
-
-    def _prepare_specific_data(self):
+    def _plot_specific_data_prep(self) -> None:
         """Calculate ranks for each category at each time point."""
         # Add rank calculation
-        plot_data = self.plot_data.copy()
-        plot_data["rank"] = plot_data.groupby(self.x)[self.y].rank(
-            method="first", ascending=False
-        )
+        self.plot_data["rank"] = self.plot_data.groupby(self.time_col)[
+            self.value_col
+        ].rank(method="first", ascending=False)
         # Update y to point to rank column for plotting
-        self.y = "rank"
-        return plot_data
+        self.value_col = "rank"
 
     def _draw(self, ax, data, legend, **kwargs):
-        """
-        Draw the bump plot using matplotlib.
+        group_cols = list(self.grouping_params.active.values())
+        if group_cols:
+            grouped = self.plot_data.groupby(group_cols)
 
-        Args:
-            ax: Matplotlib axes
-            data: DataFrame with the data to plot (specific to one category)
-            **kwargs: Plot-specific kwargs including color, marker, linewidth, label
-        """
+            for name, group_data in grouped:
+                if isinstance(name, tuple):
+                    group_values = dict(zip(group_cols, name))
+                else:
+                    group_values = {group_cols[0]: name}
+
+                styles = self.style_engine.get_styles_for_group(
+                    group_values, self.grouping_params
+                )
+
+                # Build plot kwargs for this group
+                plot_kwargs = self._build_group_plot_kwargs(styles, name, group_cols)
+
+                # Call the concrete plotter's draw method
+                self._draw_simple(ax, group_data, legend, **plot_kwargs)
+        ax.set_ylabel(self._get_style("ylabel", "Rank"))
+
+    def _draw_simple(self, ax, data, legend, **kwargs):
         # Sort data by time for proper line drawing
-        category_data = data.sort_values(by=self.x)
-
-        # Set defaults for bump-specific styling
-        plot_kwargs = {
-            "marker": self._get_style("marker"),
-            "linewidth": self._get_style("line_width"),
-        }
-        plot_kwargs.update(kwargs)
+        category_data = data.sort_values(by=self.time_col)
 
         # Draw the line for this category
-        ax.plot(category_data[self.x], category_data[self.y], **plot_kwargs)
+        ax.plot(category_data[self.time_col], category_data[self.value_col], **kwargs)
 
         # Add category label at the end of the line
         if not category_data.empty:
@@ -69,8 +72,8 @@ class BumpPlotter(BasePlotter):
             if "=" in category_name:
                 category_name = category_name.split("=")[1]
             text = ax.text(
-                last_point[self.x],
-                last_point[self.y],
+                last_point[self.time_col],
+                last_point[self.value_col],
                 f" {category_name}",
                 va="center",
                 color=kwargs.get("color", "black"),

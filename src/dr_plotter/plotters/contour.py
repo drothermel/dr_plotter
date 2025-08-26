@@ -2,12 +2,16 @@
 Compound plotter for contour plots, specifically for GMM level sets.
 """
 
+from typing import Dict, List
+
 import numpy as np
 from sklearn.mixture import GaussianMixture
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from .base import BasePlotter
+
+from dr_plotter import consts
 from dr_plotter.theme import CONTOUR_THEME
-from .plot_data import ContourPlotData
+from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
+from .base import BasePlotter
 
 
 class ContourPlotter(BasePlotter):
@@ -16,26 +20,27 @@ class ContourPlotter(BasePlotter):
     """
 
     # Declarative configuration
-    plotter_name = "contour"
-    plotter_params = {"x", "y"}
-    param_mapping = {"x": "x", "y": "y"}
-    enabled_channels = {}  # No grouping support for contour plots
+    plotter_name: str = "contour"
+    plotter_params: List[str] = []
+    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: Dict[
+        VisualChannel, bool
+    ] = {}  # No grouping support for contour plots
     default_theme = CONTOUR_THEME
-    data_validator = ContourPlotData
 
-    def _prepare_specific_data(self):
+    def _plot_specific_data_prep(self):
         """Fit GMM and create a meshgrid for contour plotting."""
         # Fit GMM and create meshgrid
         gmm = GaussianMixture(n_components=3, random_state=0).fit(
-            self.plot_data[[self.x, self.y]]
+            self.plot_data[[consts.X_COL_NAME, consts.Y_COL_NAME]]
         )
         x_min, x_max = (
-            self.plot_data[self.x].min() - 1,
-            self.plot_data[self.x].max() + 1,
+            self.plot_data[consts.X_COL_NAME].min() - 1,
+            self.plot_data[consts.X_COL_NAME].max() + 1,
         )
         y_min, y_max = (
-            self.plot_data[self.y].min() - 1,
-            self.plot_data[self.y].max() + 1,
+            self.plot_data[consts.Y_COL_NAME].min() - 1,
+            self.plot_data[consts.Y_COL_NAME].max() + 1,
         )
         xx, yy = np.meshgrid(
             np.linspace(x_min, x_max, 100), np.linspace(y_min, y_max, 100)
@@ -91,4 +96,4 @@ class ContourPlotter(BasePlotter):
         colorbar_label = self.kwargs.get("colorbar_label", "Density")
         cbar.set_label(colorbar_label)
 
-        ax.scatter(data[self.x], data[self.y], **scatter_kwargs)
+        ax.scatter(data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **scatter_kwargs)

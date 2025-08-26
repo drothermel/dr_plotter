@@ -48,7 +48,6 @@ EXAMPLES=(
     "17_custom_plotters.py"
     "18_scientific_figures.py"
     "19_ml_dashboard.py"
-    "20_validation.py"
 )
 
 echo ""
