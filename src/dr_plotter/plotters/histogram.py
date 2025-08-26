@@ -1,6 +1,7 @@
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 
 import pandas as pd
+from matplotlib.patches import Patch
 
 from dr_plotter import consts
 from dr_plotter.legend import Legend
@@ -8,6 +9,9 @@ from dr_plotter.theme import HISTOGRAM_THEME, Theme
 from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
 
 from .base import BasePlotter
+
+type Phase = str
+type ComponentSchema = Dict[str, Set[str]]
 
 
 class HistogramPlotter(BasePlotter):
@@ -17,6 +21,27 @@ class HistogramPlotter(BasePlotter):
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = HISTOGRAM_THEME
     use_style_applicator: bool = True
+    use_legend_manager: bool = True
+
+    component_schema: Dict[Phase, ComponentSchema] = {
+        "plot": {
+            "main": {
+                "color",
+                "alpha",
+                "edgecolor",
+                "linewidth",
+                "bins",
+                "label",
+                "histtype",
+                "cumulative",
+                "density",
+                "weights",
+                "bottom",
+                "rwidth",
+            }
+        },
+        "post": {"patches": {"facecolor", "edgecolor", "linewidth", "alpha"}},
+    }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -33,8 +58,43 @@ class HistogramPlotter(BasePlotter):
                     setter(value)
 
     def _draw(self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any) -> None:
+        label = kwargs.pop("label", None)
         n, bins, patches = ax.hist(data[consts.X_COL_NAME], **kwargs)
 
         if self.use_style_applicator:
             artists = {"patches": patches, "n": n, "bins": bins}
             self.style_applicator.apply_post_processing("histogram", artists)
+
+        self._apply_post_processing({"patches": patches}, legend, label)
+
+    def _apply_post_processing(
+        self, parts: Dict[str, Any], legend: Legend, label: Optional[str] = None
+    ) -> None:
+        if (
+            self.use_legend_manager
+            and self.figure_manager
+            and label
+            and "patches" in parts
+        ):
+            if parts["patches"]:
+                first_patch = parts["patches"][0]
+                proxy = Patch(
+                    facecolor=first_patch.get_facecolor(),
+                    edgecolor=first_patch.get_edgecolor(),
+                    alpha=first_patch.get_alpha(),
+                )
+
+                entry = self.style_applicator.create_legend_entry(
+                    proxy, label, self.current_axis
+                )
+                if entry:
+                    self.figure_manager.register_legend_entry(entry)
+        elif label and "patches" in parts:
+            if parts["patches"]:
+                first_patch = parts["patches"][0]
+                legend.add_patch(
+                    label=label,
+                    facecolor=first_patch.get_facecolor(),
+                    edgecolor=first_patch.get_edgecolor(),
+                    alpha=first_patch.get_alpha(),
+                )

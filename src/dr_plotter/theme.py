@@ -2,6 +2,7 @@ import itertools
 from typing import Any, Dict, List, Optional
 
 from dr_plotter import consts
+from dr_plotter.legend_manager import LegendConfig
 
 DR_PLOTTER_STYLE_KEYS = [
     "title",
@@ -66,10 +67,16 @@ class Theme:
         post_styles: Optional[PostStyles | Dict] = None,
         axes_styles: Optional[AxesStyles | Dict] = None,
         figure_styles: Optional[FigureStyles | Dict] = None,
+        legend_config: Optional[LegendConfig] = None,
         **styles: Any,
     ) -> None:
         self.name = name
         self.parent = parent
+        self.legend_config = (
+            legend_config
+            or (parent.legend_config if parent else None)
+            or LegendConfig()
+        )
         self.all_styles: Dict[str, Style] = {}
         for cls, cls_dict in [
             (PlotStyles, plot_styles),

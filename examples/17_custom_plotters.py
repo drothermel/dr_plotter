@@ -3,63 +3,85 @@ Example 17: Custom Plotters - Creating new plotters using the registry.
 Demonstrates how to create and register a custom plotter class.
 """
 
-import itertools
+from typing import Any, Dict, List, Set
+import pandas as pd
 from dr_plotter.plotters.base import BasePlotter
 from dr_plotter.figure import FigureManager
-from dr_plotter.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import verify_example
+from dr_plotter.theme import BASE_THEME, Theme, PlotStyles
+from dr_plotter.types import VisualChannel
+from dr_plotter import consts
+from dr_plotter.legend import Legend
 from plot_data import ExampleData
+
+
+# Create a custom theme following the expected pattern
+ERRORBAR_THEME = Theme(
+    name="errorbar",
+    parent=BASE_THEME,
+    plot_styles=PlotStyles(
+        capsize=5,
+        capthick=2,
+        elinewidth=1.5,
+        alpha=0.8,
+        fmt="o",
+    ),
+)
 
 
 class ErrorBarPlotter(BasePlotter):
     """
     Custom plotter for error bar plots.
-    Demonstrates declarative pattern for custom plotters.
+    Demonstrates declarative pattern for custom plotters following dr_plotter architecture.
     """
 
-    plotter_name = "errorbar"
-    plotter_params = {"x", "y", "error"}
-    param_mapping = {"x": "x", "y": "y", "error": "error"}
-    enabled_channels = {}
-    default_theme = {
-        "capsize": 5,
-        "capthick": 2,
-        "elinewidth": 1.5,
-        "alpha": 0.8,
-        "color": "blue",
-        "color_cycle": itertools.cycle(["blue", "red", "green", "orange", "purple"]),
+    plotter_name: str = "errorbar"
+    plotter_params: List[str] = ["error"]  # Only custom params, x/y are handled by base
+    param_mapping: Dict[str, str] = {"error": "error"}
+    enabled_channels: Set[VisualChannel] = set()  # No visual channels for simplicity
+    default_theme: Theme = ERRORBAR_THEME
+    use_style_applicator: bool = True
+    use_legend_manager: bool = True
+
+    # Define what styling attributes are available
+    component_schema: Dict[str, Dict[str, Set[str]]] = {
+        "plot": {
+            "main": {
+                "capsize",
+                "capthick",
+                "elinewidth",
+                "alpha",
+                "color",
+                "fmt",
+            }
+        },
     }
 
-    def _draw(self, ax, data, legend, **kwargs):
-        """Render the error bar plot."""
-        # Get error values
-        if hasattr(self, "error") and self.error and self.error in data.columns:
-            yerr = data[self.error]
+    def _draw(self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any) -> None:
+        """Render the error bar plot using standardized column names."""
+        # Get error values - check if custom error column is provided
+        error_col = self.kwargs.get("error")
+        if error_col and error_col in data.columns:
+            yerr = data[error_col]
         else:
             # Default: use 10% of absolute y values as error
-            yerr = abs(data[self.y]) * 0.1 + 0.1  # Add small constant
+            yerr = abs(data[consts.Y_COL_NAME]) * 0.1 + 0.1
 
-        # Create error bar plot with theme defaults
-        plot_kwargs = {
-            "capsize": kwargs.get("capsize", self.theme.get("capsize", 5)),
-            "capthick": kwargs.get("capthick", self.theme.get("capthick", 2)),
-            "elinewidth": kwargs.get("elinewidth", self.theme.get("elinewidth", 1.5)),
-            "alpha": kwargs.get("alpha", self.theme.get("alpha", 0.8)),
-            "color": kwargs.get("color", self.theme.get("color", "blue")),
-        }
+        # Remove custom parameters that matplotlib doesn't understand
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "error"}
 
+        # Use standardized column names from consts
         ax.errorbar(
-            data[self.x],
-            data[self.y],
+            data[consts.X_COL_NAME],
+            data[consts.Y_COL_NAME],
             yerr=yerr,
-            fmt="o",
-            **plot_kwargs,
+            **filtered_kwargs,
         )
 
 
-if __name__ == "__main__":
-    parser = setup_arg_parser(description="Custom Plotter Example")
-    args = parser.parse_args()
-
+@verify_example(expected_legends=0)
+def main(args):
     # Verify our custom plotter is registered
     from dr_plotter.plotters import BasePlotter
 
@@ -104,4 +126,11 @@ if __name__ == "__main__":
             title="Custom Error Bars (default 10%)",
         )
 
-        show_or_save_plot(fm.fig, args, "17_custom_plotters")
+    show_or_save_plot(fm.fig, args, "17_custom_plotters")
+    return fm.fig
+
+
+if __name__ == "__main__":
+    parser = setup_arg_parser(description="Custom Plotter Example")
+    args = parser.parse_args()
+    main(args)

@@ -4,13 +4,13 @@ Demonstrates consistent colors across multiple subplots using FigureManager.
 """
 
 from dr_plotter.figure import FigureManager
-from dr_plotter.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import verify_example
 from plot_data import ExampleData
 
-if __name__ == "__main__":
-    parser = setup_arg_parser(description="Color Coordination Example")
-    args = parser.parse_args()
 
+@verify_example(expected_legends=4)
+def main(args):
     with FigureManager(rows=2, cols=2, figsize=(15, 12)) as fm:
         fm.fig.suptitle(
             "Color Coordination: Consistent Colors Across Subplots", fontsize=16
@@ -79,4 +79,11 @@ if __name__ == "__main__":
             title="Grouped Violin Plot",
         )
 
-        show_or_save_plot(fm.fig, args, "08_color_coordination")
+    show_or_save_plot(fm.fig, args, "08_color_coordination")
+    return fm.fig
+
+
+if __name__ == "__main__":
+    parser = setup_arg_parser(description="Color Coordination Example")
+    args = parser.parse_args()
+    main(args)

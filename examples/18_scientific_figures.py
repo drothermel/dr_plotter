@@ -4,13 +4,13 @@ Demonstrates creating publication-quality figures with proper styling.
 """
 
 from dr_plotter.figure import FigureManager
-from dr_plotter.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import verify_example
 from plot_data import ExampleData
 
-if __name__ == "__main__":
-    parser = setup_arg_parser(description="Scientific Figures Example")
-    args = parser.parse_args()
 
+@verify_example(expected_legends=2)
+def main(args):
     # Create publication-style figure
     with FigureManager(rows=2, cols=3, figsize=(18, 12)) as fm:
         fm.fig.suptitle(
@@ -111,4 +111,11 @@ if __name__ == "__main__":
             top=0.92, bottom=0.08, left=0.08, right=0.95, hspace=0.3, wspace=0.3
         )
 
-        show_or_save_plot(fm.fig, args, "18_scientific_figures")
+    show_or_save_plot(fm.fig, args, "18_scientific_figures")
+    return fm.fig
+
+
+if __name__ == "__main__":
+    parser = setup_arg_parser(description="Scientific Figures Example")
+    args = parser.parse_args()
+    main(args)

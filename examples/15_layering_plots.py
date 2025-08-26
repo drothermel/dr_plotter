@@ -5,13 +5,13 @@ Demonstrates combining different plot types in the same subplot.
 
 import dr_plotter.api as drp
 import matplotlib.pyplot as plt
-from dr_plotter.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import verify_example
 from plot_data import ExampleData
 
-if __name__ == "__main__":
-    parser = setup_arg_parser(description="Layering Example")
-    args = parser.parse_args()
 
+@verify_example(expected_legends=2)
+def main(args):
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
     fig.suptitle("Layering: Combining Multiple Plot Types", fontsize=16)
 
@@ -57,3 +57,10 @@ if __name__ == "__main__":
     ax2.legend()
 
     show_or_save_plot(fig, args, "15_layering_plots")
+    return fig
+
+
+if __name__ == "__main__":
+    parser = setup_arg_parser(description="Layering Example")
+    args = parser.parse_args()
+    main(args)

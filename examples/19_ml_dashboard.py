@@ -4,14 +4,14 @@ Complete ML experiment visualization with multiple metrics and hyperparameters.
 """
 
 from dr_plotter.figure import FigureManager
-from dr_plotter.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import verify_example
 from dr_plotter import consts
 from plot_data import ExampleData
 
-if __name__ == "__main__":
-    parser = setup_arg_parser(description="ML Experiment Dashboard")
-    args = parser.parse_args()
 
+@verify_example(expected_legends=4)
+def main(args):
     # Generate comprehensive ML experiment data
     ml_data = ExampleData.ml_training_curves(
         epochs=100, learning_rates=[0.001, 0.01, 0.1]
@@ -28,7 +28,7 @@ if __name__ == "__main__":
             ml_data,
             x="epoch",
             y=["train_loss", "val_loss"],
-            hue_by=consts.METRICS,
+            hue_by=consts.METRIC_COL_NAME,
             style_by="learning_rate",
             title="Loss Curves (color=metric, style=lr)",
         )
@@ -54,7 +54,7 @@ if __name__ == "__main__":
             x="epoch",
             y=["train_accuracy", "val_accuracy"],
             hue_by="learning_rate",
-            style_by=consts.METRICS,
+            style_by=consts.METRIC_COL_NAME,
             title="Accuracy (color=lr, style=metric)",
         )
 
@@ -103,4 +103,11 @@ if __name__ == "__main__":
             title="Final Performance Summary",
         )
 
-        show_or_save_plot(fm.fig, args, "19_ml_dashboard")
+    show_or_save_plot(fm.fig, args, "19_ml_dashboard")
+    return fm.fig
+
+
+if __name__ == "__main__":
+    parser = setup_arg_parser(description="ML Experiment Dashboard")
+    args = parser.parse_args()
+    main(args)

@@ -2,7 +2,7 @@
 Atomic plotter for bar plots with optional grouping support.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import numpy as np
 
@@ -17,9 +17,7 @@ class BarPlotter(BasePlotter):
     plotter_name: str = "bar"
     plotter_params: List[str] = []
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Dict[VisualChannel, bool] = {
-        "hue": True,
-    }
+    enabled_channels: Set[VisualChannel] = {"hue"}
     default_theme: Theme = BAR_THEME
 
     def _draw(self, ax, data, legend, **kwargs):

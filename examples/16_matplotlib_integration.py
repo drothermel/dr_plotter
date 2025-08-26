@@ -4,13 +4,13 @@ Demonstrates seamless integration with matplotlib's parameter system.
 """
 
 from dr_plotter.figure import FigureManager
-from dr_plotter.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import verify_example
 from plot_data import ExampleData
 
-if __name__ == "__main__":
-    parser = setup_arg_parser(description="Matplotlib Integration Example")
-    args = parser.parse_args()
 
+@verify_example(expected_legends=0)
+def main(args):
     with FigureManager(rows=2, cols=2, figsize=(15, 12)) as fm:
         fm.fig.suptitle(
             "Matplotlib Integration: Direct Parameter Pass-Through", fontsize=16
@@ -85,4 +85,11 @@ if __name__ == "__main__":
             width=0.6,
         )  # matplotlib: bar width
 
-        show_or_save_plot(fm.fig, args, "16_matplotlib_integration")
+    show_or_save_plot(fm.fig, args, "16_matplotlib_integration")
+    return fm.fig
+
+
+if __name__ == "__main__":
+    parser = setup_arg_parser(description="Matplotlib Integration Example")
+    args = parser.parse_args()
+    main(args)

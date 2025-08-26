@@ -6,11 +6,14 @@ Demonstrates each high-level plotting function with consistent data.
 from plot_data import ExampleData
 
 import dr_plotter.api as drp
-from dr_plotter.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import verify_example
 
-if __name__ == "__main__":
-    parser = setup_arg_parser(description="High-Level API Example")
-    args = parser.parse_args()
+
+@verify_example(expected_legends=0)
+def create_all_plots(args):
+    # Create all plots - each should have no legends since they're simple plots
+
     # === Bump Plot ===
     bump_data = ExampleData.ranking_data()
     fig7, _ = drp.bump_plot(
@@ -73,3 +76,12 @@ if __name__ == "__main__":
     bar_summary = bar_data.groupby("category")["value"].mean().reset_index()
     fig3, _ = drp.bar(bar_summary, x="category", y="value", title="High-Level API: Bar")
     show_or_save_plot(fig3, args, "02_bar")
+
+    # Return all figures for verification
+    return [fig1, fig2, fig3, fig4, fig5, fig6, fig7, fig8]
+
+
+if __name__ == "__main__":
+    parser = setup_arg_parser(description="High-Level API Example")
+    args = parser.parse_args()
+    create_all_plots(args)

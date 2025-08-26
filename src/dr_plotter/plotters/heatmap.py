@@ -2,7 +2,7 @@
 Atomic plotter for heatmaps.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,7 +22,7 @@ class HeatmapPlotter(BasePlotter):
     plotter_name: str = "heatmap"
     plotter_params: List[str] = ["values"]
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Dict[VisualChannel, bool] = {}
+    enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = HEATMAP_THEME
 
     def _plot_specific_data_prep(self):

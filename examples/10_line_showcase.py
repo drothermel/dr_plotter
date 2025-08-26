@@ -4,14 +4,14 @@ Demonstrates all visual encoding options for line plots including multi-series.
 """
 
 from dr_plotter.figure import FigureManager
-from dr_plotter.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import verify_example
 from dr_plotter import consts
 from plot_data import ExampleData
 
-if __name__ == "__main__":
-    parser = setup_arg_parser(description="Line Plot Showcase")
-    args = parser.parse_args()
 
+@verify_example(expected_legends=3)
+def main(args):
     with FigureManager(rows=2, cols=2, figsize=(15, 12)) as fm:
         fm.fig.suptitle("Line Plot Showcase: All Visual Encoding Options", fontsize=16)
 
@@ -54,9 +54,16 @@ if __name__ == "__main__":
             ml_data,
             x="epoch",
             y=["train_loss", "val_loss"],
-            hue_by=consts.METRICS,
+            hue_by=consts.METRIC_COL_NAME,
             style_by="learning_rate",
             title="Multi-Metrics (METRICS)",
         )
 
-        show_or_save_plot(fm.fig, args, "10_line_showcase")
+    show_or_save_plot(fm.fig, args, "10_line_showcase")
+    return fm.fig
+
+
+if __name__ == "__main__":
+    parser = setup_arg_parser(description="Line Plot Showcase")
+    args = parser.parse_args()
+    main(args)

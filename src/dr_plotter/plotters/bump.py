@@ -2,7 +2,7 @@
 Compound plotter for bump plots.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import matplotlib.patheffects as path_effects
 
@@ -16,7 +16,7 @@ class BumpPlotter(BasePlotter):
     plotter_name: str = "bump"
     plotter_params: List[str] = ["time_col", "category_col", "value_col"]
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Dict[VisualChannel, bool] = {"hue": True, "style": True}
+    enabled_channels: Set[VisualChannel] = {"hue", "style"}
     default_theme: Theme = BUMP_PLOT_THEME
 
     def _initialize_subplot_specific_params(self) -> None:

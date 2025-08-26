@@ -61,6 +61,7 @@ class BasePlotter:
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = BASE_THEME
     use_style_applicator: bool = False
+    use_legend_manager: bool = False
 
     def __init__(
         self,
@@ -82,6 +83,7 @@ class BasePlotter:
             self.kwargs,
             self.grouping_params,
             figure_manager=self.figure_manager,
+            plot_type=self.__class__.plotter_name,
         )
         self.plot_data: Optional[pd.DataFrame] = None
         self._initialize_subplot_specific_params()
@@ -125,7 +127,8 @@ class BasePlotter:
 
     def render(self, ax: Any) -> None:
         self.prepare_data()
-        legend = Legend()
+        self.current_axis = ax
+        legend = Legend(self.figure_manager if self.use_legend_manager else None)
 
         if self._has_groups:
             self._render_with_grouped_method(ax, legend)
@@ -147,6 +150,9 @@ class BasePlotter:
                 legend,
                 **style_kwargs,
             )
+
+        if self._has_groups and self.__class__.use_style_applicator:
+            self.style_applicator.clear_group_context()
 
         self._apply_styling(ax, legend)
 
@@ -193,19 +199,20 @@ class BasePlotter:
         else:
             ax.grid(False)
 
-        if self._get_style("legend") is None or self._get_style("legend"):
-            if self._has_groups or legend.has_entries():
-                if not ax.get_legend():
-                    if legend.has_entries():
-                        ax.legend(
-                            handles=legend.get_handles(),
-                            fontsize=self.theme.get("legend_fontsize"),
-                        )
-                    else:
+        if not self.use_legend_manager:
+            if self._get_style("legend") is None or self._get_style("legend"):
+                if self._has_groups or legend.has_entries():
+                    if not ax.get_legend():
+                        if legend.has_entries():
+                            ax.legend(
+                                handles=legend.get_handles(),
+                                fontsize=self.theme.get("legend_fontsize"),
+                            )
+                        else:
+                            ax.legend(fontsize=self.theme.get("legend_fontsize"))
+                elif self._get_style("legend") is True:
+                    if not ax.get_legend():
                         ax.legend(fontsize=self.theme.get("legend_fontsize"))
-            elif self._get_style("legend") is True:
-                if not ax.get_legend():
-                    ax.legend(fontsize=self.theme.get("legend_fontsize"))
 
     def _render_with_grouped_method(self, ax: Any, legend: Legend) -> None:
         group_cols = list(self.grouping_params.active.values())
@@ -223,29 +230,12 @@ class BasePlotter:
                 group_values = {group_cols[0]: name}
 
             if self.__class__.use_style_applicator:
-                group_applicator = StyleApplicator(
-                    self.theme,
-                    self.kwargs,
-                    self.grouping_params,
-                    group_values,
-                    self.figure_manager,
-                )
-                component_styles = group_applicator.get_component_styles(
+                self.style_applicator.set_group_context(group_values)
+                component_styles = self.style_applicator.get_component_styles(
                     self.__class__.plotter_name
                 )
                 plot_kwargs = component_styles.get("main", {})
-                if isinstance(name, tuple) and len(name) == 1:
-                    plot_kwargs["label"] = str(name[0])
-                elif isinstance(name, tuple):
-                    label_parts = []
-                    for col, val in zip(group_cols, name):
-                        if col == consts.METRIC_COL_NAME:
-                            label_parts.append(str(val))
-                        else:
-                            label_parts.append(f"{col}={val}")
-                    plot_kwargs["label"] = ", ".join(label_parts)
-                else:
-                    plot_kwargs["label"] = str(name)
+                plot_kwargs["label"] = self._build_group_label(name, group_cols)
             else:
                 styles = self.style_engine.get_styles_for_group(
                     group_values, self.grouping_params
@@ -299,19 +289,7 @@ class BasePlotter:
             if k not in plot_kwargs:
                 plot_kwargs[k] = v
 
-        if isinstance(name, tuple):
-            if len(name) == 1:
-                plot_kwargs["label"] = str(name[0])
-            else:
-                label_parts = []
-                for col, val in zip(group_cols, name):
-                    if col == consts.METRIC_COL_NAME:
-                        label_parts.append(str(val))
-                    else:
-                        label_parts.append(f"{col}={val}")
-                plot_kwargs["label"] = ", ".join(label_parts)
-        else:
-            plot_kwargs["label"] = str(name)
+        plot_kwargs["label"] = self._build_group_label(name, group_cols)
 
         return plot_kwargs
 
@@ -336,3 +314,16 @@ class BasePlotter:
 
     def _style_zero_line(self, ax: Any) -> None:
         ax.axhline(y=0, linewidth=2.0, color="#333333", zorder=0.5)
+
+    def _build_group_label(self, name: Any, group_cols: List[str]) -> str:
+        if isinstance(name, tuple):
+            if len(name) == 1:
+                return str(name[0])
+            label_parts = []
+            for col, val in zip(group_cols, name):
+                if col == consts.METRIC_COL_NAME:
+                    label_parts.append(str(val))
+                else:
+                    label_parts.append(f"{col}={val}")
+            return ", ".join(label_parts)
+        return str(name)

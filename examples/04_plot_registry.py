@@ -5,13 +5,13 @@ Demonstrates the new registry system with the generic plot() method.
 
 from dr_plotter.figure import FigureManager
 from dr_plotter.plotters import BasePlotter
-from dr_plotter.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import verify_example
 from plot_data import ExampleData
 
-if __name__ == "__main__":
-    parser = setup_arg_parser(description="Plot Registry Example")
-    args = parser.parse_args()
 
+@verify_example(expected_legends=0)
+def main(args):
     # Show all available plotters
     print("📋 Available plotters in registry:")
     for plotter_type in BasePlotter.list_plotters():
@@ -40,4 +40,11 @@ if __name__ == "__main__":
         hist_data = ExampleData.distribution_data()
         fm.plot("histogram", 1, 1, hist_data, x="values", title="Generic histogram")
 
-        show_or_save_plot(fm.fig, args, "04_plot_registry")
+    show_or_save_plot(fm.fig, args, "04_plot_registry")
+    return fm.fig
+
+
+if __name__ == "__main__":
+    parser = setup_arg_parser(description="Plot Registry Example")
+    args = parser.parse_args()
+    main(args)
