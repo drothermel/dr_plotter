@@ -5,12 +5,28 @@ Demonstrates all visual encoding options for line plots including multi-series.
 
 from dr_plotter.figure import FigureManager
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_example
+from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
 from dr_plotter import consts
 from plot_data import ExampleData
 
+EXPECTED_CHANNELS = {
+    (0, 1): ["hue"],
+    (1, 0): ["hue"],
+    (1, 1): ["hue"],
+}
 
-@verify_example(expected_legends=3)
+
+@verify_plot_properties(expected_channels=EXPECTED_CHANNELS)
+@verify_example(
+    expected_legends=3,
+    verify_legend_consistency=True,
+    expected_channels=EXPECTED_CHANNELS,
+    expected_legend_entries={
+        (0, 1): {"hue": 4},
+        (1, 0): {"hue": 4},
+        (1, 1): {"hue": 2},
+    },
+)
 def main(args):
     with FigureManager(rows=2, cols=2, figsize=(15, 12)) as fm:
         fm.fig.suptitle("Line Plot Showcase: All Visual Encoding Options", fontsize=16)

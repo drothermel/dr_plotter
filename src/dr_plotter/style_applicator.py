@@ -1,9 +1,12 @@
-from typing import Any, Callable, Dict, Optional, Set
+from typing import Any, Callable, Dict, Optional, Set, TYPE_CHECKING
 
 from dr_plotter.consts import VISUAL_CHANNELS
 from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.legend_manager import LegendEntry
 from dr_plotter.theme import Theme
+
+if TYPE_CHECKING:
+    from dr_plotter.plotters.style_engine import StyleEngine
 
 type ComponentName = str
 type AttributeName = str
@@ -21,6 +24,7 @@ class StyleApplicator:
         group_values: Optional[Dict[str, Any]] = None,
         figure_manager: Optional[Any] = None,
         plot_type: Optional[str] = None,
+        style_engine: Optional["StyleEngine"] = None,
     ) -> None:
         self.theme = theme
         self.kwargs = kwargs
@@ -28,6 +32,7 @@ class StyleApplicator:
         self.group_values = group_values or {}
         self.figure_manager = figure_manager
         self.plot_type = plot_type
+        self.style_engine = style_engine
         self._component_schemas = self._load_component_schemas()
         self._post_processors: Dict[str, Callable] = {}
 
@@ -79,16 +84,32 @@ class StyleApplicator:
                     processor(artists[component], styles)
 
     def create_legend_entry(
-        self, artist: Any, label: str, axis: Any = None, artist_type: str = "main"
+        self,
+        artist: Any,
+        label: str,
+        axis: Any = None,
+        artist_type: str = "main",
+        explicit_channel: Optional[str] = None,
     ) -> Optional[LegendEntry]:
         if not label:
             return None
 
-        channel = None
-        if self.grouping_cfg and self.grouping_cfg.active_channels:
-            channel = list(self.grouping_cfg.active_channels)[0]
-
-        channel_value = self.group_values.get(channel) if channel else None
+        if explicit_channel:
+            channel = explicit_channel
+            # Get the actual column name for this channel
+            column_name = (
+                getattr(self.grouping_cfg, channel, None) if self.grouping_cfg else None
+            )
+            channel_value = self.group_values.get(column_name) if column_name else None
+        else:
+            channel = None
+            if self.grouping_cfg and self.grouping_cfg.active_channels:
+                channel = (
+                    self.grouping_cfg.active_channels_ordered[0]
+                    if self.grouping_cfg.active_channels
+                    else None
+                )
+            channel_value = self.group_values.get(channel) if channel else None
 
         return LegendEntry(
             artist=artist,
@@ -145,6 +166,10 @@ class StyleApplicator:
                 resolved_styles[attr] = plot_styles[attr]
             elif attr in base_theme_styles:
                 resolved_styles[attr] = base_theme_styles[attr]
+            # Special case: convert size_mult to s for scatter plots
+            elif attr == "s" and "size_mult" in group_styles and plot_type == "scatter":
+                base_size = base_theme_styles.get("marker_size", 50)
+                resolved_styles[attr] = base_size * group_styles["size_mult"]
 
         for key, value in component_kwargs.items():
             if key not in attrs:
@@ -231,10 +256,14 @@ class StyleApplicator:
         if component not in group_styled_components:
             return {}
 
-        from dr_plotter.plotters.style_engine import StyleEngine
+        if not self.style_engine:
+            from dr_plotter.plotters.style_engine import StyleEngine
 
-        style_engine = StyleEngine(self.theme, self.figure_manager)
-        return style_engine.get_styles_for_group(self.group_values, self.grouping_cfg)
+            self.style_engine = StyleEngine(self.theme, self.figure_manager)
+
+        return self.style_engine.get_styles_for_group(
+            self.group_values, self.grouping_cfg
+        )
 
     def _get_component_schema(
         self, plot_type: str, phase: Phase = "plot"

@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Set
 import pandas as pd
 
 from dr_plotter import consts
+from dr_plotter.channel_metadata import ChannelRegistry
 from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.legend import Legend
 from dr_plotter.plotters.style_engine import StyleEngine
@@ -84,6 +85,7 @@ class BasePlotter:
             self.grouping_params,
             figure_manager=self.figure_manager,
             plot_type=self.__class__.plotter_name,
+            style_engine=self.style_engine,
         )
         self.plot_data: Optional[pd.DataFrame] = None
         self._initialize_subplot_specific_params()
@@ -125,9 +127,30 @@ class BasePlotter:
     ) -> None:
         self._draw(ax, data, legend, **kwargs)
 
+    def _setup_continuous_channels(self) -> None:
+        for channel in self.grouping_params.active_channels_ordered:
+            spec = ChannelRegistry.get_spec(channel)
+            if spec.channel_type == "continuous":
+                column = getattr(self.grouping_params, channel)
+                if column and column in self.plot_data.columns:
+                    values = self.plot_data[column].dropna().tolist()
+                    # Check if values are actually numeric before treating as continuous
+                    try:
+                        # Try to convert first few values to float
+                        [float(v) for v in values[:5]]
+                        if values:
+                            self.style_engine.set_continuous_range(
+                                channel, column, values
+                            )
+                        pass
+                    except (ValueError, TypeError):
+                        # Skip non-numeric data for continuous channels
+                        pass
+
     def render(self, ax: Any) -> None:
         self.prepare_data()
         self.current_axis = ax
+        self._setup_continuous_channels()
         legend = Legend(self.figure_manager if self.use_legend_manager else None)
 
         if self._has_groups:
@@ -215,19 +238,33 @@ class BasePlotter:
                         ax.legend(fontsize=self.theme.get("legend_fontsize"))
 
     def _render_with_grouped_method(self, ax: Any, legend: Legend) -> None:
-        group_cols = list(self.grouping_params.active.values())
-        grouped = self.plot_data.groupby(group_cols)
-        n_groups = len(grouped)
+        # Only group by categorical channels, not continuous ones
+        categorical_cols = []
+        for channel, column in self.grouping_params.active.items():
+            spec = ChannelRegistry.get_spec(channel)
+            if spec.channel_type == "categorical":
+                categorical_cols.append(column)
+
+        if categorical_cols:
+            grouped = self.plot_data.groupby(categorical_cols)
+            n_groups = len(grouped)
+        else:
+            # No categorical grouping, treat as single group
+            grouped = [(None, self.plot_data)]
+            n_groups = 1
 
         x_categories = None
         if hasattr(self, "x") and self.x_col:
             x_categories = self.plot_data[self.x_col].unique()
 
         for group_index, (name, group_data) in enumerate(grouped):
-            if isinstance(name, tuple):
-                group_values = dict(zip(group_cols, name))
+            if name is None:
+                # Single group case (no categorical grouping)
+                group_values = {}
+            elif isinstance(name, tuple):
+                group_values = dict(zip(categorical_cols, name))
             else:
-                group_values = {group_cols[0]: name}
+                group_values = {categorical_cols[0]: name} if categorical_cols else {}
 
             if self.__class__.use_style_applicator:
                 self.style_applicator.set_group_context(group_values)
@@ -235,12 +272,35 @@ class BasePlotter:
                     self.__class__.plotter_name
                 )
                 plot_kwargs = component_styles.get("main", {})
-                plot_kwargs["label"] = self._build_group_label(name, group_cols)
+                plot_kwargs["label"] = self._build_group_label(name, categorical_cols)
+
+                # Handle continuous size arrays for scatter plots
+                if (
+                    self.__class__.plotter_name == "scatter"
+                    and "size" in self.grouping_params.active_channels
+                ):
+                    size_col = self.grouping_params.size
+                    if size_col and size_col in group_data.columns:
+                        sizes = []
+                        for value in group_data[size_col]:
+                            style = self.style_engine._get_continuous_style(
+                                "size", size_col, value
+                            )
+                            size_mult = style.get("size_mult", 1.0)
+                            base_size = plot_kwargs.get("s", 50)
+                            sizes.append(
+                                base_size * size_mult
+                                if isinstance(base_size, (int, float))
+                                else 50 * size_mult
+                            )
+                        plot_kwargs["s"] = sizes
             else:
                 styles = self.style_engine.get_styles_for_group(
                     group_values, self.grouping_params
                 )
-                plot_kwargs = self._build_group_plot_kwargs(styles, name, group_cols)
+                plot_kwargs = self._build_group_plot_kwargs(
+                    styles, name, categorical_cols
+                )
 
             group_position = self._calculate_group_position(group_index, n_groups)
             group_position["x_categories"] = x_categories

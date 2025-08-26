@@ -77,6 +77,26 @@ class ScatterPlotter(BasePlotter):
 
     def _draw(self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any) -> None:
         label = kwargs.pop("label", None)
+
+        # Handle continuous size channel
+        if "size" in self.grouping_params.active_channels:
+            size_col = self.grouping_params.size
+            if size_col and size_col in data.columns:
+                # Calculate sizes for each point based on continuous mapping
+                sizes = []
+                for value in data[size_col]:
+                    style = self.style_engine._get_continuous_style(
+                        "size", size_col, value
+                    )
+                    size_mult = style.get("size_mult", 1.0)
+                    base_size = kwargs.get("s", 50)
+                    sizes.append(
+                        base_size * size_mult
+                        if isinstance(base_size, (int, float))
+                        else 50 * size_mult
+                    )
+                kwargs["s"] = sizes
+
         collection = ax.scatter(
             data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **kwargs
         )
@@ -91,13 +111,15 @@ class ScatterPlotter(BasePlotter):
         self, collection: Any, legend: Legend, label: Optional[str] = None
     ) -> None:
         if self.use_legend_manager and self.figure_manager and label and collection:
-            proxy = self._create_proxy_artist_from_collection(collection)
-            if proxy:
-                entry = self.style_applicator.create_legend_entry(
-                    proxy, label, self.current_axis
-                )
-                if entry:
-                    self.figure_manager.register_legend_entry(entry)
+            # Create separate proxy for each channel to show correct styling
+            for channel in self.grouping_params.active_channels_ordered:
+                proxy = self._create_channel_specific_proxy(collection, channel)
+                if proxy:
+                    entry = self.style_applicator.create_legend_entry(
+                        proxy, label, self.current_axis, explicit_channel=channel
+                    )
+                    if entry:
+                        self.figure_manager.register_legend_entry(entry)
         elif label and collection:
             proxy = self._create_proxy_artist_from_collection(collection)
             if proxy:
@@ -120,20 +142,75 @@ class ScatterPlotter(BasePlotter):
         if len(sizes) > 0:
             marker_size = np.sqrt(sizes[0] / np.pi) * 2
 
-        marker_style = (
-            collection.get_paths()[0] if len(collection.get_paths()) > 0 else "o"
-        )
+        marker_style = "o"
+        try:
+            paths = collection.get_paths()
+            if len(paths) > 0:
+                # Convert matplotlib path to marker character
+                path = paths[0]
+                if hasattr(path, "_vertices") and len(path._vertices) == 4:
+                    marker_style = "s"  # Square
+                elif hasattr(path, "_vertices") and len(path._vertices) == 3:
+                    marker_style = "^"  # Triangle
+                # Add more marker conversions as needed
+        except:
+            marker_style = "o"
 
         proxy = Line2D(
             [0],
             [0],
-            marker="o",
+            marker=marker_style,
             color="w",
             markerfacecolor=face_color,
             markeredgecolor=edge_color,
             markersize=marker_size,
             linestyle="",
             label=collection.get_label() if hasattr(collection, "get_label") else "",
+        )
+
+        return proxy
+
+    def _create_channel_specific_proxy(
+        self, collection: Any, channel: str
+    ) -> Optional[Any]:
+        facecolors = collection.get_facecolors()
+        edgecolors = collection.get_edgecolors()
+        sizes = collection.get_sizes()
+
+        face_color = "blue"
+        if len(facecolors) > 0:
+            face_color = facecolors[0]
+
+        edge_color = "none"
+        if len(edgecolors) > 0:
+            edge_color = edgecolors[0]
+
+        marker_size = 8
+        if len(sizes) > 0:
+            marker_size = np.sqrt(sizes[0] / np.pi) * 2
+
+        # Get marker style from group context if available
+        marker_style = "o"
+        if self.use_style_applicator and self.style_applicator.group_values:
+            # Get the actual styling applied to this group for this channel
+            if channel == "marker":
+                marker_col = self.grouping_params.marker
+                if marker_col and marker_col in self.style_applicator.group_values:
+                    # Get marker from style engine
+                    styles = self.style_engine.get_styles_for_group(
+                        self.style_applicator.group_values, self.grouping_params
+                    )
+                    marker_style = styles.get("marker", "o")
+
+        proxy = Line2D(
+            [0],
+            [0],
+            marker=marker_style,
+            color="w",
+            markerfacecolor=face_color,
+            markeredgecolor=edge_color,
+            markersize=marker_size,
+            linestyle="",
         )
 
         return proxy

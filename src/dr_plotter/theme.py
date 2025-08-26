@@ -194,8 +194,8 @@ SCATTER_THEME = Theme(
     name="scatter",
     parent=BASE_THEME,
     plot_styles=PlotStyles(
-        alpha=0.7,
-        s=500,
+        alpha=1.0,
+        s=50,
     ),
 )
 
