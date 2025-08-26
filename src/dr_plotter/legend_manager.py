@@ -1,7 +1,13 @@
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, Dict, List, Optional, Set
 
-from dr_plotter.channel_metadata import ChannelRegistry
+
+class LegendStrategy(Enum):
+    PER_AXES = "per_axes"
+    FIGURE_BELOW = "figure_below"
+    GROUPED_BY_CHANNEL = "grouped_by_channel"
+    NONE = "none"
 
 
 @dataclass
@@ -39,7 +45,7 @@ class LegendRegistry:
 
 @dataclass
 class LegendConfig:
-    mode: str = "auto"
+    strategy: LegendStrategy = LegendStrategy.PER_AXES
     collect_strategy: str = "smart"
     position: str = "best"
     deduplication: bool = True
@@ -57,115 +63,38 @@ class LegendManager:
         self.registry = LegendRegistry()
 
     def finalize(self) -> None:
-        if self.config.mode == "none":
+        print("LEGEND MANAGER: finalize() called")
+        print(f"  config.strategy: {self.config.strategy}")
+        print(f"  entries count: {len(self.registry.get_unique_entries())}")
+
+        if self.config.strategy == LegendStrategy.NONE:
+            print("LEGEND MANAGER: strategy is 'none', returning")
             return
 
-        strategy = self._determine_strategy()
+        strategy = self.config.strategy.value
+        print(f"LEGEND MANAGER: strategy = {strategy}")
 
         if strategy == "figure_below":
+            print("LEGEND MANAGER: calling _create_figure_legend()")
             self._create_figure_legend()
         elif strategy == "grouped_by_channel":
+            print("LEGEND MANAGER: calling _create_grouped_legends()")
             self._create_grouped_legends()
         elif strategy == "per_axes":
+            print("LEGEND MANAGER: calling _create_per_axes_legends()")
             self._create_per_axes_legends()
-
-    def _determine_strategy(self) -> str:
-        if self.config.mode != "auto":
-            return self.config.mode
-
-        unique_channels = self._get_unique_channels()
-
-        if hasattr(self.fm, "rows") and hasattr(self.fm, "cols"):
-            if self.fm.rows > 1 or self.fm.cols > 1:
-                if len(unique_channels) > 1:
-                    return "per_axes"
-                else:
-                    return "figure_below"
-
-        if len(unique_channels) > 1:
-            return "grouped_by_channel"
-
-        return "per_axes"
-
-    def _get_unique_channels(self) -> Set[str]:
-        channels = set()
-        for entry in self.registry.get_unique_entries():
-            if entry.visual_channel:
-                channels.add(entry.visual_channel)
-        return channels
 
     def _process_entries_by_channel_type(
         self, entries: List[LegendEntry]
     ) -> List[LegendEntry]:
-        processed = []
-        continuous_channels = {}
-
-        for entry in entries:
-            if not entry.visual_channel:
-                processed.append(entry)
-                continue
-
-            spec = ChannelRegistry.get_spec(entry.visual_channel)
-
-            if spec.channel_type == "continuous":
-                if entry.visual_channel not in continuous_channels:
-                    continuous_channels[entry.visual_channel] = []
-                continuous_channels[entry.visual_channel].append(entry)
-            else:
-                processed.append(entry)
-
-        for channel, channel_entries in continuous_channels.items():
-            spec = ChannelRegistry.get_spec(channel)
-
-            if spec.legend_behavior == "min_max":
-                processed.extend(self._create_min_max_entries(channel, channel_entries))
-            elif spec.legend_behavior == "none":
-                pass
-
-        return processed
-
-    def _create_min_max_entries(
-        self, channel: str, entries: List[LegendEntry]
-    ) -> List[LegendEntry]:
-        values = [
-            float(e.channel_value) for e in entries if e.channel_value is not None
-        ]
-        if not values:
-            return []
-
-        min_val = min(values)
-        max_val = max(values)
-
-        sample_entry = entries[0]
-        channel_name = channel.title()
-
-        min_entry = LegendEntry(
-            artist=sample_entry.artist,
-            label=f"Min {channel_name} ({min_val:.2f})",
-            axis=sample_entry.axis,
-            visual_channel=channel,
-            channel_value=min_val,
-            group_key=sample_entry.group_key,
-            plotter_type=sample_entry.plotter_type,
-            artist_type=sample_entry.artist_type,
-        )
-
-        max_entry = LegendEntry(
-            artist=sample_entry.artist,
-            label=f"Max {channel_name} ({max_val:.2f})",
-            axis=sample_entry.axis,
-            visual_channel=channel,
-            channel_value=max_val,
-            group_key=sample_entry.group_key,
-            plotter_type=sample_entry.plotter_type,
-            artist_type=sample_entry.artist_type,
-        )
-
-        return [min_entry, max_entry]
+        return entries
 
     def _create_figure_legend(self) -> None:
         entries = self.registry.get_unique_entries()
+        print(f"LEGEND MANAGER: _create_figure_legend entries: {len(entries)}")
+
         if not entries:
+            print("LEGEND MANAGER: No entries, returning")
             return
 
         entries = self._process_entries_by_channel_type(entries)
@@ -176,8 +105,10 @@ class LegendManager:
         for entry in entries:
             handles.append(entry.artist)
             labels.append(entry.label)
+            print(f"  Entry: {entry.label} -> {entry.artist}")
 
         if hasattr(self.fm, "figure") and self.fm.figure:
+            print(f"LEGEND MANAGER: Creating figure legend with {len(handles)} handles")
             ncol = self.config.ncol or min(4, len(handles))
             self.fm.figure.legend(
                 handles,
@@ -226,7 +157,10 @@ class LegendManager:
                 axis.legend(handles, labels)
 
     def _create_grouped_legends(self) -> None:
-        channels = self._get_unique_channels()
+        channels = set()
+        for entry in self.registry.get_unique_entries():
+            if entry.visual_channel:
+                channels.add(entry.visual_channel)
 
         for i, channel in enumerate(channels):
             entries = self.registry.get_by_channel(channel)

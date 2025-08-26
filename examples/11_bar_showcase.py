@@ -5,11 +5,25 @@ Demonstrates single and grouped bar plots.
 
 from dr_plotter.figure import FigureManager
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_example
+from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
 from plot_data import ExampleData
 
+EXPECTED_CHANNELS = {
+    (0, 0): [],
+    (0, 1): ["hue"],
+}
 
-@verify_example(expected_legends=1)
+
+@verify_plot_properties(expected_channels=EXPECTED_CHANNELS)
+@verify_example(
+    expected_legends=2,
+    verify_legend_consistency=True,
+    expected_channels=EXPECTED_CHANNELS,
+    expected_legend_entries={
+        (0, 0): {"legend_count": 1},
+        (0, 1): {"hue": 2},
+    },
+)
 def main(args):
     with FigureManager(rows=1, cols=2, figsize=(15, 6)) as fm:
         fm.fig.suptitle("Bar Plot Showcase: Single and Grouped Bars", fontsize=16)
@@ -24,6 +38,7 @@ def main(args):
             simple_summary,
             x="category",
             y="value",
+            label="Category Values",
             title="Simple Bar Chart",
         )
 

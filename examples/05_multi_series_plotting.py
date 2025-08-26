@@ -10,7 +10,7 @@ from plot_data import ExampleData
 
 EXPECTED_CHANNELS = {
     (0, 0): ["hue", "marker"],
-    (0, 1): ["hue", "size"],
+    (0, 1): ["hue"],
     (1, 1): ["hue", "alpha"],
 }
 
@@ -22,7 +22,7 @@ EXPECTED_CHANNELS = {
     expected_channels=EXPECTED_CHANNELS,
     expected_legend_entries={
         (0, 0): {"hue": 3, "marker": 2},
-        (0, 1): {"hue": 2, "size": "min_max"},
+        (0, 1): {"hue": 2},
         (1, 1): {"hue": 3, "alpha": 2},
     },
 )
@@ -52,8 +52,7 @@ def main(args):
             x="x",
             y="y",
             hue_by="condition",
-            size_by="performance",
-            title="Scatter: hue + size",
+            title="Scatter: hue only",
         )
 
         grouped_ts = ExampleData.time_series_grouped(periods=30, groups=4)

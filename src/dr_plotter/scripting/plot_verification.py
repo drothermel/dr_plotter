@@ -57,12 +57,20 @@ def verify_channel_variation(
             all_values.extend(collection["markers"])
     elif channel == "alpha":
         for collection in collections:
-            # Extract alpha from RGBA colors
-            for rgba in collection["colors"]:
-                if len(rgba) == 4:
-                    all_values.append(rgba[3])
-                else:
-                    all_values.append(1.0)
+            # For lines, use separate alphas field if available
+            if "alphas" in collection and collection["alphas"]:
+                all_values.extend(collection["alphas"])
+            else:
+                # Extract alpha from RGBA colors (scatter/bar)
+                for rgba in collection["colors"]:
+                    if len(rgba) == 4:
+                        all_values.append(rgba[3])
+                    else:
+                        all_values.append(1.0)
+    elif channel == "style":
+        for collection in collections:
+            if "styles" in collection:
+                all_values.extend(collection["styles"])
     else:
         result["message"] = f"Unknown channel: {channel}"
         return result
@@ -361,6 +369,44 @@ def verify_size_consistency(
     return result
 
 
+def verify_style_consistency(
+    plot_styles: List[str], legend_styles: List[str], expected_unique_styles: int = None
+) -> Dict[str, Any]:
+    plot_unique = set(plot_styles)
+    legend_unique = set(legend_styles)
+
+    result = {
+        "passed": plot_unique == legend_unique,
+        "plot_styles": sorted(plot_unique),
+        "legend_styles": sorted(legend_unique),
+        "missing_from_legend": sorted(plot_unique - legend_unique),
+        "extra_in_legend": sorted(legend_unique - plot_unique),
+        "message": "",
+    }
+
+    if expected_unique_styles and len(plot_unique) != expected_unique_styles:
+        result["passed"] = False
+        result["message"] = (
+            f"🔴 Expected {expected_unique_styles} unique styles in plot, found {len(plot_unique)}"
+        )
+        return result
+
+    if result["passed"]:
+        result["message"] = (
+            f"✅ Style consistency: PASS ({len(plot_unique)} unique styles match)"
+        )
+    else:
+        result["message"] = "🔴 Style consistency: FAIL"
+        if result["missing_from_legend"]:
+            result["message"] += (
+                f"\n   - Missing from legend: {result['missing_from_legend']}"
+            )
+        if result["extra_in_legend"]:
+            result["message"] += f"\n   - Extra in legend: {result['extra_in_legend']}"
+
+    return result
+
+
 def verify_channel_uniformity(
     values: List[Any], channel: str, tolerance: float = 1e-6
 ) -> Dict[str, Any]:
@@ -426,23 +472,33 @@ def verify_legend_plot_consistency(
     all_plot_colors = []
     all_plot_sizes = []
     all_plot_alphas = []
+    all_plot_styles = []
 
     for collection in props["collections"]:
         all_plot_markers.extend(collection["markers"])
         all_plot_colors.extend(collection["colors"])
         all_plot_sizes.extend(collection["sizes"])
 
-        # Extract alpha values from RGBA colors
-        for rgba_color in collection["colors"]:
-            if len(rgba_color) >= 4:
-                all_plot_alphas.append(rgba_color[3])
-            else:
-                all_plot_alphas.append(1.0)  # Default alpha
+        # Handle line-specific alphas and styles
+        if "alphas" in collection and collection["alphas"]:
+            all_plot_alphas.extend(collection["alphas"])
+        else:
+            # Extract alpha values from RGBA colors (scatter/bar)
+            for rgba_color in collection["colors"]:
+                if len(rgba_color) >= 4:
+                    all_plot_alphas.append(rgba_color[3])
+                else:
+                    all_plot_alphas.append(1.0)  # Default alpha
+
+        # Extract line styles if available
+        if "styles" in collection:
+            all_plot_styles.extend(collection["styles"])
 
     # Extract legend data
     legend_markers = props["legend"]["markers"]
     legend_colors = props["legend"]["colors"]
     legend_sizes = props["legend"]["sizes"]
+    legend_styles = props["legend"]["styles"]
     legend_alphas = []
 
     # Extract alpha from legend colors
@@ -454,7 +510,7 @@ def verify_legend_plot_consistency(
 
     # Default to checking all channels if none specified
     if expected_varying_channels is None:
-        expected_varying_channels = ["hue", "marker", "alpha", "size"]
+        expected_varying_channels = ["hue", "marker", "alpha", "size", "style"]
 
     # Map channel names to their data and verification functions
     channel_data = {
@@ -474,10 +530,15 @@ def verify_legend_plot_consistency(
             legend_sizes,
             lambda p, l, t=tolerance: verify_size_consistency(p, l, t),
         ),
+        "style": (
+            all_plot_styles,
+            legend_styles,
+            verify_style_consistency,
+        ),
     }
 
     # Check each channel based on whether it should vary or not
-    for channel in ["marker", "hue", "alpha", "size"]:
+    for channel in ["marker", "hue", "alpha", "size", "style"]:
         if channel not in channel_data or not channel_data[channel][0]:
             continue  # Skip if no data available
 

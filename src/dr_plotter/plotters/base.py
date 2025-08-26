@@ -5,7 +5,6 @@ import pandas as pd
 from dr_plotter import consts
 from dr_plotter.channel_metadata import ChannelRegistry
 from dr_plotter.grouping_config import GroupingConfig
-from dr_plotter.legend import Legend
 from dr_plotter.plotters.style_engine import StyleEngine
 from dr_plotter.style_applicator import StyleApplicator
 from dr_plotter.theme import BASE_COLORS, BASE_THEME, DR_PLOTTER_STYLE_KEYS, Theme
@@ -62,7 +61,6 @@ class BasePlotter:
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = BASE_THEME
     use_style_applicator: bool = False
-    use_legend_manager: bool = False
 
     def __init__(
         self,
@@ -114,7 +112,7 @@ class BasePlotter:
     def _plot_specific_data_prep(self) -> None:
         pass
 
-    def _draw(self, ax: Any, data: pd.DataFrame, legend: Legend, **kwargs: Any) -> None:
+    def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         pass
 
     def _draw_grouped(
@@ -122,10 +120,9 @@ class BasePlotter:
         ax: Any,
         data: pd.DataFrame,
         group_position: Dict[str, Any],
-        legend: Legend,
         **kwargs: Any,
     ) -> None:
-        self._draw(ax, data, legend, **kwargs)
+        self._draw(ax, data, **kwargs)
 
     def _setup_continuous_channels(self) -> None:
         for channel in self.grouping_params.active_channels_ordered:
@@ -151,10 +148,9 @@ class BasePlotter:
         self.prepare_data()
         self.current_axis = ax
         self._setup_continuous_channels()
-        legend = Legend(self.figure_manager if self.use_legend_manager else None)
 
         if self._has_groups:
-            self._render_with_grouped_method(ax, legend)
+            self._render_with_grouped_method(ax)
         else:
             if self.__class__.use_style_applicator:
                 component_styles = self.style_applicator.get_component_styles(
@@ -170,14 +166,13 @@ class BasePlotter:
             self._draw(
                 ax,
                 self.plot_data,
-                legend,
                 **style_kwargs,
             )
 
         if self._has_groups and self.__class__.use_style_applicator:
             self.style_applicator.clear_group_context()
 
-        self._apply_styling(ax, legend)
+        self._apply_styling(ax)
 
     def prepare_data(self) -> None:
         self.plot_data = self.raw_data.copy()
@@ -203,7 +198,13 @@ class BasePlotter:
     def _get_style(self, key: str, default_override: Optional[Any] = None) -> Any:
         return self.kwargs.get(key, self.theme.get(key, default_override))
 
-    def _apply_styling(self, ax: Any, legend: Legend) -> None:
+    def _should_create_legend(self) -> bool:
+        legend_param = self._get_style("legend")
+        if legend_param is False:
+            return False
+        return True
+
+    def _apply_styling(self, ax: Any) -> None:
         ax.set_title(
             self._get_style("title"), fontsize=self.theme.get("title_fontsize")
         )
@@ -222,22 +223,7 @@ class BasePlotter:
         else:
             ax.grid(False)
 
-        if not self.use_legend_manager:
-            if self._get_style("legend") is None or self._get_style("legend"):
-                if self._has_groups or legend.has_entries():
-                    if not ax.get_legend():
-                        if legend.has_entries():
-                            ax.legend(
-                                handles=legend.get_handles(),
-                                fontsize=self.theme.get("legend_fontsize"),
-                            )
-                        else:
-                            ax.legend(fontsize=self.theme.get("legend_fontsize"))
-                elif self._get_style("legend") is True:
-                    if not ax.get_legend():
-                        ax.legend(fontsize=self.theme.get("legend_fontsize"))
-
-    def _render_with_grouped_method(self, ax: Any, legend: Legend) -> None:
+    def _render_with_grouped_method(self, ax: Any) -> None:
         # Only group by categorical channels, not continuous ones
         categorical_cols = []
         for channel, column in self.grouping_params.active.items():
@@ -305,7 +291,7 @@ class BasePlotter:
             group_position = self._calculate_group_position(group_index, n_groups)
             group_position["x_categories"] = x_categories
 
-            self._draw_grouped(ax, group_data, group_position, legend, **plot_kwargs)
+            self._draw_grouped(ax, group_data, group_position, **plot_kwargs)
 
     def _calculate_group_position(
         self, group_index: int, n_groups: int
@@ -371,9 +357,6 @@ class BasePlotter:
     def _initialize_subplot_specific_params(self) -> None:
         for param in self.__class__.plotter_params:
             setattr(self, param, self.kwargs.get(param))
-
-    def _style_zero_line(self, ax: Any) -> None:
-        ax.axhline(y=0, linewidth=2.0, color="#333333", zorder=0.5)
 
     def _build_group_label(self, name: Any, group_cols: List[str]) -> str:
         if isinstance(name, tuple):

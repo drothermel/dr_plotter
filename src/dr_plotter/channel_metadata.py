@@ -13,7 +13,7 @@ CHANNEL_SPECS = {
     "hue": ChannelSpec("hue", "categorical", "per_value"),
     "style": ChannelSpec("style", "categorical", "per_value"),
     "marker": ChannelSpec("marker", "categorical", "per_value"),
-    "size": ChannelSpec("size", "continuous", "min_max"),
+    "size": ChannelSpec("size", "categorical", "per_value"),
     "alpha": ChannelSpec("alpha", "categorical", "per_value"),
 }
 
