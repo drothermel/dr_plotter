@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pandas as pd
 
@@ -17,6 +17,9 @@ from dr_plotter.types import (
     Phase,
     ComponentSchema,
 )
+
+type GroupInfo = Tuple[Any, pd.DataFrame]
+type GroupContext = Dict[str, Any]
 
 BASE_PLOTTER_PARAMS = [
     "x",
@@ -252,6 +255,21 @@ class BasePlotter:
         )
 
     def _render_with_grouped_method(self, ax: Any) -> None:
+        grouped_data = self._process_grouped_data()
+        x_categories = self._extract_x_categories()
+
+        for group_index, group_info in enumerate(grouped_data):
+            group_context = self._setup_group_context(
+                group_info, group_index, len(grouped_data)
+            )
+            plot_kwargs = self._resolve_group_plot_kwargs(group_context)
+            group_position = self._calculate_group_position(
+                group_index, len(grouped_data), x_categories
+            )
+
+            self._draw_grouped(ax, group_context["data"], group_position, **plot_kwargs)
+
+    def _process_grouped_data(self) -> List[GroupInfo]:
         categorical_cols = []
         for channel, column in self.grouping_params.active.items():
             spec = ChannelRegistry.get_spec(channel)
@@ -260,57 +278,74 @@ class BasePlotter:
 
         if categorical_cols:
             grouped = self.plot_data.groupby(categorical_cols)
-            n_groups = len(grouped)
+            return list(grouped)
         else:
-            grouped = [(None, self.plot_data)]
-            n_groups = 1
+            return [(None, self.plot_data)]
 
-        x_categories = None
+    def _extract_x_categories(self) -> Optional[Any]:
         if hasattr(self, "x") and self.x_col:
-            x_categories = self.plot_data[self.x_col].unique()
+            return self.plot_data[self.x_col].unique()
+        return None
 
-        for group_index, (name, group_data) in enumerate(grouped):
-            if name is None:
-                group_values = {}
-            elif isinstance(name, tuple):
-                group_values = dict(zip(categorical_cols, name))
-            else:
-                group_values = {categorical_cols[0]: name} if categorical_cols else {}
+    def _setup_group_context(
+        self, group_info: GroupInfo, group_index: int, n_groups: int
+    ) -> GroupContext:
+        name, group_data = group_info
 
-            self.style_applicator.set_group_context(group_values)
-            component_styles = self.style_applicator.get_component_styles(
-                self.__class__.plotter_name
-            )
-            plot_kwargs = component_styles.get("main", {})
-            plot_kwargs["label"] = self._build_group_label(name, categorical_cols)
+        categorical_cols = []
+        for channel, column in self.grouping_params.active.items():
+            spec = ChannelRegistry.get_spec(channel)
+            if spec.channel_type == "categorical":
+                categorical_cols.append(column)
 
-            if (
-                self.__class__.plotter_name == "scatter"
-                and "size" in self.grouping_params.active_channels
-            ):
-                size_col = self.grouping_params.size
-                if size_col and size_col in group_data.columns:
-                    sizes = []
-                    for value in group_data[size_col]:
-                        style = self.style_engine._get_continuous_style(
-                            "size", size_col, value
-                        )
-                        size_mult = style.get("size_mult", 1.0)
-                        base_size = plot_kwargs.get("s", 50)
-                        sizes.append(
-                            base_size * size_mult
-                            if isinstance(base_size, (int, float))
-                            else 50 * size_mult
-                        )
-                    plot_kwargs["s"] = sizes
+        if name is None:
+            group_values = {}
+        elif isinstance(name, tuple):
+            group_values = dict(zip(categorical_cols, name))
+        else:
+            group_values = {categorical_cols[0]: name} if categorical_cols else {}
 
-            group_position = self._calculate_group_position(group_index, n_groups)
-            group_position["x_categories"] = x_categories
+        return {
+            "name": name,
+            "data": group_data,
+            "values": group_values,
+            "categorical_cols": categorical_cols,
+        }
 
-            self._draw_grouped(ax, group_data, group_position, **plot_kwargs)
+    def _resolve_group_plot_kwargs(self, group_context: GroupContext) -> Dict[str, Any]:
+        self.style_applicator.set_group_context(group_context["values"])
+        component_styles = self.style_applicator.get_component_styles(
+            self.__class__.plotter_name
+        )
+        plot_kwargs = component_styles.get("main", {})
+        plot_kwargs["label"] = self._build_group_label(
+            group_context["name"], group_context["categorical_cols"]
+        )
+
+        if (
+            self.__class__.plotter_name == "scatter"
+            and "size" in self.grouping_params.active_channels
+        ):
+            size_col = self.grouping_params.size
+            if size_col and size_col in group_context["data"].columns:
+                sizes = []
+                for value in group_context["data"][size_col]:
+                    style = self.style_engine._get_continuous_style(
+                        "size", size_col, value
+                    )
+                    size_mult = style.get("size_mult", 1.0)
+                    base_size = plot_kwargs.get("s", 50)
+                    sizes.append(
+                        base_size * size_mult
+                        if isinstance(base_size, (int, float))
+                        else 50 * size_mult
+                    )
+                plot_kwargs["s"] = sizes
+
+        return plot_kwargs
 
     def _calculate_group_position(
-        self, group_index: int, n_groups: int
+        self, group_index: int, n_groups: int, x_categories: Optional[Any] = None
     ) -> Dict[str, Any]:
         width = 0.8 / n_groups
         offset = width * (group_index - n_groups / 2 + 0.5)
@@ -320,6 +355,7 @@ class BasePlotter:
             "total": n_groups,
             "width": width,
             "offset": offset,
+            "x_categories": x_categories,
         }
 
     def _build_group_plot_kwargs(

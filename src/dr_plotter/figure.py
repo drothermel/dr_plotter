@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
@@ -10,7 +10,7 @@ from dr_plotter.legend_manager import (
     LegendManager,
     LegendStrategy,
 )
-from dr_plotter.theme import BASE_THEME
+from dr_plotter.theme import BASE_THEME, Theme
 from .plotters import BasePlotter
 
 
@@ -33,33 +33,69 @@ class FigureManager:
         shared_styling: Optional[bool] = None,
         **fig_kwargs: Any,
     ) -> None:
-        self._layout_rect = layout_rect
-        self._layout_pad = layout_pad if layout_pad is not None else 0.5
-        self.rows = rows
-        self.cols = cols
+        from dr_plotter.figure_config import (
+            SubplotLayoutConfig,
+            FigureCoordinationConfig,
+        )
 
-        if external_ax is not None:
-            self.fig = external_ax.get_figure()
-            self.axes = external_ax
-            self.external_mode = True
-        else:
-            self.fig, self.axes = plt.subplots(
-                rows, cols, constrained_layout=False, **fig_kwargs
-            )
-            self.external_mode = False
+        layout_pad_final = layout_pad if layout_pad is not None else 0.5
+        layout = SubplotLayoutConfig(
+            rows=rows,
+            cols=cols,
+            layout_rect=layout_rect,
+            layout_pad=layout_pad_final,
+        )
 
-        self.figure = self.fig
+        coordination = FigureCoordinationConfig(
+            theme=theme,
+            shared_styling=shared_styling,
+            external_ax=external_ax,
+            fig_kwargs=fig_kwargs,
+        )
 
-        self.shared_cycle_config: Optional[CycleConfig] = None
+        legacy_legend_config = self._convert_legacy_legend_params(
+            legend_config,
+            legend_strategy,
+            legend_position,
+            legend_ncol,
+            legend_spacing,
+            plot_margin_bottom,
+            legend_y_offset,
+            theme,
+        )
 
-        base_config = None
-        if legend_config:
-            base_config = legend_config
-        elif theme and hasattr(theme, "legend_config"):
-            base_config = theme.legend_config
+        self._init_from_configs(layout, legacy_legend_config, coordination)
 
-        self.legend_config = self._build_legend_config(
-            base_config,
+    def _convert_legacy_legend_params(
+        self,
+        legend_config: Optional[LegendConfig],
+        legend_strategy: Optional[str],
+        legend_position: Optional[str],
+        legend_ncol: Optional[int],
+        legend_spacing: Optional[float],
+        plot_margin_bottom: Optional[float],
+        legend_y_offset: Optional[float],
+        theme: Optional[Any],
+    ) -> Optional[LegendConfig]:
+        if not any(
+            [
+                legend_strategy,
+                legend_position,
+                legend_ncol,
+                legend_spacing,
+                plot_margin_bottom,
+                legend_y_offset,
+            ]
+        ):
+            return legend_config
+
+        return self._build_legend_config(
+            legend_config
+            or (
+                theme.legend_config
+                if theme and hasattr(theme, "legend_config")
+                else None
+            ),
             legend_strategy,
             legend_position,
             legend_ncol,
@@ -68,15 +104,92 @@ class FigureManager:
             legend_y_offset,
         )
 
+    def _init_from_configs(
+        self,
+        layout: "SubplotLayoutConfig",
+        legend: Optional[LegendConfig],
+        coordination: "FigureCoordinationConfig",
+    ) -> None:
+        layout.validate()
+        coordination.validate()
+
+        self._setup_layout_configuration(layout)
+
+        fig, axes, external_mode = self._create_figure_axes(
+            layout, coordination.external_ax, coordination.fig_kwargs
+        )
+        self.fig = fig
+        self.figure = fig
+        self.axes = axes
+        self.external_mode = external_mode
+
+        legend_manager = self._build_legend_system(legend, coordination.theme)
+        self.legend_config = legend_manager.config
+        self.legend_manager = legend_manager
+
+        self._coordinate_styling(coordination.theme, coordination.shared_styling)
+
+    @classmethod
+    def _create_from_configs(
+        cls,
+        layout: "SubplotLayoutConfig",
+        legend: Optional[LegendConfig],
+        coordination: "FigureCoordinationConfig",
+        faceting: Optional["SubplotFacetingConfig"] = None,
+    ) -> "FigureManager":
+        instance = cls.__new__(cls)
+        instance._init_from_configs(layout, legend, coordination)
+        return instance
+
+    def _create_figure_axes(
+        self,
+        layout: "SubplotLayoutConfig",
+        external_ax: Optional[plt.Axes],
+        fig_kwargs: Any,
+    ) -> Tuple[plt.Figure, plt.Axes, bool]:
+        if external_ax is not None:
+            return external_ax.get_figure(), external_ax, True
+
+        fig, axes = plt.subplots(
+            layout.rows, layout.cols, constrained_layout=False, **fig_kwargs
+        )
+        return fig, axes, False
+
+    def _setup_layout_configuration(self, layout: "SubplotLayoutConfig") -> None:
+        self._layout_rect = layout.layout_rect
+        self._layout_pad = layout.layout_pad
+        self.rows = layout.rows
+        self.cols = layout.cols
+
+    def _build_legend_system(
+        self,
+        legend_config: Optional[LegendConfig],
+        theme: Optional[Theme],
+    ) -> LegendManager:
+        effective_config = (
+            legend_config
+            or (
+                theme.legend_config
+                if theme and hasattr(theme, "legend_config")
+                else None
+            )
+            or LegendConfig()
+        )
+
+        return LegendManager(self, effective_config)
+
+    def _coordinate_styling(
+        self,
+        theme: Optional[Theme],
+        shared_styling: Optional[bool],
+    ) -> None:
         self.shared_styling = shared_styling
 
         if self._should_use_shared_cycle_config():
-            theme_for_cycle = theme if theme else BASE_THEME
+            theme_for_cycle = theme or BASE_THEME
             self.shared_cycle_config = CycleConfig(theme_for_cycle)
         else:
             self.shared_cycle_config = None
-
-        self.legend_manager = LegendManager(self, self.legend_config)
 
     def _should_use_shared_cycle_config(self) -> bool:
         if self.shared_styling is not None:

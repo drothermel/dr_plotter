@@ -147,37 +147,97 @@ class StyleApplicator:
     def _resolve_component_styles(
         self, plot_type: str, component: str, attrs: Set[str], phase: Phase = "plot"
     ) -> Dict[str, Any]:
-        resolved_styles = {}
+        base_styles = self._get_base_theme_styles(phase)
+        plot_styles = self._get_plot_specific_theme_styles(plot_type, phase)
+        group_styles = self._get_group_styles_for_component(plot_type, component, phase)
+        component_kwargs = self._extract_component_kwargs(component, attrs, phase)
 
-        base_theme_styles = {}
-        base_theme_styles.update(self.theme.general_styles)
+        return self._merge_style_precedence(
+            base_styles,
+            plot_styles,
+            group_styles,
+            component_kwargs,
+            attrs,
+            plot_type,
+            component,
+        )
+
+    def _get_base_theme_styles(self, phase: Phase) -> Dict[str, Any]:
+        base_styles = {}
+        base_styles.update(self.theme.general_styles)
 
         if phase == "plot":
-            base_theme_styles.update(self.theme.plot_styles)
+            base_styles.update(self.theme.plot_styles)
         elif phase == "post":
-            base_theme_styles.update(self.theme.post_styles)
+            base_styles.update(self.theme.post_styles)
         elif phase == "axes":
-            base_theme_styles.update(self.theme.axes_styles)
+            base_styles.update(self.theme.axes_styles)
         elif phase == "figure":
-            base_theme_styles.update(self.theme.figure_styles)
+            base_styles.update(self.theme.figure_styles)
 
+        return base_styles
+
+    def _get_plot_specific_theme_styles(
+        self, plot_type: str, phase: Phase
+    ) -> Dict[str, Any]:
         plot_styles = {}
-        if plot_type in self._get_plot_specific_themes():
-            plot_theme = self._get_plot_specific_themes()[plot_type]
-            plot_styles.update(plot_theme.general_styles)
+        plot_specific_themes = self._get_plot_specific_themes()
 
-            if phase == "plot":
-                plot_styles.update(plot_theme.plot_styles)
-            elif phase == "post":
-                plot_styles.update(plot_theme.post_styles)
-            elif phase == "axes":
-                plot_styles.update(plot_theme.axes_styles)
-            elif phase == "figure":
-                plot_styles.update(plot_theme.figure_styles)
+        if plot_type not in plot_specific_themes:
+            return plot_styles
 
-        group_styles = self._get_group_styles_for_component(plot_type, component, phase)
+        plot_theme = plot_specific_themes[plot_type]
+        plot_styles.update(plot_theme.general_styles)
 
-        component_kwargs = self._extract_component_kwargs(component, attrs, phase)
+        if phase == "plot":
+            plot_styles.update(plot_theme.plot_styles)
+        elif phase == "post":
+            plot_styles.update(plot_theme.post_styles)
+        elif phase == "axes":
+            plot_styles.update(plot_theme.axes_styles)
+        elif phase == "figure":
+            plot_styles.update(plot_theme.figure_styles)
+
+        return plot_styles
+
+    def _resolve_default_attribute(
+        self,
+        attr: str,
+        plot_type: str,
+        component: str,
+        base_styles: Dict[str, Any],
+        group_styles: Dict[str, Any],
+    ) -> Any:
+        if attr == "s" and "size_mult" in group_styles and plot_type == "scatter":
+            base_size = base_styles.get("marker_size", 50)
+            return base_size * group_styles["size_mult"]
+
+        if attr == "color":
+            if component == "main":
+                return base_styles["default_color"]
+            else:
+                return base_styles["text_color"]
+
+        if attr == "fontsize":
+            return base_styles["text_fontsize"]
+        elif attr == "ha":
+            return base_styles["text_ha"]
+        elif attr == "va":
+            return base_styles["text_va"]
+
+        return None
+
+    def _merge_style_precedence(
+        self,
+        base_styles: Dict[str, Any],
+        plot_styles: Dict[str, Any],
+        group_styles: Dict[str, Any],
+        component_kwargs: Dict[str, Any],
+        attrs: Set[str],
+        plot_type: str,
+        component: str,
+    ) -> Dict[str, Any]:
+        resolved_styles = {}
 
         for attr in attrs:
             if attr in component_kwargs:
@@ -186,22 +246,14 @@ class StyleApplicator:
                 resolved_styles[attr] = group_styles[attr]
             elif attr in plot_styles:
                 resolved_styles[attr] = plot_styles[attr]
-            elif attr in base_theme_styles:
-                resolved_styles[attr] = base_theme_styles[attr]
-            elif attr == "s" and "size_mult" in group_styles and plot_type == "scatter":
-                base_size = base_theme_styles.get("marker_size", 50)
-                resolved_styles[attr] = base_size * group_styles["size_mult"]
-            elif attr == "color":
-                if component == "main":
-                    resolved_styles[attr] = base_theme_styles["default_color"]
-                else:
-                    resolved_styles[attr] = base_theme_styles["text_color"]
-            elif attr == "fontsize":
-                resolved_styles[attr] = base_theme_styles["text_fontsize"]
-            elif attr == "ha":
-                resolved_styles[attr] = base_theme_styles["text_ha"]
-            elif attr == "va":
-                resolved_styles[attr] = base_theme_styles["text_va"]
+            elif attr in base_styles:
+                resolved_styles[attr] = base_styles[attr]
+            else:
+                default_value = self._resolve_default_attribute(
+                    attr, plot_type, component, base_styles, group_styles
+                )
+                if default_value is not None:
+                    resolved_styles[attr] = default_value
 
         for key, value in component_kwargs.items():
             if key not in attrs:
@@ -223,27 +275,35 @@ class StyleApplicator:
         self, component: str, attrs: Set[str], phase: Phase = "plot"
     ) -> Dict[str, Any]:
         if component == "main":
-            # Axes-specific settings should not flow to main component
-            axes_specific = {"title", "xlabel", "ylabel", "grid"}
-            # Also block axes-specific prefixed settings
-            axes_prefixed = {
-                k
-                for k in self.kwargs.keys()
-                if any(k.startswith(f"{axis}_") for axis in axes_specific)
-            }
-            extracted = {}
-            for k, v in self.kwargs.items():
-                if k in attrs and not self._is_reserved_kwarg(k):
-                    extracted[k] = v
-                elif (
-                    not self._is_reserved_kwarg(k)
-                    and not k.endswith("_by")
-                    and k not in axes_specific
-                    and k not in axes_prefixed
-                ):
-                    extracted[k] = v
-            return extracted
+            return self._extract_main_component_kwargs(attrs)
+        else:
+            return self._extract_prefixed_component_kwargs(component, attrs)
 
+    def _extract_main_component_kwargs(self, attrs: Set[str]) -> Dict[str, Any]:
+        axes_specific = {"title", "xlabel", "ylabel", "grid"}
+        axes_prefixed = {
+            k
+            for k in self.kwargs.keys()
+            if any(k.startswith(f"{axis}_") for axis in axes_specific)
+        }
+
+        extracted = {}
+        for k, v in self.kwargs.items():
+            if k in attrs and not self._is_reserved_kwarg(k):
+                extracted[k] = v
+            elif (
+                not self._is_reserved_kwarg(k)
+                and not k.endswith("_by")
+                and k not in axes_specific
+                and k not in axes_prefixed
+            ):
+                extracted[k] = v
+
+        return extracted
+
+    def _extract_prefixed_component_kwargs(
+        self, component: str, attrs: Set[str]
+    ) -> Dict[str, Any]:
         component_prefix = f"{component}_"
         extracted = {}
 
@@ -257,7 +317,6 @@ class StyleApplicator:
             ):
                 extracted[key] = value
 
-        # Backward compatibility: map display_values to cell_text_visible
         if component == "cell_text" and "display_values" in self.kwargs:
             extracted["visible"] = self.kwargs["display_values"]
 
