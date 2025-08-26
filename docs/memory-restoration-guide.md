@@ -1,112 +1,104 @@
-# Memory Restoration Guide: Faceted Plotting Project
+# Memory Restoration Guide: FigureManager Parameter Organization Project
 
-## Project Overview
-We are implementing **Phase 2 of a faceted plotting system** for dr_plotter using ML training data (`data/mean_eval.parquet`). This is part of a multi-phase project to build comprehensive faceted plotting capabilities.
+## Current Project Status: Phase 2 Complete, Ready for Phase 3 Decision
 
-## What We've Accomplished ✅
+### What We're Working On
+**Goal**: Systematic reorganization of FigureManager parameter architecture to resolve parameter chaos, fix theme integration conflicts, and establish clean foundation for advanced features.
 
-### Phase 1 Complete
-- Created `scripts/explore_mean_eval_data.py` - comprehensive data exploration script
-- **Key finding**: 1,913 metrics, 25 data recipes, 14 model sizes, 100% data density
-- Data structure validated for faceted plotting
+**Root Problem**: FigureManager had grown organically with unorganized parameters, broken controls (margin parameters didn't work), and poor parameter routing.
 
-### Phase 2 Complete  
-- **Two working examples created**:
-  1. `examples/06_faceted_training_curves.py` - Regular implementation
-  2. `examples/06b_faceted_training_curves_themed.py` - Themed implementation
+## Major Accomplishments ✅
 
-### Key Implementations
-- **2×4 grid visualization**: 2 metrics (`pile-valppl`, `mmlu_average_correct_prob`) × 4 data recipes
-- **14 model sizes as different colored lines** in each subplot
-- **Shared legends** using `legend_strategy="figure_below"` 
-- **Shared Y-axes within rows** using `sharey="row"`
-- **Professional spacing** with proper margins and layout
+### Phase 1: Architecture Analysis (COMPLETE)
+- **Phase 1a**: Architecture inventory revealed rich config infrastructure already exists (80% complete)
+- **Discovery**: SubplotFacetingConfig exists but unused - ready for future faceted plotting
+- **Finding**: Legacy bridge methods handle parameter conversion but create chaos
 
-### Recent Data Processing Fix 🎯
-**CRITICAL**: Fixed major data loss issue by removing global `dropna()` and using per-metric filtering only:
-- **Before**: 1,081 rows (lost 315 rows unnecessarily)
-- **After**: 1,396 rows (29% more data!)
-- **Key insight**: Each metric plots independently, so don't drop rows where other metrics have NaN
+### Phase 2: Clean Slate Implementation (COMPLETE) 
+- **Legacy bridge removal**: Deleted `_convert_legacy_*()` methods (~100 lines)
+- **Config-first constructor**: FigureManager now accepts only config objects
+- **FigureConfig consolidation**: Eliminated artificial SubplotLayoutConfig separation
+- **Examples updated**: Both faceted plotting examples now use clean consolidated architecture
 
-### Documentation Created
-- `docs/phase-2-friction-analysis.md` - Complete friction point analysis
-- `docs/theme-system-analysis.md` - Theme system deep dive
+## Current Architecture (Successfully Implemented)
 
-## Current Work In Progress 🚧
-
-### Adding Advanced Controls
-**Currently implementing** filtering, ordering, and axis limiting for both examples:
-
-1. **Model size filtering/ordering**: `--model-sizes 4M 6M 150M 1B` 
-2. **Recipe filtering/ordering**: `--recipes C4 Dolma1.7`
-3. **Log scaling**: `--x-log --y-log`
-4. **Axis limits**: `--xlim 1000 50000 --ylim 0.1 10`
-
-### Status
-- ✅ Regular version (`06_faceted_training_curves.py`) - **COMPLETE WITH ADVANCED CONTROLS**
-- ✅ Themed version (`06b_faceted_training_curves_themed.py`) - **COMPLETE WITH ADVANCED CONTROLS**
-
-## Key Technical Discoveries
-
-### Legend System ✅ 
-- `legend_strategy="figure_below"` works perfectly for unified legends
-- Multiple options: "figure_below", "split", "per_axes", "none"
-
-### Theme System ⚠️
-- **Can store** axis scaling (`xscale="log"`, `yscale="log"`) in themes
-- **Cannot automatically apply** - requires manual `ax.set_xscale()` calls
-- **Theme stores intent but requires manual execution**
-
-### Data Processing Pattern
+### Clean FigureManager Constructor:
 ```python
-# GOOD - Per-metric filtering only
-for metric in metrics:
-    metric_data = data[["params", "step", metric]].dropna()
-
-# BAD - Global filtering (loses data)
-df.dropna()  # Don't do this!
+FigureManager(
+    figure=FigureConfig(
+        rows=2, cols=4, figsize=(16, 9), tight_layout_pad=0.3,
+        subplot_kwargs={"sharey": "row"}
+    ),
+    legend=LegendConfig(...),
+    theme=Theme(...)
+)
 ```
 
-## Phase 2 Status: COMPLETE ✅
+### Parameter Classification Principle:
+- **Explicit parameters**: Common structural params (rows, cols, figsize) + non-matplotlib function params (tight_layout_pad)
+- **Kwargs dictionaries**: Direct matplotlib function parameters (figure_kwargs → plt.figure(), subplot_kwargs → plt.subplots())
 
-**All Phase 2 objectives achieved:**
-1. ✅ **Both examples fully functional** with comprehensive advanced controls
-2. ✅ **All filtering/ordering combinations tested** and working correctly
-3. ✅ **Documentation updated** with detailed friction analysis including advanced controls
-4. ✅ **Comprehensive friction assessment** documented for Phase 3 planning
+## Issues We've Identified & Documented
 
-**Advanced controls successfully implemented:**
-- Model size filtering and ordering
-- Data recipe filtering and ordering  
-- Independent axis log scaling (--x-log, --y-log)
-- Axis range limiting (--xlim, --ylim)
-- Dynamic grid sizing based on filtered data
-- Full CLI interface with help documentation
+### Parameter Routing Problems:
+1. **Data ordering override**: Internal pandas.pivot() destroys user data ordering
+2. **Stranded plotter parameters**: HeatmapPlotter format='int', xlabel_pos='bottom' exist in code but no API route
+3. **Theme-behavior misalignment**: GROUPED_BAR_THEME doesn't control grouping (themes = styling only)
+4. **Manual axes access**: Users must call ax.set_xlim(), ax.set_yscale() manually
 
-## Key Files Created/Updated
-- `examples/06_faceted_training_curves.py` - Main example ✅ **COMPLETE**
-- `examples/06b_faceted_training_curves_themed.py` - Themed example ✅ **COMPLETE**
-- `docs/phase-2-friction-analysis.md` - Main analysis document ✅ **UPDATED WITH ADVANCED CONTROLS**
-- `docs/theme-system-analysis.md` - Theme deep dive ✅ **COMPLETE**
-- Data file: `data/mean_eval.parquet`
+### Architecture Audit Results:
+- **Current parameter flow works well** for most cases (fm.plot kwargs → plotter)
+- **Specific gaps**: Heatmap stranded parameters, manual axes configuration
+- **Theme system**: Excellent but doesn't cover all parameter types
 
-## Current Command Pattern Examples
-```bash
-# Basic usage
-uv run python examples/06_faceted_training_curves.py
+## Strategic Decision Point: What's Next?
 
-# With filtering and options
-uv run python examples/06_faceted_training_curves.py \
-  --model-sizes 150M 300M 1B \
-  --recipes C4 Dolma1.7 \
-  --y-log \
-  --xlim 5000 50000
+### Option 1: Current Architecture Is Sufficient
+- Consolidated FigureConfig solved major architectural problems
+- Most parameter routing works well through existing kwargs flow
+- Manual axes access acceptable for advanced use cases
 
-# Help
-uv run python examples/06_faceted_training_curves.py --help
-```
+### Option 2: Add Systematic Parameter Routing
+- `axes_kwargs` in FigureManager constructor for ax.set_*() parameters
+- `plotter_kwargs` in FigureManager constructor for stranded plotter parameters
+- Provides systematic routing vs manual post-plot configuration
 
-## Critical Context
-This is **research/exploration work** to identify friction points in dr_plotter for Phase 3 improvements. We're not just building examples - we're **systematically documenting every friction point** to guide library enhancements.
+## Key Documents & Context
 
-The goal is understanding what works well vs. what needs abstraction for better faceted plotting in Phase 3.
+### Essential Reading:
+- `docs/plans/2025-08-26-figuremanager-parameter-organization.md` - Complete project plan
+- `docs/architecture-inventory.md` - Config infrastructure analysis
+- `docs/axes-plotter-parameter-routing-audit.md` - Current parameter routing analysis
+- `docs/reports/2025-08-26_figuremanager_parameter_organization/` - Lab notes and strategic report
+
+### Working Files:
+- `examples/06_faceted_training_curves.py` - Updated with consolidated architecture
+- `examples/06b_faceted_training_curves_themed.py` - Themed version with consolidated architecture
+
+## User Collaboration Style
+
+### Your Approach (Critical for Continuity):
+- **Strategic thinking partner**: Analysis → Options → Recommendation structure
+- **Evidence-based decisions**: No assumptions, always validate with concrete data
+- **Systematic architectural work**: Build on established patterns, create reusable processes
+- **Quality standards**: No comments, assertions over exceptions, complete type hints, fail fast/loud
+
+### Decision Philosophy:
+- **No backward compatibility**: Clean slate approach, breaking changes acceptable
+- **Build on existing**: 80% of config infrastructure already exists, extend rather than replace
+- **User mental model**: Match how researchers actually think about plot configuration
+- **Organized flexibility**: Explicit params for common cases, kwargs for power users
+
+## Immediate Next Decision
+
+**Question to resolve**: Do we need `axes_kwargs` and `plotter_kwargs` in FigureManager constructor, or is the current consolidated architecture sufficient?
+
+**Context for decision**: 
+- Examples now use clean consolidated FigureConfig (much simpler)
+- Still have stranded heatmap parameters and manual axes access
+- Need to balance systematic architecture vs practical sufficiency
+
+**Evidence needed**: Test current consolidated architecture against real use cases to see if additional parameter routing justified.
+
+## Key Principle: Minimize Friction Between Idea and Visualization
+Every design choice should reduce friction for researchers. The consolidated FigureConfig achieved this - question is whether additional parameter routing enhancements provide enough friction reduction to justify architectural complexity.
