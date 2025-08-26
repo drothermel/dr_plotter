@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter import consts
+from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.theme import LINE_THEME, Theme
 from dr_plotter.types import VisualChannel, Phase, ComponentSchema
 
@@ -36,6 +37,16 @@ class LinePlotter(BasePlotter):
             "grid": {"visible", "alpha", "color", "linestyle"},
         },
     }
+
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        grouping_cfg: GroupingConfig,
+        theme: Optional[Theme] = None,
+        figure_manager: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
 
     def _draw(self, ax: plt.Axes, data: pd.DataFrame, **kwargs: Any) -> None:
         label = kwargs.pop("label", None)

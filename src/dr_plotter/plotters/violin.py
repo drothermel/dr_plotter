@@ -5,6 +5,7 @@ import pandas as pd
 from matplotlib.patches import Patch
 
 from dr_plotter import consts
+from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.theme import VIOLIN_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
@@ -52,8 +53,15 @@ class ViolinPlotter(BasePlotter):
         },
     }
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        grouping_cfg: GroupingConfig,
+        theme: Optional[Theme] = None,
+        figure_manager: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
         self.style_applicator.register_post_processor(
             "violin", "bodies", self._style_violin_bodies
         )
@@ -116,13 +124,7 @@ class ViolinPlotter(BasePlotter):
 
         if label and "bodies" in parts and parts["bodies"]:
             proxy = self._create_proxy_artist_from_bodies(parts["bodies"])
-
-            if self.figure_manager and proxy:
-                entry = self.style_applicator.create_legend_entry(
-                    proxy, label, self.current_axis
-                )
-                if entry:
-                    self.figure_manager.register_legend_entry(entry)
+            self._register_legend_entry_if_valid(proxy, label)
 
     def _create_proxy_artist_from_bodies(self, bodies: List[Any]) -> Optional[Patch]:
         if not bodies:
@@ -130,40 +132,38 @@ class ViolinPlotter(BasePlotter):
 
         first_body = bodies[0]
 
-        try:
-            facecolor = first_body.get_facecolor()
-            if hasattr(facecolor, "__len__") and len(facecolor) > 0:
-                fc = facecolor[0]
-                if isinstance(fc, np.ndarray) and fc.size >= 3:
-                    facecolor = tuple(fc[:4] if fc.size >= 4 else list(fc[:3]) + [1.0])
-                else:
-                    facecolor = self.figure_manager.legend_manager.get_error_color(
-                        "face", self.theme
-                    )
+        assert hasattr(first_body, "get_facecolor"), (
+            "Body must have get_facecolor method"
+        )
+        facecolor = first_body.get_facecolor()
+
+        if hasattr(facecolor, "__len__") and len(facecolor) > 0:
+            fc = facecolor[0]
+            if isinstance(fc, np.ndarray) and fc.size >= 3:
+                facecolor = tuple(fc[:4] if fc.size >= 4 else list(fc[:3]) + [1.0])
             else:
                 facecolor = self.figure_manager.legend_manager.get_error_color(
                     "face", self.theme
                 )
-        except:
+        else:
             facecolor = self.figure_manager.legend_manager.get_error_color(
                 "face", self.theme
             )
 
-        try:
-            edgecolor = first_body.get_edgecolor()
-            if hasattr(edgecolor, "__len__") and len(edgecolor) > 0:
-                ec = edgecolor[0]
-                if isinstance(ec, np.ndarray) and ec.size >= 3:
-                    edgecolor = tuple(ec[:4] if ec.size >= 4 else list(ec[:3]) + [1.0])
-                else:
-                    edgecolor = self.figure_manager.legend_manager.get_error_color(
-                        "edge", self.theme
-                    )
+        assert hasattr(first_body, "get_edgecolor"), (
+            "Body must have get_edgecolor method"
+        )
+        edgecolor = first_body.get_edgecolor()
+
+        if hasattr(edgecolor, "__len__") and len(edgecolor) > 0:
+            ec = edgecolor[0]
+            if isinstance(ec, np.ndarray) and ec.size >= 3:
+                edgecolor = tuple(ec[:4] if ec.size >= 4 else list(ec[:3]) + [1.0])
             else:
                 edgecolor = self.figure_manager.legend_manager.get_error_color(
                     "edge", self.theme
                 )
-        except:
+        else:
             edgecolor = self.figure_manager.legend_manager.get_error_color(
                 "edge", self.theme
             )

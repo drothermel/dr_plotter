@@ -3,8 +3,8 @@
 ## Project Info
 - **Date**: 2025-08-25
 - **Project**: Comprehensive architectural audit and implementation roadmap for dr_plotter
-- **Duration**: In progress (synthesis phase complete, implementation pending)
-- **Status**: Audit complete, implementation roadmap ready
+- **Duration**: Phase 1 complete, Phase 2 Task Group 1 nearly complete
+- **Status**: Core architecture improvements in progress - explicit capability systems implemented
 
 ## Results Summary
 - **Categories audited**: 5 (DR Methodology, Architectural Consistency, Type System, Configuration Management, Code Quality)
@@ -22,9 +22,22 @@
 - **Stage 4**: 1 cross-category integration synthesis with unified 8-week roadmap
 
 ### Implementation roadmap structure:
-- **Phase 1 (Weeks 1-2)**: Foundation - Try-catch elimination, constructor standardization, critical type fixes
-- **Phase 2 (Weeks 3-5)**: Core Architecture - Legend integration, StyleApplicator enforcement, type completion
+- **Phase 1 (Weeks 1-2) ✅ COMPLETE**: Foundation - Try-catch elimination, constructor standardization, critical type fixes
+- **Phase 2 (Weeks 3-5) 🔄 IN PROGRESS**: Core Architecture - Legend integration, StyleApplicator enforcement, type completion
+  - **Task Group 1 ✅ NEARLY COMPLETE**: Legend + Grouped capability systems  
 - **Phase 3 (Weeks 6-8)**: Optimization - Function decomposition, comment removal, systematic polish
+
+### Phase 1 Implementation Results:
+- **src/dr_plotter/plotters/base.py:39**: Fixed incorrect return type `-> str` to `-> Optional[str]` for ylabel_from_metrics
+- **Try-catch elimination**: Replaced 12 validation try-catch blocks with assertion-based patterns across ViolinPlotter and BasePlotter
+- **Constructor standardization**: All 8 plotters now use identical explicit signature pattern with GroupingConfig imports
+- **Validation**: All plotters import successfully, functionality preserved, kwargs flexibility maintained
+
+### Phase 2 Task Group 1 Implementation Results:
+- **src/dr_plotter/plotters/base.py**: Added `supports_legend` and `supports_grouped` capability flags + extracted `_register_legend_entry_if_valid()` method
+- **Legend system**: All plotters now explicitly declare legend capability - ContourPlotter/HeatmapPlotter marked `supports_legend = False`
+- **Grouped drawing**: Plotter categorization complete - positioned-layout vs coordinate-sharing vs single-purpose
+- **BumpPlotter cleanup**: Converted from inappropriate grouped pathways to unified single-purpose architecture with performance improvement
 
 ## Bugs Encountered & Fixes
 ### Bug 1: Agent assessment disagreement (DR Methodology)
@@ -45,18 +58,36 @@
 - **Evidence**: Try-catch elimination must precede type system work, StyleApplicator enforcement enables function decomposition
 - **Resolution**: Stage 4 cross-category synthesis identified 4 critical path dependencies
 
+### Bug 4: BumpPlotter architectural problem (Phase 2 Task Group 1)
+- **Location**: BumpPlotter grouped pathway usage investigation  
+- **Error**: BumpPlotter using grouped rendering inappropriately for data preparation, creating duplicate processing
+- **Evidence**: Forced hue grouping + duplicate grouping logic in _draw() method created performance overhead
+- **Resolution**: Converted to single-purpose architecture with unified trajectory rendering, eliminated duplicate processing
+
 ## Technical Discoveries
-- **src/dr_plotter/plotters/**: 12 try-catch blocks violating fail-fast principle across 6 files
-- **src/dr_plotter/api.py**: 8 public functions missing return type annotations (100% coverage gap)
-- **Legend system**: 6/8 plotters missing integration, 100% duplication rate in registration patterns
-- **StyleApplicator bypass**: 4/8 plotters use direct style access, violating component abstraction
-- **Constructor inconsistency**: 3 different patterns across 8 plotters creating type safety gaps
+- **src/dr_plotter/plotters/ ✅ RESOLVED**: 12 try-catch blocks eliminated, replaced with assertion-based validation
+- **src/dr_plotter/api.py**: 8 public functions missing return type annotations (100% coverage gap) [Phase 2 target]
+- **Legend system**: 6/8 plotters missing integration, 100% duplication rate in registration patterns [Phase 2 target]
+- **StyleApplicator bypass**: 4/8 plotters use direct style access, violating component abstraction [Phase 2 target]
+- **Constructor inconsistency ✅ RESOLVED**: All 8 plotters now use standardized explicit signature pattern
 
 ## Ideas & Notes
-- **Performance**: Assert-based validation faster than try-catch defensive programming
+- **Performance**: Assert-based validation faster than try-catch defensive programming (confirmed during elimination)
 - **Architecture**: Systematic legend integration enables consistent user experience across plot types
 - **Technical debt**: 69+ comments violating zero-comment policy, function decomposition addresses atomicity
 - **Future work**: Complete type coverage enables safer refactoring, systematic configuration patterns
+
+### Phase 1 Implementation Insights:
+- **Systematic approach effectiveness**: Detailed agent prompts with comprehensive validation prevented implementation issues
+- **Constructor pattern success**: Explicit signatures provide type safety while preserving kwargs flexibility for rapid iteration
+- **Fail-fast validation**: Assertion-based error handling cleaner than try-catch defensive programming
+- **Sequential dependency validation**: Phase 1 foundation work essential for Phase 2 type system completion
+
+### Phase 2 Task Group 1 Implementation Insights:
+- **Explicit capability architecture**: `supports_legend` and `supports_grouped` flags eliminate system bypasses, provide clear architectural intent
+- **Plotter categorization discovery**: "Grouped drawing" ≠ "multiple data series" - key insight enabling proper architectural boundaries
+- **BumpPlotter architecture lessons**: Single-purpose visualizations should not use coordinate-sharing infrastructure
+- **Performance through simplicity**: Eliminating duplicate processing paths improves both performance and code clarity
 
 ## Environment Notes
 - **Dependencies**: Implementation requires 45-55 development days distributed across 8 weeks

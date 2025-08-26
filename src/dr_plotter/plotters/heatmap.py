@@ -22,6 +22,8 @@ class HeatmapPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = HEATMAP_THEME
+    supports_legend: bool = False
+    supports_grouped: bool = False
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -49,6 +51,7 @@ class HeatmapPlotter(BasePlotter):
                 "rotation",
                 "alignment",
             },
+            "cell_text": {"visible", "fontsize", "color", "ha", "va", "format"},
         },
     }
 
@@ -67,6 +70,9 @@ class HeatmapPlotter(BasePlotter):
         self.style_applicator.register_post_processor(
             self.plotter_name, "ticks", self._style_ticks
         )
+        self.style_applicator.register_post_processor(
+            self.plotter_name, "cell_text", self._style_cell_text
+        )
 
     def _plot_specific_data_prep(self) -> None:
         # Convert from tidy/long to matrix format using pivot
@@ -82,27 +88,11 @@ class HeatmapPlotter(BasePlotter):
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         # Set default cmap if not provided
         if "cmap" not in kwargs:
-            kwargs["cmap"] = self._get_style("cmap")
+            kwargs["cmap"] = self.style_applicator.get_style_with_fallback("cmap")
 
         im = ax.imshow(data, **self._filtered_plot_kwargs)
 
-        if self._get_style("display_values", True):
-            text_styles = self.style_applicator.get_single_component_styles(
-                "heatmap", "text"
-            )
-            for i in range(len(data.index)):
-                for j in range(len(data.columns)):
-                    ax.text(
-                        j,
-                        i,
-                        f"{data.iloc[i, j]:.2f}",
-                        ha=text_styles.get("ha", "center"),
-                        va=text_styles.get("va", "center"),
-                        color=text_styles.get("color", "w"),
-                        fontsize=text_styles.get("fontsize", 8),
-                    )
-
-        # Store colorbar and ticks info for post-processing
+        # Store colorbar, ticks, and cell_text info for post-processing
         artists = {
             "colorbar": {
                 "plot_object": im,
@@ -110,6 +100,7 @@ class HeatmapPlotter(BasePlotter):
                 "fig": ax.get_figure(),
             },
             "ticks": ax,
+            "cell_text": ax,
         }
         self.style_applicator.apply_post_processing(self.plotter_name, artists)
 
@@ -134,7 +125,10 @@ class HeatmapPlotter(BasePlotter):
         if label_text:
             cbar.set_label(
                 label_text,
-                fontsize=styles.get("fontsize", self._get_style("label_fontsize")),
+                fontsize=styles.get(
+                    "fontsize",
+                    self.style_applicator.get_style_with_fallback("label_fontsize"),
+                ),
                 color=styles.get("color", self.theme.get("label_color")),
             )
 
@@ -146,7 +140,7 @@ class HeatmapPlotter(BasePlotter):
         ax.set_xticklabels(data.columns)
         ax.set_yticklabels(data.index)
 
-        xlabel_pos = self._get_style("xlabel_pos")
+        xlabel_pos = self.style_applicator.get_style_with_fallback("xlabel_pos")
         if xlabel_pos == "top":
             ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False)
             plt.setp(
@@ -157,3 +151,38 @@ class HeatmapPlotter(BasePlotter):
             plt.setp(
                 ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor"
             )
+
+    def _style_cell_text(self, ax: Any, styles: Dict[str, Any]) -> None:
+        if not styles.get("visible", True):
+            return
+
+        data = self.plot_data
+
+        fontsize = styles.get("fontsize", 8)
+        color = styles.get("color", "white")
+        ha = styles.get("ha", "center")
+        va = styles.get("va", "center")
+        format_str = styles.get("format", ".2f")
+
+        for i in range(len(data.index)):
+            for j in range(len(data.columns)):
+                cell_value = data.iloc[i, j]
+                try:
+                    if format_str.startswith(".") and format_str.endswith("f"):
+                        text = f"{cell_value:{format_str}}"
+                    elif format_str == "int":
+                        text = str(int(cell_value))
+                    else:
+                        text = str(cell_value)
+                except (ValueError, TypeError):
+                    text = str(cell_value)
+
+                ax.text(
+                    j,
+                    i,
+                    text,
+                    ha=ha,
+                    va=va,
+                    color=color,
+                    fontsize=fontsize,
+                )

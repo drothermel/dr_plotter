@@ -5,6 +5,7 @@ import pandas as pd
 from matplotlib.patches import Patch
 
 from dr_plotter import consts
+from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.theme import BAR_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
@@ -46,8 +47,15 @@ class BarPlotter(BasePlotter):
         },
     }
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        grouping_cfg: GroupingConfig,
+        theme: Optional[Theme] = None,
+        figure_manager: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
         self.style_applicator.register_post_processor(
             "bar", "patches", self._style_bar_patches
         )
@@ -73,22 +81,14 @@ class BarPlotter(BasePlotter):
         self._apply_post_processing(patches, label)
 
     def _apply_post_processing(self, patches: Any, label: Optional[str] = None) -> None:
-        if not self._should_create_legend():
-            return
-
-        if self.figure_manager and label and patches:
+        if patches:
             first_patch = patches[0]
             proxy = Patch(
                 facecolor=first_patch.get_facecolor(),
                 edgecolor=first_patch.get_edgecolor(),
                 alpha=first_patch.get_alpha(),
             )
-
-            entry = self.style_applicator.create_legend_entry(
-                proxy, label, self.current_axis
-            )
-            if entry:
-                self.figure_manager.register_legend_entry(entry)
+            self._register_legend_entry_if_valid(proxy, label)
 
     def _draw_grouped(
         self,

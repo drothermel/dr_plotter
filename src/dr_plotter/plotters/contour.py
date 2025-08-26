@@ -24,6 +24,8 @@ class ContourPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = CONTOUR_THEME
+    supports_legend: bool = False
+    supports_grouped: bool = False
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -85,8 +87,8 @@ class ContourPlotter(BasePlotter):
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         contour_kwargs = {
-            "levels": self._get_style("levels"),
-            "cmap": self._get_style("cmap"),
+            "levels": self.style_applicator.get_style_with_fallback("levels"),
+            "cmap": self.style_applicator.get_style_with_fallback("cmap"),
         }
         # Add user contour kwargs (filter out scatter-specific ones)
         user_kwargs = kwargs.copy()
@@ -95,9 +97,11 @@ class ContourPlotter(BasePlotter):
         contour_kwargs.update(user_kwargs)
 
         scatter_kwargs = {
-            "s": self._get_style("scatter_size"),
-            "alpha": self._get_style("scatter_alpha"),
-            "color": self._get_style("scatter_color", BASE_COLORS[0]),
+            "s": self.style_applicator.get_style_with_fallback("scatter_size"),
+            "alpha": self.style_applicator.get_style_with_fallback("scatter_alpha"),
+            "color": self.style_applicator.get_style_with_fallback(
+                "scatter_color", BASE_COLORS[0]
+            ),
         }
         # Add user scatter kwargs
         if "s" in kwargs:
@@ -142,6 +146,9 @@ class ContourPlotter(BasePlotter):
         if label_text:
             cbar.set_label(
                 label_text,
-                fontsize=styles.get("fontsize", self._get_style("label_fontsize")),
+                fontsize=styles.get(
+                    "fontsize",
+                    self.style_applicator.get_style_with_fallback("label_fontsize"),
+                ),
                 color=styles.get("color", self.theme.get("label_color")),
             )

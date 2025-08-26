@@ -1,9 +1,9 @@
-# DR_PLOTTER PROJECT INSTRUCTIONS
+# PROJECT INSTRUCTIONS
 
 ## 🚨 READ FIRST - DESIGN PHILOSOPHY
 **MANDATORY:** Before starting ANY work, read `docs/DESIGN_PHILOSOPHY.md` to understand the core principles and methodology that guide this project. All code changes must align with these principles.
 
-## 🎯 DR_PLOTTER CODE STYLE REQUIREMENTS
+## 🎯 CODE STYLE REQUIREMENTS
 
 ### Zero Comments Policy
 - **NEVER add ANY comments** - no docstrings, no inline comments, no block comments
@@ -58,8 +58,8 @@ This aligns with the "Minimalism", "Self-Documenting Code", and "Atomicity" prin
 
 ## 🛠️ DEVELOPMENT WORKFLOW
 
-### When Editing DR_PLOTTER Files
-1. **Read design philosophy first** - understand the "DR" method principles
+### When Editing Files
+1. **Read design philosophy first** - understand the core method principles
 2. **Strip ALL comments** - docstrings, inline comments, everything
 3. **Add comprehensive type hints** - every parameter, every return value
 4. **Extract helper functions** - instead of complex inline logic with comments
