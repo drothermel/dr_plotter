@@ -21,15 +21,10 @@ class FigureManager:
         legend: Optional[LegendConfig] = None,
         theme: Optional[Any] = None,
         faceting: Optional["SubplotFacetingConfig"] = None,
-        **kwargs: Any,
     ) -> None:
         from dr_plotter.figure_config import (
             FigureConfig,
         )
-
-        if kwargs:
-            figure = self._build_figure_config_from_kwargs(figure, kwargs)
-            legend = self._build_legend_config_from_kwargs(legend, kwargs)
 
         figure = figure or FigureConfig()
         legend = legend or LegendConfig()
@@ -43,77 +38,6 @@ class FigureManager:
             faceting.validate()
 
         self._init_from_configs(figure, legend, theme, faceting)
-
-    def _build_figure_config_from_kwargs(
-        self, figure: Optional["FigureConfig"], kwargs: Dict[str, Any]
-    ) -> "FigureConfig":
-        from dr_plotter.figure_config import FigureConfig
-
-        figure = figure or FigureConfig()
-
-        if "rows" in kwargs:
-            figure.rows = kwargs.pop("rows")
-        if "cols" in kwargs:
-            figure.cols = kwargs.pop("cols")
-        if "figsize" in kwargs:
-            figure.figsize = kwargs.pop("figsize")
-        if "layout_pad" in kwargs:
-            figure.tight_layout_pad = kwargs.pop("layout_pad")
-        if "external_ax" in kwargs:
-            figure.external_ax = kwargs.pop("external_ax")
-        if "shared_styling" in kwargs:
-            figure.shared_styling = kwargs.pop("shared_styling")
-
-        subplot_kwargs = {}
-        matplotlib_params = ["sharey", "sharex", "constrained_layout"]
-        for param in matplotlib_params:
-            if param in kwargs:
-                subplot_kwargs[param] = kwargs.pop(param)
-        if subplot_kwargs:
-            figure.subplot_kwargs.update(subplot_kwargs)
-
-        return figure
-
-    def _build_legend_config_from_kwargs(
-        self, legend: Optional[LegendConfig], kwargs: Dict[str, Any]
-    ) -> Optional[LegendConfig]:
-        from dr_plotter.legend_manager import LegendConfig, LegendStrategy
-
-        legend_kwargs = {}
-        if "legend_strategy" in kwargs:
-            strategy_str = kwargs.pop("legend_strategy")
-            if strategy_str == "figure_below":
-                legend_kwargs["strategy"] = LegendStrategy.FIGURE_BELOW
-            elif strategy_str == "grouped_by_channel":
-                legend_kwargs["strategy"] = LegendStrategy.GROUPED_BY_CHANNEL
-
-        legend_params = [
-            "legend_ncol",
-            "legend_y_offset",
-            "plot_margin_top",
-            "plot_margin_bottom",
-        ]
-        for param in legend_params:
-            if param in kwargs:
-                value = kwargs.pop(param)
-                if param == "legend_ncol":
-                    legend_kwargs["ncol"] = value
-                elif param == "legend_y_offset":
-                    legend_kwargs["y_offset"] = value
-                elif param == "plot_margin_bottom":
-                    legend_kwargs["layout_bottom_margin"] = value
-                elif param == "plot_margin_top":
-                    legend_kwargs["layout_top_margin"] = value
-
-        if legend_kwargs:
-            if legend:
-                for key, value in legend_kwargs.items():
-                    setattr(legend, key, value)
-                return legend
-            else:
-                return LegendConfig(**legend_kwargs)
-
-        return legend
 
     def _init_from_configs(
         self,
