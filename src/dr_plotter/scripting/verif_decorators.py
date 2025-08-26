@@ -6,7 +6,9 @@ from .verification import verify_legend_visibility
 from .plot_verification import (
     verify_plot_properties_for_subplot,
     verify_legend_plot_consistency,
+    verify_figure_legend_strategy,
 )
+from .plot_property_extraction import extract_figure_legend_properties
 
 type SubplotCoord = Tuple[int, int]
 type ChannelName = str
@@ -364,6 +366,74 @@ def verify_example(
         wrapper.__wrapped__ = func
         wrapper._verify_expected = expected_legends
         wrapper._verify_consistency = verify_legend_consistency
+
+        return wrapper
+
+    return decorator
+
+
+def verify_figure_legends(
+    expected_legend_count: int,
+    legend_strategy: str,
+    expected_total_entries: Optional[int] = None,
+    expected_channel_entries: Optional[Dict[str, int]] = None,
+    expected_channels: Optional[List[str]] = None,
+    tolerance: float = 0.1,
+    fail_on_missing: bool = True,
+) -> Callable:
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs) -> Any:
+            result = func(*args, **kwargs)
+
+            if isinstance(result, plt.Figure):
+                fig = result
+            elif isinstance(result, (list, tuple)) and len(result) >= 1:
+                if isinstance(result[0], plt.Figure):
+                    fig = result[0]
+                else:
+                    raise ValueError(
+                        f"@verify_figure_legends requires function to return a Figure, "
+                        f"got {type(result[0]).__name__}"
+                    )
+            else:
+                raise ValueError(
+                    f"@verify_figure_legends requires function to return a Figure, "
+                    f"got {type(result).__name__}"
+                )
+
+            print(f"\n{'=' * 60}")
+            print("FIGURE LEGEND VERIFICATION")
+            print(f"Strategy: {legend_strategy.upper()}")
+            print(f"{'=' * 60}")
+
+            figure_props = extract_figure_legend_properties(fig)
+
+            verification_result = verify_figure_legend_strategy(
+                figure_props,
+                legend_strategy,
+                expected_legend_count,
+                expected_total_entries,
+                expected_channel_entries,
+                expected_channels,
+                tolerance,
+            )
+
+            print(f"Figure legends found: {figure_props['legend_count']}")
+            print(f"Expected: {expected_legend_count}")
+            print(verification_result["message"])
+
+            for check_name, check_result in verification_result["checks"].items():
+                print(f"   {check_result['message']}")
+
+            if not verification_result["passed"] and fail_on_missing:
+                print("\n💥 FIGURE LEGEND VERIFICATION FAILED!")
+                print("   This indicates issues with figure-level legend management")
+                sys.exit(1)
+            elif verification_result["passed"]:
+                print("\n🎉 SUCCESS: Figure legend verification passed!")
+
+            return result
 
         return wrapper
 

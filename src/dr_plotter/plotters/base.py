@@ -14,6 +14,8 @@ from dr_plotter.types import (
     StyleAttrName,
     SubPlotterParamName,
     VisualChannel,
+    Phase,
+    ComponentSchema,
 )
 
 BASE_PLOTTER_PARAMS = [
@@ -60,7 +62,16 @@ class BasePlotter:
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = BASE_THEME
-    use_style_applicator: bool = False
+
+    component_schema: Dict[Phase, ComponentSchema] = {
+        "plot": {"main": set()},
+        "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
+        },
+    }
 
     def __init__(
         self,
@@ -87,6 +98,19 @@ class BasePlotter:
         )
         self.plot_data: Optional[pd.DataFrame] = None
         self._initialize_subplot_specific_params()
+
+        self.style_applicator.register_post_processor(
+            self.__class__.plotter_name, "title", self._style_title
+        )
+        self.style_applicator.register_post_processor(
+            self.__class__.plotter_name, "xlabel", self._style_xlabel
+        )
+        self.style_applicator.register_post_processor(
+            self.__class__.plotter_name, "ylabel", self._style_ylabel
+        )
+        self.style_applicator.register_post_processor(
+            self.__class__.plotter_name, "grid", self._style_grid
+        )
 
         self.x_col: Optional[ColName] = self._get_x_metric_column_name()
         self.y_cols: List[ColName] = self._get_y_metric_column_names()
@@ -131,9 +155,7 @@ class BasePlotter:
                 column = getattr(self.grouping_params, channel)
                 if column and column in self.plot_data.columns:
                     values = self.plot_data[column].dropna().tolist()
-                    # Check if values are actually numeric before treating as continuous
                     try:
-                        # Try to convert first few values to float
                         [float(v) for v in values[:5]]
                         if values:
                             self.style_engine.set_continuous_range(
@@ -141,7 +163,6 @@ class BasePlotter:
                             )
                         pass
                     except (ValueError, TypeError):
-                        # Skip non-numeric data for continuous channels
                         pass
 
     def render(self, ax: Any) -> None:
@@ -152,16 +173,10 @@ class BasePlotter:
         if self._has_groups:
             self._render_with_grouped_method(ax)
         else:
-            if self.__class__.use_style_applicator:
-                component_styles = self.style_applicator.get_component_styles(
-                    self.__class__.plotter_name
-                )
-                style_kwargs = component_styles.get("main", {})
-            else:
-                style_kwargs = {
-                    **self.theme.plot_styles,
-                    **self._filtered_plot_kwargs,
-                }
+            component_styles = self.style_applicator.get_component_styles(
+                self.__class__.plotter_name
+            )
+            style_kwargs = component_styles.get("main", {})
 
             self._draw(
                 ax,
@@ -169,7 +184,7 @@ class BasePlotter:
                 **style_kwargs,
             )
 
-        if self._has_groups and self.__class__.use_style_applicator:
+        if self._has_groups:
             self.style_applicator.clear_group_context()
 
         self._apply_styling(ax)
@@ -205,26 +220,17 @@ class BasePlotter:
         return True
 
     def _apply_styling(self, ax: Any) -> None:
-        ax.set_title(
-            self._get_style("title"), fontsize=self.theme.get("title_fontsize")
+        artists = {
+            "title": ax,
+            "xlabel": ax,
+            "ylabel": ax,
+            "grid": ax,
+        }
+        self.style_applicator.apply_post_processing(
+            self.__class__.plotter_name, artists
         )
-
-        label_fontsize = self._get_style("label_fontsize")
-        xlabel = self._get_style("xlabel", fmt_txt(self.x_col))
-        ylabel = self._get_style(
-            "ylabel",
-            fmt_txt(ylabel_from_metrics(self.y_cols)),
-        )
-        ax.set_xlabel(xlabel, fontsize=label_fontsize)
-        ax.set_ylabel(ylabel, fontsize=label_fontsize)
-
-        if self._get_style("grid", True):
-            ax.grid(True, alpha=self.theme.get("grid_alpha"))
-        else:
-            ax.grid(False)
 
     def _render_with_grouped_method(self, ax: Any) -> None:
-        # Only group by categorical channels, not continuous ones
         categorical_cols = []
         for channel, column in self.grouping_params.active.items():
             spec = ChannelRegistry.get_spec(channel)
@@ -235,7 +241,6 @@ class BasePlotter:
             grouped = self.plot_data.groupby(categorical_cols)
             n_groups = len(grouped)
         else:
-            # No categorical grouping, treat as single group
             grouped = [(None, self.plot_data)]
             n_groups = 1
 
@@ -245,48 +250,38 @@ class BasePlotter:
 
         for group_index, (name, group_data) in enumerate(grouped):
             if name is None:
-                # Single group case (no categorical grouping)
                 group_values = {}
             elif isinstance(name, tuple):
                 group_values = dict(zip(categorical_cols, name))
             else:
                 group_values = {categorical_cols[0]: name} if categorical_cols else {}
 
-            if self.__class__.use_style_applicator:
-                self.style_applicator.set_group_context(group_values)
-                component_styles = self.style_applicator.get_component_styles(
-                    self.__class__.plotter_name
-                )
-                plot_kwargs = component_styles.get("main", {})
-                plot_kwargs["label"] = self._build_group_label(name, categorical_cols)
+            self.style_applicator.set_group_context(group_values)
+            component_styles = self.style_applicator.get_component_styles(
+                self.__class__.plotter_name
+            )
+            plot_kwargs = component_styles.get("main", {})
+            plot_kwargs["label"] = self._build_group_label(name, categorical_cols)
 
-                # Handle continuous size arrays for scatter plots
-                if (
-                    self.__class__.plotter_name == "scatter"
-                    and "size" in self.grouping_params.active_channels
-                ):
-                    size_col = self.grouping_params.size
-                    if size_col and size_col in group_data.columns:
-                        sizes = []
-                        for value in group_data[size_col]:
-                            style = self.style_engine._get_continuous_style(
-                                "size", size_col, value
-                            )
-                            size_mult = style.get("size_mult", 1.0)
-                            base_size = plot_kwargs.get("s", 50)
-                            sizes.append(
-                                base_size * size_mult
-                                if isinstance(base_size, (int, float))
-                                else 50 * size_mult
-                            )
-                        plot_kwargs["s"] = sizes
-            else:
-                styles = self.style_engine.get_styles_for_group(
-                    group_values, self.grouping_params
-                )
-                plot_kwargs = self._build_group_plot_kwargs(
-                    styles, name, categorical_cols
-                )
+            if (
+                self.__class__.plotter_name == "scatter"
+                and "size" in self.grouping_params.active_channels
+            ):
+                size_col = self.grouping_params.size
+                if size_col and size_col in group_data.columns:
+                    sizes = []
+                    for value in group_data[size_col]:
+                        style = self.style_engine._get_continuous_style(
+                            "size", size_col, value
+                        )
+                        size_mult = style.get("size_mult", 1.0)
+                        base_size = plot_kwargs.get("s", 50)
+                        sizes.append(
+                            base_size * size_mult
+                            if isinstance(base_size, (int, float))
+                            else 50 * size_mult
+                        )
+                    plot_kwargs["s"] = sizes
 
             group_position = self._calculate_group_position(group_index, n_groups)
             group_position["x_categories"] = x_categories
@@ -309,7 +304,9 @@ class BasePlotter:
     def _build_group_plot_kwargs(
         self, styles: Dict[StyleAttrName, Any], name: Any, group_cols: List[str]
     ) -> Dict[str, Any]:
-        default_color = styles.get("color", BASE_COLORS[0])
+        default_color = styles.get("color") or self.theme.general_styles.get(
+            "default_color", BASE_COLORS[0]
+        )
 
         plot_kwargs = {
             "color": default_color,
@@ -370,3 +367,46 @@ class BasePlotter:
                     label_parts.append(f"{col}={val}")
             return ", ".join(label_parts)
         return str(name)
+
+    def _style_title(self, ax: Any, styles: Dict[str, Any]) -> None:
+        title_text = styles.get("text", self._get_style("title"))
+        if title_text:
+            ax.set_title(
+                title_text,
+                fontsize=styles.get("fontsize", self.theme.get("title_fontsize")),
+                color=styles.get("color", self.theme.get("title_color")),
+            )
+
+    def _style_xlabel(self, ax: Any, styles: Dict[str, Any]) -> None:
+        xlabel_text = styles.get("text", self._get_style("xlabel", fmt_txt(self.x_col)))
+        if xlabel_text:
+            ax.set_xlabel(
+                xlabel_text,
+                fontsize=styles.get("fontsize", self._get_style("label_fontsize")),
+                color=styles.get("color", self.theme.get("label_color")),
+            )
+
+    def _style_ylabel(self, ax: Any, styles: Dict[str, Any]) -> None:
+        ylabel_text = styles.get(
+            "text", self._get_style("ylabel", fmt_txt(ylabel_from_metrics(self.y_cols)))
+        )
+        if ylabel_text:
+            ax.set_ylabel(
+                ylabel_text,
+                fontsize=styles.get("fontsize", self._get_style("label_fontsize")),
+                color=styles.get("color", self.theme.get("label_color")),
+            )
+
+    def _style_grid(self, ax: Any, styles: Dict[str, Any]) -> None:
+        grid_visible = styles.get("visible", self._get_style("grid", True))
+        if grid_visible:
+            ax.grid(
+                True,
+                alpha=styles.get("alpha", self.theme.get("grid_alpha")),
+                color=styles.get("color", self.theme.get("grid_color")),
+                linestyle=styles.get(
+                    "linestyle", self.theme.get("grid_linestyle", "-")
+                ),
+            )
+        else:
+            ax.grid(False)

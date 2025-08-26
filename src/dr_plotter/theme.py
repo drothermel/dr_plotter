@@ -134,8 +134,6 @@ class Theme:
         self.all_styles[source].add(key, value)
 
 
-# --- Base Theme Definition ---
-# Using a professional, colorblind-friendly palette inspired by seaborn's 'deep' palette.
 BASE_COLORS = [
     "#4C72B0",
     "#55A868",
@@ -154,10 +152,21 @@ BASE_THEME = Theme(
         label_fontsize=12,
         legend_fontsize=10,
         cmap="viridis",
+        colorbar_size="5%",
+        colorbar_pad=0.1,
     ),
     figure_styles=FigureStyles(
         title_fontsize=14,
     ),
+    error_color="#FF0000",
+    error_edge_color="#FF0000",
+    default_color=BASE_COLORS[0],
+    text_color="#000000",
+    text_fontsize=10,
+    text_ha="center",
+    text_va="center",
+    alpha_min=0.3,
+    alpha_max=1.0,
     **{
         consts.get_cycle_key("hue"): itertools.cycle(BASE_COLORS),
         consts.get_cycle_key("style"): itertools.cycle(["-", "--", ":", "-."]),
@@ -169,17 +178,15 @@ BASE_THEME = Theme(
     },
 )
 
-# --- Style Classes ---
 DARK_X_AXIS_STYLE = AxesStyles(
     name="dark_x_axis",
     **{
-        "axes.axisbelow": False,  # Put axes on top of grid
-        "axes.grid": True,  # Enable grid
-        "axes.grid.axis": "y",  # Only show horizontal grid lines
-        "axes.spines.bottom": True,  # Ensure bottom spine is visible
+        "axes.axisbelow": False,
+        "axes.grid": True,
+        "axes.grid.axis": "y",
+        "axes.spines.bottom": True,
     },
 )
-# --- Plot-Specific Themes ---
 
 LINE_THEME = Theme(
     name="line",
@@ -230,16 +237,16 @@ VIOLIN_THEME = Theme(
     axes_styles=AxesStyles(
         styles_to_merge=[DARK_X_AXIS_STYLE],
     ),
-    general_styles=Style(
-        alpha=0.7,
-        linewidth=1.5,
-        edgecolor="black",
-    ),
+    alpha=0.7,
+    linewidth=1.5,
+    edgecolor="black",
 )
 
 HEATMAP_THEME = Theme(
     name="heatmap",
     parent=BASE_THEME,
+    text_color="#FFFFFF",
+    text_fontsize=8,
     axes_styles=AxesStyles(
         grid=False,
         xlabel_pos="top",
@@ -262,11 +269,9 @@ BUMP_PLOT_THEME = Theme(
 CONTOUR_THEME = Theme(
     name="contour",
     parent=BASE_THEME,
-    general_styles=Style(
-        levels=14,
-        scatter_alpha=0.5,
-        scatter_size=10,
-    ),
+    levels=14,
+    scatter_alpha=0.5,
+    scatter_size=10,
 )
 
 GROUPED_BAR_THEME = Theme(

@@ -1,36 +1,67 @@
-"""
-Compound plotter for contour plots, specifically for GMM level sets.
-"""
-
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Set, Optional
 
 import numpy as np
+import pandas as pd
 from sklearn.mixture import GaussianMixture
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from dr_plotter import consts
-from dr_plotter.theme import CONTOUR_THEME, BASE_COLORS
-from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
+from dr_plotter.theme import CONTOUR_THEME, BASE_COLORS, Theme
+from dr_plotter.types import (
+    BasePlotterParamName,
+    SubPlotterParamName,
+    VisualChannel,
+    Phase,
+    ComponentSchema,
+)
 from .base import BasePlotter
+from dr_plotter.grouping_config import GroupingConfig
 
 
 class ContourPlotter(BasePlotter):
-    """
-    A compound plotter for creating contour plots of GMM level sets using declarative configuration.
-    """
-
-    # Declarative configuration
     plotter_name: str = "contour"
     plotter_params: List[str] = []
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = (
-        set()
-    )  # No grouping support for contour plots
-    default_theme = CONTOUR_THEME
+    enabled_channels: Set[VisualChannel] = set()
+    default_theme: Theme = CONTOUR_THEME
 
-    def _plot_specific_data_prep(self):
-        """Fit GMM and create a meshgrid for contour plotting."""
-        # Fit GMM and create meshgrid
+    component_schema: Dict[Phase, ComponentSchema] = {
+        "plot": {
+            "contour": {
+                "levels",
+                "cmap",
+                "alpha",
+                "linewidths",
+            },
+            "scatter": {
+                "color",
+                "s",
+                "alpha",
+            },
+        },
+        "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
+            "colorbar": {"label", "fontsize", "color", "size", "pad"},
+        },
+    }
+
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        grouping_cfg: GroupingConfig,
+        theme: Optional[Theme] = None,
+        figure_manager: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
+        self.style_applicator.register_post_processor(
+            self.plotter_name, "colorbar", self._style_colorbar
+        )
+
+    def _plot_specific_data_prep(self) -> pd.DataFrame:
         gmm = GaussianMixture(n_components=3, random_state=0).fit(
             self.plot_data[[consts.X_COL_NAME, consts.Y_COL_NAME]]
         )
@@ -52,15 +83,7 @@ class ContourPlotter(BasePlotter):
         self.xx, self.yy, self.Z = xx, yy, Z
         return self.plot_data
 
-    def _draw(self, ax, data, legend, **kwargs):
-        """
-        Draw the compound contour plot using matplotlib.
-
-        Args:
-            ax: Matplotlib axes
-            data: DataFrame with the data to plot
-            **kwargs: Plot-specific kwargs
-        """
+    def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         contour_kwargs = {
             "levels": self._get_style("levels"),
             "cmap": self._get_style("cmap"),
@@ -74,7 +97,7 @@ class ContourPlotter(BasePlotter):
         scatter_kwargs = {
             "s": self._get_style("scatter_size"),
             "alpha": self._get_style("scatter_alpha"),
-            "color": BASE_COLORS[0],
+            "color": self._get_style("scatter_color", BASE_COLORS[0]),
         }
         # Add user scatter kwargs
         if "s" in kwargs:
@@ -86,14 +109,39 @@ class ContourPlotter(BasePlotter):
 
         contour = ax.contour(self.xx, self.yy, self.Z, **contour_kwargs)
 
-        # Use axes_grid1 for precise colorbar layout control
-        divider = make_axes_locatable(ax)
-        cax = divider.append_axes("right", size="5%", pad=0.1)
-
-        fig = ax.get_figure()
-        cbar = fig.colorbar(contour, cax=cax)
-        # Use custom colorbar label if provided, otherwise default to "Density"
-        colorbar_label = self.kwargs.get("colorbar_label", "Density")
-        cbar.set_label(colorbar_label)
-
         ax.scatter(data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **scatter_kwargs)
+
+        # Store colorbar info for post-processing
+        artists = {
+            "colorbar": {
+                "plot_object": contour,
+                "ax": ax,
+                "fig": ax.get_figure(),
+            }
+        }
+        self.style_applicator.apply_post_processing(self.plotter_name, artists)
+
+        # Apply base post-processing for title, xlabel, ylabel, grid
+        self._apply_styling(ax)
+
+    def _style_colorbar(
+        self, colorbar_info: Dict[str, Any], styles: Dict[str, Any]
+    ) -> None:
+        plot_object = colorbar_info["plot_object"]
+        ax = colorbar_info["ax"]
+        fig = colorbar_info["fig"]
+
+        divider = make_axes_locatable(ax)
+        size = styles.get("size", "5%")
+        pad = styles.get("pad", 0.1)
+        cax = divider.append_axes("right", size=size, pad=pad)
+
+        cbar = fig.colorbar(plot_object, cax=cax)
+
+        label_text = styles.get("label", self.kwargs.get("colorbar_label", "Density"))
+        if label_text:
+            cbar.set_label(
+                label_text,
+                fontsize=styles.get("fontsize", self._get_style("label_fontsize")),
+                color=styles.get("color", self.theme.get("label_color")),
+            )

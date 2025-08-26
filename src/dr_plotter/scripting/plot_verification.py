@@ -160,7 +160,7 @@ def verify_plot_properties_for_subplot(
 
     if not props["collections"]:
         result["overall_passed"] = False
-        result["summary_message"] = "🔴 No PathCollections found in subplot"
+        result["summary_message"] = "🔴 No collections found in subplot"
         result["suggestions"].append("Check if plot was created successfully")
         return result
 
@@ -600,4 +600,173 @@ def verify_legend_plot_consistency(
             "Verify legend manager is creating correct entries"
         )
 
+    return result
+
+
+def verify_figure_legend_strategy(
+    figure_props: Dict[str, Any],
+    strategy: str,
+    expected_count: int,
+    expected_total_entries: Optional[int],
+    expected_channel_entries: Optional[Dict[str, int]],
+    expected_channels: Optional[List[str]],
+    tolerance: float,
+) -> Dict[str, Any]:
+    result = {
+        "passed": True,
+        "strategy": strategy,
+        "checks": {},
+        "message": "",
+    }
+
+    count_check = {
+        "passed": figure_props["legend_count"] == expected_count,
+        "expected": expected_count,
+        "actual": figure_props["legend_count"],
+        "message": "",
+    }
+
+    if count_check["passed"]:
+        count_check["message"] = (
+            f"✅ Legend count: PASS ({expected_count} legends found)"
+        )
+    else:
+        count_check["message"] = (
+            f"🔴 Legend count: FAIL (expected {expected_count}, got {figure_props['legend_count']})"
+        )
+        result["passed"] = False
+
+    result["checks"]["legend_count"] = count_check
+
+    if strategy == "figure_below":
+        return verify_unified_figure_strategy(
+            figure_props, expected_total_entries, result, tolerance
+        )
+    elif strategy == "split":
+        return verify_split_figure_strategy(
+            figure_props, expected_channel_entries, expected_channels, result, tolerance
+        )
+    else:
+        result["passed"] = False
+        result["message"] = f"🔴 Unknown strategy: {strategy}"
+        return result
+
+
+def verify_unified_figure_strategy(
+    figure_props: Dict[str, Any],
+    expected_total_entries: Optional[int],
+    result: Dict[str, Any],
+    tolerance: float,
+) -> Dict[str, Any]:
+    if not result["checks"]["legend_count"]["passed"]:
+        result["message"] = "🔴 Cannot verify unified legend - wrong legend count"
+        return result
+
+    legend = figure_props["legends"][0]
+
+    if expected_total_entries is not None:
+        entries_check = {
+            "passed": legend["entry_count"] == expected_total_entries,
+            "expected": expected_total_entries,
+            "actual": legend["entry_count"],
+            "message": "",
+        }
+
+        if entries_check["passed"]:
+            entries_check["message"] = (
+                f"✅ Entry count: PASS ({expected_total_entries} entries)"
+            )
+        else:
+            entries_check["message"] = (
+                f"🔴 Entry count: FAIL (expected {expected_total_entries}, got {legend['entry_count']})"
+            )
+            result["passed"] = False
+
+        result["checks"]["entry_count"] = entries_check
+
+    title_check = {
+        "passed": legend["title"] is None or legend["title"] == "",
+        "message": "✅ No channel title: PASS (unified legend)"
+        if (legend["title"] is None or legend["title"] == "")
+        else f"🔴 Unexpected title: {legend['title']}",
+    }
+
+    result["checks"]["unified_title"] = title_check
+    if not title_check["passed"]:
+        result["passed"] = False
+
+    result["message"] = (
+        "✅ Unified figure legend verified"
+        if result["passed"]
+        else "🔴 Unified figure legend verification failed"
+    )
+    return result
+
+
+def verify_split_figure_strategy(
+    figure_props: Dict[str, Any],
+    expected_channel_entries: Optional[Dict[str, int]],
+    expected_channels: Optional[List[str]],
+    result: Dict[str, Any],
+    tolerance: float,
+) -> Dict[str, Any]:
+    if not result["checks"]["legend_count"]["passed"]:
+        result["message"] = "🔴 Cannot verify split legends - wrong legend count"
+        return result
+
+    found_channels = []
+    for legend in figure_props["legends"]:
+        if legend["title"]:
+            found_channels.append(legend["title"].lower())
+
+    if expected_channels:
+        expected_set = set(ch.lower() for ch in expected_channels)
+        found_set = set(found_channels)
+
+        channels_check = {
+            "passed": expected_set == found_set,
+            "expected": sorted(expected_set),
+            "found": sorted(found_set),
+            "message": "",
+        }
+
+        if channels_check["passed"]:
+            channels_check["message"] = (
+                f"✅ Channel coverage: PASS ({len(expected_set)} channels)"
+            )
+        else:
+            missing = expected_set - found_set
+            extra = found_set - expected_set
+            channels_check["message"] = "🔴 Channel coverage: FAIL"
+            if missing:
+                channels_check["message"] += f" (missing: {sorted(missing)})"
+            if extra:
+                channels_check["message"] += f" (extra: {sorted(extra)})"
+            result["passed"] = False
+
+        result["checks"]["channel_coverage"] = channels_check
+
+    if expected_channel_entries:
+        for legend in figure_props["legends"]:
+            channel = legend["title"].lower() if legend["title"] else "untitled"
+            if channel in expected_channel_entries:
+                expected_entries = expected_channel_entries[channel]
+                entries_check = {
+                    "passed": legend["entry_count"] == expected_entries,
+                    "expected": expected_entries,
+                    "actual": legend["entry_count"],
+                    "message": f"✅ {channel.title()} entries: PASS ({expected_entries})"
+                    if legend["entry_count"] == expected_entries
+                    else f"🔴 {channel.title()} entries: FAIL (expected {expected_entries}, got {legend['entry_count']})",
+                }
+
+                result["checks"][f"{channel}_entries"] = entries_check
+                if not entries_check["passed"]:
+                    result["passed"] = False
+
+    result["message"] = (
+        "✅ Split figure legends verified"
+        if result["passed"]
+        else "🔴 Split figure legend verification failed"
+    )
     return result

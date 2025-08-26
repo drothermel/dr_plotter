@@ -4,15 +4,12 @@ from dr_plotter.consts import VISUAL_CHANNELS
 from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.legend_manager import LegendEntry
 from dr_plotter.theme import Theme
+from dr_plotter.types import ComponentSchema, Phase
 
 if TYPE_CHECKING:
     from dr_plotter.plotters.style_engine import StyleEngine
 
-type ComponentName = str
-type AttributeName = str
-type ComponentSchema = Dict[ComponentName, Set[AttributeName]]
-type ComponentStyles = Dict[ComponentName, Dict[str, Any]]
-type Phase = str
+type ComponentStyles = Dict[str, Dict[str, Any]]
 
 
 class StyleApplicator:
@@ -74,9 +71,9 @@ class StyleApplicator:
         self.group_values = {}
 
     def apply_post_processing(self, plot_type: str, artists: Dict[str, Any]) -> None:
-        post_styles = self.get_component_styles(plot_type, phase="post")
+        axes_styles = self.get_component_styles(plot_type, phase="axes")
 
-        for component, styles in post_styles.items():
+        for component, styles in axes_styles.items():
             processor_key = f"{plot_type}.{component}"
             if processor_key in self._post_processors:
                 processor = self._post_processors[processor_key]
@@ -96,11 +93,14 @@ class StyleApplicator:
 
         if explicit_channel:
             channel = explicit_channel
-            # Get the actual column name for this channel
             column_name = (
                 getattr(self.grouping_cfg, channel, None) if self.grouping_cfg else None
             )
             channel_value = self.group_values.get(column_name) if column_name else None
+
+            if self._should_use_split_legend_label():
+                label = str(channel_value) if channel_value is not None else label
+
         else:
             channel = None
             if self.grouping_cfg and self.grouping_cfg.active_channels:
@@ -166,20 +166,36 @@ class StyleApplicator:
                 resolved_styles[attr] = plot_styles[attr]
             elif attr in base_theme_styles:
                 resolved_styles[attr] = base_theme_styles[attr]
-            # Special case: convert size_mult to s for scatter plots
             elif attr == "s" and "size_mult" in group_styles and plot_type == "scatter":
                 base_size = base_theme_styles.get("marker_size", 50)
                 resolved_styles[attr] = base_size * group_styles["size_mult"]
+            elif attr == "color":
+                if component == "main":
+                    resolved_styles[attr] = base_theme_styles["default_color"]
+                else:
+                    resolved_styles[attr] = base_theme_styles["text_color"]
+            elif attr == "fontsize":
+                resolved_styles[attr] = base_theme_styles["text_fontsize"]
+            elif attr == "ha":
+                resolved_styles[attr] = base_theme_styles["text_ha"]
+            elif attr == "va":
+                resolved_styles[attr] = base_theme_styles["text_va"]
 
         for key, value in component_kwargs.items():
             if key not in attrs:
                 resolved_styles[key] = value
 
-        # Special handling: don't include cmap unless c is also present
         if "cmap" in resolved_styles and "c" not in resolved_styles:
             del resolved_styles["cmap"]
 
         return resolved_styles
+
+    def _should_use_split_legend_label(self) -> bool:
+        return (
+            self.figure_manager
+            and hasattr(self.figure_manager, "legend_config")
+            and self.figure_manager.legend_config.strategy.value == "grouped_by_channel"
+        )
 
     def _extract_component_kwargs(
         self, component: str, attrs: Set[str], phase: Phase = "plot"
@@ -209,13 +225,8 @@ class StyleApplicator:
         return extracted
 
     def _is_reserved_kwarg(self, key: str) -> bool:
-        # Build visual channel names dynamically from constants
         visual_channel_names = set(VISUAL_CHANNELS)
         visual_channel_by_names = {f"{ch}_by" for ch in VISUAL_CHANNELS}
-
-        # Note: We DON'T include raw visual channel names (hue, style, etc.)
-        # when they're used as style values (e.g., alpha=0.6 for transparency)
-        # Only the "_by" versions are reserved for grouping
         reserved = {
             "x",
             "y",
@@ -234,14 +245,10 @@ class StyleApplicator:
         }
         reserved.update(visual_channel_by_names)
 
-        # Special case: if the value is a string, it might be a column name for grouping
-        # If it's a number (like alpha=0.6), it's a style value
         if key in visual_channel_names and key in self.kwargs:
             value = self.kwargs[key]
             if isinstance(value, str):
-                # It's a column name for grouping, so it's reserved
                 return True
-            # It's a numeric value for styling, so it's not reserved
             return False
 
         return key in reserved
@@ -270,18 +277,14 @@ class StyleApplicator:
     ) -> ComponentSchema:
         from dr_plotter.plotters import BasePlotter
 
-        try:
-            plotter_cls = BasePlotter.get_plotter(plot_type)
-            if hasattr(plotter_cls, "component_schema"):
-                return plotter_cls.component_schema.get(phase, {})
-        except (KeyError, AttributeError):
-            pass
+        plotter_cls = BasePlotter.get_plotter(plot_type)
+        if plotter_cls and hasattr(plotter_cls, "component_schema"):
+            return plotter_cls.component_schema.get(phase, {})
 
         plot_schemas = self._component_schemas.get(plot_type, {})
         if isinstance(plot_schemas, dict) and phase in plot_schemas:
             return plot_schemas[phase]
         elif phase == "plot" and isinstance(plot_schemas, dict):
-            # For backward compatibility, if no phase specified, treat as plot phase
             if "plot" not in plot_schemas and "main" in plot_schemas:
                 return plot_schemas
         return {"main": set()}
@@ -292,7 +295,7 @@ class StyleApplicator:
             "line": {"main"},
             "bar": {"main"},
             "histogram": {"main"},
-            "violin": {"violin_body"},
+            "violin": {"bodies"},
             "heatmap": {"main"},
             "contour": {"scatter"},
             "bump": {"line"},
@@ -323,135 +326,4 @@ class StyleApplicator:
         }
 
     def _load_component_schemas(self) -> Dict[str, Dict[Phase, ComponentSchema]]:
-        return {
-            "scatter": {
-                "plot": {
-                    "main": {
-                        "s",
-                        "alpha",
-                        "color",
-                        "marker",
-                        "edgecolors",
-                        "linewidths",
-                        "c",
-                        "cmap",
-                        "vmin",
-                        "vmax",
-                    }
-                },
-                "post": {
-                    "collection": {
-                        "sizes",
-                        "facecolors",
-                        "edgecolors",
-                        "linewidths",
-                        "alpha",
-                    }
-                },
-            },
-            "line": {
-                "plot": {
-                    "main": {
-                        "color",
-                        "linewidth",
-                        "linestyle",
-                        "marker",
-                        "markersize",
-                        "alpha",
-                        "label",
-                    }
-                }
-            },
-            "bar": {
-                "plot": {
-                    "main": {
-                        "color",
-                        "alpha",
-                        "edgecolor",
-                        "linewidth",
-                        "width",
-                        "label",
-                    }
-                }
-            },
-            "histogram": {
-                "plot": {
-                    "main": {
-                        "color",
-                        "alpha",
-                        "edgecolor",
-                        "linewidth",
-                        "bins",
-                        "label",
-                        "histtype",
-                        "cumulative",
-                        "density",
-                        "weights",
-                        "bottom",
-                        "rwidth",
-                    }
-                },
-                "post": {
-                    # Histogram returns patches, we could style them post-creation if needed
-                    "patches": {"facecolor", "edgecolor", "linewidth", "alpha"}
-                },
-                "axes": {"properties": {"xlim", "ylim", "xlabel", "ylabel", "title"}},
-            },
-            "violin": {
-                "plot": {
-                    "main": {
-                        "showmeans",
-                        "showmedians",
-                        "showextrema",
-                        "widths",
-                        "points",
-                    }
-                },
-                "post": {
-                    "bodies": {"facecolor", "edgecolor", "alpha", "linewidth"},
-                    "stats": {"color", "linewidth", "linestyle"},
-                },
-            },
-            "heatmap": {
-                "plot": {
-                    "main": {
-                        "cmap",
-                        "vmin",
-                        "vmax",
-                        "center",
-                        "robust",
-                        "annot",
-                        "fmt",
-                        "linewidths",
-                        "linecolor",
-                        "cbar",
-                    }
-                }
-            },
-            "contour": {
-                "plot": {
-                    "contour": {
-                        "levels",
-                        "cmap",
-                        "alpha",
-                        "linewidths",
-                        "linestyles",
-                        "colors",
-                    },
-                    "scatter": {"s", "alpha", "color", "marker", "edgecolors"},
-                }
-            },
-            "bump": {
-                "plot": {
-                    "line": {
-                        "color",
-                        "linewidth",
-                        "linestyle",
-                        "marker",
-                        "markersize",
-                        "alpha",
-                    },
-                    "text": {"fontsize", "fontweight", "va", "ha"},
-                }
-            },
-        }
+        return {}

@@ -6,12 +6,15 @@ from matplotlib.lines import Line2D
 
 from dr_plotter import consts
 from dr_plotter.theme import SCATTER_THEME, Theme
-from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
+from dr_plotter.types import (
+    BasePlotterParamName,
+    SubPlotterParamName,
+    VisualChannel,
+    Phase,
+    ComponentSchema,
+)
 
 from .base import BasePlotter
-
-type Phase = str
-type ComponentSchema = Dict[str, Set[str]]
 
 
 class ScatterPlotter(BasePlotter):
@@ -20,7 +23,6 @@ class ScatterPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = {"hue", "size", "marker", "alpha"}
     default_theme: Theme = SCATTER_THEME
-    use_style_applicator: bool = True
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -37,23 +39,26 @@ class ScatterPlotter(BasePlotter):
                 "vmax",
             }
         },
-        "post": {
+        "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
             "collection": {
                 "sizes",
                 "facecolors",
                 "edgecolors",
                 "linewidths",
                 "alpha",
-            }
+            },
         },
     }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        if self.use_style_applicator:
-            self.style_applicator.register_post_processor(
-                "scatter", "collection", self._style_scatter_collection
-            )
+        self.style_applicator.register_post_processor(
+            "scatter", "collection", self._style_scatter_collection
+        )
 
     def _style_scatter_collection(
         self, collection: Any, styles: Dict[str, Any]
@@ -76,11 +81,9 @@ class ScatterPlotter(BasePlotter):
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         label = kwargs.pop("label", None)
 
-        # Handle continuous size channel
         if "size" in self.grouping_params.active_channels:
             size_col = self.grouping_params.size
             if size_col and size_col in data.columns:
-                # Calculate sizes for each point based on continuous mapping
                 sizes = []
                 for value in data[size_col]:
                     style = self.style_engine._get_continuous_style(
@@ -99,9 +102,8 @@ class ScatterPlotter(BasePlotter):
             data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **kwargs
         )
 
-        if self.use_style_applicator:
-            artists = {"collection": collection}
-            self.style_applicator.apply_post_processing("scatter", artists)
+        artists = {"collection": collection}
+        self.style_applicator.apply_post_processing("scatter", artists)
 
         self._apply_post_processing(collection, label)
 
@@ -112,7 +114,6 @@ class ScatterPlotter(BasePlotter):
             return
 
         if self.figure_manager and label and collection:
-            # Create separate proxy for each channel to show correct styling
             for channel in self.grouping_params.active_channels_ordered:
                 proxy = self._create_channel_specific_proxy(collection, channel)
                 if proxy:
@@ -122,51 +123,6 @@ class ScatterPlotter(BasePlotter):
                     if entry:
                         self.figure_manager.register_legend_entry(entry)
 
-    def _create_proxy_artist_from_collection(self, collection: Any) -> Optional[Any]:
-        facecolors = collection.get_facecolors()
-        edgecolors = collection.get_edgecolors()
-        sizes = collection.get_sizes()
-
-        face_color = "blue"
-        if len(facecolors) > 0:
-            face_color = facecolors[0]
-
-        edge_color = "none"
-        if len(edgecolors) > 0:
-            edge_color = edgecolors[0]
-
-        marker_size = 8
-        if len(sizes) > 0:
-            marker_size = np.sqrt(sizes[0] / np.pi) * 2
-
-        marker_style = "o"
-        try:
-            paths = collection.get_paths()
-            if len(paths) > 0:
-                # Convert matplotlib path to marker character
-                path = paths[0]
-                if hasattr(path, "_vertices") and len(path._vertices) == 4:
-                    marker_style = "s"  # Square
-                elif hasattr(path, "_vertices") and len(path._vertices) == 3:
-                    marker_style = "^"  # Triangle
-                # Add more marker conversions as needed
-        except:
-            marker_style = "o"
-
-        proxy = Line2D(
-            [0],
-            [0],
-            marker=marker_style,
-            color="w",
-            markerfacecolor=face_color,
-            markeredgecolor=edge_color,
-            markersize=marker_size,
-            linestyle="",
-            label=collection.get_label() if hasattr(collection, "get_label") else "",
-        )
-
-        return proxy
-
     def _create_channel_specific_proxy(
         self, collection: Any, channel: str
     ) -> Optional[Any]:
@@ -174,23 +130,26 @@ class ScatterPlotter(BasePlotter):
         edgecolors = collection.get_edgecolors()
         sizes = collection.get_sizes()
 
-        face_color = "blue"
         if len(facecolors) > 0:
             face_color = facecolors[0]
+        else:
+            face_color = self.figure_manager.legend_manager.get_error_color(
+                "face", self.theme
+            )
 
-        edge_color = "none"
         if len(edgecolors) > 0:
             edge_color = edgecolors[0]
+        else:
+            edge_color = self.figure_manager.legend_manager.get_error_color(
+                "edge", self.theme
+            )
 
-        marker_size = 8
+        marker_size = self._get_style("marker_size", 8)
         if len(sizes) > 0:
             marker_size = np.sqrt(sizes[0] / np.pi) * 2
 
-        # Get marker style from group context if available
         marker_style = "o"
-        if self.use_style_applicator and self.style_applicator.group_values:
-            # Always get the marker from style engine, regardless of channel
-            # because we want the proxy to show the actual marker used
+        if self.style_applicator.group_values:
             styles = self.style_engine.get_styles_for_group(
                 self.style_applicator.group_values, self.grouping_params
             )
@@ -200,7 +159,7 @@ class ScatterPlotter(BasePlotter):
             [0],
             [0],
             marker=marker_style,
-            color="w",
+            color="none",
             markerfacecolor=face_color,
             markeredgecolor=edge_color,
             markersize=marker_size,

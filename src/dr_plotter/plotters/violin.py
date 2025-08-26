@@ -6,21 +6,31 @@ from matplotlib.patches import Patch
 
 from dr_plotter import consts
 from dr_plotter.theme import VIOLIN_THEME, Theme
-from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
+from dr_plotter.types import (
+    BasePlotterParamName,
+    SubPlotterParamName,
+    VisualChannel,
+    Phase,
+    ComponentSchema,
+)
 
 from .base import BasePlotter
-
-type Phase = str
-type ComponentSchema = Dict[str, Set[str]]
 
 
 class ViolinPlotter(BasePlotter):
     plotter_name: str = "violin"
-    plotter_params: List[str] = []
+    plotter_params: List[str] = [
+        "alpha",
+        "color",
+        "label",
+        "hue_by",
+        "marker_by",
+        "style_by",
+        "size_by",
+    ]
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = {"hue"}
     default_theme: Theme = VIOLIN_THEME
-    use_style_applicator: bool = True
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -32,7 +42,11 @@ class ViolinPlotter(BasePlotter):
                 "points",
             }
         },
-        "post": {
+        "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
             "bodies": {"facecolor", "edgecolor", "alpha", "linewidth"},
             "stats": {"color", "linewidth", "linestyle"},
         },
@@ -40,13 +54,12 @@ class ViolinPlotter(BasePlotter):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        if self.use_style_applicator:
-            self.style_applicator.register_post_processor(
-                "violin", "bodies", self._style_violin_bodies
-            )
-            self.style_applicator.register_post_processor(
-                "violin", "stats", self._style_violin_stats
-            )
+        self.style_applicator.register_post_processor(
+            "violin", "bodies", self._style_violin_bodies
+        )
+        self.style_applicator.register_post_processor(
+            "violin", "stats", self._style_violin_stats
+        )
 
     def _style_violin_bodies(self, bodies: Any, styles: Dict[str, Any]) -> None:
         for pc in bodies:
@@ -84,25 +97,22 @@ class ViolinPlotter(BasePlotter):
         if not self._should_create_legend():
             return
 
-        if self.use_style_applicator:
-            artists = {}
-            if "bodies" in parts:
-                artists["bodies"] = parts["bodies"]
+        artists = {}
+        if "bodies" in parts:
+            artists["bodies"] = parts["bodies"]
 
-            stats_parts = []
-            for part_name in ("cbars", "cmins", "cmaxes", "cmeans"):
-                if part_name in parts:
-                    stats_parts.append(parts[part_name])
+        stats_parts = []
+        for part_name in ("cbars", "cmins", "cmaxes", "cmeans"):
+            if part_name in parts:
+                stats_parts.append(parts[part_name])
 
-            if stats_parts:
-                for stats in stats_parts:
-                    artists["stats"] = stats
-                    self.style_applicator.apply_post_processing(
-                        "violin", {"stats": stats}
-                    )
+        if stats_parts:
+            for stats in stats_parts:
+                artists["stats"] = stats
+                self.style_applicator.apply_post_processing("violin", {"stats": stats})
 
-            if artists:
-                self.style_applicator.apply_post_processing("violin", artists)
+        if artists:
+            self.style_applicator.apply_post_processing("violin", artists)
 
         if label and "bodies" in parts and parts["bodies"]:
             proxy = self._create_proxy_artist_from_bodies(parts["bodies"])
@@ -127,11 +137,17 @@ class ViolinPlotter(BasePlotter):
                 if isinstance(fc, np.ndarray) and fc.size >= 3:
                     facecolor = tuple(fc[:4] if fc.size >= 4 else list(fc[:3]) + [1.0])
                 else:
-                    facecolor = "blue"
+                    facecolor = self.figure_manager.legend_manager.get_error_color(
+                        "face", self.theme
+                    )
             else:
-                facecolor = "blue"
+                facecolor = self.figure_manager.legend_manager.get_error_color(
+                    "face", self.theme
+                )
         except:
-            facecolor = "blue"
+            facecolor = self.figure_manager.legend_manager.get_error_color(
+                "face", self.theme
+            )
 
         try:
             edgecolor = first_body.get_edgecolor()
@@ -140,11 +156,17 @@ class ViolinPlotter(BasePlotter):
                 if isinstance(ec, np.ndarray) and ec.size >= 3:
                     edgecolor = tuple(ec[:4] if ec.size >= 4 else list(ec[:3]) + [1.0])
                 else:
-                    edgecolor = "black"
+                    edgecolor = self.figure_manager.legend_manager.get_error_color(
+                        "edge", self.theme
+                    )
             else:
-                edgecolor = "black"
+                edgecolor = self.figure_manager.legend_manager.get_error_color(
+                    "edge", self.theme
+                )
         except:
-            edgecolor = "black"
+            edgecolor = self.figure_manager.legend_manager.get_error_color(
+                "edge", self.theme
+            )
 
         alpha = first_body.get_alpha() if hasattr(first_body, "get_alpha") else 1.0
 
@@ -159,7 +181,7 @@ class ViolinPlotter(BasePlotter):
         datasets = [gd[consts.Y_COL_NAME].dropna() for gd in group_data]
 
         label = kwargs.pop("label", None)
-        parts = ax.violinplot(datasets, **kwargs)
+        parts = ax.violinplot(datasets, **self._filtered_plot_kwargs)
 
         if len(groups) > 0:
             ax.set_xticks(np.arange(1, len(groups) + 1))
@@ -196,7 +218,7 @@ class ViolinPlotter(BasePlotter):
                     dataset,
                     positions=positions,
                     widths=group_position["width"],
-                    **kwargs,
+                    **self._filtered_plot_kwargs,
                 )
             else:
                 parts = {}
@@ -209,7 +231,7 @@ class ViolinPlotter(BasePlotter):
                 [data[consts.Y_COL_NAME].dropna()],
                 positions=[group_position["offset"]],
                 widths=group_position["width"],
-                **kwargs,
+                **self._filtered_plot_kwargs,
             )
 
         self._apply_post_processing(parts, label)

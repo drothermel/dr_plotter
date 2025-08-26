@@ -1,16 +1,11 @@
-"""
-Atomic plotter for line plots with multi-series support.
-"""
-
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter import consts
-from dr_plotter.legend import Legend
 from dr_plotter.theme import LINE_THEME, Theme
-from dr_plotter.types import VisualChannel
+from dr_plotter.types import VisualChannel, Phase, ComponentSchema
 
 from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
 
@@ -22,8 +17,47 @@ class LinePlotter(BasePlotter):
     enabled_channels: Set[VisualChannel] = {"hue", "style", "size", "marker", "alpha"}
     default_theme: Theme = LINE_THEME
 
-    def _draw(self, ax: plt.Axes, data: pd.DataFrame, legend: Legend, **kwargs):
+    component_schema: Dict[Phase, ComponentSchema] = {
+        "plot": {
+            "main": {
+                "color",
+                "linestyle",
+                "linewidth",
+                "marker",
+                "markersize",
+                "alpha",
+                "label",
+            }
+        },
+        "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
+        },
+    }
+
+    def _draw(self, ax: plt.Axes, data: pd.DataFrame, **kwargs: Any) -> None:
+        label = kwargs.pop("label", None)
         data_sorted = data.sort_values(consts.X_COL_NAME)
-        ax.plot(
+        lines = ax.plot(
             data_sorted[consts.X_COL_NAME], data_sorted[consts.Y_COL_NAME], **kwargs
         )
+
+        self._apply_post_processing(lines, label)
+
+    def _apply_post_processing(self, lines: Any, label: Optional[str] = None) -> None:
+        if not self._should_create_legend():
+            self._apply_styling(self.current_axis)
+            return
+
+        if self.figure_manager and label and lines:
+            line = lines[0] if isinstance(lines, list) else lines
+            for channel in self.grouping_params.active_channels_ordered:
+                entry = self.style_applicator.create_legend_entry(
+                    line, label, self.current_axis, explicit_channel=channel
+                )
+                if entry:
+                    self.figure_manager.register_legend_entry(entry)
+
+        self._apply_styling(self.current_axis)

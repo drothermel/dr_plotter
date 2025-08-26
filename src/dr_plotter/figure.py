@@ -1,10 +1,16 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 import matplotlib.pyplot as plt
 
 from dr_plotter.cycle_config import CycleConfig
 from dr_plotter.grouping_config import GroupingConfig
-from dr_plotter.legend_manager import LegendConfig, LegendEntry, LegendManager
+from dr_plotter.legend_manager import (
+    LegendConfig,
+    LegendEntry,
+    LegendManager,
+    LegendStrategy,
+)
+from dr_plotter.theme import BASE_THEME
 from .plotters import BasePlotter
 
 
@@ -17,7 +23,14 @@ class FigureManager:
         layout_rect: Optional[List[float]] = None,
         layout_pad: Optional[float] = 0.5,
         legend_config: Optional[LegendConfig] = None,
+        legend_strategy: Optional[str] = None,
+        legend_position: Optional[str] = None,
+        legend_ncol: Optional[int] = None,
+        legend_spacing: Optional[float] = None,
+        plot_margin_bottom: Optional[float] = None,
+        legend_y_offset: Optional[float] = None,
         theme: Optional[Any] = None,
+        shared_styling: Optional[bool] = None,
         **fig_kwargs: Any,
     ) -> None:
         self._layout_rect = layout_rect
@@ -37,17 +50,92 @@ class FigureManager:
 
         self.figure = self.fig
 
-        self._shared_hue_styles: Dict[Any, Any] = {}
         self.shared_cycle_config: Optional[CycleConfig] = None
 
+        base_config = None
         if legend_config:
-            self.legend_config = legend_config
+            base_config = legend_config
         elif theme and hasattr(theme, "legend_config"):
-            self.legend_config = theme.legend_config
+            base_config = theme.legend_config
+
+        self.legend_config = self._build_legend_config(
+            base_config,
+            legend_strategy,
+            legend_position,
+            legend_ncol,
+            legend_spacing,
+            plot_margin_bottom,
+            legend_y_offset,
+        )
+
+        self.shared_styling = shared_styling
+
+        if self._should_use_shared_cycle_config():
+            theme_for_cycle = theme if theme else BASE_THEME
+            self.shared_cycle_config = CycleConfig(theme_for_cycle)
         else:
-            self.legend_config = LegendConfig()
+            self.shared_cycle_config = None
 
         self.legend_manager = LegendManager(self, self.legend_config)
+
+    def _should_use_shared_cycle_config(self) -> bool:
+        if self.shared_styling is not None:
+            return self.shared_styling
+
+        coordination_strategies = {
+            LegendStrategy.GROUPED_BY_CHANNEL,
+            LegendStrategy.FIGURE_BELOW,
+        }
+        return self.legend_config.strategy in coordination_strategies
+
+    def _build_legend_config(
+        self,
+        base_config: Optional[LegendConfig],
+        legend_strategy: Optional[str],
+        legend_position: Optional[str],
+        legend_ncol: Optional[int],
+        legend_spacing: Optional[float],
+        plot_margin_bottom: Optional[float],
+        legend_y_offset: Optional[float],
+    ) -> LegendConfig:
+        if base_config:
+            config = LegendConfig(
+                strategy=base_config.strategy,
+                position=base_config.position,
+                ncol=base_config.ncol,
+                spacing=base_config.spacing,
+                collect_strategy=base_config.collect_strategy,
+                deduplication=base_config.deduplication,
+                remove_axes_legends=base_config.remove_axes_legends,
+            )
+        else:
+            config = LegendConfig()
+
+        if legend_strategy:
+            strategy_map = {
+                "figure_below": LegendStrategy.FIGURE_BELOW,
+                "split": LegendStrategy.GROUPED_BY_CHANNEL,
+                "per_axes": LegendStrategy.PER_AXES,
+                "none": LegendStrategy.NONE,
+            }
+            config.strategy = strategy_map.get(legend_strategy, LegendStrategy.PER_AXES)
+
+        if legend_position:
+            config.position = legend_position
+
+        if legend_ncol is not None:
+            config.ncol = legend_ncol
+
+        if legend_spacing is not None:
+            config.spacing = legend_spacing
+
+        if plot_margin_bottom is not None:
+            config.layout_bottom_margin = plot_margin_bottom
+
+        if legend_y_offset is not None:
+            config.bbox_y_offset = legend_y_offset
+
+        return config
 
     def __enter__(self) -> "FigureManager":
         return self
@@ -61,8 +149,21 @@ class FigureManager:
     def finalize_layout(self) -> None:
         self.finalize_legends()
 
+        needs_legend_space = (
+            self.legend_config.strategy == LegendStrategy.GROUPED_BY_CHANNEL
+            or self.legend_config.strategy == LegendStrategy.FIGURE_BELOW
+        )
+
         if self._layout_rect is not None:
             self.fig.tight_layout(rect=self._layout_rect, pad=self._layout_pad)
+        elif needs_legend_space:
+            rect = [
+                self.legend_config.layout_left_margin,
+                self.legend_config.layout_bottom_margin,
+                self.legend_config.layout_right_margin,
+                self.legend_config.layout_top_margin,
+            ]
+            self.fig.tight_layout(rect=rect, pad=self._layout_pad)
         elif self.fig._suptitle is not None:
             self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
         elif self._has_subplot_titles():

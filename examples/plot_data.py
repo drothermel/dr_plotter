@@ -1,26 +1,14 @@
-"""
-Shared synthetic datasets for all examples.
-Following DRY principle - create once, use everywhere.
-"""
-
+from typing import Dict
 import pandas as pd
 import numpy as np
 
 
 class ExampleData:
-    """
-    Centralized synthetic data generation for dr_plotter examples.
-
-    All methods return pandas DataFrames ready for plotting.
-    This ensures consistency across examples and follows DRY principle.
-    """
-
     @staticmethod
-    def simple_scatter(n=100, seed=42):
-        """Basic 2D scatter data with optional correlation."""
+    def simple_scatter(n: int = 100, seed: int = 42) -> pd.DataFrame:
         np.random.seed(seed)
         x = np.random.randn(n)
-        y = x * 0.5 + np.random.randn(n) * 0.5  # Some correlation
+        y = x * 0.5 + np.random.randn(n) * 0.5
         return pd.DataFrame({"x": x, "y": y})
 
     @staticmethod
@@ -243,6 +231,47 @@ class ExampleData:
         return pd.DataFrame(records)
 
     @staticmethod
+    def experiment_time_series(time_points=20, seed=401) -> pd.DataFrame:
+        np.random.seed(seed)
+
+        experiments = ["Exp_A", "Exp_B"]
+        conditions = ["Control", "Treatment"]
+
+        records = []
+        for exp in experiments:
+            for cond in conditions:
+                base_performance = 0.6 if exp == "Exp_A" else 0.7
+                treatment_boost = 0.1 if cond == "Treatment" else 0.0
+
+                performance_trend = np.random.randn() * 0.02
+                noise_level = 0.03
+
+                for t in range(time_points):
+                    trend_component = performance_trend * t
+                    seasonal_component = 0.05 * np.sin(2 * np.pi * t / 10)
+                    noise_component = np.random.randn() * noise_level
+
+                    performance = (
+                        base_performance
+                        + treatment_boost
+                        + trend_component
+                        + seasonal_component
+                        + noise_component
+                    )
+                    performance = np.clip(performance, 0.3, 1.0)
+
+                    records.append(
+                        {
+                            "experiment": exp,
+                            "condition": cond,
+                            "time_point": t,
+                            "performance": performance,
+                        }
+                    )
+
+        return pd.DataFrame(records)
+
+    @staticmethod
     def multi_metric_data(n_samples=100, seed=42):
         """Data with multiple y-columns for multi-metric plotting."""
         np.random.seed(seed)
@@ -301,6 +330,264 @@ class ExampleData:
                                 "performance": xi * yi + np.random.randn() * 0.5,
                             }
                         )
+
+        return pd.DataFrame(records)
+
+    @staticmethod
+    def get_individual_vs_grouped_data() -> pd.DataFrame:
+        np.random.seed(600)
+        n_samples = 120
+
+        x_continuous = np.random.randn(n_samples)
+        y_continuous = x_continuous * 0.7 + np.random.randn(n_samples) * 0.6
+
+        categories = ["Category_A", "Category_B", "Category_C", "Category_D"]
+        x_categorical = np.random.choice(categories, n_samples)
+
+        groups = ["Group_1", "Group_2", "Group_3"]
+        category_group = np.random.choice(groups, n_samples)
+
+        time_series = np.tile(np.arange(n_samples // 3), 3)
+
+        return pd.DataFrame(
+            {
+                "x_continuous": x_continuous,
+                "y_continuous": y_continuous,
+                "x_categorical": x_categorical,
+                "category_group": category_group,
+                "time_series": time_series,
+            }
+        )
+
+    @staticmethod
+    def get_all_plot_types_data() -> Dict[str, pd.DataFrame]:
+        np.random.seed(100)
+
+        scatter_data = ExampleData.simple_scatter(n=80, seed=100)
+        scatter_data["size_metric"] = np.random.uniform(20, 100, len(scatter_data))
+        scatter_data["category"] = np.repeat(["A", "B"], len(scatter_data) // 2)
+
+        line_data = ExampleData.time_series_grouped(periods=30, groups=2, seed=101)
+
+        bar_data = ExampleData.categorical_data(
+            n_categories=5, n_per_category=1, seed=102
+        )
+        bar_data["category_group"] = [
+            "Group_1",
+            "Group_2",
+            "Group_1",
+            "Group_2",
+            "Group_1",
+        ]
+
+        histogram_data = ExampleData.distribution_data(
+            n_samples=400, distributions=2, seed=103
+        )
+
+        violin_data = ExampleData.grouped_categories(
+            n_categories=3, n_groups=2, n_per_combo=25, seed=104
+        )
+
+        heatmap_data = ExampleData.heatmap_data(rows=6, cols=5, seed=105)
+
+        contour_data = ExampleData.gaussian_mixture(
+            n_components=2, n_samples=300, seed=106
+        )
+
+        bump_data = ExampleData.ranking_data(time_points=15, categories=4, seed=107)
+
+        return {
+            "scatter_data": scatter_data,
+            "line_data": line_data,
+            "bar_data": bar_data,
+            "histogram_data": histogram_data,
+            "violin_data": violin_data,
+            "heatmap_data": heatmap_data,
+            "contour_data": contour_data,
+            "bump_data": bump_data,
+        }
+
+    @staticmethod
+    def get_color_coordination_data() -> Dict[str, pd.DataFrame]:
+        np.random.seed(200)
+        shared_categories = ["Alpha", "Beta", "Gamma", "Delta"]
+
+        scatter_data = ExampleData.simple_scatter(n=60, seed=200)
+        scatter_data["category"] = np.tile(shared_categories, len(scatter_data) // 4)[
+            : len(scatter_data)
+        ]
+
+        line_data = ExampleData.time_series_grouped(periods=25, groups=4, seed=201)
+        line_data["series"] = (
+            line_data["group"]
+            .map({"Group_A": "Alpha", "Group_B": "Beta", "Group_C": "Gamma"})
+            .fillna("Delta")
+        )
+
+        violin_data = ExampleData.grouped_categories(
+            n_categories=3, n_groups=4, n_per_combo=15, seed=202
+        )
+        violin_data["group"] = (
+            violin_data["group"]
+            .map(
+                {
+                    "Group_1": "Alpha",
+                    "Group_2": "Beta",
+                    "Group_3": "Gamma",
+                    "Group_4": "Delta",
+                }
+            )
+            .fillna("Alpha")
+        )
+
+        bar_data = ExampleData.categorical_data(
+            n_categories=4, n_per_category=1, seed=203
+        )
+        bar_data["category"] = shared_categories
+
+        histogram_data = ExampleData.distribution_data(
+            n_samples=300, distributions=4, seed=204
+        )
+        dist_map = {"Normal": "Alpha", "Skewed": "Beta", "Bimodal": "Gamma"}
+        histogram_data["distribution"] = (
+            histogram_data["distribution"].map(dist_map).fillna("Delta")
+        )
+
+        heatmap_data = ExampleData.heatmap_data(rows=4, cols=4, seed=205)
+
+        return {
+            "scatter_data": scatter_data,
+            "line_data": line_data,
+            "violin_data": violin_data,
+            "bar_data": bar_data,
+            "histogram_data": histogram_data,
+            "heatmap_data": heatmap_data,
+        }
+
+    @staticmethod
+    def get_cross_groupby_legends_data() -> pd.DataFrame:
+        np.random.seed(400)
+
+        experiments = ["Exp_A", "Exp_B", "Exp_C"]
+        conditions = ["Control", "Treatment"]
+        algorithms = ["Method_1", "Method_2", "Method_3"]
+
+        records = []
+        for exp in experiments:
+            for cond in conditions:
+                for algo in algorithms:
+                    base_performance = np.random.uniform(0.5, 0.9)
+                    base_accuracy = np.random.uniform(0.6, 0.95)
+
+                    n_samples = 15
+                    for _ in range(n_samples):
+                        records.append(
+                            {
+                                "experiment": exp,
+                                "condition": cond,
+                                "algorithm": algo,
+                                "performance": base_performance
+                                + np.random.normal(0, 0.05),
+                                "accuracy": base_accuracy + np.random.normal(0, 0.03),
+                                "runtime": np.random.uniform(10, 200),
+                                "time_point": np.random.randint(0, 20),
+                            }
+                        )
+
+        return pd.DataFrame(records)
+
+    @staticmethod
+    def get_individual_styling_data() -> Dict[str, pd.DataFrame]:
+        np.random.seed(300)
+
+        scatter_data = ExampleData.simple_scatter(n=80, seed=300)
+        scatter_data["category"] = np.random.choice(
+            ["Type_A", "Type_B", "Type_C"], len(scatter_data)
+        )
+
+        line_data = ExampleData.time_series_grouped(periods=40, groups=4, seed=301)
+
+        violin_data = ExampleData.grouped_categories(
+            n_categories=3, n_groups=3, n_per_combo=20, seed=302
+        )
+
+        bar_data = ExampleData.categorical_data(
+            n_categories=5, n_per_category=1, seed=303
+        )
+        bar_data["category"] = ["A", "B", "C", "D", "E"]
+
+        histogram_data = ExampleData.distribution_data(
+            n_samples=400, distributions=1, seed=304
+        )
+
+        heatmap_data = ExampleData.heatmap_data(rows=6, cols=6, seed=305)
+
+        return {
+            "scatter_data": scatter_data,
+            "line_data": line_data,
+            "violin_data": violin_data,
+            "bar_data": bar_data,
+            "histogram_data": histogram_data,
+            "heatmap_data": heatmap_data,
+        }
+
+    @staticmethod
+    def get_legend_positioning_data() -> pd.DataFrame:
+        np.random.seed(500)
+
+        categories = ["Alpha", "Beta", "Gamma", "Delta"]
+        n_samples_per_category = 25
+
+        records = []
+        for category in categories:
+            center_x = np.random.uniform(-2, 2)
+            center_y = np.random.uniform(-2, 2)
+
+            for _ in range(n_samples_per_category):
+                records.append(
+                    {
+                        "category_group": category,
+                        "performance": center_x + np.random.normal(0, 0.8),
+                        "accuracy": center_y + np.random.normal(0, 0.8),
+                        "runtime": np.random.uniform(10, 100),
+                        "memory": np.random.uniform(50, 500),
+                    }
+                )
+
+        return pd.DataFrame(records)
+
+    @staticmethod
+    def get_category_time_series(time_points=15, seed=502) -> pd.DataFrame:
+        np.random.seed(seed)
+
+        categories = ["Alpha", "Beta", "Gamma", "Delta"]
+
+        records = []
+        for category in categories:
+            base_performance = np.random.uniform(0.4, 0.8)
+            performance_trend = np.random.randn() * 0.03
+            noise_level = 0.04
+
+            for t in range(time_points):
+                trend_component = performance_trend * t
+                seasonal_component = 0.06 * np.sin(2 * np.pi * t / 8)
+                noise_component = np.random.randn() * noise_level
+
+                performance = (
+                    base_performance
+                    + trend_component
+                    + seasonal_component
+                    + noise_component
+                )
+                performance = np.clip(performance, 0.2, 1.0)
+
+                records.append(
+                    {
+                        "category_group": category,
+                        "time_point": t,
+                        "performance": performance,
+                    }
+                )
 
         return pd.DataFrame(records)
 

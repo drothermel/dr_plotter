@@ -6,12 +6,15 @@ from matplotlib.patches import Patch
 
 from dr_plotter import consts
 from dr_plotter.theme import BAR_THEME, Theme
-from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
+from dr_plotter.types import (
+    BasePlotterParamName,
+    SubPlotterParamName,
+    VisualChannel,
+    Phase,
+    ComponentSchema,
+)
 
 from .base import BasePlotter
-
-type Phase = str
-type ComponentSchema = Dict[str, Set[str]]
 
 
 class BarPlotter(BasePlotter):
@@ -20,7 +23,6 @@ class BarPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = {"hue"}
     default_theme: Theme = BAR_THEME
-    use_style_applicator: bool = True
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -35,15 +37,20 @@ class BarPlotter(BasePlotter):
                 "label",
             }
         },
-        "post": {"patches": {"facecolor", "edgecolor", "alpha", "linewidth"}},
+        "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
+            "patches": {"facecolor", "edgecolor", "alpha", "linewidth"},
+        },
     }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        if self.use_style_applicator:
-            self.style_applicator.register_post_processor(
-                "bar", "patches", self._style_bar_patches
-            )
+        self.style_applicator.register_post_processor(
+            "bar", "patches", self._style_bar_patches
+        )
 
     def _style_bar_patches(self, patches: Any, styles: Dict[str, Any]) -> None:
         for patch in patches:
@@ -60,9 +67,8 @@ class BarPlotter(BasePlotter):
         label = kwargs.pop("label", None)
         patches = ax.bar(data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **kwargs)
 
-        if self.use_style_applicator:
-            artists = {"patches": patches}
-            self.style_applicator.apply_post_processing("bar", artists)
+        artists = {"patches": patches}
+        self.style_applicator.apply_post_processing("bar", artists)
 
         self._apply_post_processing(patches, label)
 
@@ -91,6 +97,8 @@ class BarPlotter(BasePlotter):
         group_position: Dict[str, Any],
         **kwargs: Any,
     ) -> None:
+        label = kwargs.pop("label", None)
+
         # Use shared x_categories from all groups if available
         x_categories = group_position.get("x_categories")
         if x_categories is None:
@@ -106,10 +114,15 @@ class BarPlotter(BasePlotter):
                 y_values.append(cat_data[consts.Y_COL_NAME].values[0])
 
         # Draw bars at offset positions
+        patches = None
         if x_positions:
-            ax.bar(x_positions, y_values, width=group_position["width"], **kwargs)
+            patches = ax.bar(
+                x_positions, y_values, width=group_position["width"], **kwargs
+            )
 
         # Set x-axis labels (only on first group to avoid duplication)
         if group_position["index"] == 0:
             ax.set_xticks(np.arange(len(x_categories)))
             ax.set_xticklabels(x_categories)
+
+        self._apply_post_processing(patches, label)

@@ -5,12 +5,15 @@ from matplotlib.patches import Patch
 
 from dr_plotter import consts
 from dr_plotter.theme import HISTOGRAM_THEME, Theme
-from dr_plotter.types import BasePlotterParamName, SubPlotterParamName, VisualChannel
+from dr_plotter.types import (
+    BasePlotterParamName,
+    SubPlotterParamName,
+    VisualChannel,
+    Phase,
+    ComponentSchema,
+)
 
 from .base import BasePlotter
-
-type Phase = str
-type ComponentSchema = Dict[str, Set[str]]
 
 
 class HistogramPlotter(BasePlotter):
@@ -19,7 +22,6 @@ class HistogramPlotter(BasePlotter):
     param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
     enabled_channels: Set[VisualChannel] = set()
     default_theme: Theme = HISTOGRAM_THEME
-    use_style_applicator: bool = True
 
     component_schema: Dict[Phase, ComponentSchema] = {
         "plot": {
@@ -38,15 +40,20 @@ class HistogramPlotter(BasePlotter):
                 "rwidth",
             }
         },
-        "post": {"patches": {"facecolor", "edgecolor", "linewidth", "alpha"}},
+        "axes": {
+            "title": {"text", "fontsize", "color"},
+            "xlabel": {"text", "fontsize", "color"},
+            "ylabel": {"text", "fontsize", "color"},
+            "grid": {"visible", "alpha", "color", "linestyle"},
+            "patches": {"facecolor", "edgecolor", "linewidth", "alpha"},
+        },
     }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        if self.use_style_applicator:
-            self.style_applicator.register_post_processor(
-                "histogram", "patches", self._style_histogram_patches
-            )
+        self.style_applicator.register_post_processor(
+            "histogram", "patches", self._style_histogram_patches
+        )
 
     def _style_histogram_patches(self, patches: Any, styles: Dict[str, Any]) -> None:
         for patch in patches:
@@ -59,9 +66,8 @@ class HistogramPlotter(BasePlotter):
         label = kwargs.pop("label", None)
         n, bins, patches = ax.hist(data[consts.X_COL_NAME], **kwargs)
 
-        if self.use_style_applicator:
-            artists = {"patches": patches, "n": n, "bins": bins}
-            self.style_applicator.apply_post_processing("histogram", artists)
+        artists = {"patches": patches, "n": n, "bins": bins}
+        self.style_applicator.apply_post_processing("histogram", artists)
 
         self._apply_post_processing({"patches": patches}, label)
 
