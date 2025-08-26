@@ -4,6 +4,7 @@ Demonstrates plotting multiple y-columns with the METRICS constant.
 """
 
 from dr_plotter.figure import FigureManager
+from dr_plotter.figure_config import FigureConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
 from dr_plotter import consts
@@ -30,7 +31,7 @@ EXPECTED_CHANNELS = {
     },
 )
 def main(args):
-    with FigureManager(rows=2, cols=2, figsize=(15, 12)) as fm:
+    with FigureManager(figure=FigureConfig(rows=2, cols=2, figsize=(15, 12))) as fm:
         fm.fig.suptitle("Multi-Metrics: Using the METRICS Constant", fontsize=16)
 
         # ML training data with multiple metrics

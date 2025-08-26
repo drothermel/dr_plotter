@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
@@ -17,149 +17,96 @@ from .plotters import BasePlotter
 class FigureManager:
     def __init__(
         self,
-        rows: int = 1,
-        cols: int = 1,
-        external_ax: Optional[plt.Axes] = None,
-        layout_rect: Optional[List[float]] = None,
-        layout_pad: Optional[float] = 0.5,
-        legend_config: Optional[LegendConfig] = None,
-        legend_strategy: Optional[str] = None,
-        legend_position: Optional[str] = None,
-        legend_ncol: Optional[int] = None,
-        legend_spacing: Optional[float] = None,
-        plot_margin_bottom: Optional[float] = None,
-        legend_y_offset: Optional[float] = None,
+        figure: Optional["FigureConfig"] = None,
+        legend: Optional[LegendConfig] = None,
         theme: Optional[Any] = None,
-        shared_styling: Optional[bool] = None,
-        **fig_kwargs: Any,
+        faceting: Optional["SubplotFacetingConfig"] = None,
     ) -> None:
         from dr_plotter.figure_config import (
-            SubplotLayoutConfig,
-            FigureCoordinationConfig,
+            FigureConfig,
         )
 
-        layout_pad_final = layout_pad if layout_pad is not None else 0.5
-        layout = SubplotLayoutConfig(
-            rows=rows,
-            cols=cols,
-            layout_rect=layout_rect,
-            layout_pad=layout_pad_final,
-        )
+        figure = figure or FigureConfig()
+        legend = legend or LegendConfig()
 
-        coordination = FigureCoordinationConfig(
-            theme=theme,
-            shared_styling=shared_styling,
-            external_ax=external_ax,
-            fig_kwargs=fig_kwargs,
-        )
+        if theme and hasattr(theme, "legend_config") and theme.legend_config:
+            legend = theme.legend_config
 
-        legacy_legend_config = self._convert_legacy_legend_params(
-            legend_config,
-            legend_strategy,
-            legend_position,
-            legend_ncol,
-            legend_spacing,
-            plot_margin_bottom,
-            legend_y_offset,
-            theme,
-        )
+        figure.validate()
+        legend.validate() if hasattr(legend, "validate") else None
+        if faceting:
+            faceting.validate()
 
-        self._init_from_configs(layout, legacy_legend_config, coordination)
-
-    def _convert_legacy_legend_params(
-        self,
-        legend_config: Optional[LegendConfig],
-        legend_strategy: Optional[str],
-        legend_position: Optional[str],
-        legend_ncol: Optional[int],
-        legend_spacing: Optional[float],
-        plot_margin_bottom: Optional[float],
-        legend_y_offset: Optional[float],
-        theme: Optional[Any],
-    ) -> Optional[LegendConfig]:
-        if not any(
-            [
-                legend_strategy,
-                legend_position,
-                legend_ncol,
-                legend_spacing,
-                plot_margin_bottom,
-                legend_y_offset,
-            ]
-        ):
-            return legend_config
-
-        return self._build_legend_config(
-            legend_config
-            or (
-                theme.legend_config
-                if theme and hasattr(theme, "legend_config")
-                else None
-            ),
-            legend_strategy,
-            legend_position,
-            legend_ncol,
-            legend_spacing,
-            plot_margin_bottom,
-            legend_y_offset,
-        )
+        self._init_from_configs(figure, legend, theme, faceting)
 
     def _init_from_configs(
         self,
-        layout: "SubplotLayoutConfig",
+        figure: "FigureConfig",
         legend: Optional[LegendConfig],
-        coordination: "FigureCoordinationConfig",
+        theme: Optional[Any] = None,
+        faceting: Optional["SubplotFacetingConfig"] = None,
     ) -> None:
-        layout.validate()
-        coordination.validate()
+        figure.validate()
 
-        self._setup_layout_configuration(layout)
+        self._setup_layout_configuration(figure)
 
         fig, axes, external_mode = self._create_figure_axes(
-            layout, coordination.external_ax, coordination.fig_kwargs
+            figure.external_ax,
+            figure.figure_kwargs,
+            figure.subplot_kwargs,
+            figure.figsize,
+            figure.rows,
+            figure.cols,
         )
         self.fig = fig
         self.figure = fig
         self.axes = axes
         self.external_mode = external_mode
 
-        legend_manager = self._build_legend_system(legend, coordination.theme)
+        legend_manager = self._build_legend_system(legend, theme)
         self.legend_config = legend_manager.config
         self.legend_manager = legend_manager
 
-        self._coordinate_styling(coordination.theme, coordination.shared_styling)
+        self._coordinate_styling(theme, figure.shared_styling)
 
     @classmethod
     def _create_from_configs(
         cls,
-        layout: "SubplotLayoutConfig",
+        figure: "FigureConfig",
         legend: Optional[LegendConfig],
-        coordination: "FigureCoordinationConfig",
+        theme: Optional[Any] = None,
         faceting: Optional["SubplotFacetingConfig"] = None,
     ) -> "FigureManager":
         instance = cls.__new__(cls)
-        instance._init_from_configs(layout, legend, coordination)
+        instance._init_from_configs(figure, legend, theme, faceting)
         return instance
 
     def _create_figure_axes(
         self,
-        layout: "SubplotLayoutConfig",
         external_ax: Optional[plt.Axes],
-        fig_kwargs: Any,
+        figure_kwargs: Dict[str, Any],
+        subplot_kwargs: Dict[str, Any],
+        figsize: Tuple[int, int],
+        rows: int,
+        cols: int,
     ) -> Tuple[plt.Figure, plt.Axes, bool]:
         if external_ax is not None:
             return external_ax.get_figure(), external_ax, True
 
+        combined_kwargs = {**figure_kwargs, **subplot_kwargs}
+        if "figsize" not in combined_kwargs:
+            combined_kwargs["figsize"] = figsize
+
         fig, axes = plt.subplots(
-            layout.rows, layout.cols, constrained_layout=False, **fig_kwargs
+            rows, cols, constrained_layout=False, **combined_kwargs
         )
         return fig, axes, False
 
-    def _setup_layout_configuration(self, layout: "SubplotLayoutConfig") -> None:
-        self._layout_rect = layout.layout_rect
-        self._layout_pad = layout.layout_pad
-        self.rows = layout.rows
-        self.cols = layout.cols
+    def _setup_layout_configuration(self, figure: "FigureConfig") -> None:
+        self._layout_rect = None
+        self._layout_pad = figure.tight_layout_pad
+        self.rows = figure.rows
+        self.cols = figure.cols
 
     def _build_legend_system(
         self,
@@ -200,55 +147,6 @@ class FigureManager:
             LegendStrategy.FIGURE_BELOW,
         }
         return self.legend_config.strategy in coordination_strategies
-
-    def _build_legend_config(
-        self,
-        base_config: Optional[LegendConfig],
-        legend_strategy: Optional[str],
-        legend_position: Optional[str],
-        legend_ncol: Optional[int],
-        legend_spacing: Optional[float],
-        plot_margin_bottom: Optional[float],
-        legend_y_offset: Optional[float],
-    ) -> LegendConfig:
-        if base_config:
-            config = LegendConfig(
-                strategy=base_config.strategy,
-                position=base_config.position,
-                ncol=base_config.ncol,
-                spacing=base_config.spacing,
-                collect_strategy=base_config.collect_strategy,
-                deduplication=base_config.deduplication,
-                remove_axes_legends=base_config.remove_axes_legends,
-            )
-        else:
-            config = LegendConfig()
-
-        if legend_strategy:
-            strategy_map = {
-                "figure_below": LegendStrategy.FIGURE_BELOW,
-                "split": LegendStrategy.GROUPED_BY_CHANNEL,
-                "per_axes": LegendStrategy.PER_AXES,
-                "none": LegendStrategy.NONE,
-            }
-            config.strategy = strategy_map.get(legend_strategy, LegendStrategy.PER_AXES)
-
-        if legend_position:
-            config.position = legend_position
-
-        if legend_ncol is not None:
-            config.ncol = legend_ncol
-
-        if legend_spacing is not None:
-            config.spacing = legend_spacing
-
-        if plot_margin_bottom is not None:
-            config.layout_bottom_margin = plot_margin_bottom
-
-        if legend_y_offset is not None:
-            config.bbox_y_offset = legend_y_offset
-
-        return config
 
     def __enter__(self) -> "FigureManager":
         return self

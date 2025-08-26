@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Set
 import pandas as pd
 from dr_plotter.plotters.base import BasePlotter
 from dr_plotter.figure import FigureManager
+from dr_plotter.figure_config import FigureConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_example
 from dr_plotter.theme import BASE_THEME, Theme, PlotStyles
@@ -99,7 +100,7 @@ def main(args):
     # Flatten column names
     error_data.columns = ["category", "mean_value", "error"]
 
-    with FigureManager(rows=1, cols=2, figsize=(12, 5)) as fm:
+    with FigureManager(figure=FigureConfig(rows=1, cols=2, figsize=(12, 5))) as fm:
         fm.fig.suptitle("Custom Plotter: Error Bar Plots", fontsize=16)
 
         # Use custom plotter via registry

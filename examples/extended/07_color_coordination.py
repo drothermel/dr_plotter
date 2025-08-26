@@ -2,6 +2,7 @@ from typing import Dict
 import itertools
 import pandas as pd
 from dr_plotter.figure import FigureManager
+from dr_plotter.figure_config import FigureConfig
 from dr_plotter.theme import Theme, PlotStyles, AxesStyles, BASE_THEME
 from plot_data import ExampleData
 
@@ -27,7 +28,9 @@ def create_color_coordination_example() -> None:
     coordinated_theme: Theme = create_coordinated_theme()
     data_dict: Dict[str, pd.DataFrame] = ExampleData.get_color_coordination_data()
 
-    with FigureManager(rows=2, cols=3, figsize=(18, 12), theme=coordinated_theme) as fm:
+    with FigureManager(
+        figure=FigureConfig(rows=2, cols=3, figsize=(18, 12)), theme=coordinated_theme
+    ) as fm:
         fm.fig.suptitle(
             "Example 7: Color Coordination - Multi-Subplot Shared Styling", fontsize=18
         )

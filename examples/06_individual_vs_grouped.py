@@ -1,5 +1,6 @@
 from typing import Any
 from dr_plotter.figure import FigureManager
+from dr_plotter.figure_config import FigureConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
 from plot_data import ExampleData
@@ -38,7 +39,7 @@ def main(args: Any) -> Any:
     assert "time_series" in shared_data.columns
     assert len(shared_data.groupby("category_group")) >= 2
 
-    with FigureManager(rows=2, cols=4, figsize=(20, 10)) as fm:
+    with FigureManager(figure=FigureConfig(rows=2, cols=4, figsize=(20, 10))) as fm:
         fm.fig.suptitle("Individual vs Grouped Plotting Comparison", fontsize=16)
 
         fm.plot(
