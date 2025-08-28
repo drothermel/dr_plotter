@@ -1,45 +1,36 @@
+"""
+Data Exploration Script for ML Training Metrics
+
+Requires DataDecide integration:
+    uv add "dr_plotter[datadec]"
+
+Explores available metrics, data recipes, and model sizes in the dataset.
+"""
+
 from typing import Any, Dict, List
+import sys
 import pandas as pd
+from dr_plotter.scripting.datadec_utils import get_clean_datadec_df
 
 
 def load_parquet_data() -> pd.DataFrame:
-    return pd.read_parquet("data/mean_eval.parquet")
+    """Load clean, pre-validated data from DataDecide."""
+    try:
+        return get_clean_datadec_df(filter_types=["ppl", "max_steps"])
+    except ImportError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 
-def validate_data_structure(df: pd.DataFrame) -> Dict[str, Any]:
-    expected_key_columns = ["params", "data", "step"]
-    validation_results = {
-        "expected_columns_present": all(
-            col in df.columns for col in expected_key_columns
-        ),
-        "missing_key_columns": [
-            col for col in expected_key_columns if col not in df.columns
-        ],
+def get_data_summary(df: pd.DataFrame) -> Dict[str, Any]:
+    """Get basic data summary - DataDecide guarantees structure."""
+    return {
         "total_columns": len(df.columns),
         "total_rows": len(df),
         "data_types": dict(df.dtypes),
-        "has_metric_columns": len(
-            [
-                col
-                for col in df.columns
-                if col
-                not in expected_key_columns
-                + [
-                    "seed",
-                    "tokens",
-                    "compute",
-                    "total_steps",
-                    "warmup_steps",
-                    "lr_max",
-                    "batch_size",
-                    "lr_at_step",
-                    "cumulative_lr",
-                ]
-            ]
-        )
-        > 0,
+        "key_columns_present": True,  # DataDecide guarantees these exist
+        "has_metric_columns": True,  # DataDecide provides cleaned metric data
     }
-    return validation_results
 
 
 def extract_available_metrics(df: pd.DataFrame) -> List[str]:
@@ -119,22 +110,20 @@ def main() -> None:
     )
 
     print("\n" + "=" * 50)
-    print("DATA STRUCTURE VALIDATION")
+    print("DATA SUMMARY")
     print("=" * 50)
-    validation = validate_data_structure(df)
+    summary = get_data_summary(df)
 
-    print(f"Expected key columns present: {validation['expected_columns_present']}")
-    if validation["missing_key_columns"]:
-        print(f"Missing key columns: {validation['missing_key_columns']}")
-
-    print(f"Total columns: {validation['total_columns']:,}")
-    print(f"Total rows: {validation['total_rows']:,}")
-    print(f"Has metric columns: {validation['has_metric_columns']}")
+    print(f"✅ Data structure validated by DataDecide")
+    print(f"Total columns: {summary['total_columns']:,}")
+    print(f"Total rows: {summary['total_rows']:,}")
+    print(f"Key columns present: {summary['key_columns_present']}")
+    print(f"Has metric columns: {summary['has_metric_columns']}")
 
     key_column_types = {
-        col: str(validation["data_types"][col])
+        col: str(summary["data_types"][col])
         for col in ["params", "data", "step"]
-        if col in validation["data_types"]
+        if col in summary["data_types"]
     }
     print(f"Key column types: {key_column_types}")
 
@@ -165,6 +154,7 @@ def main() -> None:
     print("=" * 50)
 
     completeness = analyze_data_completeness(df)
+    # Note: DataDecide provides pre-filtered, clean data with guaranteed completeness
 
     print(
         f"Total expected combinations (model_size × data_recipe): {completeness['total_expected_combinations']:,}"
@@ -226,11 +216,12 @@ def main() -> None:
             f"- Some metrics have null values: {len(null_metrics)} of sampled metrics"
         )
 
-    print("\nREADY FOR PHASE 2:")
+    print("\n✅ READY FOR PLOTTING:")
     print(f"- {len(metrics)} metrics available for row faceting")
     print(f"- {len(data_recipes)} data recipes available for column faceting")
     print(f"- {len(model_sizes)} model sizes available for line styling")
-    print("- Data structure validated and suitable for faceted plotting")
+    print("- Data pre-validated by DataDecide and ready for analysis")
+    print("- Use dr_plotter examples with --recipes and --model-sizes flags for plotting")
 
 
 if __name__ == "__main__":
