@@ -81,59 +81,60 @@ Multi-dimensional data visualization complexity comes from **coordination across
 
 ## Phase 3: API Design Requirements
 
-### Core Design Questions
+**Complete Requirements Specification**: See [`docs/plans/faceted_plotting_requirements.md`](./faceted_plotting_requirements.md) for the comprehensive requirements document.
 
-1. **Scope Boundary**: How much faceting logic belongs in dr_plotter vs. user code?
-   - **Evidence**: Natural division between subplot grids/styling vs. data prep/metric selection
-   
-2. **Configuration Pattern**: What's the most intuitive way to specify grid layouts and mappings?
-   - **Evidence**: Row/column semantic mapping feels natural (rows=metrics, cols=recipes)
-   
-3. **Data Integration**: How should dr_plotter handle multi-dimensional data preparation?
-   - **Evidence**: 100% data density eliminates subset constraints but creates different API needs
-   
-4. **Styling Control**: How to balance automatic styling with fine-grained control?
-   - **Evidence**: Consistent cross-subplot styling is complex but automatable
+### Core Design Questions Identified
 
-### Proposed API Vision
+1. **Scope Boundary**: Natural division between subplot grids/styling vs. data prep/metric selection
+2. **Configuration Pattern**: Row/column semantic mapping feels intuitive for multi-dimensional data
+3. **Data Integration**: 100% data density creates opportunities for streamlined API design
+4. **Styling Control**: Cross-subplot consistency is complex but automatable
+5. **Ordering and Filtering**: Dual-purpose `*_order` parameters solve styling inconsistencies
+6. **Layout Flexibility**: Support both explicit grids and wrapped single-dimension layouts
+7. **Layered Faceting**: Multiple composable calls enable sophisticated visualizations
+8. **Selective Application**: Target-specific parameters enable precise subplot control
 
-Instead of 95+ lines of boilerplate:
+### API Design Summary
+
+**Complete API Examples**: See [`docs/plans/faceted_plotting_requirements.md`](./faceted_plotting_requirements.md) for detailed API specifications and examples.
+
+**Core Vision**: Transform 95+ lines of manual subplot management into intuitive, composable API calls:
 
 ```python
+# Simple case: Full grid with automatic layout
 fm.plot_faceted(
-    data=df,
-    plot_type="line",
-    rows="metric",           # pile-valppl, mmlu_average_correct_prob
-    cols="data_recipe",      # C4, Dolma1.7, etc.
-    lines="model_size",      # 4M, 6M, 8M, etc. 
-    x="step",
-    y="value",
-    row_labels={"pile-valppl": "Pile Validation Perplexity", ...},
-    col_labels=None,  # Use data values directly
-    shared_axes={"y": "row", "x": False}
+    data=df, plot_type="line",
+    rows="metric", cols="data_recipe", lines="model_size",
+    x="step", y="value"
 )
+
+# Advanced case: Layered plots with selective targeting
+fm.plot_faceted(data=base_data, plot_type="scatter", ...)
+fm.plot_faceted(data=trend_data, plot_type="line", target_row=0, ...)
 ```
 
 ### API Design Deliverables (Phase 3)
 
-1. **API specification document** with method signatures and parameters
-2. **Configuration pattern definitions** for grid layouts and dimension mappings  
-3. **Data transformation interface** between user data and plotting system
-4. **Styling coordination system** for cross-subplot consistency
-5. **Backwards compatibility strategy** ensuring existing code continues working
-6. **Error handling approach** for malformed or incomplete data
+**Reference**: Complete deliverable specifications in [`docs/plans/faceted_plotting_requirements.md`](./faceted_plotting_requirements.md)
+
+**Summary**:
+1. **Core API specification** with `plot_faceted()` method signatures  
+2. **Layout systems** for grids, wrapping, and selective targeting
+3. **Styling coordination** maintaining consistency across subplots
+4. **Data integration** with pandas DataFrame multi-dimensional handling
+5. **Backwards compatibility** preserving all existing functionality
 
 ## Phase 4: Implementation Strategy
 
 ### Implementation Deliverables
 
-1. **Enhanced FigureManager** with `plot_faceted()` method
-2. **Faceting configuration classes** for specifying layouts and mappings
-3. **Data transformation utilities** for multi-dimensional data preparation
-4. **Cross-subplot styling coordination** maintaining color/marker consistency
-5. **Refactored examples** demonstrating new API usage
-6. **Performance validation** ensuring efficient handling of many subplot objects
-7. **Comprehensive testing** covering edge cases and data variations
+**Reference**: Complete implementation requirements in [`docs/plans/faceted_plotting_requirements.md`](./faceted_plotting_requirements.md)
+
+**Summary**:
+1. **Enhanced FigureManager** with native faceting capabilities
+2. **Configuration and coordination systems** for complex subplot management
+3. **Refactored examples** demonstrating API simplification and new capabilities
+4. **Comprehensive validation** ensuring quality and performance standards
 
 ### Success Criteria
 
@@ -147,7 +148,7 @@ fm.plot_faceted(
 ### Model Size Ordering Challenge
 - **Issue**: Alphabetic sorting (10M, 14M, 150M) vs logical numeric ordering (4M, 6M, 8M, 10M...)
 - **Impact**: Affects line styling consistency and legend ordering
-- **Solution**: API must provide explicit ordering control
+- **Solution**: API must provide explicit ordering control via `*_order` parameters (also serves as filtering)
 
 ### Metric Name Patterns
 - **Discovery**: Actual metric names use underscores (pile_valppl) not hyphens (pile-valppl)
