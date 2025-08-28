@@ -2,6 +2,9 @@
 """
 Plot model scaling for any DataDecide metric.
 
+Requires DataDecide integration:
+    uv add "dr_plotter[datadec]"
+
 Usage:
     python scripts/plot_metric_scaling.py wikitext_103-valppl
     python scripts/plot_metric_scaling.py pile-valppl
@@ -12,53 +15,45 @@ import argparse
 import os
 import sys
 import matplotlib.pyplot as plt
-from datadec import DataDecide
-from datadec import model_utils
 from dr_plotter.plotters.curve import CurvePlotter
+from dr_plotter.scripting.datadec_utils import safe_import_datadec, get_clean_datadec_df
 
 
 def load_datadec_data(data_dir="./test_data", verbose=False):
-    """Load DataDecide data, checking if it exists first."""
-    data_exists = os.path.exists(
-        os.path.join(data_dir, "datadecide", "full_eval.parquet")
-    )
-    recompute_param = None if data_exists else "all"
-
-    if not data_exists:
-        print(
-            "Data not found, downloading and processing (this may take a few minutes)..."
-        )
-
-    dd = DataDecide(data_dir=data_dir, recompute_from=recompute_param, verbose=verbose)
-    return dd
+    """Load clean DataDecide data with error handling."""
+    try:
+        return get_clean_datadec_df(filter_types=["ppl", "max_steps"], data_dir=data_dir, verbose=verbose)
+    except ImportError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 
-def prepare_scaling_data(dd, metric_name, min_params=None):
+def prepare_scaling_data(df, metric_name, min_params=None):
     """Prepare data for scaling analysis."""
-    # Get analysis dataframe
-    analysis_df = dd.get_analysis_df(
-        min_params=min_params, add_lr_cols=True, verbose=False
-    )
+    DataDecide, _, _ = safe_import_datadec()
+    from datadec import model_utils  # Import here to handle optional dependency
+    
+    analysis_df = df
 
-    # Check if metric exists
+    # DataDecide guarantees metric availability, but check anyway
     if metric_name not in analysis_df.columns:
         available_metrics = [
-            col
-            for col in analysis_df.columns
-            if any(
-                keyword in col.lower()
-                for keyword in ["ppl", "acc", "metric", "prob", "correct"]
-            )
+            col for col in analysis_df.columns 
+            if any(keyword in col.lower() for keyword in ["ppl", "acc", "metric", "prob", "correct"])
         ]
         raise ValueError(
-            f"Metric '{metric_name}' not found. Available metrics include: {available_metrics[:10]}..."
+            f"Metric '{metric_name}' not found. Available: {available_metrics[:10]}..."
         )
 
-    # Filter out rows with missing metric values
-    clean_df = analysis_df.dropna(subset=[metric_name])
-
+    # DataDecide provides clean data, but apply min_params filter if needed
+    clean_df = analysis_df
+    if min_params:
+        min_params_numeric = model_utils.param_to_numeric(min_params)
+        clean_df["params_numeric"] = clean_df["params"].apply(model_utils.param_to_numeric)
+        clean_df = clean_df[clean_df["params_numeric"] >= min_params_numeric]
+    
     if len(clean_df) == 0:
-        raise ValueError(f"No data available for metric '{metric_name}'")
+        raise ValueError(f"No data available for metric '{metric_name}' with min_params={min_params}")
 
     # Group by model size and data recipe, average across seeds
     scaling_data = (
@@ -121,10 +116,11 @@ def main():
 
     try:
         print("Loading DataDecide data...")
-        dd = load_datadec_data(args.data_dir, args.verbose)
+        df = load_datadec_data(args.data_dir, args.verbose)
+        print(f"Loaded {len(df):,} rows")
 
         print(f"Preparing scaling data for metric: {args.metric}")
-        scaling_data = prepare_scaling_data(dd, args.metric, args.min_params)
+        scaling_data = prepare_scaling_data(df, args.metric, args.min_params)
 
         print(f"Found {len(scaling_data)} model-recipe combinations")
         print(f"Model sizes: {sorted(scaling_data['params'].unique())}")

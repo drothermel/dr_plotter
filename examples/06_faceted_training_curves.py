@@ -1,54 +1,47 @@
+"""
+Faceted Training Curves Example
+
+Requires DataDecide integration:
+    uv add "dr_plotter[datadec]"
+
+This example demonstrates advanced faceted plotting with real ML training data.
+"""
+
 from typing import List, Tuple
 import argparse
+import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 from dr_plotter.figure import FigureManager
 from dr_plotter.figure_config import FigureConfig
 from dr_plotter.legend_manager import LegendConfig, LegendStrategy
+from dr_plotter.scripting.datadec_utils import get_clean_datadec_df, validate_cli_params, validate_cli_data
 
 
 def load_and_prepare_data() -> pd.DataFrame:
-    return pd.read_parquet("data/mean_eval.parquet")
+    """Load clean, pre-validated data from DataDecide."""
+    try:
+        return get_clean_datadec_df(filter_types=["ppl", "max_steps"])
+    except ImportError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 
-def create_model_size_ordering() -> List[str]:
-    size_order = [
-        "4M",
-        "6M",
-        "8M",
-        "10M",
-        "14M",
-        "16M",
-        "20M",
-        "60M",
-        "90M",
-        "150M",
-        "300M",
-        "530M",
-        "750M",
-        "1B",
-    ]
-    return size_order
 
 
 def subset_data_for_plotting(
     df: pd.DataFrame, target_recipes: List[str], model_sizes: List[str]
 ) -> pd.DataFrame:
+    """Filter DataFrame for target metrics, recipes, and model sizes."""
     target_metrics = ["pile-valppl", "mmlu_average_correct_prob"]
 
-    assert all(metric in df.columns for metric in target_metrics), (
-        f"Missing metrics from {target_metrics}"
-    )
-    assert all(recipe in df["data"].values for recipe in target_recipes), (
-        f"Missing recipes from {target_recipes}"
-    )
-
-    filtered_df = df[df["data"].isin(target_recipes)].copy()
-    filtered_df = filtered_df[filtered_df["params"].isin(model_sizes)].copy()
-
+    # DataDecide guarantees these columns exist, but filter for what we need
+    filtered_df = df[df["data"].isin(target_recipes) & df["params"].isin(model_sizes)].copy()
+    
     keep_columns = ["params", "data", "step"] + target_metrics
     filtered_df = filtered_df[keep_columns].copy()
-
+    
+    # Set up categorical ordering for consistent plotting
     filtered_df["params"] = pd.Categorical(
         filtered_df["params"], categories=model_sizes, ordered=True
     )
@@ -56,7 +49,7 @@ def subset_data_for_plotting(
         filtered_df["data"], categories=target_recipes, ordered=True
     )
     filtered_df = filtered_df.sort_values(["params", "data", "step"])
-
+    
     return filtered_df
 
 
@@ -101,14 +94,13 @@ def plot_training_curves(
 
         for col_idx, recipe in enumerate(target_recipes):
             recipe_data = df[df["data"] == recipe].copy()
-            assert len(recipe_data) > 0, f"No data found for recipe: {recipe}"
 
             for row_idx, (metric, metric_label) in enumerate(
                 zip(metrics, metric_labels)
             ):
+                # DataDecide provides clean data, minimal processing needed
                 metric_data = recipe_data[["params", "step", metric]].copy()
-                metric_data = metric_data.dropna()
-
+                
                 if len(metric_data) == 0:
                     continue
 
@@ -180,23 +172,8 @@ def create_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--model-sizes",
         nargs="+",
-        default=[
-            "4M",
-            "6M",
-            "8M",
-            "10M",
-            "14M",
-            "16M",
-            "20M",
-            "60M",
-            "90M",
-            "150M",
-            "300M",
-            "530M",
-            "750M",
-            "1B",
-        ],
-        help="Model sizes to include (in order for line styling)",
+        default=["all"],
+        help="Model sizes to include (in order for line styling). Use 'all' for all available.",
     )
 
     # Axis limits
@@ -217,13 +194,21 @@ def main() -> None:
     print("Loading and preparing data...")
     df = load_and_prepare_data()
     print(f"Loaded {len(df):,} rows")
+    
+    # Validate CLI arguments using DataDecide utilities
+    try:
+        validated_recipes = validate_cli_data(args.recipes)
+        validated_model_sizes = validate_cli_params(args.model_sizes)
+    except ImportError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
     print("Filtering data for target metrics, recipes, and model sizes...")
-    filtered_df = subset_data_for_plotting(df, args.recipes, args.model_sizes)
+    filtered_df = subset_data_for_plotting(df, validated_recipes, validated_model_sizes)
     print(f"Filtered to {len(filtered_df):,} rows")
 
-    print(f"Model sizes (in order): {args.model_sizes}")
-    print(f"Data recipes (in order): {args.recipes}")
+    print(f"Model sizes (in order): {validated_model_sizes}")
+    print(f"Data recipes (in order): {validated_recipes}")
 
     config_info = []
     if args.x_log:
@@ -239,7 +224,7 @@ def main() -> None:
     print(f"Creating faceted training curves visualization with {config_desc}...")
     plot_training_curves(
         filtered_df,
-        args.recipes,
+        validated_recipes,
         x_log=args.x_log,
         y_log=args.y_log,
         xlim=args.xlim,
