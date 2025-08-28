@@ -81,60 +81,64 @@ Multi-dimensional data visualization complexity comes from **coordination across
 
 ## Phase 3: API Design Requirements
 
-**Complete Requirements Specification**: See [`docs/plans/faceted_plotting_requirements.md`](./faceted_plotting_requirements.md) for the comprehensive requirements document.
+**Complete Requirements**: See [`docs/plans/faceted_plotting_requirements.md`](./faceted_plotting_requirements.md) for comprehensive functional requirements.
 
-### Core Design Questions Identified
+**Complete Architecture Design**: See [`docs/plans/faceted_plotting_detailed_design.md`](./faceted_plotting_detailed_design.md) for full architectural specifications and implementation details.
 
-1. **Scope Boundary**: Natural division between subplot grids/styling vs. data prep/metric selection
-2. **Configuration Pattern**: Row/column semantic mapping feels intuitive for multi-dimensional data
-3. **Data Integration**: 100% data density creates opportunities for streamlined API design
-4. **Styling Control**: Cross-subplot consistency is complex but automatable
-5. **Ordering and Filtering**: Dual-purpose `*_order` parameters solve styling inconsistencies
-6. **Layout Flexibility**: Support both explicit grids and wrapped single-dimension layouts
-7. **Layered Faceting**: Multiple composable calls enable sophisticated visualizations
-8. **Selective Application**: Target-specific parameters enable precise subplot control
+### Design Questions Resolved
 
-### API Design Summary
+**Hybrid Architecture Selected**: Combination of simple method-based API for common cases with rich configuration objects for advanced scenarios.
 
-**Complete API Examples**: See [`docs/plans/faceted_plotting_requirements.md`](./faceted_plotting_requirements.md) for detailed API specifications and examples.
+**Key Decisions Made**:
+1. **Parameter Resolution**: Direct parameters override FacetingConfig (config as defaults)
+2. **File Structure**: New `faceting_config.py` file, remove unused `SubplotFacetingConfig`
+3. **Grid Sizing**: Auto-calculate dimensions for wrapped layouts with validation
+4. **Style Coordination**: Figure-level persistence across multiple faceting calls
+5. **Validation**: Strict, eager validation with helpful error messages
+6. **Empty Subplots**: Warning and continue with configurable behavior
 
-**Core Vision**: Transform 95+ lines of manual subplot management into intuitive, composable API calls:
+### Final Architecture Summary
 
+**Detailed Implementation Specification**: See [`docs/plans/faceted_plotting_detailed_design.md`](./faceted_plotting_detailed_design.md) for complete architecture, code examples, and implementation details.
+
+**Hybrid API Design**:
 ```python
-# Simple case: Full grid with automatic layout
-fm.plot_faceted(
-    data=df, plot_type="line",
-    rows="metric", cols="data_recipe", lines="model_size",
-    x="step", y="value"
-)
+# Simple API: Direct parameters for common cases
+fm.plot_faceted(data=df, plot_type="line", rows="metric", cols="recipe", 
+               lines="model_size", x="step", y="value")
 
-# Advanced case: Layered plots with selective targeting
-fm.plot_faceted(data=base_data, plot_type="scatter", ...)
-fm.plot_faceted(data=trend_data, plot_type="line", target_row=0, ...)
+# Advanced API: Rich configuration for complex scenarios
+config = FacetingConfig(rows="metric", target_row=0, x_labels=[[...]])
+fm.plot_faceted(data=df, plot_type="line", faceting=config, x="step", y="value")
+
+# Mixed usage: Config + direct parameter overrides
+fm.plot_faceted(data=df, faceting=complex_config, target_row=0)
 ```
 
-### API Design Deliverables (Phase 3)
+### Implementation Deliverables (Phase 3)
 
-**Reference**: Complete deliverable specifications in [`docs/plans/faceted_plotting_requirements.md`](./faceted_plotting_requirements.md)
+**Reference**: Complete implementation specification in [`docs/plans/faceted_plotting_detailed_design.md`](./faceted_plotting_detailed_design.md)
 
 **Summary**:
-1. **Core API specification** with `plot_faceted()` method signatures  
-2. **Layout systems** for grids, wrapping, and selective targeting
-3. **Styling coordination** maintaining consistency across subplots
-4. **Data integration** with pandas DataFrame multi-dimensional handling
-5. **Backwards compatibility** preserving all existing functionality
+1. **New `faceting_config.py`** with comprehensive `FacetingConfig` class
+2. **Enhanced `FigureManager.plot_faceted()`** with hybrid API pattern
+3. **Decomposed helper methods** for validation, grid computation, data preparation, styling
+4. **Figure-level style coordination** supporting layered faceting scenarios
+5. **Strict validation system** with informative error messages
 
 ## Phase 4: Implementation Strategy
 
-### Implementation Deliverables
+### Phase 4 Implementation Tasks
 
-**Reference**: Complete implementation requirements in [`docs/plans/faceted_plotting_requirements.md`](./faceted_plotting_requirements.md)
+**Reference**: Complete technical specifications in [`docs/plans/faceted_plotting_detailed_design.md`](./faceted_plotting_detailed_design.md)
 
-**Summary**:
-1. **Enhanced FigureManager** with native faceting capabilities
-2. **Configuration and coordination systems** for complex subplot management
-3. **Refactored examples** demonstrating API simplification and new capabilities
-4. **Comprehensive validation** ensuring quality and performance standards
+**Ready for Implementation**:
+1. **File structure changes**: Create `faceting_config.py`, remove unused `SubplotFacetingConfig`
+2. **Core `plot_faceted()` method** with all helper methods specified
+3. **Configuration resolution system** with direct parameter override logic
+4. **Comprehensive validation** for data, targeting, and configuration parameters
+5. **Style coordination system** maintaining consistency across layered calls
+6. **Example refactoring** demonstrating 95+ → <20 line reduction
 
 ### Success Criteria
 
