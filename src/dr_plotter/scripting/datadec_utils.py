@@ -7,6 +7,7 @@ def check_datadec_available() -> bool:
     """Check if DataDecide is available and provide helpful error."""
     try:
         import datadec  # noqa: F401
+
         return True
     except ImportError:
         raise ImportError(
@@ -20,6 +21,7 @@ def safe_import_datadec() -> Tuple[Any, Any, Any]:
     check_datadec_available()
     from datadec import DataDecide
     from datadec.script_utils import select_params, select_data
+
     return DataDecide, select_params, select_data
 
 

@@ -20,7 +20,6 @@ class FigureManager:
         figure: Optional["FigureConfig"] = None,
         legend: Optional[LegendConfig] = None,
         theme: Optional[Any] = None,
-        faceting: Optional["SubplotFacetingConfig"] = None,
     ) -> None:
         from dr_plotter.figure_config import (
             FigureConfig,
@@ -34,17 +33,14 @@ class FigureManager:
 
         figure.validate()
         legend.validate() if hasattr(legend, "validate") else None
-        if faceting:
-            faceting.validate()
 
-        self._init_from_configs(figure, legend, theme, faceting)
+        self._init_from_configs(figure, legend, theme)
 
     def _init_from_configs(
         self,
         figure: "FigureConfig",
         legend: Optional[LegendConfig],
         theme: Optional[Any] = None,
-        faceting: Optional["SubplotFacetingConfig"] = None,
     ) -> None:
         figure.validate()
 
@@ -76,10 +72,9 @@ class FigureManager:
         figure: "FigureConfig",
         legend: Optional[LegendConfig],
         theme: Optional[Any] = None,
-        faceting: Optional["SubplotFacetingConfig"] = None,
     ) -> "FigureManager":
         instance = cls.__new__(cls)
-        instance._init_from_configs(figure, legend, theme, faceting)
+        instance._init_from_configs(figure, legend, theme)
         return instance
 
     def _create_figure_axes(

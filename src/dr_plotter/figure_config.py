@@ -10,28 +10,6 @@ type ColName = str
 
 
 @dataclass
-class SubplotFacetingConfig:
-    facet_by: Optional[ColName] = None
-    group_by: Optional[ColName] = None
-    x_col: Optional[ColName] = None
-    y_col: Optional[ColName] = None
-
-    facet_rows: Optional[ColName] = None
-    facet_cols: Optional[ColName] = None
-    wrap_facets: Optional[int] = None
-
-    def validate(self) -> None:
-        if self.facet_by and self.group_by:
-            assert self.facet_by != self.group_by, (
-                f"Facet and group columns must be different: {self.facet_by}"
-            )
-        if self.wrap_facets is not None:
-            assert self.wrap_facets > 0, (
-                f"Wrap facets must be positive, got {self.wrap_facets}"
-            )
-
-
-@dataclass
 class FigureConfig:
     rows: int = 1
     cols: int = 1
@@ -85,14 +63,11 @@ def create_figure_manager(
     figure: Optional[FigureConfig] = None,
     legend: Optional[LegendConfig] = None,
     theme: Optional[Theme] = None,
-    faceting: Optional[SubplotFacetingConfig] = None,
 ) -> "FigureManager":
     from dr_plotter.figure import FigureManager
 
     figure = figure or FigureConfig()
 
     figure.validate()
-    if faceting:
-        faceting.validate()
 
-    return FigureManager._create_from_configs(figure, legend, theme, faceting)
+    return FigureManager._create_from_configs(figure, legend, theme)
