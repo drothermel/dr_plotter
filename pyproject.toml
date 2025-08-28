@@ -23,7 +23,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.optional-dependencies]
-datadec = ["datadec"]
+datadec = ["datadec @ git+https://github.com/drothermel/datadec.git"]
 
 [dependency-groups]
 dev = [
