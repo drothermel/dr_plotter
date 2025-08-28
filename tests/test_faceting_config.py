@@ -294,7 +294,6 @@ class TestFacetingConfigIntegration:
         config = FacetingConfig(
             rows="metric",
             cols="model",
-            ncols=3,
             shared_x="row",
             empty_subplot_strategy="silent",
         )
@@ -303,7 +302,6 @@ class TestFacetingConfigIntegration:
 
         assert config_dict["rows"] == "metric"
         assert config_dict["cols"] == "model"
-        assert config_dict["ncols"] == 3
         assert config_dict["shared_x"] == "row"
         assert config_dict["empty_subplot_strategy"] == "silent"
 
