@@ -33,19 +33,23 @@ EXPECTED_CHANNELS = {
 def main(args: Any) -> Any:
     data_dict: Dict[str, pd.DataFrame] = ExampleData.get_all_plot_types_data()
 
-    with FigureManager(figure=FigureConfig(
-        rows=3, cols=3, figsize=(24, 18),
-        x_labels=[
-            [None, None, None],
-            [None, None, None], 
-            ["X Coordinate", "Category", "Column"]
-        ],
-        y_labels=[
-            ["Y Coordinate", "Value", "Count"],
-            ["Y Coordinate", "Response", None],
-            ["Count", None, None]
-        ]
-    )) as fm:
+    with FigureManager(
+        figure=FigureConfig(
+            rows=3,
+            cols=3,
+            figsize=(24, 18),
+            x_labels=[
+                [None, None, None],
+                [None, None, None],
+                ["X Coordinate", "Category", "Column"],
+            ],
+            y_labels=[
+                ["Y Coordinate", "Value", "Count"],
+                ["Y Coordinate", "Response", None],
+                ["Count", None, None],
+            ],
+        )
+    ) as fm:
         fm.fig.suptitle(
             "Example 5: All Plot Types - Systematic Verification of 8 Plotters",
             fontsize=20,

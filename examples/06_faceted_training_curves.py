@@ -15,7 +15,11 @@ import matplotlib.pyplot as plt
 from dr_plotter.figure import FigureManager
 from dr_plotter.figure_config import FigureConfig
 from dr_plotter.legend_manager import LegendConfig, LegendStrategy
-from dr_plotter.scripting.datadec_utils import get_clean_datadec_df, validate_cli_params, validate_cli_data
+from dr_plotter.scripting.datadec_utils import (
+    get_clean_datadec_df,
+    validate_cli_params,
+    validate_cli_data,
+)
 
 
 def load_and_prepare_data() -> pd.DataFrame:
@@ -27,8 +31,6 @@ def load_and_prepare_data() -> pd.DataFrame:
         sys.exit(1)
 
 
-
-
 def subset_data_for_plotting(
     df: pd.DataFrame, target_recipes: List[str], model_sizes: List[str]
 ) -> pd.DataFrame:
@@ -36,11 +38,13 @@ def subset_data_for_plotting(
     target_metrics = ["pile-valppl", "mmlu_average_correct_prob"]
 
     # DataDecide guarantees these columns exist, but filter for what we need
-    filtered_df = df[df["data"].isin(target_recipes) & df["params"].isin(model_sizes)].copy()
-    
+    filtered_df = df[
+        df["data"].isin(target_recipes) & df["params"].isin(model_sizes)
+    ].copy()
+
     keep_columns = ["params", "data", "step"] + target_metrics
     filtered_df = filtered_df[keep_columns].copy()
-    
+
     # Set up categorical ordering for consistent plotting
     filtered_df["params"] = pd.Categorical(
         filtered_df["params"], categories=model_sizes, ordered=True
@@ -49,7 +53,7 @@ def subset_data_for_plotting(
         filtered_df["data"], categories=target_recipes, ordered=True
     )
     filtered_df = filtered_df.sort_values(["params", "data", "step"])
-    
+
     return filtered_df
 
 
@@ -100,7 +104,7 @@ def plot_training_curves(
             ):
                 # DataDecide provides clean data, minimal processing needed
                 metric_data = recipe_data[["params", "step", metric]].copy()
-                
+
                 if len(metric_data) == 0:
                     continue
 
@@ -194,7 +198,7 @@ def main() -> None:
     print("Loading and preparing data...")
     df = load_and_prepare_data()
     print(f"Loaded {len(df):,} rows")
-    
+
     # Validate CLI arguments using DataDecide utilities
     try:
         validated_recipes = validate_cli_data(args.recipes)

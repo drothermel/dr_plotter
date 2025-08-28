@@ -17,7 +17,11 @@ from dr_plotter.figure import FigureManager
 from dr_plotter.figure_config import FigureConfig
 from dr_plotter.legend_manager import LegendConfig, LegendStrategy
 from dr_plotter.theme import Theme, PlotStyles, AxesStyles, FigureStyles, BASE_THEME
-from dr_plotter.scripting.datadec_utils import get_clean_datadec_df, validate_cli_params, validate_cli_data
+from dr_plotter.scripting.datadec_utils import (
+    get_clean_datadec_df,
+    validate_cli_params,
+    validate_cli_data,
+)
 
 
 def load_and_prepare_data() -> pd.DataFrame:
@@ -29,14 +33,27 @@ def load_and_prepare_data() -> pd.DataFrame:
         sys.exit(1)
 
 
-
-
 def create_faceted_training_curves_theme(
     x_log: bool = False, y_log: bool = False, model_sizes: List[str] = None
 ) -> Theme:
     if model_sizes is None:
         # Default model sizes - will be overridden by actual data
-        model_sizes = ["4M", "6M", "8M", "10M", "14M", "16M", "20M", "60M", "90M", "150M", "300M", "530M", "750M", "1B"]
+        model_sizes = [
+            "4M",
+            "6M",
+            "8M",
+            "10M",
+            "14M",
+            "16M",
+            "20M",
+            "60M",
+            "90M",
+            "150M",
+            "300M",
+            "530M",
+            "750M",
+            "1B",
+        ]
 
     color_palette = [
         "#1f77b4",
@@ -89,11 +106,13 @@ def subset_data_for_plotting(
     target_metrics = ["pile-valppl", "mmlu_average_correct_prob"]
 
     # DataDecide guarantees these columns exist, but filter for what we need
-    filtered_df = df[df["data"].isin(target_recipes) & df["params"].isin(model_sizes)].copy()
-    
+    filtered_df = df[
+        df["data"].isin(target_recipes) & df["params"].isin(model_sizes)
+    ].copy()
+
     keep_columns = ["params", "data", "step"] + target_metrics
     filtered_df = filtered_df[keep_columns].copy()
-    
+
     # Set up categorical ordering for consistent plotting
     filtered_df["params"] = pd.Categorical(
         filtered_df["params"], categories=model_sizes, ordered=True
@@ -102,7 +121,7 @@ def subset_data_for_plotting(
         filtered_df["data"], categories=target_recipes, ordered=True
     )
     filtered_df = filtered_df.sort_values(["params", "data", "step"])
-    
+
     return filtered_df
 
 
@@ -155,7 +174,7 @@ def plot_training_curves_themed(
             ):
                 # DataDecide provides clean data, minimal processing needed
                 metric_data = recipe_data[["params", "step", metric]].copy()
-                
+
                 if len(metric_data) == 0:
                     continue
 
@@ -250,7 +269,7 @@ def main() -> None:
     print("Loading and preparing data...")
     df = load_and_prepare_data()
     print(f"Loaded {len(df):,} rows")
-    
+
     # Validate CLI arguments using DataDecide utilities
     try:
         validated_recipes = validate_cli_data(args.recipes)

@@ -30,17 +30,15 @@ EXPECTED_CHANNELS = {
     },
 )
 def main(args):
-    with FigureManager(figure=FigureConfig(
-        rows=2, cols=2, figsize=(15, 12),
-        x_labels=[
-            [None, None],
-            ["Time (units)", "Category"]
-        ],
-        y_labels=[
-            ["Performance", "Value"],
-            ["Performance", None]
-        ]
-    )) as fm:
+    with FigureManager(
+        figure=FigureConfig(
+            rows=2,
+            cols=2,
+            figsize=(15, 12),
+            x_labels=[[None, None], ["Time (units)", "Category"]],
+            y_labels=[["Performance", "Value"], ["Performance", None]],
+        )
+    ) as fm:
         fm.fig.suptitle("Grouped Plotting: Side-by-Side Comparisons", fontsize=16)
 
         # Simple grouping: 2 groups for clear comparison
