@@ -443,12 +443,45 @@ class FigureManager:
     def _resolve_faceting_config(
         self, faceting: Optional[FacetingConfig], **kwargs
     ) -> FacetingConfig:
+        faceting_params = {}
+
+        faceting_param_names = {
+            "rows",
+            "cols",
+            "lines",
+            "ncols",
+            "nrows",
+            "target_row",
+            "target_col",
+            "target_rows",
+            "target_cols",
+            "row_order",
+            "col_order",
+            "lines_order",
+            "x",
+            "y",
+            "x_labels",
+            "y_labels",
+            "xlim",
+            "ylim",
+            "subplot_titles",
+            "title_template",
+            "shared_x",
+            "shared_y",
+            "empty_subplot_strategy",
+            "color_wrap",
+        }
+
+        for param_name in faceting_param_names:
+            if param_name in kwargs:
+                faceting_params[param_name] = kwargs[param_name]
+
         if faceting is None:
-            return FacetingConfig(**kwargs)
+            return FacetingConfig(**faceting_params)
 
         config_dict = {k: v for k, v in faceting.__dict__.items()}
-        for key, value in kwargs.items():
-            if hasattr(FacetingConfig, key) and value is not None:
+        for key, value in faceting_params.items():
+            if value is not None:
                 config_dict[key] = value
 
         has_rows = config_dict.get("rows") is not None
@@ -469,39 +502,133 @@ class FigureManager:
         faceting: Optional[FacetingConfig] = None,
         **kwargs,
     ) -> None:
-        assert isinstance(data, pd.DataFrame), (
-            f"data must be DataFrame, got {type(data)}"
-        )
-        assert isinstance(plot_type, str), (
-            f"plot_type must be string, got {type(plot_type)}"
-        )
-
         config = self._resolve_faceting_config(faceting, **kwargs)
-        config.validate()
+        self._validate_faceting_inputs(data, config)
 
         grid_rows, grid_cols, layout_metadata = self._compute_facet_grid(data, config)
         self._validate_facet_grid_against_existing(grid_rows, grid_cols)
         target_positions = self._resolve_targeting(config, grid_rows, grid_cols)
 
-        self._set_facet_grid_info(
-            {
-                "config": config,
-                "grid_dimensions": (grid_rows, grid_cols),
-                "layout_metadata": layout_metadata,
-                "target_positions": target_positions,
-            }
-        )
+        data_subsets = self._prepare_facet_data(data, config, layout_metadata)
 
-        self._debug_grid_info = {
-            "config": config,
-            "grid_dimensions": (grid_rows, grid_cols),
-            "layout_metadata": layout_metadata,
-            "target_positions": target_positions,
+        plot_kwargs = {
+            k: v for k, v in kwargs.items() if not hasattr(FacetingConfig, k)
         }
-
-        print(
-            f"Grid computed: {grid_rows}×{grid_cols}, targeting {len(target_positions)} positions"
+        self._execute_faceted_plotting(
+            data_subsets, target_positions, config, plot_type, **plot_kwargs
         )
+
+        self._store_faceting_state(config, layout_metadata)
+
+    def _validate_faceting_inputs(
+        self, data: pd.DataFrame, config: FacetingConfig
+    ) -> None:
+        assert isinstance(data, pd.DataFrame), (
+            f"data must be DataFrame, got {type(data)}"
+        )
+
+        required_columns = []
+        if config.rows is not None:
+            required_columns.append(config.rows)
+        if config.cols is not None:
+            required_columns.append(config.cols)
+        if config.lines is not None:
+            required_columns.append(config.lines)
+        if config.x is not None:
+            required_columns.append(config.x)
+        if config.y is not None:
+            required_columns.append(config.y)
+
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        assert not missing_columns, (
+            f"Missing columns {missing_columns}. Available columns: {sorted(data.columns.tolist())}"
+        )
+
+        config.validate()
+
+        assert config.rows is not None or config.cols is not None, (
+            "Must specify at least one of: rows, cols"
+        )
+
+        if config.x is None:
+            assert False, "x parameter is required for plotting"
+        if config.y is None:
+            assert False, "y parameter is required for plotting"
+
+        if config.rows and config.cols and (config.ncols or config.nrows):
+            assert False, (
+                "Wrapped layouts (ncols/nrows) not supported in Chunk 3. Use explicit grids (rows + cols) only."
+            )
+        if config.target_row is not None or config.target_col is not None:
+            assert False, "Targeting not supported in Chunk 3"
+        if config.target_rows is not None or config.target_cols is not None:
+            assert False, "Targeting not supported in Chunk 3"
+
+    def _prepare_facet_data(
+        self,
+        data: pd.DataFrame,
+        config: FacetingConfig,
+        layout_metadata: Dict[str, Any],
+    ) -> Dict[Tuple[int, int], pd.DataFrame]:
+        data_copy = data.copy()
+        data_subsets = {}
+
+        row_values = layout_metadata["row_values"]
+        col_values = layout_metadata["col_values"]
+        grid_type = layout_metadata["grid_type"]
+
+        if grid_type == "explicit":
+            for row_idx, row_value in enumerate(row_values):
+                for col_idx, col_value in enumerate(col_values):
+                    row_mask = True
+                    col_mask = True
+
+                    if config.rows is not None:
+                        row_mask = data_copy[config.rows] == row_value
+                    if config.cols is not None:
+                        col_mask = data_copy[config.cols] == col_value
+
+                    subset_data = data_copy[row_mask & col_mask].copy()
+                    data_subsets[(row_idx, col_idx)] = subset_data
+        else:
+            assert False, f"Layout type '{grid_type}' not supported in Chunk 3"
+
+        return data_subsets
+
+    def _execute_faceted_plotting(
+        self,
+        data_subsets: Dict[Tuple[int, int], pd.DataFrame],
+        target_positions: List[Tuple[int, int]],
+        config: FacetingConfig,
+        plot_type: str,
+        **plot_kwargs,
+    ) -> None:
+        for row_idx, col_idx in target_positions:
+            if (row_idx, col_idx) not in data_subsets:
+                continue
+
+            subset_data = data_subsets[(row_idx, col_idx)]
+            if subset_data.empty:
+                continue
+
+            plot_params = plot_kwargs.copy()
+            plot_params["x"] = config.x
+            plot_params["y"] = config.y
+
+            if config.lines is not None:
+                plot_params["hue_by"] = config.lines
+
+            self.plot(plot_type, row_idx, col_idx, subset_data, **plot_params)
+
+    def _store_faceting_state(
+        self, config: FacetingConfig, layout_metadata: Dict[str, Any]
+    ) -> None:
+        self._facet_grid_info = {
+            "config": config,
+            "layout_metadata": layout_metadata,
+            "last_plot_type": None,
+            "subplot_styles": {},
+        }
 
     def plot(
         self, plot_type: str, row: int, col: int, *args: Any, **kwargs: Any

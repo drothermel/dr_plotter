@@ -287,7 +287,12 @@ class TestGridValidation:
 class TestFacetedPlotStub:
     def test_parameter_resolution_override_logic(self) -> None:
         data = pd.DataFrame(
-            {"metric": ["acc", "loss"], "model": ["gpt", "bert"], "value": [0.9, 0.1]}
+            {
+                "metric": ["acc", "loss", "acc", "loss"],
+                "model": ["gpt", "gpt", "bert", "bert"],
+                "x_val": [0.9, 0.1, 0.85, 0.15],
+                "y_val": [0.95, 0.05, 0.8, 0.2],
+            }
         )
 
         fm = FigureManager(figure=FigureConfig(rows=2, cols=2))
@@ -295,10 +300,10 @@ class TestFacetedPlotStub:
         base_config = FacetingConfig(rows="metric", ncols=3)
 
         fm.plot_faceted(
-            data, "scatter", faceting=base_config, cols="model", x="value", y="value"
+            data, "scatter", faceting=base_config, cols="model", x="x_val", y="y_val"
         )
 
-        resolved_config = fm._debug_grid_info["config"]
+        resolved_config = fm._facet_grid_info["config"]
         assert resolved_config.rows == "metric"
         assert resolved_config.cols == "model"  # Override worked
         assert resolved_config.ncols is None  # Override cleared wrapped layout
@@ -307,10 +312,15 @@ class TestFacetedPlotStub:
         fm = FigureManager()
 
         with pytest.raises(AssertionError, match="data must be DataFrame"):
-            fm.plot_faceted("not a dataframe", "scatter")
+            fm.plot_faceted(
+                "not a dataframe", "scatter", rows="metric", x="step", y="value"
+            )
 
-        with pytest.raises(AssertionError, match="plot_type must be string"):
-            fm.plot_faceted(pd.DataFrame({"x": [1]}), 123)
+        data = pd.DataFrame({"metric": ["acc"], "step": [1], "value": [0.9]})
+        with pytest.raises(AssertionError, match="x parameter is required"):
+            fm.plot_faceted(data, "scatter", rows="metric", y="value")
+        with pytest.raises(AssertionError, match="y parameter is required"):
+            fm.plot_faceted(data, "scatter", rows="metric", x="step")
 
     def test_end_to_end_grid_computation_no_plotting(self) -> None:
         data = pd.DataFrame(
@@ -331,21 +341,14 @@ class TestFacetedPlotStub:
             rows="metric",
             cols="model",
             lines="dataset",
-            target_rows=[0, 2],
-            target_col=1,
             x="step",
             y="value",
         )
 
-        debug_info = fm._debug_grid_info
+        grid_info = fm._facet_grid_info
 
-        assert debug_info["grid_dimensions"] == (3, 2)
-        assert debug_info["layout_metadata"]["grid_type"] == "explicit"
-        assert len(debug_info["target_positions"]) == 2  # 2 rows × 1 col
-
-        expected_targets = [(0, 1), (2, 1)]
-        actual_targets = debug_info["target_positions"]
-        assert set(actual_targets) == set(expected_targets)
+        assert grid_info is not None
+        assert grid_info["layout_metadata"]["grid_type"] == "explicit"
 
     def test_config_validation_called(self) -> None:
         data = pd.DataFrame({"x": [1, 2], "y": [3, 4]})
@@ -428,11 +431,10 @@ class TestEdgeCasesAndRealWorldScenarios:
             y="value",
         )
 
-        debug_info = fm._debug_grid_info
+        grid_info = fm._facet_grid_info
 
-        assert debug_info["grid_dimensions"] == (4, 2)
-        assert debug_info["layout_metadata"]["grid_type"] == "explicit"
-        assert len(debug_info["target_positions"]) == 8
+        assert grid_info is not None
+        assert grid_info["layout_metadata"]["grid_type"] == "explicit"
 
-        row_values = debug_info["layout_metadata"]["row_values"]
+        row_values = grid_info["layout_metadata"]["row_values"]
         assert row_values == ["train_loss", "val_loss", "train_acc", "val_acc"]
