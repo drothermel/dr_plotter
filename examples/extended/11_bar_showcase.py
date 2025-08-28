@@ -26,7 +26,11 @@ EXPECTED_CHANNELS = {
     },
 )
 def main(args):
-    with FigureManager(figure=FigureConfig(rows=1, cols=2, figsize=(15, 6))) as fm:
+    with FigureManager(figure=FigureConfig(
+        rows=1, cols=2, figsize=(15, 6),
+        x_labels=[["Category", "Category"]],
+        y_labels=[["Value", None]]
+    )) as fm:
         fm.fig.suptitle("Bar Plot Showcase: Single and Grouped Bars", fontsize=16)
 
         # Simple bar chart

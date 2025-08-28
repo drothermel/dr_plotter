@@ -26,7 +26,17 @@ EXPECTED_CHANNELS = {
     },
 )
 def main(args):
-    with FigureManager(figure=FigureConfig(rows=2, cols=2, figsize=(16, 12))) as fm:
+    with FigureManager(figure=FigureConfig(
+        rows=2, cols=2, figsize=(16, 12),
+        x_labels=[
+            [None, None],
+            ["Distribution Values", "Category"]
+        ],
+        y_labels=[
+            ["Row Index", "Y Coordinate"],
+            ["Frequency", None]
+        ]
+    )) as fm:
         fm.fig.suptitle(
             "Example 4: Specialized Plots - Heatmap, Contour, and Distribution Types",
             fontsize=16,

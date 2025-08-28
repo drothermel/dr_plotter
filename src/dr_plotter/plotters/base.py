@@ -441,9 +441,7 @@ class BasePlotter:
     def _style_xlabel(self, ax: Any, styles: Dict[str, Any]) -> None:
         xlabel_text = styles.get(
             "text",
-            self.style_applicator.get_style_with_fallback(
-                "xlabel", fmt_txt(self.x_col)
-            ),
+            self.style_applicator.get_style_with_fallback("xlabel", None),
         )
         if xlabel_text:
             ax.set_xlabel(
@@ -458,9 +456,7 @@ class BasePlotter:
     def _style_ylabel(self, ax: Any, styles: Dict[str, Any]) -> None:
         ylabel_text = styles.get(
             "text",
-            self.style_applicator.get_style_with_fallback(
-                "ylabel", fmt_txt(ylabel_from_metrics(self.y_cols))
-            ),
+            self.style_applicator.get_style_with_fallback("ylabel", None),
         )
         if ylabel_text:
             ax.set_ylabel(
