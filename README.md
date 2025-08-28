@@ -2,6 +2,11 @@
 
 `dr_plotter` is a high-level plotting library for Python, designed to make it easy for researchers to create a wide range of publication-quality plots with minimal effort. It is built on top of `matplotlib` and `pandas`, and it provides a simple, declarative API for creating complex visualizations.
 
+```
+# To update datadec import
+uv lock --upgrade-package datadec
+```
+
 ## Features
 
 *   **Declarative API:** Create complex plots with just a few lines of code.
