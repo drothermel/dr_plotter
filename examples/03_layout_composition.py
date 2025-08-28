@@ -29,7 +29,15 @@ EXPECTED_CHANNELS = {
     },
 )
 def main(args):
-    with FigureManager(figure=FigureConfig(rows=2, cols=2, figsize=(16, 12))) as fm:
+    with FigureManager(
+        figure=FigureConfig(
+            rows=2,
+            cols=2,
+            figsize=(16, 12),
+            x_labels=[[None, None], ["Training Epoch", "Time (units)"]],
+            y_labels=[["Metric A", "Y Coordinate"], ["Training Loss", None]],
+        )
+    ) as fm:
         fm.fig.suptitle(
             "Example 3: Layout & Composition - Multi-Subplot Coordination", fontsize=16
         )
