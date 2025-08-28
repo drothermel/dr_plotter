@@ -35,6 +35,7 @@ def main(args: Any) -> Any:
             ncol=2,
             layout_bottom_margin=0.1,
             bbox_y_offset=0.1,
+            channel_titles={"hue": "Experiment Type", "marker": "Test Condition"},
         ),
     ) as fm:
         fm.fig.suptitle(

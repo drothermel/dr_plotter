@@ -68,6 +68,7 @@ class LegendConfig:
     max_col: int = 4
     spacing: float = 0.1
     remove_axes_legends: bool = True
+    channel_titles: Optional[Dict[str, str]] = None
 
     layout_left_margin: float = 0.0
     layout_bottom_margin: float = 0.15
@@ -255,10 +256,20 @@ class LegendManager:
                     )
                     bbox_to_anchor = (bbox_x, self.config.bbox_y_offset)
 
+                title = None
+                if channel:
+                    if (
+                        self.config.channel_titles
+                        and channel in self.config.channel_titles
+                    ):
+                        title = self.config.channel_titles[channel]
+                    else:
+                        title = channel.title()
+
                 legend = self.fm.figure.legend(
                     handles,
                     labels,
-                    title=channel.title() if channel else None,
+                    title=title,
                     loc="upper center",
                     bbox_to_anchor=bbox_to_anchor,
                     ncol=self._calculate_ncol(len(handles)),
