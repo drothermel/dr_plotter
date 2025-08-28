@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import List, Tuple
 import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -60,15 +60,21 @@ def subset_data_for_plotting(
     return filtered_df
 
 
-def create_faceted_grid(
-    num_recipes: int, num_model_sizes: int
-) -> Tuple[plt.Figure, Any]:
-    figwidth = max(12, num_recipes * 3.5)
+def plot_training_curves(
+    df: pd.DataFrame,
+    target_recipes: List[str],
+    x_log: bool = False,
+    y_log: bool = False,
+    xlim: Tuple[float, float] = None,
+    ylim: Tuple[float, float] = None,
+) -> None:
+    num_model_sizes = len(df["params"].cat.categories)
+    figwidth = max(12, len(target_recipes) * 3.5)
 
-    fm = FigureManager(
+    with FigureManager(
         figure=FigureConfig(
             rows=2,
-            cols=num_recipes,
+            cols=len(target_recipes),
             figsize=(figwidth, 9),
             tight_layout_pad=0.3,
             subplot_kwargs={"sharey": "row"},
@@ -80,78 +86,68 @@ def create_faceted_grid(
             layout_bottom_margin=0.5,
             bbox_y_offset=0.02,
         ),
-    )
-    fm.fig.suptitle(
-        f"Faceted Training Curves: 2 Metrics × {num_recipes} Data Recipes",
-        fontsize=16,
-        y=0.96,
-    )
-    return fm.fig, fm
+    ) as fm:
+        fm.fig.suptitle(
+            f"Faceted Training Curves: 2 Metrics × {len(target_recipes)} Data Recipes",
+            fontsize=16,
+            y=0.96,
+        )
 
+        metrics = ["pile-valppl", "mmlu_average_correct_prob"]
+        metric_labels = [
+            "Pile Validation Perplexity",
+            "MMLU Average Correct Probability",
+        ]
 
-def plot_training_curves(
-    df: pd.DataFrame,
-    target_recipes: List[str],
-    x_log: bool = False,
-    y_log: bool = False,
-    xlim: Tuple[float, float] = None,
-    ylim: Tuple[float, float] = None,
-) -> None:
-    num_model_sizes = len(df["params"].cat.categories)
-    fig, fm = create_faceted_grid(len(target_recipes), num_model_sizes)
+        for col_idx, recipe in enumerate(target_recipes):
+            recipe_data = df[df["data"] == recipe].copy()
+            assert len(recipe_data) > 0, f"No data found for recipe: {recipe}"
 
-    metrics = ["pile-valppl", "mmlu_average_correct_prob"]
-    metric_labels = ["Pile Validation Perplexity", "MMLU Average Correct Probability"]
+            for row_idx, (metric, metric_label) in enumerate(
+                zip(metrics, metric_labels)
+            ):
+                metric_data = recipe_data[["params", "step", metric]].copy()
+                metric_data = metric_data.dropna()
 
-    for col_idx, recipe in enumerate(target_recipes):
-        recipe_data = df[df["data"] == recipe].copy()
-        assert len(recipe_data) > 0, f"No data found for recipe: {recipe}"
+                if len(metric_data) == 0:
+                    continue
 
-        for row_idx, (metric, metric_label) in enumerate(zip(metrics, metric_labels)):
-            metric_data = recipe_data[["params", "step", metric]].copy()
-            metric_data = metric_data.dropna()
+                fm.plot(
+                    "line",
+                    row_idx,
+                    col_idx,
+                    metric_data,
+                    x="step",
+                    y=metric,
+                    hue_by="params",
+                    linewidth=1.5,
+                    alpha=0.8,
+                    title=f"{recipe}",
+                )
 
-            if len(metric_data) == 0:
-                continue
+                ax = fm.get_axes(row_idx, col_idx)
 
-            fm.plot(
-                "line",
-                row_idx,
-                col_idx,
-                metric_data,
-                x="step",
-                y=metric,
-                hue_by="params",
-                linewidth=1.5,
-                alpha=0.8,
-                title=f"{recipe}",
-            )
+                if row_idx == 1:
+                    ax.set_xlabel("Training Steps")
 
-            ax = fm.get_axes(row_idx, col_idx)
+                if col_idx == 0:
+                    ax.set_ylabel(metric_label)
 
-            if row_idx == 1:
-                ax.set_xlabel("Training Steps")
+                if x_log:
+                    ax.set_xscale("log")
+                else:
+                    ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
 
-            if col_idx == 0:
-                ax.set_ylabel(metric_label)
+                if y_log:
+                    ax.set_yscale("log")
 
-            if x_log:
-                ax.set_xscale("log")
-            else:
-                ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
+                if xlim:
+                    ax.set_xlim(xlim)
 
-            if y_log:
-                ax.set_yscale("log")
+                if ylim:
+                    ax.set_ylim(ylim)
 
-            if xlim:
-                ax.set_xlim(xlim)
-
-            if ylim:
-                ax.set_ylim(ylim)
-
-            ax.grid(True, alpha=0.3)
-
-    fm.finalize_layout()
+                ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
     plt.savefig(

@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import List, Tuple
 import argparse
 import itertools
 import pandas as pd
@@ -111,15 +111,22 @@ def subset_data_for_plotting(
     return filtered_df
 
 
-def create_faceted_grid_with_theme(
-    custom_theme: Theme, num_recipes: int, num_model_sizes: int
-) -> Tuple[plt.Figure, Any]:
-    figwidth = max(12, num_recipes * 3.5)
+def plot_training_curves_themed(
+    df: pd.DataFrame,
+    target_recipes: List[str],
+    x_log: bool = False,
+    y_log: bool = False,
+    xlim: Tuple[float, float] = None,
+    ylim: Tuple[float, float] = None,
+) -> None:
+    num_model_sizes = len(df["params"].cat.categories)
+    custom_theme = create_faceted_training_curves_theme(x_log=x_log, y_log=y_log)
+    figwidth = max(12, len(target_recipes) * 3.5)
 
-    fm = FigureManager(
+    with FigureManager(
         figure=FigureConfig(
             rows=2,
-            cols=num_recipes,
+            cols=len(target_recipes),
             figsize=(figwidth, 9),
             tight_layout_pad=0.3,
             subplot_kwargs={"sharey": "row"},
@@ -132,80 +139,67 @@ def create_faceted_grid_with_theme(
             bbox_y_offset=0.02,
         ),
         theme=custom_theme,
-    )
-    fm.fig.suptitle(
-        f"Themed Faceted Training Curves: 2 Metrics × {num_recipes} Data Recipes",
-        fontsize=16,
-        y=0.96,
-    )
-    return fm.fig, fm
+    ) as fm:
+        fm.fig.suptitle(
+            f"Themed Faceted Training Curves: 2 Metrics × {len(target_recipes)} Data Recipes",
+            fontsize=16,
+            y=0.96,
+        )
 
+        metrics = ["pile-valppl", "mmlu_average_correct_prob"]
+        metric_labels = [
+            "Pile Validation Perplexity",
+            "MMLU Average Correct Probability",
+        ]
 
-def plot_training_curves_themed(
-    df: pd.DataFrame,
-    target_recipes: List[str],
-    x_log: bool = False,
-    y_log: bool = False,
-    xlim: Tuple[float, float] = None,
-    ylim: Tuple[float, float] = None,
-) -> None:
-    num_model_sizes = len(df["params"].cat.categories)
-    custom_theme = create_faceted_training_curves_theme(x_log=x_log, y_log=y_log)
-    fig, fm = create_faceted_grid_with_theme(
-        custom_theme, len(target_recipes), num_model_sizes
-    )
+        for col_idx, recipe in enumerate(target_recipes):
+            recipe_data = df[df["data"] == recipe].copy()
+            assert len(recipe_data) > 0, f"No data found for recipe: {recipe}"
 
-    metrics = ["pile-valppl", "mmlu_average_correct_prob"]
-    metric_labels = ["Pile Validation Perplexity", "MMLU Average Correct Probability"]
+            for row_idx, (metric, metric_label) in enumerate(
+                zip(metrics, metric_labels)
+            ):
+                metric_data = recipe_data[["params", "step", metric]].copy()
+                metric_data = metric_data.dropna()
 
-    for col_idx, recipe in enumerate(target_recipes):
-        recipe_data = df[df["data"] == recipe].copy()
-        assert len(recipe_data) > 0, f"No data found for recipe: {recipe}"
+                if len(metric_data) == 0:
+                    continue
 
-        for row_idx, (metric, metric_label) in enumerate(zip(metrics, metric_labels)):
-            metric_data = recipe_data[["params", "step", metric]].copy()
-            metric_data = metric_data.dropna()
+                fm.plot(
+                    "line",
+                    row_idx,
+                    col_idx,
+                    metric_data,
+                    x="step",
+                    y=metric,
+                    hue_by="params",
+                    title=f"{recipe}",
+                )
 
-            if len(metric_data) == 0:
-                continue
+                ax = fm.get_axes(row_idx, col_idx)
 
-            fm.plot(
-                "line",
-                row_idx,
-                col_idx,
-                metric_data,
-                x="step",
-                y=metric,
-                hue_by="params",
-                title=f"{recipe}",
-            )
+                if row_idx == 1:
+                    ax.set_xlabel("Training Steps")
 
-            ax = fm.get_axes(row_idx, col_idx)
+                if col_idx == 0:
+                    ax.set_ylabel(metric_label)
 
-            if row_idx == 1:
-                ax.set_xlabel("Training Steps")
+                theme_x_scale = custom_theme.axes_styles.get("xscale", "linear")
+                theme_y_scale = custom_theme.axes_styles.get("yscale", "linear")
 
-            if col_idx == 0:
-                ax.set_ylabel(metric_label)
+                if theme_x_scale == "log":
+                    ax.set_xscale("log")
+                else:
+                    ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
 
-            theme_x_scale = custom_theme.axes_styles.get("xscale", "linear")
-            theme_y_scale = custom_theme.axes_styles.get("yscale", "linear")
+                if theme_y_scale == "log":
+                    ax.set_yscale("log")
 
-            if theme_x_scale == "log":
-                ax.set_xscale("log")
-            else:
-                ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
+                if xlim:
+                    ax.set_xlim(xlim)
 
-            if theme_y_scale == "log":
-                ax.set_yscale("log")
-
-            if xlim:
-                ax.set_xlim(xlim)
-
-            if ylim:
-                ax.set_ylim(ylim)
-
-    fm.finalize_layout()
+                if ylim:
+                    ax.set_ylim(ylim)
 
     plt.tight_layout()
     plt.savefig(
