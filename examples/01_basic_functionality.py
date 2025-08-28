@@ -20,7 +20,15 @@ EXPECTED_CHANNELS = {
 @verify_plot_properties(expected_channels=EXPECTED_CHANNELS)
 @verify_example(expected_legends=0, expected_channels=EXPECTED_CHANNELS)
 def main(args):
-    with FigureManager(figure=FigureConfig(rows=2, cols=2, figsize=(12, 10))) as fm:
+    with FigureManager(
+        figure=FigureConfig(
+            rows=2,
+            cols=2,
+            figsize=(12, 10),
+            x_labels=[[None, None], ["Category", "Values"]],
+            y_labels=[["Y Coordinate", "Performance"], ["Average Value", None]],
+        )
+    ) as fm:
         fm.fig.suptitle("Example 1: Basic Functionality - Core Plot Types", fontsize=16)
 
         # Scatter Plot (0,0)

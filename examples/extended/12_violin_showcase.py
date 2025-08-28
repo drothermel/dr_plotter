@@ -12,7 +12,11 @@ from plot_data import ExampleData
 
 @verify_example(expected_legends=1)
 def main(args):
-    with FigureManager(figure=FigureConfig(rows=1, cols=2, figsize=(15, 6))) as fm:
+    with FigureManager(figure=FigureConfig(
+        rows=1, cols=2, figsize=(15, 6),
+        x_labels=[["Category", "Category"]],
+        y_labels=[["Value", None]]
+    )) as fm:
         fm.fig.suptitle("Violin Plot Showcase: Distribution Shapes", fontsize=16)
 
         # Simple violin plot

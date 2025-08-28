@@ -48,6 +48,7 @@ class FigureManager:
     ) -> None:
         figure.validate()
 
+        self.figure_config = figure
         self._setup_layout_configuration(figure)
 
         fig, axes, external_mode = self._create_figure_axes(
@@ -159,6 +160,7 @@ class FigureManager:
 
     def finalize_layout(self) -> None:
         self.finalize_legends()
+        self._apply_axis_labels()
 
         needs_legend_space = (
             self.legend_config.strategy == LegendStrategy.GROUPED_BY_CHANNEL
@@ -181,6 +183,28 @@ class FigureManager:
             self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
         else:
             self.fig.tight_layout(pad=self._layout_pad)
+
+    def _apply_axis_labels(self) -> None:
+        if self.external_mode:
+            return
+
+        if self.figure_config.x_labels is not None:
+            for row_idx, row_labels in enumerate(self.figure_config.x_labels):
+                for col_idx, label in enumerate(row_labels):
+                    ax = self.get_axes(row_idx, col_idx)
+                    if label is not None:
+                        ax.set_xlabel(label)
+                    else:
+                        ax.set_xlabel("")
+
+        if self.figure_config.y_labels is not None:
+            for row_idx, row_labels in enumerate(self.figure_config.y_labels):
+                for col_idx, label in enumerate(row_labels):
+                    ax = self.get_axes(row_idx, col_idx)
+                    if label is not None:
+                        ax.set_ylabel(label)
+                    else:
+                        ax.set_ylabel("")
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
         self.finalize_layout()

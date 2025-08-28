@@ -30,7 +30,15 @@ EXPECTED_CHANNELS = {
     },
 )
 def main(args):
-    with FigureManager(figure=FigureConfig(rows=2, cols=2, figsize=(15, 12))) as fm:
+    with FigureManager(
+        figure=FigureConfig(
+            rows=2,
+            cols=2,
+            figsize=(15, 12),
+            x_labels=[["Time (units)", "X Coordinate"], ["Category", "Time (units)"]],
+            y_labels=[["Value", None], ["Distribution", None]],
+        )
+    ) as fm:
         fm.fig.suptitle(
             "Example 2: Visual Encoding - Color, Marker, and Style Systems", fontsize=16
         )
