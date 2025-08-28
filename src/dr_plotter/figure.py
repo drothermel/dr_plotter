@@ -1,5 +1,4 @@
 from typing import Any, Dict, List, Optional, Tuple
-import math
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -15,6 +14,14 @@ from dr_plotter.legend_manager import (
     LegendStrategy,
 )
 from dr_plotter.theme import BASE_THEME, Theme
+from dr_plotter.faceting import (
+    compute_grid_dimensions,
+    compute_grid_layout_metadata,
+    resolve_target_positions,
+    analyze_data_dimensions,
+    prepare_subplot_data_subsets,
+    validate_faceting_data_requirements,
+)
 from .plotters import BasePlotter
 
 
@@ -261,150 +268,22 @@ class FigureManager:
     def _analyze_data_dimensions(
         self, data: pd.DataFrame, config: FacetingConfig
     ) -> Dict[str, List[str]]:
-        result = {"rows": [], "cols": [], "lines": []}
-
-        if config.rows is not None:
-            assert config.rows in data.columns, (
-                f"Row dimension column '{config.rows}' not found in data. Available columns: {sorted(data.columns.tolist())}"
-            )
-            row_values = data[config.rows].unique().tolist()
-            if config.row_order is not None:
-                missing_values = [v for v in config.row_order if v not in row_values]
-                assert not missing_values, (
-                    f"Row order values {missing_values} not found in data['{config.rows}']. Available values: {sorted(row_values)}"
-                )
-                result["rows"] = config.row_order
-            else:
-                result["rows"] = sorted(row_values, key=str)
-
-        if config.cols is not None:
-            assert config.cols in data.columns, (
-                f"Column dimension column '{config.cols}' not found in data. Available columns: {sorted(data.columns.tolist())}"
-            )
-            col_values = data[config.cols].unique().tolist()
-            if config.col_order is not None:
-                missing_values = [v for v in config.col_order if v not in col_values]
-                assert not missing_values, (
-                    f"Column order values {missing_values} not found in data['{config.cols}']. Available values: {sorted(col_values)}"
-                )
-                result["cols"] = config.col_order
-            else:
-                result["cols"] = sorted(col_values, key=str)
-
-        if config.lines is not None:
-            assert config.lines in data.columns, (
-                f"Lines dimension column '{config.lines}' not found in data. Available columns: {sorted(data.columns.tolist())}"
-            )
-            line_values = data[config.lines].unique().tolist()
-            if config.lines_order is not None:
-                missing_values = [v for v in config.lines_order if v not in line_values]
-                assert not missing_values, (
-                    f"Lines order values {missing_values} not found in data['{config.lines}']. Available values: {sorted(line_values)}"
-                )
-                result["lines"] = config.lines_order
-            else:
-                result["lines"] = sorted(line_values, key=str)
-
-        return result
+        return analyze_data_dimensions(data, config)
 
     def _compute_facet_grid(
         self, data: pd.DataFrame, config: FacetingConfig
     ) -> Tuple[int, int, Dict[str, Any]]:
         dimensions = self._analyze_data_dimensions(data, config)
 
-        row_values = dimensions["rows"]
-        col_values = dimensions["cols"]
-
-        if config.rows and config.cols:
-            grid_type = "explicit"
-            n_rows = len(row_values)
-            n_cols = len(col_values)
-            fill_order = [(r, c) for r in range(n_rows) for c in range(n_cols)]
-
-        elif config.rows and config.ncols:
-            grid_type = "wrapped_rows"
-            n_cols = config.ncols
-            n_rows = math.ceil(len(row_values) / n_cols)
-            fill_order = []
-            for i, _ in enumerate(row_values):
-                row_idx = i // n_cols
-                col_idx = i % n_cols
-                fill_order.append((row_idx, col_idx))
-
-        elif config.cols and config.nrows:
-            grid_type = "wrapped_cols"
-            n_rows = config.nrows
-            n_cols = math.ceil(len(col_values) / n_rows)
-            fill_order = []
-            for i, _ in enumerate(col_values):
-                col_idx = i // n_rows
-                row_idx = i % n_rows
-                fill_order.append((row_idx, col_idx))
-
-        else:
-            assert False, (
-                f"Invalid grid configuration. Must specify either (rows + cols), (rows + ncols), or (cols + nrows). Got rows='{config.rows}', cols='{config.cols}', ncols={config.ncols}, nrows={config.nrows}"
-            )
-
-        layout_metadata = {
-            "row_values": row_values,
-            "col_values": col_values,
-            "grid_type": grid_type,
-            "fill_order": fill_order,
-            "dimensions": dimensions,
-        }
+        n_rows, n_cols = compute_grid_dimensions(data, config, dimensions)
+        layout_metadata = compute_grid_layout_metadata(data, config, dimensions)
 
         return n_rows, n_cols, layout_metadata
 
     def _resolve_targeting(
         self, config: FacetingConfig, grid_rows: int, grid_cols: int
     ) -> List[Tuple[int, int]]:
-        target_row = config.target_row
-        target_col = config.target_col
-        target_rows = config.target_rows
-        target_cols = config.target_cols
-
-        if target_row is not None:
-            assert 0 <= target_row < grid_rows, (
-                f"target_row={target_row} invalid for {grid_rows}×{grid_cols} grid. Valid range: 0-{grid_rows - 1}"
-            )
-        if target_col is not None:
-            assert 0 <= target_col < grid_cols, (
-                f"target_col={target_col} invalid for {grid_rows}×{grid_cols} grid. Valid range: 0-{grid_cols - 1}"
-            )
-        if target_rows is not None:
-            for tr in target_rows:
-                assert 0 <= tr < grid_rows, (
-                    f"target_rows contains {tr} which is invalid for {grid_rows}×{grid_cols} grid. Valid range: 0-{grid_rows - 1}"
-                )
-        if target_cols is not None:
-            for tc in target_cols:
-                assert 0 <= tc < grid_cols, (
-                    f"target_cols contains {tc} which is invalid for {grid_rows}×{grid_cols} grid. Valid range: 0-{grid_cols - 1}"
-                )
-
-        if all(x is None for x in [target_row, target_col, target_rows, target_cols]):
-            return [(r, c) for r in range(grid_rows) for c in range(grid_cols)]
-
-        effective_rows = (
-            target_rows
-            if target_rows is not None
-            else ([target_row] if target_row is not None else None)
-        )
-        effective_cols = (
-            target_cols
-            if target_cols is not None
-            else ([target_col] if target_col is not None else None)
-        )
-
-        if effective_rows is not None and effective_cols is not None:
-            return [(r, c) for r in effective_rows for c in effective_cols]
-        elif effective_rows is not None:
-            return [(r, c) for r in effective_rows for c in range(grid_cols)]
-        elif effective_cols is not None:
-            return [(r, c) for r in range(grid_rows) for c in effective_cols]
-
-        return [(r, c) for r in range(grid_rows) for c in range(grid_cols)]
+        return resolve_target_positions(config, grid_rows, grid_cols)
 
     def _validate_facet_grid_against_existing(
         self, new_rows: int, new_cols: int
@@ -523,26 +402,7 @@ class FigureManager:
     def _validate_faceting_inputs(
         self, data: pd.DataFrame, config: FacetingConfig
     ) -> None:
-        assert isinstance(data, pd.DataFrame), (
-            f"data must be DataFrame, got {type(data)}"
-        )
-
-        required_columns = []
-        if config.rows is not None:
-            required_columns.append(config.rows)
-        if config.cols is not None:
-            required_columns.append(config.cols)
-        if config.lines is not None:
-            required_columns.append(config.lines)
-        if config.x is not None:
-            required_columns.append(config.x)
-        if config.y is not None:
-            required_columns.append(config.y)
-
-        missing_columns = [col for col in required_columns if col not in data.columns]
-        assert not missing_columns, (
-            f"Missing columns {missing_columns}. Available columns: {sorted(data.columns.tolist())}"
-        )
+        validate_faceting_data_requirements(data, config)
 
         config.validate()
 
@@ -570,30 +430,13 @@ class FigureManager:
         config: FacetingConfig,
         layout_metadata: Dict[str, Any],
     ) -> Dict[Tuple[int, int], pd.DataFrame]:
-        data_copy = data.copy()
-        data_subsets = {}
-
         row_values = layout_metadata["row_values"]
         col_values = layout_metadata["col_values"]
         grid_type = layout_metadata["grid_type"]
 
-        if grid_type == "explicit":
-            for row_idx, row_value in enumerate(row_values):
-                for col_idx, col_value in enumerate(col_values):
-                    row_mask = True
-                    col_mask = True
-
-                    if config.rows is not None:
-                        row_mask = data_copy[config.rows] == row_value
-                    if config.cols is not None:
-                        col_mask = data_copy[config.cols] == col_value
-
-                    subset_data = data_copy[row_mask & col_mask].copy()
-                    data_subsets[(row_idx, col_idx)] = subset_data
-        else:
-            assert False, f"Layout type '{grid_type}' not supported in Chunk 3"
-
-        return data_subsets
+        return prepare_subplot_data_subsets(
+            data, row_values, col_values, config.rows, config.cols, grid_type
+        )
 
     def _execute_faceted_plotting(
         self,
