@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.colors as mcolors
 from matplotlib.collections import PathCollection, PolyCollection
 from matplotlib.lines import Line2D
+from matplotlib.image import AxesImage
 
 
 def extract_scatter_positions(collection: PathCollection) -> List[Tuple[float, float]]:
@@ -258,6 +259,22 @@ def extract_line_alphas(lines: List[Any]) -> List[float]:
     return alphas
 
 
+def extract_images_from_axis(ax: Any) -> List[AxesImage]:
+    return [img for img in getattr(ax, "images", []) if isinstance(img, AxesImage)]
+
+
+def extract_image_data(image: AxesImage) -> Dict[str, Any]:
+    array = image.get_array()
+    extent = image.get_extent()
+    return {
+        "shape": array.shape if hasattr(array, "shape") else None,
+        "extent": extent,
+        "colormap": str(image.get_cmap()),
+        "vmin": image.get_clim()[0] if image.get_clim() else None,
+        "vmax": image.get_clim()[1] if image.get_clim() else None,
+    }
+
+
 def convert_scatter_size_to_legend_size(scatter_size: float) -> float:
     return np.sqrt(scatter_size / np.pi) * 2
 
@@ -396,6 +413,7 @@ def extract_subplot_properties(ax: Any) -> Dict[str, Any]:
     poly_collections = extract_polycollections_from_axis(ax)
     bar_containers = extract_barcontainers_from_axis(ax)
     lines = extract_lines_from_axis(ax)
+    images = extract_images_from_axis(ax)
     legend_handles = extract_legend_handles(ax)
     legend_debug = debug_legend_detection(ax)
 
@@ -462,5 +480,21 @@ def extract_subplot_properties(ax: Any) -> Dict[str, Any]:
             "alphas": line_alphas,
         }
         result["collections"].append(collection_props)
+
+    for i, image in enumerate(images):
+        image_props = {
+            "index": len(path_collections)
+            + len(poly_collections)
+            + len(bar_containers)
+            + len(lines)
+            + i,
+            "type": "image",
+            "positions": [],
+            "colors": [],
+            "sizes": [],
+            "markers": [],
+            "image_data": extract_image_data(image),
+        }
+        result["collections"].append(image_props)
 
     return result
