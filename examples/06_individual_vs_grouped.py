@@ -39,6 +39,10 @@ def main(args: Any) -> Any:
     assert "time_series" in shared_data.columns
     assert len(shared_data.groupby("category_group")) >= 2
 
+    aggregated_data = (
+        shared_data.groupby("x_categorical")["y_continuous"].mean().reset_index()
+    )
+
     with FigureManager(figure=FigureConfig(rows=2, cols=4, figsize=(20, 10))) as fm:
         fm.fig.suptitle("Individual vs Grouped Plotting Comparison", fontsize=16)
 
@@ -84,7 +88,7 @@ def main(args: Any) -> Any:
             "bar",
             0,
             3,
-            shared_data,
+            aggregated_data,
             x="x_categorical",
             y="y_continuous",
             color="orange",
