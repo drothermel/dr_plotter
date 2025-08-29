@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Union
 
 
 class LegendStrategy(Enum):
@@ -82,6 +82,23 @@ class LegendConfig:
     two_legend_right_x: float = 0.75
     multi_legend_start_x: float = 0.15
     multi_legend_spacing: float = 0.35
+
+
+def resolve_legend_config(legend_input: Union[str, LegendConfig]) -> LegendConfig:
+    if isinstance(legend_input, str):
+        string_mappings = {
+            "grouped": LegendConfig(
+                strategy=LegendStrategy.GROUPED_BY_CHANNEL, layout_bottom_margin=0.2
+            ),
+            "subplot": LegendConfig(strategy=LegendStrategy.PER_AXES),
+            "figure": LegendConfig(strategy=LegendStrategy.FIGURE_BELOW),
+            "none": LegendConfig(strategy=LegendStrategy.NONE),
+        }
+        assert legend_input in string_mappings, (
+            f"Invalid legend string '{legend_input}'. Valid options: {list(string_mappings.keys())}"
+        )
+        return string_mappings[legend_input]
+    return legend_input
 
 
 class LegendManager:

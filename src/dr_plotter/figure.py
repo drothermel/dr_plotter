@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -12,6 +12,7 @@ from dr_plotter.legend_manager import (
     LegendEntry,
     LegendManager,
     LegendStrategy,
+    resolve_legend_config,
 )
 from dr_plotter.theme import BASE_THEME, Theme
 from dr_plotter.faceting import (
@@ -31,11 +32,15 @@ class FigureManager:
     def __init__(
         self,
         figure: Optional["FigureConfig"] = None,
-        legend: Optional[LegendConfig] = None,
+        legend: Optional[Union[str, LegendConfig]] = None,
         theme: Optional[Any] = None,
     ) -> None:
         figure = figure or FigureConfig()
-        legend = legend or LegendConfig()
+
+        if legend is None:
+            legend = LegendConfig()
+        else:
+            legend = resolve_legend_config(legend)
 
         if theme and hasattr(theme, "legend_config") and theme.legend_config:
             legend = theme.legend_config
@@ -48,7 +53,7 @@ class FigureManager:
     def _init_from_configs(
         self,
         figure: "FigureConfig",
-        legend: Optional[LegendConfig],
+        legend: Optional[Union[str, LegendConfig]],
         theme: Optional[Any] = None,
     ) -> None:
         figure.validate()
@@ -82,7 +87,7 @@ class FigureManager:
     def _create_from_configs(
         cls,
         figure: "FigureConfig",
-        legend: Optional[LegendConfig],
+        legend: Optional[Union[str, LegendConfig]],
         theme: Optional[Any] = None,
     ) -> "FigureManager":
         instance = cls.__new__(cls)
@@ -118,18 +123,15 @@ class FigureManager:
 
     def _build_legend_system(
         self,
-        legend_config: Optional[LegendConfig],
+        legend_config: Optional[Union[str, LegendConfig]],
         theme: Optional[Theme],
     ) -> LegendManager:
-        effective_config = (
-            legend_config
-            or (
-                theme.legend_config
-                if theme and hasattr(theme, "legend_config")
-                else None
-            )
-            or LegendConfig()
-        )
+        if legend_config is not None:
+            effective_config = resolve_legend_config(legend_config)
+        elif theme and hasattr(theme, "legend_config") and theme.legend_config:
+            effective_config = theme.legend_config
+        else:
+            effective_config = LegendConfig()
 
         return LegendManager(self, effective_config)
 
