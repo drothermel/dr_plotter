@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, Optional, Set, TYPE_CHECKING
 
 from dr_plotter.consts import VISUAL_CHANNELS
 from dr_plotter.grouping_config import GroupingConfig
-from dr_plotter.legend_manager import LegendEntry
+from dr_plotter.legend_manager import LegendEntry, LegendStrategy
 from dr_plotter.theme import Theme
 from dr_plotter.types import ComponentSchema, Phase
 
@@ -272,7 +272,8 @@ class StyleApplicator:
         return (
             self.figure_manager
             and hasattr(self.figure_manager, "legend_config")
-            and self.figure_manager.legend_config.strategy.value == "grouped_by_channel"
+            and self.figure_manager.legend_config.strategy
+            == LegendStrategy.GROUPED_BY_CHANNEL
         )
 
     def _extract_component_kwargs(

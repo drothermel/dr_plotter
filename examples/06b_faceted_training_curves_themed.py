@@ -15,7 +15,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from dr_plotter.figure import FigureManager
 from dr_plotter.figure_config import FigureConfig
-from dr_plotter.legend_manager import LegendConfig, LegendStrategy
+from dr_plotter.legend_manager import LegendConfig
 from dr_plotter.theme import Theme, PlotStyles, AxesStyles, FigureStyles, BASE_THEME
 from dr_plotter.scripting.datadec_utils import (
     get_clean_datadec_df,
@@ -146,7 +146,7 @@ def plot_training_curves_themed(
             subplot_kwargs={"sharey": "row"},
         ),
         legend=LegendConfig(
-            strategy=LegendStrategy.FIGURE_BELOW,
+            strategy="figure",
             ncol=min(num_model_sizes, 8),
             layout_top_margin=0.1,
             layout_bottom_margin=0.12,

@@ -61,7 +61,23 @@ class LegendRegistry:
 
 @dataclass
 class LegendConfig:
-    strategy: LegendStrategy = LegendStrategy.PER_AXES
+    strategy: str = "subplot"
+
+    def __post_init__(self) -> None:
+        self.strategy = self._validate_and_convert_strategy(self.strategy)
+
+    def _validate_and_convert_strategy(self, strategy: str) -> LegendStrategy:
+        string_to_enum = {
+            "grouped": LegendStrategy.GROUPED_BY_CHANNEL,
+            "subplot": LegendStrategy.PER_AXES,
+            "figure": LegendStrategy.FIGURE_BELOW,
+            "none": LegendStrategy.NONE,
+        }
+        assert strategy in string_to_enum, (
+            f"Invalid legend strategy '{strategy}'. Valid options: {list(string_to_enum.keys())}"
+        )
+        return string_to_enum[strategy]
+
     collect_strategy: str = "smart"
     position: str = "lower center"
     deduplication: bool = True
@@ -88,12 +104,10 @@ class LegendConfig:
 def resolve_legend_config(legend_input: Union[str, LegendConfig]) -> LegendConfig:
     if isinstance(legend_input, str):
         string_mappings = {
-            "grouped": LegendConfig(
-                strategy=LegendStrategy.GROUPED_BY_CHANNEL, layout_bottom_margin=0.2
-            ),
-            "subplot": LegendConfig(strategy=LegendStrategy.PER_AXES),
-            "figure": LegendConfig(strategy=LegendStrategy.FIGURE_BELOW),
-            "none": LegendConfig(strategy=LegendStrategy.NONE),
+            "grouped": LegendConfig(strategy="grouped", layout_bottom_margin=0.2),
+            "subplot": LegendConfig(strategy="subplot"),
+            "figure": LegendConfig(strategy="figure"),
+            "none": LegendConfig(strategy="none"),
         }
         assert legend_input in string_mappings, (
             f"Invalid legend string '{legend_input}'. Valid options: {list(string_mappings.keys())}"
@@ -200,13 +214,11 @@ class LegendManager:
         if self.config.strategy == LegendStrategy.NONE:
             return
 
-        strategy = self.config.strategy.value
-
-        if strategy == "figure_below":
+        if self.config.strategy == LegendStrategy.FIGURE_BELOW:
             self._create_figure_legend()
-        elif strategy == "grouped_by_channel":
+        elif self.config.strategy == LegendStrategy.GROUPED_BY_CHANNEL:
             self._create_grouped_legends()
-        elif strategy == "per_axes":
+        elif self.config.strategy == LegendStrategy.PER_AXES:
             self._create_per_axes_legends()
 
     def _process_entries_by_channel_type(

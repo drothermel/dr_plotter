@@ -1,15 +1,7 @@
-"""
-Faceted Training Curves Example
-
-Requires DataDecide integration:
-    uv add "dr_plotter[datadec]"
-
-This example demonstrates advanced faceted plotting with real ML training data.
-"""
-
 from typing import List, Tuple
 import argparse
 import sys
+import time
 import pandas as pd
 import matplotlib.pyplot as plt
 from dr_plotter.figure import FigureManager
@@ -23,7 +15,6 @@ from dr_plotter.scripting.datadec_utils import (
 
 
 def load_and_prepare_data() -> pd.DataFrame:
-    """Load clean, pre-validated data from DataDecide."""
     try:
         return get_clean_datadec_df(filter_types=["ppl", "max_steps"])
     except ImportError as e:
@@ -31,13 +22,12 @@ def load_and_prepare_data() -> pd.DataFrame:
         sys.exit(1)
 
 
-def subset_data_for_plotting(
+def prepare_faceted_data(
     df: pd.DataFrame, target_recipes: List[str], model_sizes: List[str]
 ) -> pd.DataFrame:
-    """Filter DataFrame for target metrics, recipes, and model sizes."""
-    target_metrics = ["pile-valppl", "mmlu_average_correct_prob"]
+    target_metrics = ["pile-valppl", "mmlu_average_acc_raw"]
 
-    # DataDecide guarantees these columns exist, but filter for what we need
+    # Filter for target recipes and model sizes
     filtered_df = df[
         df["data"].isin(target_recipes) & df["params"].isin(model_sizes)
     ].copy()
@@ -45,19 +35,38 @@ def subset_data_for_plotting(
     keep_columns = ["params", "data", "step"] + target_metrics
     filtered_df = filtered_df[keep_columns].copy()
 
+    # Melt from wide to long format for faceting
+    melted_df = filtered_df.melt(
+        id_vars=["params", "data", "step"],
+        value_vars=target_metrics,
+        var_name="metric",
+        value_name="value",
+    )
+
+    # Remove NaN values to prevent line discontinuities
+    melted_df = melted_df.dropna(subset=["value"])
+
     # Set up categorical ordering for consistent plotting
-    filtered_df["params"] = pd.Categorical(
-        filtered_df["params"], categories=model_sizes, ordered=True
+    melted_df["params"] = pd.Categorical(
+        melted_df["params"], categories=model_sizes, ordered=True
     )
-    filtered_df["data"] = pd.Categorical(
-        filtered_df["data"], categories=target_recipes, ordered=True
+    melted_df["data"] = pd.Categorical(
+        melted_df["data"], categories=target_recipes, ordered=True
     )
-    filtered_df = filtered_df.sort_values(["params", "data", "step"])
 
-    return filtered_df
+    # Create nice metric labels
+    metric_label_map = {
+        "pile-valppl": "Pile Validation Perplexity",
+        "mmlu_average_acc_raw": "MMLU Average Accuracy",
+    }
+    melted_df["metric_label"] = melted_df["metric"].map(metric_label_map)
+
+    melted_df = melted_df.sort_values(["metric", "data", "params", "step"])
+
+    return melted_df
 
 
-def plot_training_curves(
+def plot_training_curves_faceted(
     df: pd.DataFrame,
     target_recipes: List[str],
     x_log: bool = False,
@@ -70,8 +79,8 @@ def plot_training_curves(
 
     with FigureManager(
         figure=FigureConfig(
-            rows=2,
-            cols=len(target_recipes),
+            rows=2,  # 2 metrics
+            cols=len(target_recipes),  # N recipes
             figsize=(figwidth, 9),
             tight_layout_pad=0.3,
             subplot_kwargs={"sharey": "row"},
@@ -90,45 +99,48 @@ def plot_training_curves(
             y=0.96,
         )
 
-        metrics = ["pile-valppl", "mmlu_average_correct_prob"]
-        metric_labels = [
-            "Pile Validation Perplexity",
-            "MMLU Average Correct Probability",
-        ]
+        # Here's the magic: replace 95+ lines of manual loops with a single faceted call!
+        fm.plot_faceted(
+            data=df,
+            plot_type="line",
+            rows="metric",  # Facet metrics across rows
+            cols="data",  # Facet recipes across columns
+            lines="params",  # Model sizes get different colors
+            x="step",
+            y="value",
+            linewidth=1.5,
+            alpha=0.8,
+        )
 
-        for col_idx, recipe in enumerate(target_recipes):
-            recipe_data = df[df["data"] == recipe].copy()
-
-            for row_idx, (metric, metric_label) in enumerate(
-                zip(metrics, metric_labels)
-            ):
-                # DataDecide provides clean data, minimal processing needed
-                metric_data = recipe_data[["params", "step", metric]].copy()
-
-                if len(metric_data) == 0:
-                    continue
-
-                fm.plot(
-                    "line",
-                    row_idx,
-                    col_idx,
-                    metric_data,
-                    x="step",
-                    y=metric,
-                    hue_by="params",
-                    linewidth=1.5,
-                    alpha=0.8,
-                    title=f"{recipe}",
-                )
-
+        # Apply custom formatting to each subplot
+        for row_idx in range(2):  # 2 metrics
+            for col_idx in range(len(target_recipes)):  # N recipes
                 ax = fm.get_axes(row_idx, col_idx)
 
-                if row_idx == 1:
+                # Set labels and titles
+                if row_idx == 1:  # Bottom row
                     ax.set_xlabel("Training Steps")
+                else:
+                    ax.set_xlabel("")
 
-                if col_idx == 0:
-                    ax.set_ylabel(metric_label)
+                if col_idx == 0:  # Left column
+                    # Get the metric for this row
+                    metrics = df["metric"].unique()
+                    if row_idx < len(metrics):
+                        metric = metrics[row_idx]
+                        metric_label = df[df["metric"] == metric]["metric_label"].iloc[
+                            0
+                        ]
+                        ax.set_ylabel(metric_label)
+                else:
+                    ax.set_ylabel("")
 
+                # Set recipe title
+                recipe = target_recipes[col_idx]
+                if row_idx == 0:  # Top row only
+                    ax.set_title(recipe, pad=10)
+
+                # Apply axis formatting
                 if x_log:
                     ax.set_xscale("log")
                 else:
@@ -147,14 +159,18 @@ def plot_training_curves(
 
     plt.tight_layout()
     plt.savefig(
-        "examples/plots/06_faceted_training_curves.png", dpi=150, bbox_inches="tight"
+        "examples/plots/07_faceted_training_curves_refactored.png",
+        dpi=150,
+        bbox_inches="tight",
     )
     plt.show()
+    time.sleep(5)
+    plt.close()
 
 
 def create_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Faceted Training Curves - 2 Metrics × N Data Recipes"
+        description="Faceted Training Curves (Refactored) - Using dr_plotter faceting system"
     )
     parser.add_argument(
         "--x-log", action="store_true", help="Use log scale for X-axis (training steps)"
@@ -207,9 +223,9 @@ def main() -> None:
         print(f"Error: {e}")
         sys.exit(1)
 
-    print("Filtering data for target metrics, recipes, and model sizes...")
-    filtered_df = subset_data_for_plotting(df, validated_recipes, validated_model_sizes)
-    print(f"Filtered to {len(filtered_df):,} rows")
+    print("Preparing data for faceted plotting...")
+    faceted_df = prepare_faceted_data(df, validated_recipes, validated_model_sizes)
+    print(f"Melted to {len(faceted_df):,} rows for faceting")
 
     print(f"Model sizes (in order): {validated_model_sizes}")
     print(f"Data recipes (in order): {validated_recipes}")
@@ -226,8 +242,10 @@ def main() -> None:
     config_desc = " + ".join(config_info) if config_info else "default settings"
 
     print(f"Creating faceted training curves visualization with {config_desc}...")
-    plot_training_curves(
-        filtered_df,
+    print("✨ Using the new dr_plotter faceting system - watch the magic!")
+
+    plot_training_curves_faceted(
+        faceted_df,
         validated_recipes,
         x_log=args.x_log,
         y_log=args.y_log,
@@ -235,6 +253,7 @@ def main() -> None:
         ylim=args.ylim,
     )
     print("Visualization complete!")
+    print("🎉 Reduced from 95+ lines to ~15 lines of core plotting code!")
 
 
 if __name__ == "__main__":
