@@ -29,6 +29,15 @@ def compute_grid_dimensions(
 def compute_grid_layout_metadata(
     data: pd.DataFrame, config: FacetingConfig, dimensions: Dict[str, List[str]]
 ) -> Dict[str, Any]:
+    if not hasattr(compute_grid_layout_metadata, "_cache"):
+        compute_grid_layout_metadata._cache = {}
+
+    cache_key = _create_cache_key(data, config)
+    if cache_key in compute_grid_layout_metadata._cache:
+        cached_result = compute_grid_layout_metadata._cache[cache_key]
+        if cached_result["data_shape"] == data.shape:
+            return cached_result["metadata"]
+
     row_values = dimensions["rows"]
     col_values = dimensions["cols"]
 
@@ -58,13 +67,41 @@ def compute_grid_layout_metadata(
             f"Invalid grid configuration. Must specify either (rows + cols), (rows + ncols), or (cols + nrows). Got rows='{config.rows}', cols='{config.cols}', ncols={config.ncols}, nrows={config.nrows}"
         )
 
-    return {
+    metadata = {
         "row_values": row_values,
         "col_values": col_values,
         "grid_type": grid_type,
         "fill_order": fill_order,
         "dimensions": dimensions,
     }
+
+    if len(compute_grid_layout_metadata._cache) < 10:
+        compute_grid_layout_metadata._cache[cache_key] = {
+            "metadata": metadata,
+            "data_shape": data.shape,
+        }
+
+    return metadata
+
+
+def _create_cache_key(data: pd.DataFrame, config: FacetingConfig) -> str:
+    key_parts = []
+
+    if config.rows:
+        key_parts.append(f"rows:{config.rows}")
+    if config.cols:
+        key_parts.append(f"cols:{config.cols}")
+    if config.lines:
+        key_parts.append(f"lines:{config.lines}")
+
+    relevant_columns = [
+        c for c in [config.rows, config.cols, config.lines] if c and c in data.columns
+    ]
+    if relevant_columns:
+        column_hash = hash(tuple(sorted(relevant_columns)))
+        key_parts.append(f"cols_hash:{column_hash}")
+
+    return "|".join(key_parts)
 
 
 def resolve_target_positions(

@@ -39,13 +39,25 @@ class FacetingConfig:
     color_wrap: bool = False
 
     def validate(self) -> None:
-        assert self.rows or self.cols, "Must specify at least one of: rows, cols"
+        if not (self.rows or self.cols):
+            assert False, (
+                "Must specify at least one faceting dimension.\n"
+                "Examples:\n"
+                "  - rows='metric' (facet by metric across rows)\n"
+                "  - cols='dataset' (facet by dataset across columns)\n"
+                "  - rows='metric', cols='dataset' (2D grid)"
+            )
 
         has_explicit_grid = self.rows and self.cols
         has_wrap_layout = self.ncols or self.nrows
-        assert not (has_explicit_grid and has_wrap_layout), (
-            f"Cannot specify both explicit grid (rows+cols) and wrap layout (ncols/nrows). Got rows='{self.rows}', cols='{self.cols}', ncols={self.ncols}, nrows={self.nrows}"
-        )
+        if has_explicit_grid and has_wrap_layout:
+            assert False, (
+                f"Cannot specify both explicit grid and wrap layout.\n"
+                f"Current config: rows='{self.rows}', cols='{self.cols}', ncols={self.ncols}, nrows={self.nrows}\n"
+                f"Choose one approach:\n"
+                f"  - Explicit grid: rows='{self.rows}', cols='{self.cols}'\n"
+                f"  - Wrapped layout: rows='{self.rows}', ncols={self.ncols or self.nrows}\n"
+            )
 
         if self.ncols is not None:
             assert self.rows is not None and self.cols is None, (
@@ -56,12 +68,18 @@ class FacetingConfig:
                 f"nrows requires cols dimension and no rows dimension. Got rows='{self.rows}', cols='{self.cols}', nrows={self.nrows}"
             )
 
-        assert not (self.target_row is not None and self.target_rows is not None), (
-            f"Cannot specify both target_row and target_rows. Got target_row={self.target_row}, target_rows={self.target_rows}"
-        )
-        assert not (self.target_col is not None and self.target_cols is not None), (
-            f"Cannot specify both target_col and target_cols. Got target_col={self.target_col}, target_cols={self.target_cols}"
-        )
+        if self.target_row is not None and self.target_rows is not None:
+            assert False, (
+                f"Cannot specify both target_row and target_rows.\n"
+                f"Current: target_row={self.target_row}, target_rows={self.target_rows}\n"
+                f"Use target_row for single row or target_rows for multiple rows."
+            )
+        if self.target_col is not None and self.target_cols is not None:
+            assert False, (
+                f"Cannot specify both target_col and target_cols.\n"
+                f"Current: target_col={self.target_col}, target_cols={self.target_cols}\n"
+                f"Use target_col for single column or target_cols for multiple columns."
+            )
 
         if self.ncols is not None:
             assert isinstance(self.ncols, int) and self.ncols > 0, (

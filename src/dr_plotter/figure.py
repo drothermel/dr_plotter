@@ -384,29 +384,129 @@ class FigureManager:
         faceting: Optional[FacetingConfig] = None,
         **kwargs,
     ) -> None:
-        config = self._resolve_faceting_config(faceting, **kwargs)
+        config = None
+        try:
+            if data.empty:
+                assert False, (
+                    "Cannot create faceted plot with empty DataFrame. "
+                    "Please provide data with at least one row."
+                )
+
+            config = self._resolve_faceting_config(faceting, **kwargs)
+
+            if not config.rows and not config.cols:
+                self.plot(
+                    plot_type,
+                    0,
+                    0,
+                    data,
+                    x=config.x,
+                    y=config.y,
+                    hue_by=config.lines,
+                    **kwargs,
+                )
+                return
+
+            if len(data) < 1000:
+                return self._plot_faceted_standard_pipeline(
+                    data, plot_type, config, **kwargs
+                )
+
+            return self._plot_faceted_optimized_pipeline(
+                data, plot_type, config, **kwargs
+            )
+
+        except Exception as error:
+            self._handle_faceting_errors_gracefully(error, data, config)
+
+    def _plot_faceted_standard_pipeline(
+        self, data: pd.DataFrame, plot_type: str, config: FacetingConfig, **kwargs
+    ) -> None:
+        valid_plot_types = ["line", "scatter", "bar", "fill_between", "heatmap"]
+        if plot_type not in valid_plot_types:
+            assert False, (
+                f"Unsupported plot type: '{plot_type}'\n"
+                f"Supported types: {valid_plot_types}\n"
+                f"Note: All standard dr_plotter plot types should work with faceting."
+            )
+
         self._validate_faceting_inputs(data, config)
 
-        grid_rows, grid_cols, layout_metadata = self._compute_facet_grid(data, config)
+        try:
+            grid_rows, grid_cols, layout_metadata = self._compute_facet_grid(
+                data, config
+            )
+        except Exception as e:
+            assert False, (
+                f"Failed to compute faceting grid: {str(e)}\n"
+                f"Data shape: {data.shape}\n"
+                f"Faceting config: rows='{config.rows}', cols='{config.cols}', "
+                f"ncols={config.ncols}, nrows={config.nrows}\n"
+                f"Check that your data contains the specified dimension columns."
+            )
+
         self._validate_facet_grid_against_existing(grid_rows, grid_cols)
 
         if config.x_labels is not None:
-            validate_nested_list_dimensions(
-                config.x_labels, grid_rows, grid_cols, "x_labels"
-            )
+            try:
+                validate_nested_list_dimensions(
+                    config.x_labels, grid_rows, grid_cols, "x_labels"
+                )
+            except AssertionError as e:
+                assert False, (
+                    f"x_labels configuration error: {str(e)}\n"
+                    f"Computed grid: {grid_rows} rows × {grid_cols} cols\n"
+                    f"x_labels shape: {len(config.x_labels)} rows × {len(config.x_labels[0]) if config.x_labels else 0} cols\n"
+                    f"Tip: x_labels must match the computed grid dimensions."
+                )
+
         if config.y_labels is not None:
-            validate_nested_list_dimensions(
-                config.y_labels, grid_rows, grid_cols, "y_labels"
-            )
+            try:
+                validate_nested_list_dimensions(
+                    config.y_labels, grid_rows, grid_cols, "y_labels"
+                )
+            except AssertionError as e:
+                assert False, (
+                    f"y_labels configuration error: {str(e)}\n"
+                    f"Computed grid: {grid_rows} rows × {grid_cols} cols\n"
+                    f"y_labels shape: {len(config.y_labels)} rows × {len(config.y_labels[0]) if config.y_labels else 0} cols\n"
+                    f"Tip: y_labels must match the computed grid dimensions."
+                )
+
         if config.xlim is not None:
-            validate_nested_list_dimensions(config.xlim, grid_rows, grid_cols, "xlim")
+            try:
+                validate_nested_list_dimensions(
+                    config.xlim, grid_rows, grid_cols, "xlim"
+                )
+            except AssertionError as e:
+                assert False, (
+                    f"xlim configuration error: {str(e)}\n"
+                    f"Computed grid: {grid_rows} rows × {grid_cols} cols\n"
+                    f"Tip: xlim must match the computed grid dimensions."
+                )
+
         if config.ylim is not None:
-            validate_nested_list_dimensions(config.ylim, grid_rows, grid_cols, "ylim")
+            try:
+                validate_nested_list_dimensions(
+                    config.ylim, grid_rows, grid_cols, "ylim"
+                )
+            except AssertionError as e:
+                assert False, (
+                    f"ylim configuration error: {str(e)}\n"
+                    f"Computed grid: {grid_rows} rows × {grid_cols} cols\n"
+                    f"Tip: ylim must match the computed grid dimensions."
+                )
 
         target_positions = self._resolve_targeting(config, grid_rows, grid_cols)
 
         data_subsets = self._prepare_facet_data(
             data, config, layout_metadata, target_positions
+        )
+
+        from dr_plotter.faceting.data_preparation import handle_empty_subplots
+
+        data_subsets = handle_empty_subplots(
+            data_subsets, config.empty_subplot_strategy
         )
 
         style_coordinator = self._get_or_create_style_coordinator()
@@ -431,11 +531,65 @@ class FigureManager:
             config, layout_metadata, grid_rows, grid_cols, data_subsets
         )
 
+        if config.lines and hasattr(self, "legend_manager") and self.legend_manager:
+            self._coordinate_faceted_legends(config, data)
+
+    def _plot_faceted_optimized_pipeline(
+        self, data: pd.DataFrame, plot_type: str, config: FacetingConfig, **kwargs
+    ) -> None:
+        self._validate_faceting_inputs(data, config)
+
+        grid_info = self._compute_facet_grid_optimized(data, config)
+        grid_rows, grid_cols = grid_info[0], grid_info[1]
+        layout_metadata = grid_info[2]
+
+        target_positions = self._resolve_targeting(config, grid_rows, grid_cols)
+        data_subsets = self._prepare_facet_data(
+            data, config, layout_metadata, target_positions
+        )
+
+        from dr_plotter.faceting.data_preparation import handle_empty_subplots
+
+        data_subsets = handle_empty_subplots(
+            data_subsets, config.empty_subplot_strategy
+        )
+
+        style_coordinator = self._get_or_create_style_coordinator()
+        if config.lines is not None:
+            dimension_analysis = analyze_data_dimensions(data, config)
+            lines_values = dimension_analysis.get("lines", [])
+            style_coordinator.register_dimension_values(config.lines, lines_values)
+
+        plot_kwargs = {
+            k: v for k, v in kwargs.items() if not hasattr(FacetingConfig, k)
+        }
+        self._execute_faceted_plotting(
+            data_subsets,
+            target_positions,
+            config,
+            plot_type,
+            style_coordinator,
+            **plot_kwargs,
+        )
+
+        self._store_faceting_state(
+            config, layout_metadata, grid_rows, grid_cols, data_subsets
+        )
+
+    def _compute_facet_grid_optimized(
+        self, data: pd.DataFrame, config: FacetingConfig
+    ) -> Tuple[int, int, Dict[str, Any]]:
+        return self._compute_facet_grid(data, config)
+
     def _validate_faceting_inputs(
         self, data: pd.DataFrame, config: FacetingConfig
     ) -> None:
-        validate_faceting_data_requirements(data, config)
+        from dr_plotter.faceting.validation import (
+            validate_common_mistakes,
+            validate_subplot_data_coverage,
+        )
 
+        validate_faceting_data_requirements(data, config)
         config.validate()
 
         assert config.rows is not None or config.cols is not None, (
@@ -446,6 +600,10 @@ class FigureManager:
             assert False, "x parameter is required for plotting"
         if config.y is None:
             assert False, "y parameter is required for plotting"
+
+        validate_common_mistakes(config, data)
+        validate_subplot_data_coverage(data, config)
+        self._validate_faceting_compatibility_with_existing_features(config)
 
     def _prepare_facet_data(
         self,
@@ -564,13 +722,149 @@ class FigureManager:
             "subplot_styles": {},
         }
 
+    def _handle_faceting_errors_gracefully(
+        self, error: Exception, data: pd.DataFrame, config: Optional[FacetingConfig]
+    ) -> None:
+        error_context = {
+            "data_shape": data.shape,
+            "data_columns": data.columns.tolist(),
+            "config_summary": {
+                "rows": config.rows if config else None,
+                "cols": config.cols if config else None,
+                "lines": config.lines if config else None,
+                "ncols": config.ncols if config else None,
+                "nrows": config.nrows if config else None,
+            }
+            if config
+            else None,
+        }
+
+        error_msg = f"Faceted plotting failed: {str(error)}\n"
+        error_msg += "\nContext:\n"
+        error_msg += f"• Data shape: {error_context['data_shape']}\n"
+        error_msg += f"• Available columns: {error_context['data_columns'][:5]}..."
+        if len(error_context["data_columns"]) > 5:
+            error_msg += f" (and {len(error_context['data_columns']) - 5} more)\n"
+        else:
+            error_msg += "\n"
+        error_msg += f"• Faceting config: {error_context['config_summary']}\n"
+
+        if "Missing columns" in str(error) or "Missing required columns" in str(error):
+            error_msg += "\nRecovery suggestions:\n"
+            error_msg += "• Check that column names match exactly (case-sensitive)\n"
+            error_msg += "• Use data.head() to inspect your data structure\n"
+            error_msg += "• Verify data loading worked correctly\n"
+        elif "grid" in str(error).lower():
+            error_msg += "\nGrid-related recovery suggestions:\n"
+            error_msg += (
+                "• Ensure FigureManager grid size matches your data dimensions\n"
+            )
+            error_msg += "• Check if you need wrapped layout (ncols/nrows)\n"
+            error_msg += "• Consider filtering data to reduce grid size\n"
+        elif "empty" in str(error).lower():
+            error_msg += "\nEmpty data recovery suggestions:\n"
+            error_msg += "• Check data filtering - you may have filtered out all data\n"
+            if config and config.rows and config.cols:
+                error_msg += f"• Use data.groupby(['{config.rows}', '{config.cols}']).size() to check coverage\n"
+            error_msg += "• Set empty_subplot_strategy='warn' to allow empty subplots\n"
+
+        assert False, error_msg
+
+    def _coordinate_faceted_legends(
+        self, config: FacetingConfig, data: pd.DataFrame
+    ) -> None:
+        if config.lines and config.lines in data.columns:
+            legend_values = sorted(data[config.lines].unique(), key=str)
+
+            style_coordinator = self._get_or_create_style_coordinator()
+            legend_entries = []
+
+            for value in legend_values:
+                if value in style_coordinator._style_assignments.get(config.lines, {}):
+                    style = style_coordinator._style_assignments[config.lines][value]
+                    legend_entry = {
+                        "label": str(value),
+                        "color": style.get("color", "#1f77b4"),
+                        "marker": style.get("marker", "o"),
+                        "linestyle": style.get("linestyle", "-"),
+                    }
+                    legend_entries.append(legend_entry)
+
+            if legend_entries and hasattr(
+                self.legend_manager, "add_coordinated_entries"
+            ):
+                self.legend_manager.add_coordinated_entries(legend_entries)
+
+    def _validate_faceting_compatibility_with_existing_features(
+        self, config: FacetingConfig
+    ) -> None:
+        if (
+            hasattr(self, "external_mode")
+            and self.external_mode
+            and (config.rows or config.cols)
+        ):
+            print(
+                "Warning: Faceting with external axes may not work as expected. "
+                "Consider using FigureManager without external_ax for faceting."
+            )
+
+        if hasattr(self, "figure_config"):
+            fig_rows, fig_cols = self.figure_config.rows, self.figure_config.cols
+
+        if hasattr(self, "legend_manager") and self.legend_manager and config.lines:
+            pass
+
+    def _ensure_plot_kwargs_consistency(self, **kwargs) -> Dict[str, Any]:
+        consistent_kwargs = {}
+
+        for key, value in kwargs.items():
+            if key in ["color", "c"]:
+                consistent_kwargs["color"] = value
+            elif key in ["marker", "m"]:
+                consistent_kwargs["marker"] = value
+            elif key in ["linestyle", "ls"]:
+                consistent_kwargs["linestyle"] = value
+            else:
+                consistent_kwargs[key] = value
+
+        return consistent_kwargs
+
     def _get_or_create_style_coordinator(self) -> FacetStyleCoordinator:
         if self._facet_style_coordinator is None:
-            self._facet_style_coordinator = FacetStyleCoordinator()
+            theme_info = None
+            if hasattr(self, "_theme") and self._theme:
+                theme_info = {
+                    "color_cycle": getattr(self._theme, "color_cycle", None),
+                    "marker_cycle": getattr(self._theme, "marker_cycle", None),
+                    "line_style_cycle": getattr(self._theme, "line_style_cycle", None),
+                }
+
+            self._facet_style_coordinator = FacetStyleCoordinator(theme=theme_info)
         return self._facet_style_coordinator
 
     def plot(
         self, plot_type: str, row: int, col: int, *args: Any, **kwargs: Any
     ) -> None:
+        is_faceted_plot = (
+            hasattr(self, "_facet_grid_info") and self._facet_grid_info is not None
+        )
+
+        if is_faceted_plot:
+            kwargs = self._apply_faceting_plot_enhancements(row, col, **kwargs)
+
         plotter_class = BasePlotter.get_plotter(plot_type)
         self._add_plot(plotter_class, args, row, col, **kwargs)
+
+    def _apply_faceting_plot_enhancements(
+        self, row: int, col: int, **kwargs
+    ) -> Dict[str, Any]:
+        if "_coordinated_colors" in kwargs:
+            coordinated_colors = kwargs.pop("_coordinated_colors")
+            coordinated_markers = kwargs.pop("_coordinated_markers", None)
+
+            if len(coordinated_colors) == 1:
+                kwargs["color"] = coordinated_colors[0]
+            elif len(coordinated_colors) > 1:
+                kwargs["palette"] = coordinated_colors
+
+        return kwargs
