@@ -239,7 +239,11 @@ class LegendManager:
             figure_dimensions, legend_metadata
         )
 
-        return result.legend_positions.get(legend_index, (0.5, 0.08))
+        default_pos = (
+            self.config.positioning_config.legend_alignment_center,
+            self.config.positioning_config.legend_y_offset_factor,
+        )
+        return result.legend_positions.get(legend_index, default_pos)
 
     def get_error_color(
         self, color_type: str = "face", theme: Optional[Any] = None
@@ -296,7 +300,11 @@ class LegendManager:
                 figure_dimensions, legend_metadata
             )
 
-            bbox_to_anchor = result.legend_positions.get(0, (0.5, 0.08))
+            default_pos = (
+                self.config.positioning_config.legend_alignment_center,
+                self.config.positioning_config.legend_y_offset_factor,
+            )
+            bbox_to_anchor = result.legend_positions.get(0, default_pos)
             self.fm.figure.legend(
                 handles,
                 labels,

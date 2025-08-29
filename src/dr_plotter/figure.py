@@ -200,31 +200,28 @@ class FigureManager:
 
             positioning_config = self.legend_config.positioning_config
             if positioning_config:
-                layout_result = (
-                    positioning_config.calculate_layout_rect
-                    if hasattr(positioning_config, "calculate_layout_rect")
-                    else None
-                )
-                if layout_result:
-                    rect = layout_result(figure_dimensions)
+                from dr_plotter.positioning_calculator import PositioningCalculator
+
+                calculator = PositioningCalculator(positioning_config)
+                rect = calculator.calculate_layout_rect(figure_dimensions)
+                if rect:
+                    self.fig.tight_layout(rect=rect, pad=self._layout_pad)
+                else:
+                    self.fig.tight_layout(pad=self._layout_pad)
+            else:
+                if self.fig._suptitle is not None or self._has_subplot_titles():
+                    from dr_plotter.positioning_calculator import (
+                        PositioningCalculator,
+                        PositioningConfig,
+                    )
+
+                    default_config = PositioningConfig()
+                    calculator = PositioningCalculator(default_config)
+                    rect = calculator.calculate_layout_rect(figure_dimensions)
                     if rect:
                         self.fig.tight_layout(rect=rect, pad=self._layout_pad)
                     else:
                         self.fig.tight_layout(pad=self._layout_pad)
-                else:
-                    if (
-                        figure_dimensions.has_title
-                        or figure_dimensions.has_subplot_titles
-                    ):
-                        self.fig.tight_layout(
-                            rect=[0, 0, 1, positioning_config.title_space_factor],
-                            pad=self._layout_pad,
-                        )
-                    else:
-                        self.fig.tight_layout(pad=self._layout_pad)
-            else:
-                if self.fig._suptitle is not None or self._has_subplot_titles():
-                    self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
                 else:
                     self.fig.tight_layout(pad=self._layout_pad)
 

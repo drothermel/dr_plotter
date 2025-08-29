@@ -161,6 +161,11 @@ class PositioningCalculator:
 
         return (optimal_spacing, start_x)
 
+    def calculate_layout_rect(
+        self, figure_dimensions: FigureDimensions
+    ) -> Optional[Tuple[float, float, float, float]]:
+        return self._calculate_layout_rect(figure_dimensions)
+
     def _calculate_layout_rect(
         self, figure_dimensions: FigureDimensions
     ) -> Optional[Tuple[float, float, float, float]]:
@@ -182,7 +187,12 @@ class PositioningCalculator:
         self, figure_dimensions: FigureDimensions, legend_metadata: LegendMetadata
     ) -> PositioningResult:
         return PositioningResult(
-            legend_positions={},
+            legend_positions={
+                0: (
+                    self.config.legend_alignment_center,
+                    self.config.legend_y_offset_factor,
+                )
+            },
             layout_rect=self._calculate_layout_rect(figure_dimensions),
             tight_layout_pad=self.config.tight_layout_pad,
         )
