@@ -37,7 +37,7 @@ def main(args: Any) -> Any:
         figure=FigureConfig(
             rows=3,
             cols=3,
-            figsize=(24, 18),
+            figsize=(14, 14),
             x_labels=[
                 [None, None, None],
                 [None, None, None],
