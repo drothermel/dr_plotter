@@ -1,6 +1,7 @@
 # DR_PLOTTER DESIGN DECISIONS
 
-**Last Updated**: August 25, 2025
+**Last Updated**: 2025-08-29  
+**Enhanced**: Consolidated with architectural insights from comprehensive audit and analysis work
 
 ## General Architecture
 
