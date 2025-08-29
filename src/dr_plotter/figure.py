@@ -718,7 +718,7 @@ class FigureManager:
             )
 
         if hasattr(self, "figure_config"):
-            fig_rows, fig_cols = self.figure_config.rows, self.figure_config.cols
+            pass
 
         if hasattr(self, "legend_manager") and self.legend_manager and config.lines:
             pass
@@ -769,7 +769,7 @@ class FigureManager:
     ) -> Dict[str, Any]:
         if "_coordinated_colors" in kwargs:
             coordinated_colors = kwargs.pop("_coordinated_colors")
-            coordinated_markers = kwargs.pop("_coordinated_markers", None)
+            kwargs.pop("_coordinated_markers", None)
 
             if len(coordinated_colors) == 1:
                 kwargs["color"] = coordinated_colors[0]

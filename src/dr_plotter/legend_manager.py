@@ -337,7 +337,7 @@ class LegendManager:
                 if channel:
                     title = self.generate_channel_title(channel, entries)
 
-                legend = self.fm.figure.legend(
+                self.fm.figure.legend(
                     handles,
                     labels,
                     title=title,
