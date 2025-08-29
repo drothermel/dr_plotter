@@ -57,19 +57,32 @@ def example_1_basic_2d_faceting() -> None:
         print("Same model sizes have identical colors across all subplots")
 
 
-def example_2_wrapped_layouts() -> None:
-    print("\n=== Example 2: Wrapped Layouts ===")
+def example_2_grid_layouts() -> None:
+    print("\n=== Example 2: Explicit Grid Layouts ===")
 
     data = create_ml_training_data()
     metrics = ["train_loss", "val_loss", "train_acc", "val_acc", "train_f1", "val_f1"]
     data = data[data["metric"].isin(metrics)]
 
-    with FigureManager(figure=FigureConfig(rows=4, cols=3, figsize=(18, 16))) as fm:
+    # Create row/col grid coordinates for 6 metrics in 2×3 layout
+    data = data.copy()
+    metric_to_grid = {
+        "train_loss": (0, 0),
+        "val_loss": (0, 1),
+        "train_acc": (0, 2),
+        "val_acc": (1, 0),
+        "train_f1": (1, 1),
+        "val_f1": (1, 2),
+    }
+    data["metric_row"] = data["metric"].map(lambda m: metric_to_grid[m][0])
+    data["metric_col"] = data["metric"].map(lambda m: metric_to_grid[m][1])
+
+    with FigureManager(figure=FigureConfig(rows=2, cols=3, figsize=(18, 12))) as fm:
         fm.plot_faceted(
             data=data,
             plot_type="scatter",
-            rows="metric",
-            ncols=3,
+            rows="metric_row",
+            cols="metric_col",
             lines="model_size",
             x="step",
             y="value",
@@ -77,8 +90,8 @@ def example_2_wrapped_layouts() -> None:
             s=20,
         )
 
-        print("Wrapped 6 metrics into 2×3 grid instead of 6×1")
-        print("Much better use of figure space")
+        print("Arranged 6 metrics into 2×3 grid using explicit row/col mapping")
+        print("Better use of figure space than 6×1 or 1×6 layouts")
 
 
 def example_3_layered_faceting() -> None:
@@ -255,7 +268,7 @@ if __name__ == "__main__":
     print("=" * 50)
 
     example_1_basic_2d_faceting()
-    example_2_wrapped_layouts()
+    example_2_grid_layouts()
     example_3_layered_faceting()
     example_4_targeted_plotting()
     example_5_custom_subplot_configuration()

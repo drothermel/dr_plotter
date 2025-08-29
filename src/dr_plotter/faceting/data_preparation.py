@@ -56,28 +56,16 @@ def prepare_subplot_data_subsets(
 
     if grid_type == "explicit":
         if row_col and col_col and len(position_set) > 4:
-            try:
-                grouped = filtered_data.groupby([row_col, col_col])
+            grouped = filtered_data.groupby([row_col, col_col])
 
-                for row_idx, col_idx in position_set:
-                    if row_idx < len(row_values) and col_idx < len(col_values):
-                        row_val = row_values[row_idx]
-                        col_val = col_values[col_idx]
+            for row_idx, col_idx in position_set:
+                if row_idx < len(row_values) and col_idx < len(col_values):
+                    row_val = row_values[row_idx]
+                    col_val = col_values[col_idx]
 
-                        try:
-                            subset = grouped.get_group((row_val, col_val))
-                            data_subsets[(row_idx, col_idx)] = subset
-                        except KeyError:
-                            pass
-            except Exception:
-                data_subsets = _prepare_subsets_individual_filtering(
-                    filtered_data,
-                    row_values,
-                    col_values,
-                    row_col,
-                    col_col,
-                    position_set,
-                )
+                    if (row_val, col_val) in grouped.groups:
+                        subset = grouped.get_group((row_val, col_val))
+                        data_subsets[(row_idx, col_idx)] = subset
         else:
             data_subsets = _prepare_subsets_individual_filtering(
                 filtered_data, row_values, col_values, row_col, col_col, position_set
@@ -152,8 +140,8 @@ def handle_empty_subplots(
             )
         elif empty_subplot_strategy == "warn":
             print(
-                f"Warning: Empty subplots at positions {empty_positions}. "
-                f"These subplots will remain empty."
+                f"Warning: {len(empty_positions)}/{len(empty_positions) + len(data_subsets)} subplot combinations have no data ({100 * len(empty_positions) / (len(empty_positions) + len(data_subsets)):.1f}%). "
+                f"Consider filtering data or using different dimensions."
             )
         elif empty_subplot_strategy == "silent":
             pass

@@ -1,5 +1,4 @@
 from typing import Dict, List, Tuple, Any
-import math
 import pandas as pd
 from dr_plotter.faceting_config import FacetingConfig
 
@@ -12,17 +11,9 @@ def compute_grid_dimensions(
 
     if config.rows and config.cols:
         return len(row_values), len(col_values)
-    elif config.rows and config.ncols:
-        n_cols = config.ncols
-        n_rows = math.ceil(len(row_values) / n_cols)
-        return n_rows, n_cols
-    elif config.cols and config.nrows:
-        n_rows = config.nrows
-        n_cols = math.ceil(len(col_values) / n_rows)
-        return n_rows, n_cols
     else:
         assert False, (
-            f"Invalid grid configuration. Must specify either (rows + cols), (rows + ncols), or (cols + nrows). Got rows='{config.rows}', cols='{config.cols}', ncols={config.ncols}, nrows={config.nrows}"
+            f"Invalid grid configuration. Must specify both rows and cols dimensions. Got rows='{config.rows}', cols='{config.cols}'"
         )
 
 
@@ -46,25 +37,9 @@ def compute_grid_layout_metadata(
         n_rows = len(row_values)
         n_cols = len(col_values)
         fill_order = [(r, c) for r in range(n_rows) for c in range(n_cols)]
-    elif config.rows and config.ncols:
-        grid_type = "wrapped_rows"
-        n_cols = config.ncols
-        fill_order = []
-        for i, _ in enumerate(row_values):
-            row_idx = i // n_cols
-            col_idx = i % n_cols
-            fill_order.append((row_idx, col_idx))
-    elif config.cols and config.nrows:
-        grid_type = "wrapped_cols"
-        n_rows = config.nrows
-        fill_order = []
-        for i, _ in enumerate(col_values):
-            col_idx = i // n_rows
-            row_idx = i % n_rows
-            fill_order.append((row_idx, col_idx))
     else:
         assert False, (
-            f"Invalid grid configuration. Must specify either (rows + cols), (rows + ncols), or (cols + nrows). Got rows='{config.rows}', cols='{config.cols}', ncols={config.ncols}, nrows={config.nrows}"
+            f"Invalid grid configuration. Must specify both rows and cols dimensions. Got rows='{config.rows}', cols='{config.cols}'"
         )
 
     metadata = {

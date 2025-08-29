@@ -81,9 +81,11 @@ for i in range(n_metrics, len(axes)):
 
 **After:**
 ```python  
+# Create explicit 2×3 grid with FigureConfig
+fm = FigureManager(figure=FigureConfig(rows=2, cols=3))
 fm.plot_faceted(
     data=data, plot_type='scatter',
-    rows='metric', ncols=3,  # Automatic wrapping
+    rows='metric', cols='dataset',  # Explicit grid dimensions
     lines='model_size', x='step', y='value'
 )
 ```
@@ -212,8 +214,9 @@ fm.plot_faceted(recent_data, 'line', ...)
 
 ### Many Subplots  
 ```python
-# For >20 subplots, consider wrapped layouts:
-fm.plot_faceted(data, 'scatter', rows='metric', ncols=4)  # Instead of 1×20
+# For >20 subplots, use explicit grid dimensions:
+fm = FigureManager(figure=FigureConfig(rows=5, cols=4))  # 20 subplots in 5×4 grid
+fm.plot_faceted(data, 'scatter', rows='metric', cols='dataset')
 ```
 
 ### Multiple Layers
@@ -235,5 +238,29 @@ fm.plot_faceted(layer3_data, 'line', ...)
 ✅ **Consistent API** - Follows dr_plotter patterns
 ✅ **Performance optimized** - Efficient for large datasets
 ✅ **Extensible** - Easy to add new plot types and features
+
+### Axis Sharing
+
+For shared axes across subplots, use FigureConfig's `subplot_kwargs`:
+
+```python
+# Share x-axis across all subplots
+fm = FigureManager(figure=FigureConfig(
+    rows=2, cols=3,
+    subplot_kwargs={"sharex": True}
+))
+
+# Share y-axis within rows only  
+fm = FigureManager(figure=FigureConfig(
+    rows=2, cols=3, 
+    subplot_kwargs={"sharey": "row"}
+))
+
+# Share both axes
+fm = FigureManager(figure=FigureConfig(
+    rows=2, cols=3,
+    subplot_kwargs={"sharex": True, "sharey": True}
+))
+```
 
 Start with basic 2D faceting and gradually adopt advanced features as needed!

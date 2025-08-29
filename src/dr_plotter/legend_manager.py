@@ -100,18 +100,10 @@ class LegendManager:
     def get_error_color(
         self, color_type: str = "face", theme: Optional[Any] = None
     ) -> str:
-        import warnings
-
-        warnings.warn(
-            f"Legend proxy creation failed - using error color for {color_type}"
+        assert False, (
+            f"Legend proxy creation failed for {color_type}. "
+            f"This indicates a problem with legend configuration that should be fixed."
         )
-
-        assert theme is not None, "Theme must be provided for error color access"
-
-        if color_type == "edge":
-            return theme.general_styles.get("error_edge_color", "#FF0000")
-        else:
-            return theme.general_styles.get("error_color", "#FF0000")
 
     def finalize(self) -> None:
         if self.config.strategy == LegendStrategy.NONE:

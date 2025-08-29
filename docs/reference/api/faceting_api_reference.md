@@ -33,9 +33,7 @@ def plot_faceted(
 - `cols`: Column name to facet across columns. Each unique value gets a column.
 - `lines`: Column name for within-subplot grouping (hue). Creates different colored/styled lines/points within each subplot.
 
-**Layout Control:**
-- `ncols`: Number of columns for wrapped layout. Use with 'rows' only.
-- `nrows`: Number of rows for wrapped layout. Use with 'cols' only.
+**Note:** Grid dimensions are controlled by FigureConfig. Faceting parameters only specify data mapping.
 
 **Targeting (for layered faceting):**
 - `target_row`: Plot only in specific row (0-indexed).
@@ -61,9 +59,11 @@ fm.plot_faceted(data, 'line', rows='metric', cols='dataset',
                 lines='model', x='step', y='value')
 ```
 
-Wrapped layout:
+Grid layout with FigureConfig:
 ```python
-fm.plot_faceted(data, 'scatter', rows='metric', ncols=3,
+# Grid size controlled by FigureConfig
+fm = FigureManager(figure=FigureConfig(rows=2, cols=3))
+fm.plot_faceted(data, 'scatter', rows='metric', cols='dataset',
                 x='step', y='value', alpha=0.6)
 ```
 
@@ -85,9 +85,6 @@ fm.plot_faceted(highlight_data, 'line', rows='metric', cols='dataset',
 - `cols`: Column name to facet across columns  
 - `lines`: Column name for within-subplot grouping
 
-**Layout Control:**
-- `ncols`: Number of columns for wrapped row layout (use with 'rows' only)
-- `nrows`: Number of rows for wrapped column layout (use with 'cols' only)
 
 **Value Ordering:**
 - `row_order`: Custom ordering for row dimension values
@@ -113,8 +110,6 @@ fm.plot_faceted(highlight_data, 'line', rows='metric', cols='dataset',
 **Advanced Features:**
 - `subplot_titles`: Subplot titles (string template or nested list)
 - `title_template`: Template for automatic subplot titles
-- `shared_x`: Share x-axis across subplots ('all', 'row', 'col', True, False)
-- `shared_y`: Share y-axis across subplots ('all', 'row', 'col', True, False)
 - `empty_subplot_strategy`: How to handle empty subplots ('warn', 'error', 'silent')
 - `color_wrap`: Whether to wrap colors when more groups than colors available
 
@@ -125,9 +120,9 @@ Basic grid:
 config = FacetingConfig(rows='metric', cols='dataset', lines='model')
 ```
 
-Wrapped layout:
+Explicit grid (controlled by FigureConfig):
 ```python
-config = FacetingConfig(rows='metric', ncols=3, lines='model_size')
+config = FacetingConfig(rows='metric', cols='dataset', lines='model_size')
 ```
 
 Custom configuration:
@@ -147,9 +142,9 @@ config = FacetingConfig(
 - Style coordination works across multiple plot_faceted() calls (layered plotting)
 
 ### Grid Layout
-- Grid dimensions computed automatically from data
-- FigureManager grid size must accommodate computed facet grid
-- Wrapped layouts handle many categories efficiently
+- Grid dimensions computed automatically from data dimensions
+- FigureManager grid size must match computed facet grid exactly
+- Clear error messages guide users to correct FigureConfig dimensions
 
 ### Error Handling
 - Missing columns trigger helpful error messages with suggestions
@@ -195,12 +190,13 @@ fm.plot_faceted(highlight_data, 'scatter', rows='metric', cols='dataset',
                 target_rows=[0], target_cols=[1, 2], s=100, color='red')
 ```
 
-### Wrapped Layouts
-Handle many categories efficiently:
+### Grid Layouts  
+Handle many categories with explicit grid dimensions:
 
 ```python
-# Instead of 12×1 grid
-fm.plot_faceted(data, 'plot_type', rows='category', ncols=4)  # 3×4 grid
+# Create 3×4 grid with FigureConfig
+fm = FigureManager(figure=FigureConfig(rows=3, cols=4))
+fm.plot_faceted(data, 'plot_type', rows='category', cols='subcategory')
 ```
 
 ## Common Patterns

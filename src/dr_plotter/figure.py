@@ -322,6 +322,23 @@ class FigureManager:
                 return True
         return False
 
+    def _validate_grid_dimensions(
+        self, computed_rows: int, computed_cols: int, config: FacetingConfig
+    ) -> None:
+        figure_rows, figure_cols = self.figure_config.rows, self.figure_config.cols
+
+        if (computed_rows, computed_cols) != (figure_rows, figure_cols):
+            assert False, (
+                f"Grid dimension mismatch:\n"
+                f"  FigureConfig: {figure_rows}×{figure_cols} subplot grid\n"
+                f"  Required by faceting data: {computed_rows}×{computed_cols}\n"
+                f"  \n"
+                f"Fix: Update FigureConfig(rows={computed_rows}, cols={computed_cols})\n"
+                f"  \n"
+                f"For axis sharing, use:\n"
+                f"  subplot_kwargs={{'sharex': True, 'sharey': True}}"
+            )
+
     def _resolve_faceting_config(
         self, faceting: Optional[FacetingConfig], **kwargs
     ) -> FacetingConfig:
@@ -331,8 +348,6 @@ class FigureManager:
             "rows",
             "cols",
             "lines",
-            "ncols",
-            "nrows",
             "target_row",
             "target_col",
             "target_rows",
@@ -348,8 +363,6 @@ class FigureManager:
             "ylim",
             "subplot_titles",
             "title_template",
-            "shared_x",
-            "shared_y",
             "empty_subplot_strategy",
             "color_wrap",
         }
@@ -366,15 +379,6 @@ class FigureManager:
             if value is not None:
                 config_dict[key] = value
 
-        has_rows = config_dict.get("rows") is not None
-        has_cols = config_dict.get("cols") is not None
-        has_ncols = config_dict.get("ncols") is not None
-        has_nrows = config_dict.get("nrows") is not None
-
-        if has_rows and has_cols and (has_ncols or has_nrows):
-            config_dict["ncols"] = None
-            config_dict["nrows"] = None
-
         return FacetingConfig(**config_dict)
 
     def plot_faceted(
@@ -384,40 +388,32 @@ class FigureManager:
         faceting: Optional[FacetingConfig] = None,
         **kwargs,
     ) -> None:
-        config = None
-        try:
-            if data.empty:
-                assert False, (
-                    "Cannot create faceted plot with empty DataFrame. "
-                    "Please provide data with at least one row."
-                )
+        assert not data.empty, (
+            "Cannot create faceted plot with empty DataFrame. "
+            "Please provide data with at least one row."
+        )
 
-            config = self._resolve_faceting_config(faceting, **kwargs)
+        config = self._resolve_faceting_config(faceting, **kwargs)
 
-            if not config.rows and not config.cols:
-                self.plot(
-                    plot_type,
-                    0,
-                    0,
-                    data,
-                    x=config.x,
-                    y=config.y,
-                    hue_by=config.lines,
-                    **kwargs,
-                )
-                return
+        if not config.rows and not config.cols:
+            self.plot(
+                plot_type,
+                0,
+                0,
+                data,
+                x=config.x,
+                y=config.y,
+                hue_by=config.lines,
+                **kwargs,
+            )
+            return
 
-            if len(data) < 1000:
-                return self._plot_faceted_standard_pipeline(
-                    data, plot_type, config, **kwargs
-                )
-
-            return self._plot_faceted_optimized_pipeline(
+        if len(data) < 1000:
+            return self._plot_faceted_standard_pipeline(
                 data, plot_type, config, **kwargs
             )
 
-        except Exception as error:
-            self._handle_faceting_errors_gracefully(error, data, config)
+        return self._plot_faceted_optimized_pipeline(data, plot_type, config, **kwargs)
 
     def _plot_faceted_standard_pipeline(
         self, data: pd.DataFrame, plot_type: str, config: FacetingConfig, **kwargs
@@ -432,70 +428,27 @@ class FigureManager:
 
         self._validate_faceting_inputs(data, config)
 
-        try:
-            grid_rows, grid_cols, layout_metadata = self._compute_facet_grid(
-                data, config
-            )
-        except Exception as e:
-            assert False, (
-                f"Failed to compute faceting grid: {str(e)}\n"
-                f"Data shape: {data.shape}\n"
-                f"Faceting config: rows='{config.rows}', cols='{config.cols}', "
-                f"ncols={config.ncols}, nrows={config.nrows}\n"
-                f"Check that your data contains the specified dimension columns."
-            )
+        grid_rows, grid_cols, layout_metadata = self._compute_facet_grid(data, config)
+
+        self._validate_grid_dimensions(grid_rows, grid_cols, config)
 
         self._validate_facet_grid_against_existing(grid_rows, grid_cols)
 
         if config.x_labels is not None:
-            try:
-                validate_nested_list_dimensions(
-                    config.x_labels, grid_rows, grid_cols, "x_labels"
-                )
-            except AssertionError as e:
-                assert False, (
-                    f"x_labels configuration error: {str(e)}\n"
-                    f"Computed grid: {grid_rows} rows × {grid_cols} cols\n"
-                    f"x_labels shape: {len(config.x_labels)} rows × {len(config.x_labels[0]) if config.x_labels else 0} cols\n"
-                    f"Tip: x_labels must match the computed grid dimensions."
-                )
+            validate_nested_list_dimensions(
+                config.x_labels, grid_rows, grid_cols, "x_labels"
+            )
 
         if config.y_labels is not None:
-            try:
-                validate_nested_list_dimensions(
-                    config.y_labels, grid_rows, grid_cols, "y_labels"
-                )
-            except AssertionError as e:
-                assert False, (
-                    f"y_labels configuration error: {str(e)}\n"
-                    f"Computed grid: {grid_rows} rows × {grid_cols} cols\n"
-                    f"y_labels shape: {len(config.y_labels)} rows × {len(config.y_labels[0]) if config.y_labels else 0} cols\n"
-                    f"Tip: y_labels must match the computed grid dimensions."
-                )
+            validate_nested_list_dimensions(
+                config.y_labels, grid_rows, grid_cols, "y_labels"
+            )
 
         if config.xlim is not None:
-            try:
-                validate_nested_list_dimensions(
-                    config.xlim, grid_rows, grid_cols, "xlim"
-                )
-            except AssertionError as e:
-                assert False, (
-                    f"xlim configuration error: {str(e)}\n"
-                    f"Computed grid: {grid_rows} rows × {grid_cols} cols\n"
-                    f"Tip: xlim must match the computed grid dimensions."
-                )
+            validate_nested_list_dimensions(config.xlim, grid_rows, grid_cols, "xlim")
 
         if config.ylim is not None:
-            try:
-                validate_nested_list_dimensions(
-                    config.ylim, grid_rows, grid_cols, "ylim"
-                )
-            except AssertionError as e:
-                assert False, (
-                    f"ylim configuration error: {str(e)}\n"
-                    f"Computed grid: {grid_rows} rows × {grid_cols} cols\n"
-                    f"Tip: ylim must match the computed grid dimensions."
-                )
+            validate_nested_list_dimensions(config.ylim, grid_rows, grid_cols, "ylim")
 
         target_positions = self._resolve_targeting(config, grid_rows, grid_cols)
 
@@ -542,6 +495,8 @@ class FigureManager:
         grid_info = self._compute_facet_grid_optimized(data, config)
         grid_rows, grid_cols = grid_info[0], grid_info[1]
         layout_metadata = grid_info[2]
+
+        self._validate_grid_dimensions(grid_rows, grid_cols, config)
 
         target_positions = self._resolve_targeting(config, grid_rows, grid_cols)
         data_subsets = self._prepare_facet_data(
@@ -721,54 +676,6 @@ class FigureManager:
             "last_plot_type": None,
             "subplot_styles": {},
         }
-
-    def _handle_faceting_errors_gracefully(
-        self, error: Exception, data: pd.DataFrame, config: Optional[FacetingConfig]
-    ) -> None:
-        error_context = {
-            "data_shape": data.shape,
-            "data_columns": data.columns.tolist(),
-            "config_summary": {
-                "rows": config.rows if config else None,
-                "cols": config.cols if config else None,
-                "lines": config.lines if config else None,
-                "ncols": config.ncols if config else None,
-                "nrows": config.nrows if config else None,
-            }
-            if config
-            else None,
-        }
-
-        error_msg = f"Faceted plotting failed: {str(error)}\n"
-        error_msg += "\nContext:\n"
-        error_msg += f"• Data shape: {error_context['data_shape']}\n"
-        error_msg += f"• Available columns: {error_context['data_columns'][:5]}..."
-        if len(error_context["data_columns"]) > 5:
-            error_msg += f" (and {len(error_context['data_columns']) - 5} more)\n"
-        else:
-            error_msg += "\n"
-        error_msg += f"• Faceting config: {error_context['config_summary']}\n"
-
-        if "Missing columns" in str(error) or "Missing required columns" in str(error):
-            error_msg += "\nRecovery suggestions:\n"
-            error_msg += "• Check that column names match exactly (case-sensitive)\n"
-            error_msg += "• Use data.head() to inspect your data structure\n"
-            error_msg += "• Verify data loading worked correctly\n"
-        elif "grid" in str(error).lower():
-            error_msg += "\nGrid-related recovery suggestions:\n"
-            error_msg += (
-                "• Ensure FigureManager grid size matches your data dimensions\n"
-            )
-            error_msg += "• Check if you need wrapped layout (ncols/nrows)\n"
-            error_msg += "• Consider filtering data to reduce grid size\n"
-        elif "empty" in str(error).lower():
-            error_msg += "\nEmpty data recovery suggestions:\n"
-            error_msg += "• Check data filtering - you may have filtered out all data\n"
-            if config and config.rows and config.cols:
-                error_msg += f"• Use data.groupby(['{config.rows}', '{config.cols}']).size() to check coverage\n"
-            error_msg += "• Set empty_subplot_strategy='warn' to allow empty subplots\n"
-
-        assert False, error_msg
 
     def _coordinate_faceted_legends(
         self, config: FacetingConfig, data: pd.DataFrame

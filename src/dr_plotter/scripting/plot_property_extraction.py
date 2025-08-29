@@ -207,12 +207,9 @@ def extract_violin_styles(collection: PolyCollection) -> List[str]:
 
 
 def extract_barcontainers_from_axis(ax: Any) -> List[Any]:
-    try:
-        from matplotlib.container import BarContainer
+    from matplotlib.container import BarContainer
 
-        return [c for c in getattr(ax, "containers", []) if isinstance(c, BarContainer)]
-    except ImportError:
-        return []
+    return [c for c in getattr(ax, "containers", []) if isinstance(c, BarContainer)]
 
 
 def extract_bar_colors(container: Any) -> List[Tuple[float, float, float, float]]:
