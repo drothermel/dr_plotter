@@ -3,7 +3,17 @@ from typing import Any, Callable, Dict, Optional, Set, TYPE_CHECKING
 from dr_plotter.consts import VISUAL_CHANNELS
 from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.legend_manager import LegendEntry, LegendStrategy
-from dr_plotter.theme import Theme
+from dr_plotter.theme import (
+    Theme,
+    LINE_THEME,
+    SCATTER_THEME,
+    BAR_THEME,
+    HISTOGRAM_THEME,
+    VIOLIN_THEME,
+    HEATMAP_THEME,
+    BUMP_PLOT_THEME,
+    CONTOUR_THEME,
+)
 from dr_plotter.types import ComponentSchema, Phase
 
 if TYPE_CHECKING:
@@ -402,17 +412,6 @@ class StyleApplicator:
         return group_styled_map.get(plot_type, {"main"})
 
     def _get_plot_specific_themes(self) -> Dict[str, Theme]:
-        from dr_plotter.theme import (
-            LINE_THEME,
-            SCATTER_THEME,
-            BAR_THEME,
-            HISTOGRAM_THEME,
-            VIOLIN_THEME,
-            HEATMAP_THEME,
-            BUMP_PLOT_THEME,
-            CONTOUR_THEME,
-        )
-
         return {
             "line": LINE_THEME,
             "scatter": SCATTER_THEME,

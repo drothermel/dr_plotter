@@ -14,7 +14,11 @@ from dr_plotter.legend_manager import (
     LegendStrategy,
     resolve_legend_config,
 )
-from dr_plotter.positioning_calculator import FigureDimensions
+from dr_plotter.positioning_calculator import (
+    FigureDimensions,
+    PositioningCalculator,
+    PositioningConfig,
+)
 from dr_plotter.utils import get_axes_from_grid
 from dr_plotter.theme import BASE_THEME, Theme
 from dr_plotter.faceting import (
@@ -26,6 +30,11 @@ from dr_plotter.faceting import (
     validate_faceting_data_requirements,
     validate_nested_list_dimensions,
     FacetStyleCoordinator,
+)
+from dr_plotter.faceting.data_preparation import handle_empty_subplots
+from dr_plotter.faceting.validation import (
+    validate_common_mistakes,
+    validate_subplot_data_coverage,
 )
 from .plotters import BasePlotter
 
@@ -200,8 +209,6 @@ class FigureManager:
 
             positioning_config = self.legend_config.positioning_config
             if positioning_config:
-                from dr_plotter.positioning_calculator import PositioningCalculator
-
                 calculator = PositioningCalculator(positioning_config)
                 rect = calculator.calculate_layout_rect(figure_dimensions)
                 if rect:
@@ -210,11 +217,6 @@ class FigureManager:
                     self.fig.tight_layout(pad=self._layout_pad)
             else:
                 if self.fig._suptitle is not None or self._has_subplot_titles():
-                    from dr_plotter.positioning_calculator import (
-                        PositioningCalculator,
-                        PositioningConfig,
-                    )
-
                     default_config = PositioningConfig()
                     calculator = PositioningCalculator(default_config)
                     rect = calculator.calculate_layout_rect(figure_dimensions)
@@ -479,8 +481,6 @@ class FigureManager:
             data, config, layout_metadata, target_positions
         )
 
-        from dr_plotter.faceting.data_preparation import handle_empty_subplots
-
         data_subsets = handle_empty_subplots(
             data_subsets, config.empty_subplot_strategy
         )
@@ -526,8 +526,6 @@ class FigureManager:
             data, config, layout_metadata, target_positions
         )
 
-        from dr_plotter.faceting.data_preparation import handle_empty_subplots
-
         data_subsets = handle_empty_subplots(
             data_subsets, config.empty_subplot_strategy
         )
@@ -562,11 +560,6 @@ class FigureManager:
     def _validate_faceting_inputs(
         self, data: pd.DataFrame, config: FacetingConfig
     ) -> None:
-        from dr_plotter.faceting.validation import (
-            validate_common_mistakes,
-            validate_subplot_data_coverage,
-        )
-
         validate_faceting_data_requirements(data, config)
         config.validate()
 

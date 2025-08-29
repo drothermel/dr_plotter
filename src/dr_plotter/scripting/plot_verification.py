@@ -1,8 +1,7 @@
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
-import matplotlib.colors as mcolors
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+from .unified_verification_engine import execute_verification
 from .plot_property_extraction import extract_subplot_properties
-from .plot_data_extractor import count_unique_colors, count_unique_floats
 
 
 type SubplotCoord = Tuple[int, int]
@@ -11,121 +10,24 @@ type ExpectedChannels = Dict[SubplotCoord, List[ChannelName]]
 type VerificationResult = Dict[str, Any]
 
 
-def format_sample_values(values: List[Any], max_count: int = 5) -> List[Any]:
-    limited_values = values[:max_count] if len(values) > max_count else values
-    formatted_values = []
-
-    for value in limited_values:
-        if isinstance(value, (tuple, list)) and len(value) >= 3:
-            if all(isinstance(x, float) for x in value):
-                formatted_values.append(tuple(round(x, 3) for x in value))
-            else:
-                formatted_values.append(value)
-        elif isinstance(value, float):
-            formatted_values.append(round(value, 3))
-        else:
-            formatted_values.append(value)
-
-    return formatted_values
-
-
 def verify_channel_variation(
     collections: List[Dict[str, Any]], channel: str, min_unique_threshold: int = 2
 ) -> VerificationResult:
-    result = {
-        "channel": channel,
-        "passed": False,
-        "unique_values": 0,
-        "total_points": 0,
-        "details": {},
-        "message": "",
-    }
-
-    if not collections:
-        result["message"] = f"No collections found to verify {channel} variation"
-        return result
-
-    all_values = []
-
-    if channel == "size":
-        for collection in collections:
-            all_values.extend(collection["sizes"])
-    elif channel == "hue" or channel == "color":
-        for collection in collections:
-            all_values.extend(collection["colors"])
-    elif channel == "marker":
-        for collection in collections:
-            all_values.extend(collection["markers"])
-    elif channel == "alpha":
-        for collection in collections:
-            # For lines, use separate alphas field if available
-            if "alphas" in collection and collection["alphas"]:
-                all_values.extend(collection["alphas"])
-            else:
-                # Extract alpha from RGBA colors (scatter/bar)
-                for rgba in collection["colors"]:
-                    if len(rgba) == 4:
-                        all_values.append(rgba[3])
-                    else:
-                        all_values.append(1.0)
-    elif channel == "style":
-        for collection in collections:
-            if "styles" in collection:
-                all_values.extend(collection["styles"])
-    else:
-        result["message"] = f"Unknown channel: {channel}"
-        return result
-
-    if channel in ["size", "alpha"]:
-        unique_values = count_unique_floats(all_values, tolerance=1e-6)
-    elif channel in ["hue", "color"]:
-        unique_values = count_unique_colors(all_values, tolerance=1e-6)
-    else:
-        unique_values = set(all_values)
-
-    result["unique_values"] = len(unique_values)
-    result["total_points"] = len(all_values)
-
-    # Format sample values with rounding for readability
-    raw_samples = (
-        list(unique_values)[:5]
-        if isinstance(unique_values, (set, list))
-        else sorted(list(unique_values))[:5]
+    return execute_verification(
+        "channel_variation",
+        {
+            "collections": collections,
+            "channel": channel,
+            "min_unique_threshold": min_unique_threshold,
+        },
     )
-    result["details"]["sample_values"] = format_sample_values(raw_samples)
-    result["passed"] = len(unique_values) >= min_unique_threshold
-
-    if result["passed"]:
-        result["message"] = (
-            f"✅ {channel.title()} variation: PASS ({len(unique_values)} unique values found)"
-        )
-    else:
-        result["message"] = (
-            f"🔴 {channel.title()} variation: FAIL (only {len(unique_values)} unique values, expected ≥{min_unique_threshold})"
-        )
-
-        if len(unique_values) == 1:
-            sample_val = next(iter(unique_values)) if unique_values else "none"
-            result["message"] += f"\n   - All points have {channel}: {sample_val}"
-
-    return result
-
-
-def _count_unique_floats(values: List[float], tolerance: float = 1e-6) -> Set[float]:
-    return count_unique_floats(values, tolerance)
-
-
-def _count_unique_colors(
-    colors: List[Tuple[float, ...]], tolerance: float = 1e-6
-) -> Set[Tuple[float, ...]]:
-    return count_unique_colors(colors, tolerance)
 
 
 def verify_plot_properties_for_subplot(
     ax: Any,
     expected_channels: List[str],
     min_unique_threshold: int = 2,
-    tolerance: float = 0.05,
+    tolerance: Optional[float] = None,
 ) -> Dict[str, Any]:
     props = extract_subplot_properties(ax)
 
@@ -140,17 +42,21 @@ def verify_plot_properties_for_subplot(
 
     if not props["collections"]:
         result["overall_passed"] = False
-        result["summary_message"] = "🔴 No collections found in subplot"
+        result["summary_message"] = "No collections found in subplot"
         result["suggestions"].append("Check if plot was created successfully")
         return result
 
-    # Verify each expected channel
     passed_channels = []
     failed_channels = []
 
     for channel in expected_channels:
-        channel_result = verify_channel_variation(
-            props["collections"], channel, min_unique_threshold
+        channel_result = execute_verification(
+            "channel_variation",
+            {
+                "collections": props["collections"],
+                "channel": channel,
+                "min_unique_threshold": min_unique_threshold,
+            },
         )
         result["channels"][channel] = channel_result
 
@@ -161,17 +67,15 @@ def verify_plot_properties_for_subplot(
 
     result["overall_passed"] = len(failed_channels) == 0
 
-    # Build summary message
     if result["overall_passed"]:
         result["summary_message"] = (
-            f"✅ All channels verified: {', '.join(passed_channels)}"
+            f"All channels verified: {', '.join(passed_channels)}"
         )
     else:
         result["summary_message"] = (
-            f"🔴 Channel verification failed: {', '.join(failed_channels)}"
+            f"Channel verification failed: {', '.join(failed_channels)}"
         )
 
-        # Add specific suggestions
         for channel in failed_channels:
             if channel == "size":
                 result["suggestions"].append(
@@ -198,394 +102,103 @@ def verify_marker_consistency(
     legend_markers: List[str],
     expected_unique_markers: int = None,
 ) -> Dict[str, Any]:
-    plot_unique = set(plot_markers)
-    legend_unique = set(legend_markers)
-
-    result = {
-        "passed": plot_unique == legend_unique,
-        "plot_markers": sorted(plot_unique),
-        "legend_markers": sorted(legend_unique),
-        "missing_from_legend": sorted(plot_unique - legend_unique),
-        "extra_in_legend": sorted(legend_unique - plot_unique),
-        "message": "",
-    }
-
-    if expected_unique_markers and len(plot_unique) != expected_unique_markers:
-        result["passed"] = False
-        result["message"] = (
-            f"🔴 Expected {expected_unique_markers} unique markers in plot, found {len(plot_unique)}"
-        )
-        return result
-
-    if result["passed"]:
-        result["message"] = (
-            f"✅ Marker consistency: PASS ({len(plot_unique)} unique markers match)"
-        )
-    else:
-        result["message"] = "🔴 Marker consistency: FAIL"
-        if result["missing_from_legend"]:
-            result["message"] += (
-                f"\n   - Missing from legend: {result['missing_from_legend']}"
-            )
-        if result["extra_in_legend"]:
-            result["message"] += f"\n   - Extra in legend: {result['extra_in_legend']}"
-
-    return result
+    return execute_verification(
+        "consistency_check",
+        {
+            "channel": "marker",
+            "plot_data": plot_markers,
+            "legend_data": legend_markers,
+            "expected_unique": expected_unique_markers,
+        },
+    )
 
 
 def verify_color_consistency(
     plot_colors: List[Tuple[float, ...]],
     legend_colors: List[Tuple[float, ...]],
-    tolerance: float = 0.05,
+    tolerance: Optional[float] = None,
 ) -> Dict[str, Any]:
-    plot_unique = count_unique_colors(plot_colors, tolerance)
-    legend_unique = count_unique_colors(legend_colors, tolerance)
-
-    # Convert to hex for easier comparison and display
-    plot_hex = [mcolors.to_hex(color) for color in plot_unique]
-    legend_hex = [mcolors.to_hex(color) for color in legend_unique]
-
-    result = {
-        "passed": set(plot_hex) == set(legend_hex),
-        "plot_colors": sorted(plot_hex),
-        "legend_colors": sorted(legend_hex),
-        "message": "",
-    }
-
-    if result["passed"]:
-        result["message"] = (
-            f"✅ Color consistency: PASS ({len(plot_unique)} unique colors match)"
-        )
-    else:
-        result["message"] = "🔴 Color consistency: FAIL"
-        result["message"] += f"\n   - Plot colors: {result['plot_colors']}"
-        result["message"] += f"\n   - Legend colors: {result['legend_colors']}"
-
-    return result
+    return execute_verification(
+        "consistency_check",
+        {
+            "channel": "color",
+            "plot_data": plot_colors,
+            "legend_data": legend_colors,
+            "tolerance": tolerance,
+        },
+    )
 
 
 def verify_alpha_consistency(
-    plot_alphas: List[float], legend_alphas: List[float], tolerance: float = 0.05
+    plot_alphas: List[float],
+    legend_alphas: List[float],
+    tolerance: Optional[float] = None,
 ) -> Dict[str, Any]:
-    plot_unique = count_unique_floats(plot_alphas, tolerance)
-    legend_unique = count_unique_floats(legend_alphas, tolerance)
-
-    result = {
-        "passed": len(plot_unique) == len(legend_unique),
-        "plot_alpha_range": (min(plot_unique), max(plot_unique))
-        if plot_unique
-        else (1.0, 1.0),
-        "legend_alpha_range": (min(legend_unique), max(legend_unique))
-        if legend_unique
-        else (1.0, 1.0),
-        "plot_unique_count": len(plot_unique),
-        "legend_unique_count": len(legend_unique),
-        "message": "",
-    }
-
-    # More sophisticated check - ranges should overlap significantly
-    if plot_unique and legend_unique:
-        plot_min, plot_max = min(plot_unique), max(plot_unique)
-        legend_min, legend_max = min(legend_unique), max(legend_unique)
-
-        # Check if ranges overlap reasonably
-        range_overlap = (min(plot_max, legend_max) - max(plot_min, legend_min)) / max(
-            (plot_max - plot_min), 0.1
-        )
-
-        if range_overlap > 0.5:  # At least 50% overlap
-            result["passed"] = True
-            result["message"] = (
-                "✅ Alpha consistency: PASS (ranges overlap sufficiently)"
-            )
-        else:
-            result["passed"] = False
-            result["message"] = "🔴 Alpha consistency: FAIL (ranges don't overlap)"
-    elif result["passed"]:
-        result["message"] = (
-            f"✅ Alpha consistency: PASS ({len(plot_unique)} alpha values match)"
-        )
-    else:
-        result["message"] = "🔴 Alpha consistency: FAIL"
-        result["message"] += f"\n   - Plot alpha range: {result['plot_alpha_range']}"
-        result["message"] += (
-            f"\n   - Legend alpha range: {result['legend_alpha_range']}"
-        )
-
-    return result
+    return execute_verification(
+        "consistency_check",
+        {
+            "channel": "alpha",
+            "plot_data": plot_alphas,
+            "legend_data": legend_alphas,
+            "tolerance": tolerance,
+        },
+    )
 
 
 def verify_size_consistency(
-    plot_sizes: List[float], legend_sizes: List[float], tolerance: float = 0.1
+    plot_sizes: List[float],
+    legend_sizes: List[float],
+    tolerance: Optional[float] = None,
 ) -> Dict[str, Any]:
-    from .plot_data_extractor import convert_legend_size_to_scatter_size
-
-    legend_as_scatter = [
-        convert_legend_size_to_scatter_size(size) for size in legend_sizes
-    ]
-
-    plot_unique = count_unique_floats(plot_sizes, tolerance)
-    legend_unique = count_unique_floats(legend_as_scatter, tolerance)
-
-    result = {
-        "passed": len(plot_unique) == len(legend_unique),
-        "plot_size_range": (min(plot_unique), max(plot_unique))
-        if plot_unique
-        else (0, 0),
-        "legend_size_range": (min(legend_unique), max(legend_unique))
-        if legend_unique
-        else (0, 0),
-        "message": "",
-    }
-
-    if result["passed"]:
-        result["message"] = "✅ Size consistency: PASS (ranges match within tolerance)"
-    else:
-        result["message"] = "🔴 Size consistency: FAIL"
-        result["message"] += f"\n   - Plot size range: {result['plot_size_range']}"
-        result["message"] += f"\n   - Legend size range: {result['legend_size_range']}"
-
-    return result
+    return execute_verification(
+        "consistency_check",
+        {
+            "channel": "size",
+            "plot_data": plot_sizes,
+            "legend_data": legend_sizes,
+            "tolerance": tolerance,
+        },
+    )
 
 
 def verify_style_consistency(
     plot_styles: List[str], legend_styles: List[str], expected_unique_styles: int = None
 ) -> Dict[str, Any]:
-    plot_unique = set(plot_styles)
-    legend_unique = set(legend_styles)
-
-    result = {
-        "passed": plot_unique == legend_unique,
-        "plot_styles": sorted(plot_unique),
-        "legend_styles": sorted(legend_unique),
-        "missing_from_legend": sorted(plot_unique - legend_unique),
-        "extra_in_legend": sorted(legend_unique - plot_unique),
-        "message": "",
-    }
-
-    if expected_unique_styles and len(plot_unique) != expected_unique_styles:
-        result["passed"] = False
-        result["message"] = (
-            f"🔴 Expected {expected_unique_styles} unique styles in plot, found {len(plot_unique)}"
-        )
-        return result
-
-    if result["passed"]:
-        result["message"] = (
-            f"✅ Style consistency: PASS ({len(plot_unique)} unique styles match)"
-        )
-    else:
-        result["message"] = "🔴 Style consistency: FAIL"
-        if result["missing_from_legend"]:
-            result["message"] += (
-                f"\n   - Missing from legend: {result['missing_from_legend']}"
-            )
-        if result["extra_in_legend"]:
-            result["message"] += f"\n   - Extra in legend: {result['extra_in_legend']}"
-
-    return result
+    return execute_verification(
+        "consistency_check",
+        {
+            "channel": "style",
+            "plot_data": plot_styles,
+            "legend_data": legend_styles,
+            "expected_unique": expected_unique_styles,
+        },
+    )
 
 
 def verify_channel_uniformity(
-    values: List[Any], channel: str, tolerance: float = 1e-6
+    values: List[Any], channel: str, tolerance: float = None
 ) -> Dict[str, Any]:
-    result = {
-        "channel": channel,
-        "passed": False,
-        "unique_values": 0,
-        "message": "",
-        "uniform_value": None,
-    }
-
-    if not values:
-        result["message"] = f"🔴 {channel.title()} uniformity: No values to check"
-        return result
-
-    if channel in ["size", "alpha"]:
-        unique_values = count_unique_floats(values, tolerance)
-    elif channel in ["hue", "color"]:
-        unique_values = count_unique_colors(values, tolerance)
-    else:
-        unique_values = set(values)
-
-    result["unique_values"] = len(unique_values)
-    result["passed"] = len(unique_values) == 1
-
-    if result["passed"]:
-        result["uniform_value"] = next(iter(unique_values)) if unique_values else None
-        result["message"] = (
-            f"✅ {channel.title()} uniformity: PASS (all plot values are {result['uniform_value']})"
-        )
-    else:
-        result["message"] = (
-            f"🔴 {channel.title()} uniformity: FAIL ({len(unique_values)} different plot values found)"
-        )
-        raw_samples = (
-            list(unique_values)[:3]
-            if isinstance(unique_values, (set, list))
-            else sorted(list(unique_values))[:3]
-        )
-        formatted_samples = format_sample_values(raw_samples, max_count=3)
-        result["message"] += f"\n   - Plot sample values: {formatted_samples}"
-
-    return result
+    return execute_verification(
+        "channel_uniformity",
+        {"values": values, "channel": channel, "tolerance": tolerance},
+    )
 
 
 def verify_legend_plot_consistency(
     ax: Any,
     expected_varying_channels: Optional[List[str]] = None,
     expected_legend_entries: Optional[Dict[str, Union[int, str]]] = None,
-    tolerance: float = 0.1,
+    tolerance: Optional[float] = None,
 ) -> Dict[str, Any]:
-    props = extract_subplot_properties(ax)
-
-    result = {
-        "consistency_checks": {},
-        "overall_passed": True,
-        "message": "",
-        "suggestions": [],
-    }
-
-    # Extract plot data
-    all_plot_markers = []
-    all_plot_colors = []
-    all_plot_sizes = []
-    all_plot_alphas = []
-    all_plot_styles = []
-
-    for collection in props["collections"]:
-        all_plot_markers.extend(collection["markers"])
-        all_plot_colors.extend(collection["colors"])
-        all_plot_sizes.extend(collection["sizes"])
-
-        # Handle line-specific alphas and styles
-        if "alphas" in collection and collection["alphas"]:
-            all_plot_alphas.extend(collection["alphas"])
-        else:
-            # Extract alpha values from RGBA colors (scatter/bar)
-            for rgba_color in collection["colors"]:
-                if len(rgba_color) >= 4:
-                    all_plot_alphas.append(rgba_color[3])
-                else:
-                    all_plot_alphas.append(1.0)  # Default alpha
-
-        # Extract line styles if available
-        if "styles" in collection:
-            all_plot_styles.extend(collection["styles"])
-
-    # Extract legend data
-    legend_markers = props["legend"]["markers"]
-    legend_colors = props["legend"]["colors"]
-    legend_sizes = props["legend"]["sizes"]
-    legend_styles = props["legend"]["styles"]
-    legend_alphas = []
-
-    # Extract alpha from legend colors
-    for rgba_color in legend_colors:
-        if len(rgba_color) >= 4:
-            legend_alphas.append(rgba_color[3])
-        else:
-            legend_alphas.append(1.0)
-
-    # Default to checking all channels if none specified
-    if expected_varying_channels is None:
-        expected_varying_channels = ["hue", "marker", "alpha", "size", "style"]
-
-    # Map channel names to their data and verification functions
-    channel_data = {
-        "marker": (all_plot_markers, legend_markers, verify_marker_consistency),
-        "hue": (
-            all_plot_colors,
-            legend_colors,
-            lambda plot_data, legend_data, t=tolerance: verify_color_consistency(
-                plot_data, legend_data, t
-            ),
-        ),
-        "alpha": (
-            all_plot_alphas,
-            legend_alphas,
-            lambda plot_data, legend_data, t=tolerance: verify_alpha_consistency(
-                plot_data, legend_data, t
-            ),
-        ),
-        "size": (
-            all_plot_sizes,
-            legend_sizes,
-            lambda plot_data, legend_data, t=tolerance: verify_size_consistency(
-                plot_data, legend_data, t
-            ),
-        ),
-        "style": (
-            all_plot_styles,
-            legend_styles,
-            verify_style_consistency,
-        ),
-    }
-
-    # Check each channel based on whether it should vary or not
-    for channel in ["marker", "hue", "alpha", "size", "style"]:
-        if channel not in channel_data or not channel_data[channel][0]:
-            continue  # Skip if no data available
-
-        plot_data, legend_data, verify_func = channel_data[channel]
-
-        # Determine if this channel should vary based on expected channels
-        should_vary = False
-        if channel in expected_varying_channels:
-            should_vary = True
-        # Handle hue/color synonyms - if expected channels contain "color", treat it as "hue"
-        elif channel == "hue" and "color" in expected_varying_channels:
-            should_vary = True
-
-        if should_vary and legend_data:
-            # This channel should vary - check plot-legend consistency
-            consistency_check = verify_func(plot_data, legend_data)
-            result["consistency_checks"][f"{channel}s"] = consistency_check
-            if not consistency_check["passed"]:
-                result["overall_passed"] = False
-        elif should_vary and not legend_data:
-            # This channel should vary but legend data is missing - verify plot has variation
-            variation_check = verify_channel_variation(
-                [
-                    {
-                        "colors": all_plot_colors,
-                        "markers": all_plot_markers,
-                        "sizes": all_plot_sizes,
-                    }
-                ],
-                channel,
-            )
-
-            # Create a special message for this case
-            if variation_check["passed"]:
-                message = f"✅ {channel.title()} variation: VERIFIED (plot shows expected variation, legend data missing)"
-            else:
-                message = f"🔴 {channel.title()} variation: MISSING (expected variation not found in plot)"
-
-            special_check = {"passed": variation_check["passed"], "message": message}
-            result["consistency_checks"][f"{channel}s"] = special_check
-            if not special_check["passed"]:
-                result["overall_passed"] = False
-        elif not should_vary:
-            # This channel should NOT vary - check plot uniformity
-            uniformity_check = verify_channel_uniformity(plot_data, channel, tolerance)
-            result["consistency_checks"][f"{channel}s"] = uniformity_check
-            if not uniformity_check["passed"]:
-                result["overall_passed"] = False
-
-    # Build overall message
-    if result["overall_passed"]:
-        checks = list(result["consistency_checks"].keys())
-        result["message"] = f"✅ Legend-plot consistency: PASS ({', '.join(checks)})"
-    else:
-        failed = [k for k, v in result["consistency_checks"].items() if not v["passed"]]
-        result["message"] = f"🔴 Legend-plot consistency: FAIL ({', '.join(failed)})"
-        result["suggestions"].append("Check legend proxy artist creation")
-        result["suggestions"].append(
-            "Verify legend manager is creating correct entries"
-        )
-
-    return result
+    return execute_verification(
+        "legend_plot_consistency",
+        {
+            "ax": ax,
+            "expected_varying_channels": expected_varying_channels,
+            "expected_legend_entries": expected_legend_entries,
+            "tolerance": tolerance,
+        },
+    )
 
 
 def verify_figure_legend_strategy(
@@ -597,44 +210,18 @@ def verify_figure_legend_strategy(
     expected_channels: Optional[List[str]],
     tolerance: float,
 ) -> Dict[str, Any]:
-    result = {
-        "passed": True,
-        "strategy": strategy,
-        "checks": {},
-        "message": "",
-    }
-
-    count_check = {
-        "passed": figure_props["legend_count"] == expected_count,
-        "expected": expected_count,
-        "actual": figure_props["legend_count"],
-        "message": "",
-    }
-
-    if count_check["passed"]:
-        count_check["message"] = (
-            f"✅ Legend count: PASS ({expected_count} legends found)"
-        )
-    else:
-        count_check["message"] = (
-            f"🔴 Legend count: FAIL (expected {expected_count}, got {figure_props['legend_count']})"
-        )
-        result["passed"] = False
-
-    result["checks"]["legend_count"] = count_check
-
-    if strategy == "figure_below":
-        return verify_unified_figure_strategy(
-            figure_props, expected_total_entries, result, tolerance
-        )
-    elif strategy == "split":
-        return verify_split_figure_strategy(
-            figure_props, expected_channel_entries, expected_channels, result, tolerance
-        )
-    else:
-        result["passed"] = False
-        result["message"] = f"🔴 Unknown strategy: {strategy}"
-        return result
+    return execute_verification(
+        "figure_legend_strategy",
+        {
+            "figure_props": figure_props,
+            "strategy": strategy,
+            "expected_count": expected_count,
+            "expected_total_entries": expected_total_entries,
+            "expected_channel_entries": expected_channel_entries,
+            "expected_channels": expected_channels,
+            "tolerance": tolerance,
+        },
+    )
 
 
 def verify_unified_figure_strategy(
@@ -643,49 +230,18 @@ def verify_unified_figure_strategy(
     result: Dict[str, Any],
     tolerance: float,
 ) -> Dict[str, Any]:
-    if not result["checks"]["legend_count"]["passed"]:
-        result["message"] = "🔴 Cannot verify unified legend - wrong legend count"
-        return result
-
-    legend = figure_props["legends"][0]
-
-    if expected_total_entries is not None:
-        entries_check = {
-            "passed": legend["entry_count"] == expected_total_entries,
-            "expected": expected_total_entries,
-            "actual": legend["entry_count"],
-            "message": "",
-        }
-
-        if entries_check["passed"]:
-            entries_check["message"] = (
-                f"✅ Entry count: PASS ({expected_total_entries} entries)"
-            )
-        else:
-            entries_check["message"] = (
-                f"🔴 Entry count: FAIL (expected {expected_total_entries}, got {legend['entry_count']})"
-            )
-            result["passed"] = False
-
-        result["checks"]["entry_count"] = entries_check
-
-    title_check = {
-        "passed": legend["title"] is None or legend["title"] == "",
-        "message": "✅ No channel title: PASS (unified legend)"
-        if (legend["title"] is None or legend["title"] == "")
-        else f"🔴 Unexpected title: {legend['title']}",
-    }
-
-    result["checks"]["unified_title"] = title_check
-    if not title_check["passed"]:
-        result["passed"] = False
-
-    result["message"] = (
-        "✅ Unified figure legend verified"
-        if result["passed"]
-        else "🔴 Unified figure legend verification failed"
+    return execute_verification(
+        "figure_legend_strategy",
+        {
+            "figure_props": figure_props,
+            "strategy": "figure_below",
+            "expected_count": 1,
+            "expected_total_entries": expected_total_entries,
+            "expected_channel_entries": None,
+            "expected_channels": None,
+            "tolerance": tolerance,
+        },
     )
-    return result
 
 
 def verify_split_figure_strategy(
@@ -695,63 +251,16 @@ def verify_split_figure_strategy(
     result: Dict[str, Any],
     tolerance: float,
 ) -> Dict[str, Any]:
-    if not result["checks"]["legend_count"]["passed"]:
-        result["message"] = "🔴 Cannot verify split legends - wrong legend count"
-        return result
-
-    found_channels = []
-    for legend in figure_props["legends"]:
-        if legend["title"]:
-            found_channels.append(legend["title"].lower())
-
-    if expected_channels:
-        expected_set = set(ch.lower() for ch in expected_channels)
-        found_set = set(found_channels)
-
-        channels_check = {
-            "passed": expected_set == found_set,
-            "expected": sorted(expected_set),
-            "found": sorted(found_set),
-            "message": "",
-        }
-
-        if channels_check["passed"]:
-            channels_check["message"] = (
-                f"✅ Channel coverage: PASS ({len(expected_set)} channels)"
-            )
-        else:
-            missing = expected_set - found_set
-            extra = found_set - expected_set
-            channels_check["message"] = "🔴 Channel coverage: FAIL"
-            if missing:
-                channels_check["message"] += f" (missing: {sorted(missing)})"
-            if extra:
-                channels_check["message"] += f" (extra: {sorted(extra)})"
-            result["passed"] = False
-
-        result["checks"]["channel_coverage"] = channels_check
-
-    if expected_channel_entries:
-        for legend in figure_props["legends"]:
-            channel = legend["title"].lower() if legend["title"] else "untitled"
-            if channel in expected_channel_entries:
-                expected_entries = expected_channel_entries[channel]
-                entries_check = {
-                    "passed": legend["entry_count"] == expected_entries,
-                    "expected": expected_entries,
-                    "actual": legend["entry_count"],
-                    "message": f"✅ {channel.title()} entries: PASS ({expected_entries})"
-                    if legend["entry_count"] == expected_entries
-                    else f"🔴 {channel.title()} entries: FAIL (expected {expected_entries}, got {legend['entry_count']})",
-                }
-
-                result["checks"][f"{channel}_entries"] = entries_check
-                if not entries_check["passed"]:
-                    result["passed"] = False
-
-    result["message"] = (
-        "✅ Split figure legends verified"
-        if result["passed"]
-        else "🔴 Split figure legend verification failed"
+    expected_count = len(expected_channels) if expected_channels else 0
+    return execute_verification(
+        "figure_legend_strategy",
+        {
+            "figure_props": figure_props,
+            "strategy": "split",
+            "expected_count": expected_count,
+            "expected_total_entries": None,
+            "expected_channel_entries": expected_channel_entries,
+            "expected_channels": expected_channels,
+            "tolerance": tolerance,
+        },
     )
-    return result

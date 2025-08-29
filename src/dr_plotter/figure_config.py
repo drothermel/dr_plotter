@@ -1,7 +1,10 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 import matplotlib.pyplot as plt
+
+if TYPE_CHECKING:
+    from dr_plotter.figure import FigureManager
 
 type ColName = str
 

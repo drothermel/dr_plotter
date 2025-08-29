@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple, Set
+from typing import Any, Dict, List, Tuple
 import numpy as np
 import matplotlib.colors as mcolors
 from matplotlib.collections import PathCollection, PolyCollection
@@ -248,47 +248,6 @@ def convert_scatter_size_to_legend_size(scatter_size: float) -> float:
 
 def convert_legend_size_to_scatter_size(legend_size: float) -> float:
     return np.pi * (legend_size / 2) ** 2
-
-
-def colors_equal_with_tolerance(
-    color1: RGBA, color2: RGBA, tolerance: float = 1e-6
-) -> bool:
-    assert len(color1) == len(color2), (
-        f"Color lengths must match: {len(color1)} vs {len(color2)}"
-    )
-    return all(abs(a - b) < tolerance for a, b in zip(color1, color2))
-
-
-def floats_equal_with_tolerance(
-    val1: float, val2: float, tolerance: float = 1e-6
-) -> bool:
-    return abs(val1 - val2) < tolerance
-
-
-def count_unique_colors(colors: List[RGBA], tolerance: float = 1e-6) -> Set[RGBA]:
-    unique = set()
-    for color in colors:
-        is_duplicate = False
-        for existing in unique:
-            if colors_equal_with_tolerance(color, existing, tolerance):
-                is_duplicate = True
-                break
-        if not is_duplicate:
-            unique.add(color)
-    return unique
-
-
-def count_unique_floats(values: List[float], tolerance: float = 1e-6) -> Set[float]:
-    unique = set()
-    for val in values:
-        is_duplicate = False
-        for existing in unique:
-            if floats_equal_with_tolerance(val, existing, tolerance):
-                is_duplicate = True
-                break
-        if not is_duplicate:
-            unique.add(val)
-    return unique
 
 
 def _identify_marker_from_path(path: Any) -> str:

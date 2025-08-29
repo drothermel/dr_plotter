@@ -2,6 +2,18 @@ import functools
 import sys
 from typing import Optional, Callable, Any, Dict, List, Union, Tuple
 import matplotlib.pyplot as plt
+from .verification_formatter import (
+    print_section_header,
+    print_subsection_header,
+    print_success,
+    print_failure,
+    print_critical,
+    print_final_success,
+    print_info,
+    print_item_result,
+    print_suggestions,
+    print_detailed_issues,
+)
 from .verification import verify_legend_visibility
 from .plot_verification import (
     verify_plot_properties_for_subplot,
@@ -9,6 +21,7 @@ from .plot_verification import (
     verify_figure_legend_strategy,
 )
 from .plot_data_extractor import extract_figure_legend_properties
+from .validation import validate_figure_result, validate_legend_properties
 from dr_plotter.utils import get_axes_from_grid
 
 
@@ -39,42 +52,41 @@ def _print_failure_message(
     result: Dict[str, Any],
     descriptions: Optional[Dict[int, str]] = None,
 ) -> None:
-    print(f"\n💥 EXAMPLE {name.upper()} FAILED: Legend visibility issues detected!")
+    print_critical(f"EXAMPLE {name.upper()} FAILED: Legend visibility issues detected!")
 
     if expected == 0:
-        print("   - Expected NO legends (simple plots with no grouping)")
-        print(f"   - Found {result['visible_legends']} unexpected legend(s)")
+        print_info("- Expected NO legends (simple plots with no grouping)", 1)
+        print_info(f"- Found {result['visible_legends']} unexpected legend(s)", 1)
     else:
-        print(f"   - Expected {expected} subplot(s) to have visible legends")
-        print(f"   - Only {result['visible_legends']} legends are actually visible")
-        print(f"   - {result['missing_legends']} legends are missing")
+        print_info(f"- Expected {expected} subplot(s) to have visible legends", 1)
+        print_info(
+            f"- Only {result['visible_legends']} legends are actually visible", 1
+        )
+        print_info(f"- {result['missing_legends']} legends are missing", 1)
 
     if descriptions:
-        print("\n📋 Expected Configuration:")
+        print_info("Expected Configuration:", 1)
         for idx, desc in descriptions.items():
-            print(f"   • Subplot {idx}: {desc}")
+            print_info(f"• Subplot {idx}: {desc}", 2)
 
     if result.get("issues"):
-        print("\n📋 Detailed Issues:")
-        for issue in result["issues"]:
-            print(f"   • Subplot {issue['subplot']}: {issue['reason']}")
-            print(
-                f"     (exists: {issue['exists']}, marked_visible: {issue['marked_visible']}, has_content: {issue['has_content']})"
-            )
+        print_detailed_issues(result["issues"], 1)
 
-    print("\n🔧 This indicates a bug in the legend management system.")
+    print_info("This indicates a bug in the legend management system.")
     if expected > 0:
-        print("   The plots should show legends for all visual encoding channels.")
+        print_info("The plots should show legends for all visual encoding channels.", 1)
     else:
-        print("   Simple plots without grouping variables should not have legends.")
-    print("   Please check the legend manager implementation.")
-    print("   📊 Plot has been saved for visual debugging.")
+        print_info(
+            "Simple plots without grouping variables should not have legends.", 1
+        )
+    print_info("Please check the legend manager implementation.", 1)
+    print_info("Plot has been saved for visual debugging.", 1)
 
 
 def verify_plot_properties(
     expected_channels: ExpectedChannels,
     min_unique_threshold: int = 2,
-    tolerance: float = 0.05,
+    tolerance: Optional[float] = None,
     fail_on_missing: bool = True,
 ) -> Callable:
     def decorator(func: Callable) -> Callable:
@@ -82,30 +94,26 @@ def verify_plot_properties(
         def wrapper(*args, **kwargs) -> Any:
             result = func(*args, **kwargs)
 
+            assert isinstance(result, (plt.Figure, list, tuple)), (
+                f"Function must return Figure or list, got {type(result).__name__}"
+            )
+
             if isinstance(result, plt.Figure):
                 fig = result
             elif isinstance(result, (list, tuple)) and len(result) >= 1:
-                if isinstance(result[0], plt.Figure):
-                    fig = result[0]
-                else:
-                    raise ValueError(
-                        f"@verify_plot_properties requires function to return a Figure, "
-                        f"got {type(result[0]).__name__}"
-                    )
-            else:
-                raise ValueError(
-                    f"@verify_plot_properties requires function to return a Figure, "
-                    f"got {type(result).__name__}"
+                assert isinstance(result[0], plt.Figure), (
+                    f"Function must return Figure(s), got {type(result[0]).__name__}"
                 )
+                fig = result[0]
+            else:
+                assert False, f"Invalid return type: {type(result).__name__}"
 
             name = func.__name__.replace("_", "-")
             if name == "main":
                 module_parts = func.__module__.split(".") if func.__module__ else []
                 name = module_parts[-1] if module_parts else "example"
 
-            print(f"\n{'=' * 60}")
-            print("PLOT PROPERTIES VERIFICATION")
-            print(f"{'=' * 60}")
+            print_section_header("PLOT PROPERTIES VERIFICATION")
 
             all_passed = True
             failed_subplots = []
@@ -113,44 +121,38 @@ def verify_plot_properties(
             for subplot_coord, channels in expected_channels.items():
                 row, col = subplot_coord
 
-                try:
-                    # Filter to only main grid axes, excluding auxiliary axes like colorbars
-                    main_grid_axes = filter_main_grid_axes(fig.axes)
-                    ax = get_axes_from_grid(main_grid_axes, row, col)
-                except (IndexError, AttributeError, AssertionError) as e:
-                    print(f"🔴 Could not find axis at position ({row}, {col}): {e}")
-                    all_passed = False
-                    continue
+                main_grid_axes = filter_main_grid_axes(fig.axes)
+                ax = get_axes_from_grid(main_grid_axes, row, col)
 
-                print(f"\n📊 Verifying subplot [{row},{col}]: {channels}")
-                print("-" * 50)
+                print_subsection_header(f"Verifying subplot [{row},{col}]: {channels}")
 
                 subplot_result = verify_plot_properties_for_subplot(
                     ax, channels, min_unique_threshold, tolerance
                 )
 
-                print(f"Collections found: {subplot_result['collections_found']}")
+                print_info(f"Collections found: {subplot_result['collections_found']}")
 
                 for channel, channel_result in subplot_result["channels"].items():
-                    print(channel_result["message"])
+                    success = channel_result["passed"]
+                    print_item_result(
+                        channel_result["channel"], success, channel_result["message"], 1
+                    )
                     if (
                         channel_result["passed"]
                         and channel_result["details"]["sample_values"]
                     ):
                         sample = channel_result["details"]["sample_values"]
-                        print(f"   - Sample values: {sample}")
+                        print_info(f"- Sample values: {sample}", 2)
 
                 if not subplot_result["overall_passed"]:
                     all_passed = False
                     failed_subplots.append(f"[{row},{col}]")
-                    print(f"\n{subplot_result['summary_message']}")
+                    print_failure(subplot_result["summary_message"], 1)
 
                     if subplot_result["suggestions"]:
-                        print("Suggestions:")
-                        for suggestion in subplot_result["suggestions"]:
-                            print(f"   • {suggestion}")
+                        print_suggestions(subplot_result["suggestions"], 2)
                 else:
-                    print(f"\n{subplot_result['summary_message']}")
+                    print_success(subplot_result["summary_message"], 1)
 
             # Check if legend verification also failed
             legend_verification_failed = getattr(
@@ -162,23 +164,25 @@ def verify_plot_properties(
             all_failure_types = list(legend_failure_types)  # Copy the list
 
             if not all_passed and fail_on_missing:
-                print("\n💥 PLOT PROPERTIES VERIFICATION FAILED!")
-                print(f"   - Failed subplots: {', '.join(failed_subplots)}")
-                print("   - This indicates issues with visual encoding channels")
-                print("   📊 Plot has been saved for visual debugging.")
+                print_critical("PLOT PROPERTIES VERIFICATION FAILED!")
+                print_info(f"- Failed subplots: {', '.join(failed_subplots)}", 1)
+                print_info("- This indicates issues with visual encoding channels", 1)
+                print_info("Plot has been saved for visual debugging.", 1)
                 all_failure_types.append("plot properties")
             elif all_passed:
-                print("\n🎉 SUCCESS: All plot properties verified successfully!")
-                print("   - All expected visual channels show proper variation")
+                print_final_success(
+                    "SUCCESS: All plot properties verified successfully!"
+                )
+                print_info("- All expected visual channels show proper variation", 1)
 
             # Final exit decision
             if all_failure_types:
-                print(
-                    f"\n🔥 FINAL RESULT: VERIFICATION FAILED - {' and '.join(all_failure_types)}"
+                print_critical(
+                    f"FINAL RESULT: VERIFICATION FAILED - {' and '.join(all_failure_types)}"
                 )
                 sys.exit(1)
             elif not legend_verification_failed:  # Both passed
-                print("\n🎉 FINAL RESULT: ALL VERIFICATIONS PASSED!")
+                print_final_success("FINAL RESULT: ALL VERIFICATIONS PASSED!")
 
             return result
 
@@ -197,7 +201,7 @@ def verify_example(
     expected_legend_entries: Optional[
         Dict[SubplotCoord, Dict[str, Union[int, str]]]
     ] = None,
-    legend_tolerance: float = 0.1,
+    legend_tolerance: Optional[float] = None,
     expected_channels: Optional[ExpectedChannels] = None,
 ) -> Callable:
     def decorator(func: Callable) -> Callable:
@@ -205,23 +209,24 @@ def verify_example(
         def wrapper(*args, **kwargs) -> Any:
             result = func(*args, **kwargs)
 
+            assert isinstance(result, (plt.Figure, list, tuple)), (
+                f"Function must return Figure or list/tuple, got {type(result).__name__}"
+            )
+
             if isinstance(result, plt.Figure):
                 figs = [result]
             elif isinstance(result, (list, tuple)) and len(result) >= 1:
-                # Handle list/tuple of figures
                 if all(isinstance(f, plt.Figure) for f in result):
                     figs = list(result)
                 elif isinstance(result[0], plt.Figure):
                     figs = [result[0]]
                 else:
-                    raise ValueError(
-                        f"@verify_example requires function to return Figure(s), "
-                        f"got {type(result[0]).__name__} in {type(result).__name__}"
+                    assert False, (
+                        f"Function must return Figure(s), got {type(result[0]).__name__} in {type(result).__name__}"
                     )
             else:
-                raise ValueError(
-                    f"@verify_example requires function to return a Figure or list of Figures, "
-                    f"got {type(result).__name__}"
+                assert False, (
+                    f"Function must return Figure or list of Figures, got {type(result).__name__}"
                 )
 
             name = func.__name__.replace("_", "-")
@@ -229,9 +234,7 @@ def verify_example(
                 module_parts = func.__module__.split(".") if func.__module__ else []
                 name = module_parts[-1] if module_parts else "example"
 
-            print(f"\n{'=' * 60}")
-            print("LEGEND VISIBILITY VERIFICATION")
-            print(f"{'=' * 60}")
+            print_section_header("LEGEND VISIBILITY VERIFICATION")
 
             legend_failed = False
             consistency_failed = False
@@ -254,7 +257,7 @@ def verify_example(
                     )
             else:
                 # Multiple figures verification
-                print(f"Verifying {len(figs)} individual plots...")
+                print_info(f"Verifying {len(figs)} individual plots...")
                 failed_plots = []
 
                 for i, fig in enumerate(figs):
@@ -271,16 +274,14 @@ def verify_example(
 
                 if failed_plots:
                     legend_failed = True
-                    print(
-                        f"\n💥 EXAMPLE {name.upper()} FAILED: {len(failed_plots)} plots had legend issues!"
+                    print_critical(
+                        f"EXAMPLE {name.upper()} FAILED: {len(failed_plots)} plots had legend issues!"
                     )
-                    print(f"   - Failed plots: {', '.join(failed_plots)}")
+                    print_info(f"- Failed plots: {', '.join(failed_plots)}", 1)
 
             # NEW: Legend-plot consistency verification
             if verify_legend_consistency and len(figs) == 1:
-                print(f"\n{'=' * 60}")
-                print("LEGEND-PLOT CONSISTENCY VERIFICATION")
-                print(f"{'=' * 60}")
+                print_section_header("LEGEND-PLOT CONSISTENCY VERIFICATION")
 
                 fig = figs[0]
 
@@ -291,47 +292,47 @@ def verify_example(
                     for subplot_coord, _ in expected_legend_entries.items():
                         row, col = subplot_coord
 
-                        try:
-                            ax = (
-                                fig.axes[row * 2 + col]
-                                if len(fig.axes) > row * 2 + col
-                                else fig.axes[0]
-                            )
+                        main_grid_axes = filter_main_grid_axes(fig.axes)
+                        ax = get_axes_from_grid(main_grid_axes, row, col)
 
-                            print(
-                                f"\n📊 Checking legend consistency for subplot [{row},{col}]"
-                            )
-                            print("-" * 50)
+                        assert ax is not None, (
+                            f"No axis found at position ({row}, {col})"
+                        )
 
-                            # Get expected varying channels for this subplot
-                            expected_varying_channels = expected_channels_map.get(
-                                subplot_coord, []
-                            )
+                        print_subsection_header(
+                            f"Checking legend consistency for subplot [{row},{col}]"
+                        )
 
-                            consistency_result = verify_legend_plot_consistency(
-                                ax,
-                                expected_varying_channels,
-                                expected_legend_entries.get(subplot_coord),
-                                legend_tolerance,
-                            )
+                        expected_varying_channels = expected_channels_map.get(
+                            subplot_coord, []
+                        )
 
-                            print(consistency_result["message"])
+                        consistency_result = verify_legend_plot_consistency(
+                            ax,
+                            expected_varying_channels,
+                            expected_legend_entries.get(subplot_coord),
+                            legend_tolerance,
+                        )
 
-                            for check_name, check_result in consistency_result[
-                                "consistency_checks"
-                            ].items():
-                                print(f"   {check_result['message']}")
+                        success = consistency_result["overall_passed"]
+                        if success:
+                            print_success(consistency_result["message"], 1)
+                        else:
+                            print_failure(consistency_result["message"], 1)
 
-                            if not consistency_result["overall_passed"]:
-                                consistency_failed = True
-                                if consistency_result["suggestions"]:
-                                    print("Suggestions:")
-                                    for suggestion in consistency_result["suggestions"]:
-                                        print(f"   • {suggestion}")
+                        for check_name, check_result in consistency_result[
+                            "consistency_checks"
+                        ].items():
+                            success = check_result["passed"]
+                            if success:
+                                print_success(check_result["message"], 2)
+                            else:
+                                print_failure(check_result["message"], 2)
 
-                        except (IndexError, AttributeError):
-                            print(f"🔴 Could not find axis at position ({row}, {col})")
+                        if not consistency_result["overall_passed"]:
                             consistency_failed = True
+                            if consistency_result["suggestions"]:
+                                print_suggestions(consistency_result["suggestions"], 2)
 
             # Check if plot properties verification also failed
             plot_properties_failed = getattr(result, "_plot_properties_failed", False)
@@ -346,7 +347,7 @@ def verify_example(
                 failure_types.append("legend consistency")
 
             if failure_types:
-                print(f"\n💥 VERIFICATION FAILED: {' and '.join(failure_types)}")
+                print_critical(f"VERIFICATION FAILED: {' and '.join(failure_types)}")
                 # Mark failures but don't exit yet - let other decorators run
                 result._legend_verification_failed = True
                 result._legend_failure_types = failure_types
@@ -365,7 +366,7 @@ def verify_example(
                 if verify_legend_consistency:
                     success_parts.append("Legend-plot consistency confirmed!")
 
-                print(f"\n🎉 SUCCESS: {' '.join(success_parts)}")
+                print_final_success(f"SUCCESS: {' '.join(success_parts)}")
 
             return result
 
@@ -384,7 +385,7 @@ def verify_figure_legends(
     expected_total_entries: Optional[int] = None,
     expected_channel_entries: Optional[Dict[str, int]] = None,
     expected_channels: Optional[List[str]] = None,
-    tolerance: float = 0.1,
+    tolerance: Optional[float] = None,
     fail_on_missing: bool = True,
 ) -> Callable:
     def decorator(func: Callable) -> Callable:
@@ -392,26 +393,10 @@ def verify_figure_legends(
         def wrapper(*args, **kwargs) -> Any:
             result = func(*args, **kwargs)
 
-            if isinstance(result, plt.Figure):
-                fig = result
-            elif isinstance(result, (list, tuple)) and len(result) >= 1:
-                if isinstance(result[0], plt.Figure):
-                    fig = result[0]
-                else:
-                    raise ValueError(
-                        f"@verify_figure_legends requires function to return a Figure, "
-                        f"got {type(result[0]).__name__}"
-                    )
-            else:
-                raise ValueError(
-                    f"@verify_figure_legends requires function to return a Figure, "
-                    f"got {type(result).__name__}"
-                )
+            fig = validate_figure_result(result)
 
-            print(f"\n{'=' * 60}")
-            print("FIGURE LEGEND VERIFICATION")
-            print(f"Strategy: {legend_strategy.upper()}")
-            print(f"{'=' * 60}")
+            print_section_header("FIGURE LEGEND VERIFICATION")
+            print_info(f"Strategy: {legend_strategy.upper()}")
 
             figure_props = extract_figure_legend_properties(fig)
 
@@ -425,19 +410,29 @@ def verify_figure_legends(
                 tolerance,
             )
 
-            print(f"Figure legends found: {figure_props['legend_count']}")
-            print(f"Expected: {expected_legend_count}")
-            print(verification_result["message"])
+            print_info(f"Figure legends found: {figure_props['legend_count']}")
+            print_info(f"Expected: {expected_legend_count}")
+            success = verification_result["passed"]
+            if success:
+                print_success(verification_result["message"], 1)
+            else:
+                print_failure(verification_result["message"], 1)
 
             for check_name, check_result in verification_result["checks"].items():
-                print(f"   {check_result['message']}")
+                success = check_result["passed"]
+                if success:
+                    print_success(check_result["message"], 1)
+                else:
+                    print_failure(check_result["message"], 1)
 
             if not verification_result["passed"] and fail_on_missing:
-                print("\n💥 FIGURE LEGEND VERIFICATION FAILED!")
-                print("   This indicates issues with figure-level legend management")
+                print_critical("FIGURE LEGEND VERIFICATION FAILED!")
+                print_info(
+                    "This indicates issues with figure-level legend management", 1
+                )
                 sys.exit(1)
             elif verification_result["passed"]:
-                print("\n🎉 SUCCESS: Figure legend verification passed!")
+                print_final_success("SUCCESS: Figure legend verification passed!")
 
             return result
 
@@ -448,7 +443,6 @@ def verify_figure_legends(
 
 def extract_basic_subplot_info(ax: Any) -> Dict[str, Any]:
     import matplotlib.colors as mcolors
-    from .plot_data_extractor import extract_colors, extract_legend_properties
 
     info = {
         "title": ax.get_title() or "(no title)",
@@ -463,38 +457,7 @@ def extract_basic_subplot_info(ax: Any) -> Dict[str, Any]:
         normalized_color = mcolors.to_hex(color)
         info["lines"].append({"index": i, "color": normalized_color})
 
-    legend_props = extract_legend_properties(ax)
-    if legend_props["visible"]:
-        try:
-            legend_colors = extract_colors(legend_props["handles"])
-            legend_labels = legend_props["labels"]
-
-            color_label_pairs = []
-            for i, (rgba_color, label) in enumerate(zip(legend_colors, legend_labels)):
-                hex_color = mcolors.to_hex(rgba_color)
-                color_label_pairs.append(
-                    {
-                        "index": i,
-                        "color": hex_color,
-                        "label": label.strip() if label else "(empty)",
-                    }
-                )
-
-            info["legend"] = {
-                "visible": True,
-                "entries": color_label_pairs,
-                "entry_count": len(legend_labels),
-            }
-
-        except Exception as e:
-            info["legend"] = {
-                "visible": True,
-                "entries": [],
-                "entry_count": 0,
-                "error": str(e),
-            }
-    else:
-        info["legend"] = {"visible": False, "entries": [], "entry_count": 0}
+    info["legend"] = validate_legend_properties(ax)
 
     return info
 
@@ -505,25 +468,9 @@ def report_subplot_line_colors() -> Callable:
         def wrapper(*args, **kwargs) -> Any:
             result = func(*args, **kwargs)
 
-            if isinstance(result, plt.Figure):
-                fig = result
-            elif isinstance(result, (list, tuple)) and len(result) >= 1:
-                if isinstance(result[0], plt.Figure):
-                    fig = result[0]
-                else:
-                    raise ValueError(
-                        f"@report_subplot_line_colors requires function to return a Figure, "
-                        f"got {type(result[0]).__name__}"
-                    )
-            else:
-                raise ValueError(
-                    f"@report_subplot_line_colors requires function to return a Figure, "
-                    f"got {type(result).__name__}"
-                )
+            fig = validate_figure_result(result)
 
-            print(f"\n{'=' * 60}")
-            print("SUBPLOT LINE COLORS REPORT")
-            print(f"{'=' * 60}")
+            print_section_header("SUBPLOT LINE COLORS REPORT")
 
             main_grid_axes = filter_main_grid_axes(fig.axes)
 
@@ -532,41 +479,41 @@ def report_subplot_line_colors() -> Callable:
                 info = extract_basic_subplot_info(ax)
                 subplot_infos.append(info)
 
-                print(f"\nSubplot {i}:")
-                print(f'   Title: "{info["title"]}"')
-                print(f'   X-label: "{info["xlabel"]}"')
-                print(f'   Y-label: "{info["ylabel"]}"')
-                print("   Lines:")
+                print_info(f"Subplot {i}:")
+                print_info(f'Title: "{info["title"]}"', 1)
+                print_info(f'X-label: "{info["xlabel"]}"', 1)
+                print_info(f'Y-label: "{info["ylabel"]}"', 1)
+                print_info("Lines:", 1)
 
                 if info["lines"]:
                     for line_info in info["lines"]:
-                        print(f"     Line {line_info['index']}: {line_info['color']}")
+                        print_info(
+                            f"Line {line_info['index']}: {line_info['color']}", 2
+                        )
                 else:
-                    print("     (no lines found)")
+                    print_info("(no lines found)", 2)
 
-                print("   Legend:")
+                print_info("Legend:", 1)
                 if info["legend"]["visible"]:
                     if info["legend"]["entries"]:
                         for entry in info["legend"]["entries"]:
-                            print(f'     {entry["color"]}: "{entry["label"]}"')
+                            print_info(f'{entry["color"]}: "{entry["label"]}"', 2)
                     else:
                         error_msg = info["legend"].get("error", "unknown error")
-                        print(
-                            f"     (legend visible but extraction failed: {error_msg})"
+                        print_info(
+                            f"(legend visible but extraction failed: {error_msg})", 2
                         )
                 else:
-                    print("     (no legend found)")
+                    print_info("(no legend found)", 2)
 
             # Basic consistency check
-            print(f"\n{'=' * 60}")
-            print("BASIC CONSISTENCY SUMMARY")
-            print(f"{'=' * 60}")
+            print_section_header("BASIC CONSISTENCY SUMMARY")
 
             if subplot_infos:
                 # Check if all subplots have same number of lines
                 line_counts = [len(info["lines"]) for info in subplot_infos]
                 if len(set(line_counts)) == 1:
-                    print(f"✅ All subplots have {line_counts[0]} lines")
+                    print_success(f"All subplots have {line_counts[0]} lines", 1)
 
                     # Check color consistency by position
                     num_lines = line_counts[0]
@@ -580,20 +527,22 @@ def report_subplot_line_colors() -> Callable:
 
                         if len(unique_colors) == 1:
                             color = list(unique_colors)[0]
-                            print(
-                                f"✅ Position {pos}: {color} (consistent across {len(colors_at_pos)} subplots)"
+                            print_success(
+                                f"Position {pos}: {color} (consistent across {len(colors_at_pos)} subplots)",
+                                1,
                             )
                         else:
-                            print(
-                                f"❌ Position {pos}: {len(unique_colors)} different colors found"
+                            print_failure(
+                                f"Position {pos}: {len(unique_colors)} different colors found",
+                                1,
                             )
                             for color in unique_colors:
                                 count = colors_at_pos.count(color)
-                                print(f"     {color}: {count} subplots")
+                                print_info(f"{color}: {count} subplots", 2)
                 else:
-                    print(f"❌ Inconsistent line counts: {line_counts}")
+                    print_failure(f"Inconsistent line counts: {line_counts}", 1)
             else:
-                print("❌ No subplots found")
+                print_failure("No subplots found", 1)
 
             return result
 

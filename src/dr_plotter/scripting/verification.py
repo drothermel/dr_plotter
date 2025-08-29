@@ -1,5 +1,14 @@
 from typing import Optional, Dict, Any
 import matplotlib.pyplot as plt
+from .verification_formatter import (
+    print_section_header,
+    print_success,
+    print_failure,
+    print_warning,
+    print_critical,
+    print_info,
+    print_item_result,
+)
 
 
 def is_legend_actually_visible(
@@ -44,72 +53,63 @@ def is_legend_actually_visible(
     if figure is None:
         figure = ax.get_figure()
 
-    try:
-        figure.canvas.draw()
+    figure.canvas.draw()
 
-        legend_bbox = legend.get_window_extent()
-        fig_bbox = figure.bbox
+    legend_bbox = legend.get_window_extent()
+    fig_bbox = figure.bbox
 
-        result["bbox_info"] = {
-            "legend_bbox": {
-                "x0": legend_bbox.x0,
-                "y0": legend_bbox.y0,
-                "x1": legend_bbox.x1,
-                "y1": legend_bbox.y1,
-                "width": legend_bbox.width,
-                "height": legend_bbox.height,
-            },
-            "figure_bbox": {
-                "x0": fig_bbox.x0,
-                "y0": fig_bbox.y0,
-                "x1": fig_bbox.x1,
-                "y1": fig_bbox.y1,
-                "width": fig_bbox.width,
-                "height": fig_bbox.height,
-            },
-        }
+    result["bbox_info"] = {
+        "legend_bbox": {
+            "x0": legend_bbox.x0,
+            "y0": legend_bbox.y0,
+            "x1": legend_bbox.x1,
+            "y1": legend_bbox.y1,
+            "width": legend_bbox.width,
+            "height": legend_bbox.height,
+        },
+        "figure_bbox": {
+            "x0": fig_bbox.x0,
+            "y0": fig_bbox.y0,
+            "x1": fig_bbox.x1,
+            "y1": fig_bbox.y1,
+            "width": fig_bbox.width,
+            "height": fig_bbox.height,
+        },
+    }
 
-        legend_in_figure = (
-            legend_bbox.x0 < fig_bbox.x1
-            and legend_bbox.x1 > fig_bbox.x0
-            and legend_bbox.y0 < fig_bbox.y1
-            and legend_bbox.y1 > fig_bbox.y0
-        )
+    legend_in_figure = (
+        legend_bbox.x0 < fig_bbox.x1
+        and legend_bbox.x1 > fig_bbox.x0
+        and legend_bbox.y0 < fig_bbox.y1
+        and legend_bbox.y1 > fig_bbox.y0
+    )
 
-        if not legend_in_figure:
-            result["reason"] = "Legend is positioned outside the visible figure area"
-            return result
-
-        if legend_bbox.width <= 0 or legend_bbox.height <= 0:
-            result["reason"] = "Legend has zero width or height"
-            return result
-
-        result["within_bounds"] = True
-
-        visible_area = min(legend_bbox.x1, fig_bbox.x1) - max(
-            legend_bbox.x0, fig_bbox.x0
-        )
-        visible_area *= min(legend_bbox.y1, fig_bbox.y1) - max(
-            legend_bbox.y0, fig_bbox.y0
-        )
-        legend_area = legend_bbox.width * legend_bbox.height
-
-        if legend_area > 0:
-            visibility_ratio = visible_area / legend_area
-            result["bbox_info"]["visibility_ratio"] = visibility_ratio
-
-            if visibility_ratio < 0.1:
-                result["reason"] = (
-                    f"Legend is mostly clipped (only {visibility_ratio:.1%} visible)"
-                )
-                return result
-
-        result["visible"] = True
-        result["reason"] = "Legend is fully visible and properly positioned"
-
-    except Exception as e:
-        result["reason"] = f"Error checking legend bounds: {str(e)}"
+    if not legend_in_figure:
+        result["reason"] = "Legend is positioned outside the visible figure area"
         return result
+
+    if legend_bbox.width <= 0 or legend_bbox.height <= 0:
+        result["reason"] = "Legend has zero width or height"
+        return result
+
+    result["within_bounds"] = True
+
+    visible_area = min(legend_bbox.x1, fig_bbox.x1) - max(legend_bbox.x0, fig_bbox.x0)
+    visible_area *= min(legend_bbox.y1, fig_bbox.y1) - max(legend_bbox.y0, fig_bbox.y0)
+    legend_area = legend_bbox.width * legend_bbox.height
+
+    if legend_area > 0:
+        visibility_ratio = visible_area / legend_area
+        result["bbox_info"]["visibility_ratio"] = visibility_ratio
+
+        if visibility_ratio < 0.1:
+            result["reason"] = (
+                f"Legend is mostly clipped (only {visibility_ratio:.1%} visible)"
+            )
+            return result
+
+    result["visible"] = True
+    result["reason"] = "Legend is fully visible and properly positioned"
 
     return result
 
@@ -143,25 +143,21 @@ def verify_legend_visibility(
         "details": results,
     }
 
-    print("🔍 LEGEND VISIBILITY VERIFICATION")
-    print("=" * 50)
-    print(f"Total subplots: {total_count}")
-    print(f"Legends visible: {visible_count}")
+    print_section_header("LEGEND VISIBILITY VERIFICATION")
+    print_info(f"Total subplots: {total_count}")
+    print_info(f"Legends visible: {visible_count}")
     if expected_visible_count is not None:
-        print(f"Expected visible: {expected_visible_count}")
-    print(f"Legends missing: {total_count - visible_count}")
-    print()
+        print_info(f"Expected visible: {expected_visible_count}")
+    print_info(f"Legends missing: {total_count - visible_count}")
 
     for i, result in results.items():
         if expected_visible_count is not None and expected_visible_count == 0:
-            status = "✅" if not result["visible"] else "❌"
             if result["visible"]:
-                print(f"Subplot {i}: {status} Unexpected legend found")
+                print_item_result(f"Subplot {i}", False, "Unexpected legend found", 1)
             else:
-                print(f"Subplot {i}: {status} No legend (expected)")
+                print_item_result(f"Subplot {i}", True, "No legend (expected)", 1)
         else:
-            status = "✅" if result["visible"] else "❌"
-            print(f"Subplot {i}: {status} {result['reason']}")
+            print_item_result(f"Subplot {i}", result["visible"], result["reason"], 1)
 
         if not result["visible"] and expected_visible_count != 0:
             summary["issues"].append(
@@ -188,37 +184,37 @@ def verify_legend_visibility(
         if visible_count != expected_visible_count:
             summary["success"] = False
             if expected_visible_count == 0:
-                print(
-                    f"\n❌ EXPECTED no legends, but found {visible_count} unexpected legend(s)"
+                print_failure(
+                    f"EXPECTED no legends, but found {visible_count} unexpected legend(s)"
                 )
             else:
-                print(
-                    f"\n❌ EXPECTED {expected_visible_count} visible legends, but found {visible_count}"
+                print_failure(
+                    f"EXPECTED {expected_visible_count} visible legends, but found {visible_count}"
                 )
         else:
             if expected_visible_count == 0:
-                print("\n✅ EXPECTED no legends and found none - perfect!")
+                print_success("EXPECTED no legends and found none - perfect!")
             else:
-                print(
-                    f"\n✅ EXPECTED {expected_visible_count} legends and found {visible_count} - perfect!"
+                print_success(
+                    f"EXPECTED {expected_visible_count} legends and found {visible_count} - perfect!"
                 )
     else:
         if visible_count == 0:
             if not fail_on_missing:
-                print("\n✅ No legends found (not treated as failure)")
+                print_success("No legends found (not treated as failure)")
             else:
                 summary["success"] = False
-                print("\n❌ CRITICAL: No legends are visible in any subplot!")
+                print_critical("CRITICAL: No legends are visible in any subplot!")
         elif visible_count < total_count:
             if fail_on_missing:
                 summary["success"] = False
-            print(
-                f"\n⚠️  WARNING: {total_count - visible_count} subplot(s) missing legends"
+            print_warning(
+                f"WARNING: {total_count - visible_count} subplot(s) missing legends"
             )
 
     if summary["success"]:
-        print("\n✅ All legend visibility checks passed!")
+        print_success("All legend visibility checks passed!")
     else:
-        print("\n❌ Legend visibility verification FAILED!")
+        print_failure("Legend visibility verification FAILED!")
 
     return summary
