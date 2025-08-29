@@ -518,17 +518,17 @@ def verify_legend_plot_consistency(
         "hue": (
             all_plot_colors,
             legend_colors,
-            lambda p, l, t=tolerance: verify_color_consistency(p, l, t),
+            lambda plot_data, legend_data, t=tolerance: verify_color_consistency(plot_data, legend_data, t),
         ),
         "alpha": (
             all_plot_alphas,
             legend_alphas,
-            lambda p, l, t=tolerance: verify_alpha_consistency(p, l, t),
+            lambda plot_data, legend_data, t=tolerance: verify_alpha_consistency(plot_data, legend_data, t),
         ),
         "size": (
             all_plot_sizes,
             legend_sizes,
-            lambda p, l, t=tolerance: verify_size_consistency(p, l, t),
+            lambda plot_data, legend_data, t=tolerance: verify_size_consistency(plot_data, legend_data, t),
         ),
         "style": (
             all_plot_styles,

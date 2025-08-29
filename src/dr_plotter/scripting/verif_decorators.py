@@ -111,7 +111,7 @@ def verify_plot_properties(
                             and ax.get_gridspec().get_geometry()[2]
                             == row * fig.get_axes()[0].get_gridspec().ncols + col
                         ][0]
-                    except:
+                    except (IndexError, AttributeError):
                         print(f"🔴 Could not find axis at position ({row}, {col})")
                         all_passed = False
                         continue
@@ -171,7 +171,7 @@ def verify_plot_properties(
                     f"\n🔥 FINAL RESULT: VERIFICATION FAILED - {' and '.join(all_failure_types)}"
                 )
                 sys.exit(1)
-            elif legend_verification_failed == False:  # Both passed
+            elif not legend_verification_failed:  # Both passed
                 print("\n🎉 FINAL RESULT: ALL VERIFICATIONS PASSED!")
 
             return result
