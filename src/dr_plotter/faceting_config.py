@@ -47,6 +47,15 @@ class FacetingConfig:
             f"Cannot specify both explicit grid (rows+cols) and wrap layout (ncols/nrows). Got rows='{self.rows}', cols='{self.cols}', ncols={self.ncols}, nrows={self.nrows}"
         )
 
+        if self.ncols is not None:
+            assert self.rows is not None and self.cols is None, (
+                f"ncols requires rows dimension and no cols dimension. Got rows='{self.rows}', cols='{self.cols}', ncols={self.ncols}"
+            )
+        if self.nrows is not None:
+            assert self.cols is not None and self.rows is None, (
+                f"nrows requires cols dimension and no rows dimension. Got rows='{self.rows}', cols='{self.cols}', nrows={self.nrows}"
+            )
+
         assert not (self.target_row is not None and self.target_rows is not None), (
             f"Cannot specify both target_row and target_rows. Got target_row={self.target_row}, target_rows={self.target_rows}"
         )

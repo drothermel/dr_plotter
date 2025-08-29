@@ -17,8 +17,10 @@ from .validation import (
     validate_dimension_values,
     get_available_columns_message,
     validate_faceting_data_requirements,
+    validate_nested_list_dimensions,
 )
 from .types import GridLayout, SubplotPosition, DataSubsets
+from .style_coordination import FacetStyleCoordinator
 
 __all__ = [
     "compute_grid_dimensions",
@@ -33,7 +35,9 @@ __all__ = [
     "validate_dimension_values",
     "get_available_columns_message",
     "validate_faceting_data_requirements",
+    "validate_nested_list_dimensions",
     "GridLayout",
     "SubplotPosition",
     "DataSubsets",
+    "FacetStyleCoordinator",
 ]

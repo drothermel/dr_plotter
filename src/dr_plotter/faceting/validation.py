@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 import pandas as pd
 from dr_plotter.faceting_config import FacetingConfig
 
@@ -50,3 +50,22 @@ def validate_faceting_data_requirements(
         required_columns.append(config.y)
 
     validate_required_columns(data, required_columns)
+
+
+def validate_nested_list_dimensions(
+    nested_list: List[List[Any]],
+    expected_rows: int,
+    expected_cols: int,
+    param_name: str,
+) -> None:
+    if nested_list is None:
+        return
+
+    assert len(nested_list) == expected_rows, (
+        f"{param_name} must have {expected_rows} rows, got {len(nested_list)}"
+    )
+
+    for i, row in enumerate(nested_list):
+        assert len(row) == expected_cols, (
+            f"{param_name}[{i}] must have {expected_cols} columns, got {len(row)}"
+        )

@@ -253,13 +253,10 @@ class TestFacetingConfigEdgeCases:
         assert config.xlim == complex_limits
 
     def test_boundary_integer_values(self) -> None:
-        config = FacetingConfig(
-            rows="metric", ncols=1, nrows=1, target_row=0, target_col=0
-        )
+        config = FacetingConfig(rows="metric", ncols=1, target_row=0, target_col=0)
 
         config.validate()
         assert config.ncols == 1
-        assert config.nrows == 1
         assert config.target_row == 0
         assert config.target_col == 0
 

@@ -21,6 +21,8 @@ from dr_plotter.faceting import (
     analyze_data_dimensions,
     prepare_subplot_data_subsets,
     validate_faceting_data_requirements,
+    validate_nested_list_dimensions,
+    FacetStyleCoordinator,
 )
 from .plotters import BasePlotter
 
@@ -74,6 +76,7 @@ class FigureManager:
         self._coordinate_styling(theme, figure.shared_styling)
 
         self._facet_grid_info: Optional[Dict[str, Any]] = None
+        self._facet_style_coordinator: Optional[FacetStyleCoordinator] = None
 
     @classmethod
     def _create_from_configs(
@@ -386,18 +389,47 @@ class FigureManager:
 
         grid_rows, grid_cols, layout_metadata = self._compute_facet_grid(data, config)
         self._validate_facet_grid_against_existing(grid_rows, grid_cols)
+
+        if config.x_labels is not None:
+            validate_nested_list_dimensions(
+                config.x_labels, grid_rows, grid_cols, "x_labels"
+            )
+        if config.y_labels is not None:
+            validate_nested_list_dimensions(
+                config.y_labels, grid_rows, grid_cols, "y_labels"
+            )
+        if config.xlim is not None:
+            validate_nested_list_dimensions(config.xlim, grid_rows, grid_cols, "xlim")
+        if config.ylim is not None:
+            validate_nested_list_dimensions(config.ylim, grid_rows, grid_cols, "ylim")
+
         target_positions = self._resolve_targeting(config, grid_rows, grid_cols)
 
-        data_subsets = self._prepare_facet_data(data, config, layout_metadata)
+        data_subsets = self._prepare_facet_data(
+            data, config, layout_metadata, target_positions
+        )
+
+        style_coordinator = self._get_or_create_style_coordinator()
+        if config.lines is not None:
+            dimension_analysis = analyze_data_dimensions(data, config)
+            lines_values = dimension_analysis.get("lines", [])
+            style_coordinator.register_dimension_values(config.lines, lines_values)
 
         plot_kwargs = {
             k: v for k, v in kwargs.items() if not hasattr(FacetingConfig, k)
         }
         self._execute_faceted_plotting(
-            data_subsets, target_positions, config, plot_type, **plot_kwargs
+            data_subsets,
+            target_positions,
+            config,
+            plot_type,
+            style_coordinator,
+            **plot_kwargs,
         )
 
-        self._store_faceting_state(config, layout_metadata)
+        self._store_faceting_state(
+            config, layout_metadata, grid_rows, grid_cols, data_subsets
+        )
 
     def _validate_faceting_inputs(
         self, data: pd.DataFrame, config: FacetingConfig
@@ -415,27 +447,27 @@ class FigureManager:
         if config.y is None:
             assert False, "y parameter is required for plotting"
 
-        if config.rows and config.cols and (config.ncols or config.nrows):
-            assert False, (
-                "Wrapped layouts (ncols/nrows) not supported in Chunk 3. Use explicit grids (rows + cols) only."
-            )
-        if config.target_row is not None or config.target_col is not None:
-            assert False, "Targeting not supported in Chunk 3"
-        if config.target_rows is not None or config.target_cols is not None:
-            assert False, "Targeting not supported in Chunk 3"
-
     def _prepare_facet_data(
         self,
         data: pd.DataFrame,
         config: FacetingConfig,
         layout_metadata: Dict[str, Any],
+        target_positions: List[Tuple[int, int]],
     ) -> Dict[Tuple[int, int], pd.DataFrame]:
         row_values = layout_metadata["row_values"]
         col_values = layout_metadata["col_values"]
         grid_type = layout_metadata["grid_type"]
+        fill_order = layout_metadata.get("fill_order")
 
         return prepare_subplot_data_subsets(
-            data, row_values, col_values, config.rows, config.cols, grid_type
+            data,
+            row_values,
+            col_values,
+            config.rows,
+            config.cols,
+            grid_type,
+            fill_order,
+            target_positions,
         )
 
     def _execute_faceted_plotting(
@@ -444,6 +476,7 @@ class FigureManager:
         target_positions: List[Tuple[int, int]],
         config: FacetingConfig,
         plot_type: str,
+        style_coordinator: FacetStyleCoordinator,
         **plot_kwargs,
     ) -> None:
         for row_idx, col_idx in target_positions:
@@ -461,17 +494,80 @@ class FigureManager:
             if config.lines is not None:
                 plot_params["hue_by"] = config.lines
 
-            self.plot(plot_type, row_idx, col_idx, subset_data, **plot_params)
+            coordinated_styles = style_coordinator.get_subplot_styles(
+                row_idx, col_idx, config.lines, subset_data, **plot_params
+            )
+
+            self._apply_subplot_configuration(row_idx, col_idx, config)
+            self.plot(plot_type, row_idx, col_idx, subset_data, **coordinated_styles)
+
+    def _apply_subplot_configuration(
+        self, row: int, col: int, config: FacetingConfig
+    ) -> None:
+        if (
+            config.x_labels is not None
+            and len(config.x_labels) > row
+            and len(config.x_labels[row]) > col
+        ):
+            label = config.x_labels[row][col]
+            if label is not None:
+                ax = self.fig.axes[row * self.figure_config.cols + col]
+                ax.set_xlabel(label)
+
+        if (
+            config.y_labels is not None
+            and len(config.y_labels) > row
+            and len(config.y_labels[row]) > col
+        ):
+            label = config.y_labels[row][col]
+            if label is not None:
+                ax = self.fig.axes[row * self.figure_config.cols + col]
+                ax.set_ylabel(label)
+
+        if (
+            config.xlim is not None
+            and len(config.xlim) > row
+            and len(config.xlim[row]) > col
+        ):
+            limits = config.xlim[row][col]
+            if limits is not None:
+                ax = self.fig.axes[row * self.figure_config.cols + col]
+                ax.set_xlim(limits)
+
+        if (
+            config.ylim is not None
+            and len(config.ylim) > row
+            and len(config.ylim[row]) > col
+        ):
+            limits = config.ylim[row][col]
+            if limits is not None:
+                ax = self.fig.axes[row * self.figure_config.cols + col]
+                ax.set_ylim(limits)
 
     def _store_faceting_state(
-        self, config: FacetingConfig, layout_metadata: Dict[str, Any]
+        self,
+        config: FacetingConfig,
+        layout_metadata: Dict[str, Any],
+        grid_rows: int,
+        grid_cols: int,
+        data_subsets: Dict[Tuple[int, int], pd.DataFrame],
     ) -> None:
+        enhanced_metadata = layout_metadata.copy()
+        enhanced_metadata["n_rows"] = grid_rows
+        enhanced_metadata["n_cols"] = grid_cols
+
         self._facet_grid_info = {
             "config": config,
-            "layout_metadata": layout_metadata,
+            "layout_metadata": enhanced_metadata,
+            "data_subsets": data_subsets,
             "last_plot_type": None,
             "subplot_styles": {},
         }
+
+    def _get_or_create_style_coordinator(self) -> FacetStyleCoordinator:
+        if self._facet_style_coordinator is None:
+            self._facet_style_coordinator = FacetStyleCoordinator()
+        return self._facet_style_coordinator
 
     def plot(
         self, plot_type: str, row: int, col: int, *args: Any, **kwargs: Any
