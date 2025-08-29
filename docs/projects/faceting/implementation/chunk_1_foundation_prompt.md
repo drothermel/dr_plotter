@@ -9,9 +9,9 @@ You are implementing **Chunk 1 of 6** for native faceting support in dr_plotter.
 ## Key References
 
 **MANDATORY**: Before starting, read these docs to understand the project:
-- `docs/DESIGN_PHILOSOPHY.md` - Core principles and coding standards
-- `docs/plans/faceted_plotting_detailed_design.md` - Complete technical architecture 
-- `docs/plans/faceted_plotting_implementation_plan.md` - Your place in the overall plan
+- `docs/processes/design_philosophy.md` - Core principles and coding standards
+- `../design/detailed_design.md` - Complete technical architecture 
+- `../implementation_plan.md` - Your place in the overall plan
 
 ## Your Tasks
 

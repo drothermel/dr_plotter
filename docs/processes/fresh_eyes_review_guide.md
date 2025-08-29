@@ -30,7 +30,7 @@ You are the **external auditor** coming to this codebase with fresh perspective.
 ### Phase 1: Foundation Assessment
 
 **Read Required Documents** (in order):
-1. `docs/DESIGN_PHILOSOPHY.md` - Core methodology and product vision
+1. `design_philosophy.md` - Core methodology and product vision
 2. `docs/processes/strategic_collaboration_guide.md` - Strategic principles application
 3. `docs/processes/tactical_execution_guide.md` - Implementation expectations
 

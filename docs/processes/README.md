@@ -68,7 +68,7 @@ This directory contains guides for effective collaboration with different types 
 
 ## 🧭 Core Philosophy
 
-All agents operate according to the **DR methodology** principles found in `../DESIGN_PHILOSOPHY.md`:
+All agents operate according to the **DR methodology** principles found in `design_philosophy.md`:
 
 - **Clarity Through Structure**: Code and processes should be self-evident
 - **Architectural Courage**: Prefer clean solutions over incremental complexity
@@ -116,7 +116,7 @@ This separation allows each agent type to focus on their strengths while maintai
 ## 📚 Additional Resources
 
 **Foundation Documents**:
-- `../DESIGN_PHILOSOPHY.md` - Core methodology and principles
+- `design_philosophy.md` - Core methodology and principles
 - `../CLAUDE.md` - Project-specific requirements and conventions
 
 **Process Evolution**:

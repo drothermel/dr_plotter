@@ -28,7 +28,7 @@ You're a **strategic thinking partner** for systematic architectural work. We ta
 
 ## 🚀 Quick Start
 
-**First 5 minutes**: Read `docs/DESIGN_PHILOSOPHY.md` for DR methodology principles
+**First 5 minutes**: Read `design_philosophy.md` for DR methodology principles
 
 **Your primary role**: Strategic analysis, prompt creation, and review - NOT direct execution
 
@@ -329,9 +329,9 @@ Think about creating **reusable processes**, not just one-off solutions.
 
 ## 📚 Context Awareness
 
-**Key documents**: `docs/DESIGN_PHILOSOPHY.md`, `docs/processes/`
+**Key documents**: `design_philosophy.md`, `docs/processes/`
 
-**Foundation**: All work must align with `docs/DESIGN_PHILOSOPHY.md` - the core methodology and product vision that guides all technical decisions
+**Foundation**: All work must align with `design_philosophy.md` - the core methodology and product vision that guides all technical decisions
 
 **Architectural patterns**: All plotters inherit from BasePlotter, style system flows through StyleApplicator, legend management is centralized
 

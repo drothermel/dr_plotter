@@ -90,7 +90,7 @@ When implementing changes:
 
 ### Code Quality Standards
 
-**Foundation**: All implementation must align with principles in `docs/DESIGN_PHILOSOPHY.md`. Key operational applications:
+**Foundation**: All implementation must align with principles in `design_philosophy.md`. Key operational applications:
 
 **Atomicity & Clear Structure**:
 - Each function/class has single, well-defined purpose
