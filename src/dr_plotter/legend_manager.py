@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 
 class LegendStrategy(Enum):
@@ -17,6 +17,7 @@ class LegendEntry:
     axis: Any = None
     visual_channel: Optional[str] = None
     channel_value: Any = None
+    source_column: Optional[str] = None
     group_key: Dict[str, Any] = field(default_factory=dict)
     plotter_type: str = "unknown"
     artist_type: str = "main"
@@ -113,6 +114,79 @@ class LegendManager:
         if self.config.ncol is not None:
             return self.config.ncol
         return min(self.config.max_col, num_handles)
+
+    def _contextualize_column_name(self, column_name: str) -> str:
+        if column_name.endswith("_by"):
+            column_name = column_name[:-3]
+
+        if "_" in column_name:
+            words = column_name.split("_")
+            return " ".join(word.capitalize() for word in words)
+
+        return column_name.capitalize()
+
+    def generate_channel_title(self, channel: str, entries: List[LegendEntry]) -> str:
+        if self.config.channel_titles and channel in self.config.channel_titles:
+            return self.config.channel_titles[channel]
+
+        source_columns = [
+            e.source_column for e in entries if e.source_column is not None
+        ]
+        if source_columns:
+            unique_sources = list(set(source_columns))
+            if len(unique_sources) == 1:
+                return self._contextualize_column_name(unique_sources[0])
+
+        return channel.title()
+
+    def calculate_optimal_ncol(
+        self, legend_entries: List[LegendEntry], figure_width: Optional[float] = None
+    ) -> int:
+        if self.config.ncol is not None:
+            return self.config.ncol
+
+        num_entries = len(legend_entries)
+        if num_entries <= 1:
+            return 1
+
+        if figure_width is None:
+            figure_width = getattr(self.fm.fig, "get_figwidth", lambda: 10)()
+
+        if num_entries <= 3:
+            return num_entries
+        elif figure_width >= 12:
+            return min(5, num_entries)
+        elif figure_width >= 8:
+            return min(4, num_entries)
+        else:
+            return min(3, num_entries)
+
+    def calculate_optimal_positioning(
+        self, num_legends: int, legend_index: int, figure_width: Optional[float] = None
+    ) -> Tuple[float, float]:
+        if figure_width is None:
+            figure_width = getattr(self.fm.fig, "get_figwidth", lambda: 10)()
+
+        if num_legends == 1:
+            return (self.config.single_legend_x, self.config.bbox_y_offset)
+        elif num_legends == 2:
+            if legend_index == 0:
+                return (self.config.two_legend_left_x, self.config.bbox_y_offset)
+            else:
+                return (self.config.two_legend_right_x, self.config.bbox_y_offset)
+        else:
+            if figure_width >= 16:
+                spacing = min(0.35, 0.8 / (num_legends - 1))
+                start_x = 0.5 - (num_legends - 1) * spacing / 2
+            elif figure_width >= 12:
+                spacing = min(0.3, 0.7 / (num_legends - 1))
+                start_x = 0.5 - (num_legends - 1) * spacing / 2
+            else:
+                spacing = self.config.multi_legend_spacing
+                start_x = self.config.multi_legend_start_x
+
+            bbox_x = start_x + (legend_index * spacing)
+            return (bbox_x, self.config.bbox_y_offset)
 
     def get_error_color(
         self, color_type: str = "face", theme: Optional[Any] = None
@@ -243,37 +317,13 @@ class LegendManager:
                 labels.append(entry.label)
 
             if hasattr(self.fm, "figure") and self.fm.figure and self.fm.figure.axes:
-                if num_legends == 1:
-                    bbox_to_anchor = (
-                        self.config.single_legend_x,
-                        self.config.bbox_y_offset,
-                    )
-                elif num_legends == 2:
-                    if legend_index == 0:
-                        bbox_to_anchor = (
-                            self.config.two_legend_left_x,
-                            self.config.bbox_y_offset,
-                        )
-                    else:
-                        bbox_to_anchor = (
-                            self.config.two_legend_right_x,
-                            self.config.bbox_y_offset,
-                        )
-                else:
-                    bbox_x = self.config.multi_legend_start_x + (
-                        legend_index * self.config.multi_legend_spacing
-                    )
-                    bbox_to_anchor = (bbox_x, self.config.bbox_y_offset)
+                bbox_to_anchor = self.calculate_optimal_positioning(
+                    num_legends, legend_index
+                )
 
                 title = None
                 if channel:
-                    if (
-                        self.config.channel_titles
-                        and channel in self.config.channel_titles
-                    ):
-                        title = self.config.channel_titles[channel]
-                    else:
-                        title = channel.title()
+                    title = self.generate_channel_title(channel, entries)
 
                 legend = self.fm.figure.legend(
                     handles,
@@ -281,6 +331,6 @@ class LegendManager:
                     title=title,
                     loc="upper center",
                     bbox_to_anchor=bbox_to_anchor,
-                    ncol=self._calculate_ncol(len(handles)),
+                    ncol=self.calculate_optimal_ncol(entries),
                     frameon=True,
                 )
