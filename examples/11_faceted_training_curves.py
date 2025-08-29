@@ -1,59 +1,41 @@
 """
-Themed Faceted Training Curves Example
+Faceted Training Curves Example
 
 Requires DataDecide integration:
     uv add "dr_plotter[datadec]"
 
-This example demonstrates advanced themed faceted plotting with real ML training data.
+This example demonstrates advanced faceted plotting with real ML training data.
 """
 
 from typing import List, Tuple
 import argparse
 import itertools
-import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 from dr_plotter.figure import FigureManager
 from dr_plotter.figure_config import FigureConfig
 from dr_plotter.legend_manager import LegendConfig
+from dr_plotter.positioning_calculator import PositioningConfig
 from dr_plotter.theme import Theme, PlotStyles, AxesStyles, FigureStyles, BASE_THEME
-from dr_plotter.scripting.datadec_utils import (
-    get_clean_datadec_df,
-    validate_cli_params,
-    validate_cli_data,
-)
+from dr_plotter import consts
+from dr_plotter.scripting.datadec_utils import get_datadec_functions
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import report_subplot_line_colors
+
+# Get DataDecide functions once at module level
+DataDecide, select_params, select_data = get_datadec_functions()
 
 
 def load_and_prepare_data() -> pd.DataFrame:
     """Load clean, pre-validated data from DataDecide."""
-    try:
-        return get_clean_datadec_df(filter_types=["ppl", "max_steps"])
-    except ImportError as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+    dd = DataDecide()
+    return dd.get_filtered_df(filter_types=["max_steps"], return_means=True)
 
 
 def create_faceted_training_curves_theme(
     x_log: bool = False, y_log: bool = False, model_sizes: List[str] = None
 ) -> Theme:
-    if model_sizes is None:
-        # Default model sizes - will be overridden by actual data
-        model_sizes = [
-            "4M",
-            "6M",
-            "8M",
-            "10M",
-            "14M",
-            "16M",
-            "20M",
-            "60M",
-            "90M",
-            "150M",
-            "300M",
-            "530M",
-            "750M",
-            "1B",
-        ]
+    model_sizes = select_params(model_sizes or "all")
 
     color_palette = [
         "#1f77b4",
@@ -71,8 +53,6 @@ def create_faceted_training_curves_theme(
         "#98df8a",
         "#ff9896",
     ]
-
-    from dr_plotter import consts
 
     return Theme(
         name="faceted_training_curves",
@@ -125,14 +105,16 @@ def subset_data_for_plotting(
     return filtered_df
 
 
-def plot_training_curves_themed(
+@report_subplot_line_colors()
+def plot_training_curves(
     df: pd.DataFrame,
     target_recipes: List[str],
+    args: argparse.Namespace,
     x_log: bool = False,
     y_log: bool = False,
     xlim: Tuple[float, float] = None,
     ylim: Tuple[float, float] = None,
-) -> None:
+) -> plt.Figure:
     num_model_sizes = len(df["params"].cat.categories)
     custom_theme = create_faceted_training_curves_theme(x_log=x_log, y_log=y_log)
     figwidth = max(12, len(target_recipes) * 3.5)
@@ -150,12 +132,12 @@ def plot_training_curves_themed(
             ncol=min(num_model_sizes, 8),
             layout_top_margin=0.1,
             layout_bottom_margin=0.12,
-            bbox_y_offset=0.02,
+            positioning_config=PositioningConfig(legend_y_offset_factor=0.02),
         ),
         theme=custom_theme,
     ) as fm:
         fm.fig.suptitle(
-            f"Themed Faceted Training Curves: 2 Metrics × {len(target_recipes)} Data Recipes",
+            f"Faceted Training Curves: 2 Metrics × {len(target_recipes)} Data Recipes",
             fontsize=16,
             y=0.96,
         )
@@ -175,6 +157,9 @@ def plot_training_curves_themed(
                 # DataDecide provides clean data, minimal processing needed
                 metric_data = recipe_data[["params", "step", metric]].copy()
 
+                # Remove NaN values to prevent gaps in lines
+                metric_data = metric_data.dropna(subset=[metric])
+
                 if len(metric_data) == 0:
                     continue
 
@@ -186,6 +171,8 @@ def plot_training_curves_themed(
                     x="step",
                     y=metric,
                     hue_by="params",
+                    linewidth=1.5,
+                    alpha=0.8,
                     title=f"{recipe}",
                 )
 
@@ -214,19 +201,17 @@ def plot_training_curves_themed(
                 if ylim:
                     ax.set_ylim(ylim)
 
+        # Store figure reference before exiting context
+        figure = fm.fig
+
     plt.tight_layout()
-    plt.savefig(
-        "examples/plots/06b_faceted_training_curves_themed.png",
-        dpi=150,
-        bbox_inches="tight",
-    )
-    plt.show()
+    show_or_save_plot(figure, args, "11_faceted_training_curves")
+
+    return figure
 
 
 def create_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Themed Faceted Training Curves - 2 Metrics × N Data Recipes"
-    )
+    parser = setup_arg_parser("Faceted Training Curves - 2 Metrics × N Data Recipes")
     parser.add_argument(
         "--x-log", action="store_true", help="Use log scale for X-axis (training steps)"
     )
@@ -247,7 +232,7 @@ def create_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--model-sizes",
         nargs="+",
-        default=["all"],
+        default=["10M", "14M", "16M"],
         help="Model sizes to include (in order for line styling). Use 'all' for all available.",
     )
 
@@ -271,12 +256,8 @@ def main() -> None:
     print(f"Loaded {len(df):,} rows")
 
     # Validate CLI arguments using DataDecide utilities
-    try:
-        validated_recipes = validate_cli_data(args.recipes)
-        validated_model_sizes = validate_cli_params(args.model_sizes)
-    except ImportError as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+    validated_recipes = select_data(args.recipes)
+    validated_model_sizes = select_params(args.model_sizes)
 
     print("Filtering data for target metrics, recipes, and model sizes...")
     filtered_df = subset_data_for_plotting(df, validated_recipes, validated_model_sizes)
@@ -296,30 +277,17 @@ def main() -> None:
         config_info.append(f"ylim={args.ylim}")
     config_desc = " + ".join(config_info) if config_info else "default settings"
 
-    print(f"Creating custom theme with {config_desc}...")
-    custom_theme = create_faceted_training_curves_theme(
-        x_log=args.x_log, y_log=args.y_log, model_sizes=validated_model_sizes
-    )
-    print(f"Theme created: {custom_theme.name}")
-    print(f"Theme plot styles: {custom_theme.plot_styles}")
-
-    axes_info = custom_theme.axes_styles
-    print(
-        f"Theme axes scales: X={axes_info.get('xscale', 'linear')}, Y={axes_info.get('yscale', 'linear')}"
-    )
-
-    print(
-        f"Creating themed faceted training curves visualization with {config_desc}..."
-    )
-    plot_training_curves_themed(
+    print(f"Creating faceted training curves visualization with {config_desc}...")
+    figure = plot_training_curves(
         filtered_df,
         validated_recipes,
+        args,
         x_log=args.x_log,
         y_log=args.y_log,
         xlim=args.xlim,
         ylim=args.ylim,
     )
-    print("Themed visualization complete!")
+    print("Visualization complete!")
 
 
 if __name__ == "__main__":
