@@ -20,17 +20,16 @@ To ensure the library lives up to its principles, we adhere to a specific develo
     *   **Atomicity:** Every component (function, class, file) should have a single, well-defined purpose. This makes the code easier to understand, test, and refactor.
 
 2.  **Succinct and Self-Documenting Code:**
-    *   **No Duplication (DRY):** We strictly follow the "Don't Repeat Yourself" principle. Code duplication is a sign that a new abstraction is needed.
-    *   **Minimalism:** We favor concise, compact code and avoid unnecessary comments. The code should speak for itself.
+    *   **No Duplication:** Code duplication signals the need for better abstraction. 
+    *   **Minimalism:** Favor concise, self-explanatory code over extensive documentation.
 
-3.  **Pragmatic, Example-Driven Testing:**
-    *   **End-to-End Examples:** Our primary testing strategy is a comprehensive suite of examples that demonstrate the library's functionality in a real-world context.
-    *   **Targeted Unit Tests:** Unit tests are used sparingly, reserved for core, complex algorithms that are not easily covered by the examples.
+3.  **Architectural Courage Over Incremental Safety:**
+    *   **Bold, Clean Solutions:** Prefer complete replacement over incremental additions that increase complexity.
+    *   **Ruthless Legacy Elimination:** When improving functionality, completely remove what you replace rather than supporting multiple approaches.
 
-4.  **Embrace Change, Demand Consistency:**
-    *   **No Backward Compatibility:** This is a research library, and we will always prioritize a streamlined and intuitive design over backward compatibility. We are not afraid to make breaking changes to improve the library.
-    *   **Leave No Trace:** When a change is made, all legacy code must be removed, and all affected parts of the library must be updated. The codebase should always be in a clean, consistent state.
-    *   **Fail Fast, Fail Loudly:** We favor a coding style that surfaces errors immediately. This means using assertions and avoiding overly defensive programming (e.g., broad `try-except` blocks) that can hide bugs.
+4.  **Fail Fast, Surface Problems:**
+    *   **Immediate Error Detection:** Problems should surface immediately rather than being hidden by defensive programming.
+    *   **No Silent Failures:** Avoid compatibility layers and graceful degradation that mask underlying issues.
 
 5.  **Focus on the Researcher's Workflow:**
     *   **Minimize Friction:** Every design choice should aim to reduce the friction between a researcher's idea and its visualization. If a feature is hard to use or explain, it's a candidate for simplification.
@@ -39,3 +38,12 @@ To ensure the library lives up to its principles, we adhere to a specific develo
 ## Target Audience
 
 Research engineers and scientists who value a high-level, declarative plotting library that doesn't sacrifice the power and flexibility of the underlying `matplotlib` backend.
+
+## Implementation Guidance
+
+This document establishes the foundational methodology and product vision. For operational guidance on applying these principles:
+
+- **Strategic work**: See `docs/processes/strategic_collaboration_guide.md`
+- **Tactical implementation**: See `docs/processes/tactical_execution_guide.md`
+
+These guides provide role-specific applications of the DR methodology for effective multi-agent collaboration.
