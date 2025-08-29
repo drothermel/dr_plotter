@@ -8,7 +8,7 @@ from .plot_verification import (
     verify_legend_plot_consistency,
     verify_figure_legend_strategy,
 )
-from .plot_property_extraction import extract_figure_legend_properties
+from .plot_data_extractor import extract_figure_legend_properties
 from dr_plotter.utils import get_axes_from_grid
 
 
@@ -448,6 +448,7 @@ def verify_figure_legends(
 
 def extract_basic_subplot_info(ax: Any) -> Dict[str, Any]:
     import matplotlib.colors as mcolors
+    from .plot_data_extractor import extract_colors, extract_legend_properties
 
     info = {
         "title": ax.get_title() or "(no title)",
@@ -457,57 +458,24 @@ def extract_basic_subplot_info(ax: Any) -> Dict[str, Any]:
         "legend": {},
     }
 
-    # Extract line colors
     for i, line in enumerate(ax.lines):
         color = line.get_color()
         normalized_color = mcolors.to_hex(color)
         info["lines"].append({"index": i, "color": normalized_color})
 
-    # Extract legend information
-    legend = ax.get_legend()
-    if legend is not None and legend.get_visible():
+    legend_props = extract_legend_properties(ax)
+    if legend_props["visible"]:
         try:
-            # Get legend labels
-            labels = [text.get_text() for text in legend.get_texts()]
+            legend_colors = extract_colors(legend_props["handles"])
+            legend_labels = legend_props["labels"]
 
-            # Get legend handles (proxy artists)
-            handles = (
-                legend.legend_handles
-                if hasattr(legend, "legend_handles")
-                else legend.get_lines()
-            )
-
-            # Extract colors from handles
-            legend_colors = []
-            for handle in handles:
-                try:
-                    if hasattr(handle, "get_color"):
-                        color = handle.get_color()
-                    elif hasattr(handle, "get_markerfacecolor"):
-                        color = handle.get_markerfacecolor()
-                        if color == "none" or color is None:
-                            color = (
-                                handle.get_color()
-                                if hasattr(handle, "get_color")
-                                else "black"
-                            )
-                    else:
-                        color = "unknown"
-
-                    normalized_color = (
-                        mcolors.to_hex(color) if color != "unknown" else "unknown"
-                    )
-                    legend_colors.append(normalized_color)
-                except Exception:
-                    legend_colors.append("unknown")
-
-            # Create color-to-label mapping
             color_label_pairs = []
-            for i, (color, label) in enumerate(zip(legend_colors, labels)):
+            for i, (rgba_color, label) in enumerate(zip(legend_colors, legend_labels)):
+                hex_color = mcolors.to_hex(rgba_color)
                 color_label_pairs.append(
                     {
                         "index": i,
-                        "color": color,
+                        "color": hex_color,
                         "label": label.strip() if label else "(empty)",
                     }
                 )
@@ -515,7 +483,7 @@ def extract_basic_subplot_info(ax: Any) -> Dict[str, Any]:
             info["legend"] = {
                 "visible": True,
                 "entries": color_label_pairs,
-                "entry_count": len(labels),
+                "entry_count": len(legend_labels),
             }
 
         except Exception as e:

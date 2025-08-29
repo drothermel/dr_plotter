@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import matplotlib.colors as mcolors
 
 from .plot_property_extraction import extract_subplot_properties
+from .plot_data_extractor import count_unique_colors, count_unique_floats
 
 
 type SubplotCoord = Tuple[int, int]
@@ -75,11 +76,10 @@ def verify_channel_variation(
         result["message"] = f"Unknown channel: {channel}"
         return result
 
-    # Count unique values (with tolerance for floats)
     if channel in ["size", "alpha"]:
-        unique_values = _count_unique_floats(all_values, tolerance=1e-6)
+        unique_values = count_unique_floats(all_values, tolerance=1e-6)
     elif channel in ["hue", "color"]:
-        unique_values = _count_unique_colors(all_values, tolerance=1e-6)
+        unique_values = count_unique_colors(all_values, tolerance=1e-6)
     else:
         unique_values = set(all_values)
 
@@ -112,33 +112,13 @@ def verify_channel_variation(
 
 
 def _count_unique_floats(values: List[float], tolerance: float = 1e-6) -> Set[float]:
-    unique = set()
-    for val in values:
-        is_duplicate = False
-        for existing in unique:
-            if abs(val - existing) < tolerance:
-                is_duplicate = True
-                break
-        if not is_duplicate:
-            unique.add(val)
-    return unique
+    return count_unique_floats(values, tolerance)
 
 
 def _count_unique_colors(
     colors: List[Tuple[float, ...]], tolerance: float = 1e-6
 ) -> Set[Tuple[float, ...]]:
-    unique = set()
-    for color in colors:
-        is_duplicate = False
-        for existing in unique:
-            if len(color) == len(existing) and all(
-                abs(a - b) < tolerance for a, b in zip(color, existing)
-            ):
-                is_duplicate = True
-                break
-        if not is_duplicate:
-            unique.add(color)
-    return unique
+    return count_unique_colors(colors, tolerance)
 
 
 def verify_plot_properties_for_subplot(
@@ -258,8 +238,8 @@ def verify_color_consistency(
     legend_colors: List[Tuple[float, ...]],
     tolerance: float = 0.05,
 ) -> Dict[str, Any]:
-    plot_unique = _count_unique_colors(plot_colors, tolerance)
-    legend_unique = _count_unique_colors(legend_colors, tolerance)
+    plot_unique = count_unique_colors(plot_colors, tolerance)
+    legend_unique = count_unique_colors(legend_colors, tolerance)
 
     # Convert to hex for easier comparison and display
     plot_hex = [mcolors.to_hex(color) for color in plot_unique]
@@ -287,8 +267,8 @@ def verify_color_consistency(
 def verify_alpha_consistency(
     plot_alphas: List[float], legend_alphas: List[float], tolerance: float = 0.05
 ) -> Dict[str, Any]:
-    plot_unique = _count_unique_floats(plot_alphas, tolerance)
-    legend_unique = _count_unique_floats(legend_alphas, tolerance)
+    plot_unique = count_unique_floats(plot_alphas, tolerance)
+    legend_unique = count_unique_floats(legend_alphas, tolerance)
 
     result = {
         "passed": len(plot_unique) == len(legend_unique),
@@ -338,15 +318,14 @@ def verify_alpha_consistency(
 def verify_size_consistency(
     plot_sizes: List[float], legend_sizes: List[float], tolerance: float = 0.1
 ) -> Dict[str, Any]:
-    from .plot_property_extraction import convert_legend_size_to_scatter_size
+    from .plot_data_extractor import convert_legend_size_to_scatter_size
 
-    # Convert legend sizes to scatter size units for comparison
     legend_as_scatter = [
         convert_legend_size_to_scatter_size(size) for size in legend_sizes
     ]
 
-    plot_unique = _count_unique_floats(plot_sizes, tolerance)
-    legend_unique = _count_unique_floats(legend_as_scatter, tolerance)
+    plot_unique = count_unique_floats(plot_sizes, tolerance)
+    legend_unique = count_unique_floats(legend_as_scatter, tolerance)
 
     result = {
         "passed": len(plot_unique) == len(legend_unique),
@@ -423,9 +402,9 @@ def verify_channel_uniformity(
         return result
 
     if channel in ["size", "alpha"]:
-        unique_values = _count_unique_floats(values, tolerance)
+        unique_values = count_unique_floats(values, tolerance)
     elif channel in ["hue", "color"]:
-        unique_values = _count_unique_colors(values, tolerance)
+        unique_values = count_unique_colors(values, tolerance)
     else:
         unique_values = set(values)
 
