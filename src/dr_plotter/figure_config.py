@@ -3,10 +3,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 
-from dr_plotter.figure import FigureManager
-from dr_plotter.legend_manager import LegendConfig
-from dr_plotter.theme import Theme
-
 type ColName = str
 
 
@@ -62,9 +58,10 @@ class FigureConfig:
 
 def create_figure_manager(
     figure: Optional[FigureConfig] = None,
-    legend: Optional[LegendConfig] = None,
-    theme: Optional[Theme] = None,
-) -> FigureManager:
+    legend: Optional["LegendConfig"] = None,
+    theme: Optional[Any] = None,
+) -> "FigureManager":
+    from dr_plotter.figure import FigureManager
 
     figure = figure or FigureConfig()
 

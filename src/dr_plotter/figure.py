@@ -14,6 +14,8 @@ from dr_plotter.legend_manager import (
     LegendStrategy,
     resolve_legend_config,
 )
+from dr_plotter.positioning_calculator import FigureDimensions
+from dr_plotter.utils import get_axes_from_grid
 from dr_plotter.theme import BASE_THEME, Theme
 from dr_plotter.faceting import (
     compute_grid_dimensions,
@@ -186,12 +188,45 @@ class FigureManager:
                 self.legend_config.layout_top_margin,
             ]
             self.fig.tight_layout(rect=rect, pad=self._layout_pad)
-        elif self.fig._suptitle is not None:
-            self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
-        elif self._has_subplot_titles():
-            self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
         else:
-            self.fig.tight_layout(pad=self._layout_pad)
+            figure_dimensions = FigureDimensions(
+                width=self.fig.get_figwidth(),
+                height=self.fig.get_figheight(),
+                rows=self.rows,
+                cols=self.cols,
+                has_title=self.fig._suptitle is not None,
+                has_subplot_titles=self._has_subplot_titles(),
+            )
+
+            positioning_config = self.legend_config.positioning_config
+            if positioning_config:
+                layout_result = (
+                    positioning_config.calculate_layout_rect
+                    if hasattr(positioning_config, "calculate_layout_rect")
+                    else None
+                )
+                if layout_result:
+                    rect = layout_result(figure_dimensions)
+                    if rect:
+                        self.fig.tight_layout(rect=rect, pad=self._layout_pad)
+                    else:
+                        self.fig.tight_layout(pad=self._layout_pad)
+                else:
+                    if (
+                        figure_dimensions.has_title
+                        or figure_dimensions.has_subplot_titles
+                    ):
+                        self.fig.tight_layout(
+                            rect=[0, 0, 1, positioning_config.title_space_factor],
+                            pad=self._layout_pad,
+                        )
+                    else:
+                        self.fig.tight_layout(pad=self._layout_pad)
+            else:
+                if self.fig._suptitle is not None or self._has_subplot_titles():
+                    self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
+                else:
+                    self.fig.tight_layout(pad=self._layout_pad)
 
     def _apply_axis_labels(self) -> None:
         if self.external_mode:
@@ -238,18 +273,7 @@ class FigureManager:
         if self.external_mode:
             return self.axes
 
-        if not hasattr(self.axes, "__len__"):
-            return self.axes
-        if self.axes.ndim == 1:
-            idx = col if col is not None else row
-            return self.axes[idx]
-        if row is not None and col is not None:
-            return self.axes[row, col]
-        elif row is not None:
-            return self.axes[row, :]
-        elif col is not None:
-            return self.axes[:, col]
-        return self.axes
+        return get_axes_from_grid(self.axes, row, col)
 
     def _add_plot(
         self,

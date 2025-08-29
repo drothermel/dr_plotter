@@ -2,6 +2,13 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
+from dr_plotter.positioning_calculator import (
+    PositioningCalculator,
+    FigureDimensions,
+    LegendMetadata,
+    PositioningConfig,
+)
+
 
 class LegendStrategy(Enum):
     PER_AXES = "per_axes"
@@ -65,6 +72,8 @@ class LegendConfig:
 
     def __post_init__(self) -> None:
         self.strategy = self._validate_and_convert_strategy(self.strategy)
+        if self.positioning_config is None:
+            self.positioning_config = PositioningConfig()
 
     def _validate_and_convert_strategy(self, strategy: str) -> LegendStrategy:
         string_to_enum = {
@@ -92,27 +101,38 @@ class LegendConfig:
     layout_right_margin: float = 1.0
     layout_top_margin: float = 0.95
 
-    bbox_y_offset: float = 0.08
-
-    single_legend_x: float = 0.5
-    two_legend_left_x: float = 0.25
-    two_legend_right_x: float = 0.75
-    multi_legend_start_x: float = 0.15
-    multi_legend_spacing: float = 0.35
+    positioning_config: Optional[PositioningConfig] = None
 
 
 def resolve_legend_config(legend_input: Union[str, LegendConfig]) -> LegendConfig:
     if isinstance(legend_input, str):
+        positioning_config = PositioningConfig()
+        grouped_config = PositioningConfig(default_margin_bottom=0.2)
+
         string_mappings = {
-            "grouped": LegendConfig(strategy="grouped", layout_bottom_margin=0.2),
-            "subplot": LegendConfig(strategy="subplot"),
-            "figure": LegendConfig(strategy="figure"),
-            "none": LegendConfig(strategy="none"),
+            "grouped": LegendConfig(
+                strategy="grouped",
+                layout_bottom_margin=0.2,
+                positioning_config=grouped_config,
+            ),
+            "subplot": LegendConfig(
+                strategy="subplot", positioning_config=positioning_config
+            ),
+            "figure": LegendConfig(
+                strategy="figure", positioning_config=positioning_config
+            ),
+            "none": LegendConfig(
+                strategy="none", positioning_config=positioning_config
+            ),
         }
         assert legend_input in string_mappings, (
             f"Invalid legend string '{legend_input}'. Valid options: {list(string_mappings.keys())}"
         )
         return string_mappings[legend_input]
+
+    if legend_input.positioning_config is None:
+        legend_input.positioning_config = PositioningConfig()
+
     return legend_input
 
 
@@ -122,6 +142,11 @@ class LegendManager:
     ) -> None:
         self.fm = figure_manager
         self.config = config or LegendConfig()
+        if self.config.positioning_config is None:
+            self.config.positioning_config = PositioningConfig()
+        self.positioning_calculator = PositioningCalculator(
+            self.config.positioning_config
+        )
         self.registry = LegendRegistry(self.config.strategy)
 
     def _calculate_ncol(self, num_handles: int) -> int:
@@ -175,32 +200,46 @@ class LegendManager:
         else:
             return min(3, num_entries)
 
+    def _get_figure_dimensions(self) -> FigureDimensions:
+        figure_width = getattr(self.fm.fig, "get_figwidth", lambda: 10)()
+        figure_height = getattr(self.fm.fig, "get_figheight", lambda: 8)()
+
+        has_title = self.fm.fig._suptitle is not None
+        has_subplot_titles = (
+            self.fm._has_subplot_titles()
+            if hasattr(self.fm, "_has_subplot_titles")
+            else False
+        )
+
+        return FigureDimensions(
+            width=figure_width,
+            height=figure_height,
+            rows=getattr(self.fm, "rows", 1),
+            cols=getattr(self.fm, "cols", 1),
+            has_title=has_title,
+            has_subplot_titles=has_subplot_titles,
+        )
+
     def calculate_optimal_positioning(
         self, num_legends: int, legend_index: int, figure_width: Optional[float] = None
     ) -> Tuple[float, float]:
-        if figure_width is None:
-            figure_width = getattr(self.fm.fig, "get_figwidth", lambda: 10)()
+        figure_dimensions = self._get_figure_dimensions()
+        if figure_width:
+            figure_dimensions.width = figure_width
 
-        if num_legends == 1:
-            return (self.config.single_legend_x, self.config.bbox_y_offset)
-        elif num_legends == 2:
-            if legend_index == 0:
-                return (self.config.two_legend_left_x, self.config.bbox_y_offset)
-            else:
-                return (self.config.two_legend_right_x, self.config.bbox_y_offset)
-        else:
-            if figure_width >= 16:
-                spacing = min(0.35, 0.8 / (num_legends - 1))
-                start_x = 0.5 - (num_legends - 1) * spacing / 2
-            elif figure_width >= 12:
-                spacing = min(0.3, 0.7 / (num_legends - 1))
-                start_x = 0.5 - (num_legends - 1) * spacing / 2
-            else:
-                spacing = self.config.multi_legend_spacing
-                start_x = self.config.multi_legend_start_x
+        legend_metadata = LegendMetadata(
+            num_legends=num_legends,
+            num_handles_per_legend=1,
+            strategy=self.config.strategy.value
+            if hasattr(self.config.strategy, "value")
+            else str(self.config.strategy),
+        )
 
-            bbox_x = start_x + (legend_index * spacing)
-            return (bbox_x, self.config.bbox_y_offset)
+        result = self.positioning_calculator.calculate_positions(
+            figure_dimensions, legend_metadata
+        )
+
+        return result.legend_positions.get(legend_index, (0.5, 0.08))
 
     def get_error_color(
         self, color_type: str = "face", theme: Optional[Any] = None
@@ -243,7 +282,21 @@ class LegendManager:
 
         if hasattr(self.fm, "figure") and self.fm.figure:
             ncol = self._calculate_ncol(len(handles))
-            bbox_to_anchor = (self.config.single_legend_x, self.config.bbox_y_offset)
+
+            figure_dimensions = self._get_figure_dimensions()
+            legend_metadata = LegendMetadata(
+                num_legends=1,
+                num_handles_per_legend=len(handles),
+                strategy=self.config.strategy.value
+                if hasattr(self.config.strategy, "value")
+                else str(self.config.strategy),
+            )
+
+            result = self.positioning_calculator.calculate_positions(
+                figure_dimensions, legend_metadata
+            )
+
+            bbox_to_anchor = result.legend_positions.get(0, (0.5, 0.08))
             self.fm.figure.legend(
                 handles,
                 labels,
