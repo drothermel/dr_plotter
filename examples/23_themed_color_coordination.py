@@ -1,7 +1,7 @@
 from typing import Dict
 import itertools
 import pandas as pd
-from dr_plotter.figure import FigureManager
+from dr_plotter.figure_manager import FigureManager
 from dr_plotter.plot_config import PlotConfig
 from dr_plotter.theme import Theme, PlotStyles, AxesStyles, BASE_THEME
 from plot_data import ExampleData

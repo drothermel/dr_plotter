@@ -6,7 +6,7 @@ Demonstrates how to create and register a custom plotter class.
 from typing import Any, Dict, List, Set
 import pandas as pd
 from dr_plotter.plotters.base import BasePlotter
-from dr_plotter.figure import FigureManager
+from dr_plotter.figure_manager import FigureManager
 from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties

@@ -12,7 +12,7 @@ import argparse
 import itertools
 import pandas as pd
 import matplotlib.pyplot as plt
-from dr_plotter.figure import FigureManager
+from dr_plotter.figure_manager import FigureManager
 from dr_plotter.figure_config import FigureConfig
 from dr_plotter.legend_manager import LegendConfig
 from dr_plotter.positioning_calculator import PositioningConfig

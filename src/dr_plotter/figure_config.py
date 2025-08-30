@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 if TYPE_CHECKING:
-    from dr_plotter.figure import FigureManager
+    from dr_plotter.figure_manager import FigureManager
 
 
 @dataclass
@@ -63,7 +63,7 @@ def create_figure_manager(
     legend: Optional["LegendConfig"] = None,
     theme: Optional[Any] = None,
 ) -> "FigureManager":
-    from dr_plotter.figure import FigureManager
+    from dr_plotter.figure_manager import FigureManager
 
     figure = figure or FigureConfig()
 
