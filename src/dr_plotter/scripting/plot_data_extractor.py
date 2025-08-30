@@ -41,6 +41,9 @@ def extract_colors(obj: Any) -> List[RGBA]:
         if (isinstance(face_color, str) and face_color == "none") or face_color is None:
             face_color = obj.get_color()
         return [mcolors.to_rgba(face_color)]
+    elif isinstance(obj, AxesImage):
+        cmap = obj.get_cmap()
+        return [mcolors.to_rgba(cmap(0.5))]
     elif hasattr(obj, "get_facecolor"):
         return [mcolors.to_rgba(obj.get_facecolor())]
     elif hasattr(obj, "get_color"):
@@ -71,6 +74,8 @@ def extract_markers(obj: Any) -> List[str]:
                 marker = ""
             markers.append(str(marker))
         return markers
+    elif isinstance(obj, AxesImage):
+        return ["none"]
     elif hasattr(obj, "get_marker"):
         marker = obj.get_marker()
         return [str(marker) if marker and marker != "None" else "None"]
@@ -90,6 +95,8 @@ def extract_sizes(obj: Any) -> List[float]:
         return [1.0] * len(obj.patches)
     elif isinstance(obj, list) and obj and hasattr(obj[0], "get_markersize"):
         return [float(line.get_markersize()) for line in obj]
+    elif isinstance(obj, AxesImage):
+        return [1.0]
     elif hasattr(obj, "get_markersize"):
         return [float(obj.get_markersize())]
     else:
@@ -148,6 +155,8 @@ def extract_styles(obj: Any) -> List[str]:
         return ["-"] * len(obj.patches)
     elif isinstance(obj, list) and obj and hasattr(obj[0], "get_linestyle"):
         return [line.get_linestyle() for line in obj]
+    elif isinstance(obj, AxesImage):
+        return ["-"]
     elif hasattr(obj, "get_linestyle"):
         style = obj.get_linestyle()
         return [str(style) if style is not None else "-"]
