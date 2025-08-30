@@ -1,8 +1,8 @@
 from typing import Any
 from dr_plotter.figure import FigureManager
-from dr_plotter.figure_config import FigureConfig
+from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
+from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from plot_data import ExampleData
 
 
@@ -18,8 +18,8 @@ EXPECTED_CHANNELS = {
 }
 
 
-@verify_plot_properties(expected_channels=EXPECTED_CHANNELS)
-@verify_example(
+@inspect_plot_properties()
+@verify_plot(
     expected_legends=4,
     expected_channels=EXPECTED_CHANNELS,
     expected_legend_entries={
@@ -39,7 +39,13 @@ def main(args: Any) -> Any:
     assert "time_series" in shared_data.columns
     assert len(shared_data.groupby("category_group")) >= 2
 
-    with FigureManager(figure=FigureConfig(rows=2, cols=4, figsize=(20, 10))) as fm:
+    aggregated_data = (
+        shared_data.groupby("x_categorical")["y_continuous"].mean().reset_index()
+    )
+
+    with FigureManager(
+        PlotConfig(layout={"rows": 2, "cols": 4, "figsize": (20, 10)})
+    ) as fm:
         fm.fig.suptitle("Individual vs Grouped Plotting Comparison", fontsize=16)
 
         fm.plot(
@@ -84,7 +90,7 @@ def main(args: Any) -> Any:
             "bar",
             0,
             3,
-            shared_data,
+            aggregated_data,
             x="x_categorical",
             y="y_continuous",
             color="orange",

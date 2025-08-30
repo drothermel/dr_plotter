@@ -114,7 +114,7 @@ def main() -> None:
     print("=" * 50)
     summary = get_data_summary(df)
 
-    print(f"✅ Data structure validated by DataDecide")
+    print("✅ Data structure validated by DataDecide")
     print(f"Total columns: {summary['total_columns']:,}")
     print(f"Total rows: {summary['total_rows']:,}")
     print(f"Key columns present: {summary['key_columns_present']}")
@@ -221,7 +221,9 @@ def main() -> None:
     print(f"- {len(data_recipes)} data recipes available for column faceting")
     print(f"- {len(model_sizes)} model sizes available for line styling")
     print("- Data pre-validated by DataDecide and ready for analysis")
-    print("- Use dr_plotter examples with --recipes and --model-sizes flags for plotting")
+    print(
+        "- Use dr_plotter examples with --recipes and --model-sizes flags for plotting"
+    )
 
 
 if __name__ == "__main__":

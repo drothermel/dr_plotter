@@ -1,16 +1,10 @@
-"""
-Utility functions for dr_plotter, especially for scripting and examples.
-"""
-
 import argparse
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
 
 
 def setup_arg_parser(description: str = "dr_plotter example script"):
-    """
-    Sets up a standard argument parser for example scripts.
-    """
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         "--save-dir",
@@ -25,9 +19,6 @@ def setup_arg_parser(description: str = "dr_plotter example script"):
 
 
 def show_or_save_plot(fig, args, filename: str):
-    """
-    Shows or saves a plot based on the provided arguments.
-    """
     if args.save_dir:
         os.makedirs(args.save_dir, exist_ok=True)
         savename = os.path.join(args.save_dir, f"{filename}.png")
@@ -41,9 +32,5 @@ def show_or_save_plot(fig, args, filename: str):
 
 
 def create_and_render_plot(ax, plotter_class, plotter_args, **kwargs):
-    """
-    The single source of truth for creating and rendering any plot.
-    Creates a plotter instance and calls its render method.
-    """
     plotter = plotter_class(*plotter_args, **kwargs)
     plotter.render(ax)

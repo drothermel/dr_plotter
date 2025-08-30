@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 
 from dr_plotter.consts import (
     CHANNEL_TO_ATTR,
@@ -6,9 +6,7 @@ from dr_plotter.consts import (
     get_cycle_key,
 )
 from dr_plotter.theme import Theme
-from dr_plotter.types import StyleAttrName, VisualChannel
-
-StyleCacheKey = Tuple[VisualChannel, Any]
+from dr_plotter.types import StyleAttrName, VisualChannel, StyleCacheKey
 
 
 class CycleConfig:

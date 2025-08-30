@@ -4,9 +4,9 @@ Demonstrates fundamental plotting capabilities across all basic plot types.
 """
 
 from dr_plotter.figure import FigureManager
-from dr_plotter.figure_config import FigureConfig
+from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
+from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from plot_data import ExampleData
 
 EXPECTED_CHANNELS = {
@@ -17,16 +17,18 @@ EXPECTED_CHANNELS = {
 }
 
 
-@verify_plot_properties(expected_channels=EXPECTED_CHANNELS)
-@verify_example(expected_legends=0, expected_channels=EXPECTED_CHANNELS)
+@inspect_plot_properties()
+@verify_plot(expected_legends=0, expected_channels=EXPECTED_CHANNELS)
 def main(args):
     with FigureManager(
-        figure=FigureConfig(
-            rows=2,
-            cols=2,
-            figsize=(12, 10),
-            x_labels=[[None, None], ["Category", "Values"]],
-            y_labels=[["Y Coordinate", "Performance"], ["Average Value", None]],
+        PlotConfig(
+            layout={
+                "rows": 2,
+                "cols": 2,
+                "figsize": (12, 10),
+                "x_labels": [[None, None], ["Category", "Values"]],
+                "y_labels": [["Y Coordinate", "Performance"], ["Average Value", None]],
+            }
         )
     ) as fm:
         fm.fig.suptitle("Example 1: Basic Functionality - Core Plot Types", fontsize=16)

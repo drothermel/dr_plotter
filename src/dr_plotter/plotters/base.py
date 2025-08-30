@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set
 
 import pandas as pd
 
@@ -16,10 +16,9 @@ from dr_plotter.types import (
     VisualChannel,
     Phase,
     ComponentSchema,
+    GroupInfo,
+    GroupContext,
 )
-
-type GroupInfo = Tuple[Any, pd.DataFrame]
-type GroupContext = Dict[str, Any]
 
 BASE_PLOTTER_PARAMS = [
     "x",
@@ -152,10 +151,8 @@ class BasePlotter:
         **kwargs: Any,
     ) -> None:
         if not self.supports_grouped:
-            # Single-purpose plotters ignore group_position and process all data
             self._draw(ax, self.plot_data, **kwargs)
         else:
-            # Default behavior for coordinate-sharing plotters (Line, Scatter)
             self._draw(ax, data, **kwargs)
 
     def _setup_continuous_channels(self) -> None:

@@ -16,31 +16,31 @@ The pipeline addresses a core challenge in multi-agent analysis: **How do we con
 - **Purpose**: Produce specialized audit reports from multiple independent agents
 - **Input**: Codebase + audit focus areas
 - **Output**: 3-5 audit reports per category (architectural, quality, DR methodology, etc.)
-- **Prompt**: `docs/processes/prompts/comprehensive_codebase_audit_prompt.md`
+- **Prompt**: `docs/archive/completed_project_docs/audit_methodology/prompts/comprehensive_codebase_audit_prompt.md`
 
 ### **Stage 1: Disagreement Identification**
 - **Purpose**: Systematically identify consensus vs conflict across audit reports
 - **Input**: Multiple audit reports for single category
 - **Output**: Structured analysis of agreements, disagreements, and novel claims
-- **Prompt**: `docs/processes/prompts/disagreement_identification_prompt.md`
+- **Prompt**: `docs/archive/completed_project_docs/audit_methodology/prompts/disagreement_identification_prompt.md`
 
 ### **Stage 2: Evidence Verification**
 - **Purpose**: Provide empirical evidence for ALL claims (consensus and disputed)
 - **Input**: Disagreement analysis + full codebase access
 - **Output**: Evidence assessment with file/line references and quantitative data
-- **Prompt**: `docs/processes/prompts/evidence_verification_prompt.md`
+- **Prompt**: `docs/archive/completed_project_docs/audit_methodology/prompts/evidence_verification_prompt.md`
 
 ### **Stage 3: Final Synthesis**
 - **Purpose**: Create evidence-weighted recommendations for implementation
 - **Input**: Evidence verification report
 - **Output**: Prioritized, actionable implementation guidance
-- **Prompt**: `docs/processes/prompts/synthesis_agent_prompt.md`
+- **Prompt**: `docs/archive/completed_project_docs/audit_methodology/prompts/synthesis_agent_prompt.md`
 
 ### **Stage 4: Cross-Category Integration**
 - **Purpose**: Transform multiple category roadmaps into unified implementation strategy
 - **Input**: All final synthesis reports across architectural categories
 - **Output**: Optimized, integrated architectural improvement roadmap with sequencing, dependencies, and resource allocation
-- **Prompt**: `docs/processes/prompts/cross_category_synthesis_prompt.md`
+- **Prompt**: `docs/archive/completed_project_docs/audit_methodology/prompts/cross_category_synthesis_prompt.md`
 
 ## 🎯 Strategic Benefits
 

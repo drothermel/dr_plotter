@@ -2,14 +2,22 @@ from typing import Any, Callable, Dict, Optional, Set, TYPE_CHECKING
 
 from dr_plotter.consts import VISUAL_CHANNELS
 from dr_plotter.grouping_config import GroupingConfig
-from dr_plotter.legend_manager import LegendEntry
-from dr_plotter.theme import Theme
-from dr_plotter.types import ComponentSchema, Phase
+from dr_plotter.legend_manager import LegendEntry, LegendStrategy
+from dr_plotter.theme import (
+    Theme,
+    LINE_THEME,
+    SCATTER_THEME,
+    BAR_THEME,
+    HISTOGRAM_THEME,
+    VIOLIN_THEME,
+    HEATMAP_THEME,
+    BUMP_PLOT_THEME,
+    CONTOUR_THEME,
+)
+from dr_plotter.types import ComponentSchema, ComponentStyles, Phase
 
 if TYPE_CHECKING:
     from dr_plotter.plotters.style_engine import StyleEngine
-
-type ComponentStyles = Dict[str, Dict[str, Any]]
 
 
 class StyleApplicator:
@@ -97,18 +105,21 @@ class StyleApplicator:
                 getattr(self.grouping_cfg, channel, None) if self.grouping_cfg else None
             )
             channel_value = self.group_values.get(column_name) if column_name else None
+            source_column = self.kwargs.get(f"{channel}_by") if channel else None
 
             if self._should_use_split_legend_label():
                 label = str(channel_value) if channel_value is not None else label
 
         else:
             channel = None
+            source_column = None
             if self.grouping_cfg and self.grouping_cfg.active_channels:
                 channel = (
                     self.grouping_cfg.active_channels_ordered[0]
                     if self.grouping_cfg.active_channels
                     else None
                 )
+                source_column = self.kwargs.get(f"{channel}_by") if channel else None
             channel_value = self.group_values.get(channel) if channel else None
 
         return LegendEntry(
@@ -117,6 +128,7 @@ class StyleApplicator:
             axis=axis,
             visual_channel=channel,
             channel_value=channel_value,
+            source_column=source_column,
             group_key=self.group_values.copy(),
             plotter_type=self.plot_type or "unknown",
             artist_type=artist_type,
@@ -268,7 +280,8 @@ class StyleApplicator:
         return (
             self.figure_manager
             and hasattr(self.figure_manager, "legend_config")
-            and self.figure_manager.legend_config.strategy.value == "grouped_by_channel"
+            and self.figure_manager.legend_config.strategy
+            == LegendStrategy.GROUPED_BY_CHANNEL
         )
 
     def _extract_component_kwargs(
@@ -397,17 +410,6 @@ class StyleApplicator:
         return group_styled_map.get(plot_type, {"main"})
 
     def _get_plot_specific_themes(self) -> Dict[str, Theme]:
-        from dr_plotter.theme import (
-            LINE_THEME,
-            SCATTER_THEME,
-            BAR_THEME,
-            HISTOGRAM_THEME,
-            VIOLIN_THEME,
-            HEATMAP_THEME,
-            BUMP_PLOT_THEME,
-            CONTOUR_THEME,
-        )
-
         return {
             "line": LINE_THEME,
             "scatter": SCATTER_THEME,

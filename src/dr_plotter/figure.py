@@ -1,50 +1,94 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from dr_plotter.cycle_config import CycleConfig
+from dr_plotter.plot_config import PlotConfig
+from dr_plotter.faceting_config import FacetingConfig
+from dr_plotter.figure_config import FigureConfig
 from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.legend_manager import (
     LegendConfig,
     LegendEntry,
     LegendManager,
     LegendStrategy,
+    resolve_legend_config,
 )
+from dr_plotter.positioning_calculator import (
+    FigureDimensions,
+    PositioningCalculator,
+    PositioningConfig,
+)
+from dr_plotter.utils import get_axes_from_grid
 from dr_plotter.theme import BASE_THEME, Theme
-from .plotters import BasePlotter
+from dr_plotter.faceting.faceting_core import (
+    prepare_faceted_subplots,
+    plot_faceted_data,
+    get_grid_dimensions,
+    handle_empty_subplots,
+)
+from dr_plotter.faceting.style_coordination import FacetStyleCoordinator
 
 
 class FigureManager:
-    def __init__(
-        self,
-        figure: Optional["FigureConfig"] = None,
-        legend: Optional[LegendConfig] = None,
-        theme: Optional[Any] = None,
-        faceting: Optional["SubplotFacetingConfig"] = None,
-    ) -> None:
-        from dr_plotter.figure_config import (
-            FigureConfig,
-        )
+    def __init__(self, config: Optional[PlotConfig] = None, **kwargs: Any) -> None:
+        old_params = {"figure", "legend", "theme"}
+        used_old_params = old_params.intersection(kwargs.keys())
 
-        figure = figure or FigureConfig()
-        legend = legend or LegendConfig()
+        if used_old_params:
+            example_conversion = self._generate_conversion_example(kwargs)
+            assert False, (
+                f"FigureManager no longer accepts {sorted(used_old_params)} parameters. "
+                f"Use PlotConfig instead:\n\n"
+                f"OLD: FigureManager({', '.join(f'{k}=...' for k in sorted(used_old_params))})\n"
+                f"NEW: {example_conversion}\n\n"
+                f"See PlotConfig documentation for complete conversion patterns."
+            )
 
-        if theme and hasattr(theme, "legend_config") and theme.legend_config:
-            legend = theme.legend_config
+        if config is None:
+            config = PlotConfig()
 
-        figure.validate()
-        legend.validate() if hasattr(legend, "validate") else None
-        if faceting:
-            faceting.validate()
+        figure_config, legend_config, theme = config._to_legacy_configs()
 
-        self._init_from_configs(figure, legend, theme, faceting)
+        figure_config.validate()
+        if hasattr(legend_config, "validate"):
+            legend_config.validate()
+
+        self._init_from_configs(figure_config, legend_config, theme)
+
+    def _generate_conversion_example(self, kwargs: Dict[str, Any]) -> str:
+        conversions = []
+
+        if "figure" in kwargs:
+            fig_config = kwargs["figure"]
+            if hasattr(fig_config, "rows") and hasattr(fig_config, "cols"):
+                conversions.append(
+                    f"layout={{'rows': {fig_config.rows}, 'cols': {fig_config.cols}}}"
+                )
+            if hasattr(fig_config, "figsize"):
+                conversions.append(f"figsize={fig_config.figsize}")
+
+        if "legend" in kwargs:
+            legend = kwargs["legend"]
+            if isinstance(legend, str):
+                conversions.append(f"legend={{'strategy': '{legend}'}}")
+            else:
+                conversions.append("legend={...}")
+
+        if "theme" in kwargs:
+            conversions.append("style={...}")
+
+        if conversions:
+            return f"FigureManager(PlotConfig({', '.join(conversions)}))"
+        else:
+            return "FigureManager(PlotConfig(...))"
 
     def _init_from_configs(
         self,
         figure: "FigureConfig",
-        legend: Optional[LegendConfig],
+        legend: Optional[Union[str, LegendConfig]],
         theme: Optional[Any] = None,
-        faceting: Optional["SubplotFacetingConfig"] = None,
     ) -> None:
         figure.validate()
 
@@ -70,16 +114,18 @@ class FigureManager:
 
         self._coordinate_styling(theme, figure.shared_styling)
 
+        self._facet_grid_info: Optional[Dict[str, Any]] = None
+        self._facet_style_coordinator: Optional[FacetStyleCoordinator] = None
+
     @classmethod
     def _create_from_configs(
         cls,
         figure: "FigureConfig",
-        legend: Optional[LegendConfig],
+        legend: Optional[Union[str, LegendConfig]],
         theme: Optional[Any] = None,
-        faceting: Optional["SubplotFacetingConfig"] = None,
     ) -> "FigureManager":
         instance = cls.__new__(cls)
-        instance._init_from_configs(figure, legend, theme, faceting)
+        instance._init_from_configs(figure, legend, theme)
         return instance
 
     def _create_figure_axes(
@@ -111,18 +157,15 @@ class FigureManager:
 
     def _build_legend_system(
         self,
-        legend_config: Optional[LegendConfig],
+        legend_config: Optional[Union[str, LegendConfig]],
         theme: Optional[Theme],
     ) -> LegendManager:
-        effective_config = (
-            legend_config
-            or (
-                theme.legend_config
-                if theme and hasattr(theme, "legend_config")
-                else None
-            )
-            or LegendConfig()
-        )
+        if legend_config is not None:
+            effective_config = resolve_legend_config(legend_config)
+        elif theme and hasattr(theme, "legend_config") and theme.legend_config:
+            effective_config = theme.legend_config
+        else:
+            effective_config = LegendConfig()
 
         return LegendManager(self, effective_config)
 
@@ -177,12 +220,35 @@ class FigureManager:
                 self.legend_config.layout_top_margin,
             ]
             self.fig.tight_layout(rect=rect, pad=self._layout_pad)
-        elif self.fig._suptitle is not None:
-            self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
-        elif self._has_subplot_titles():
-            self.fig.tight_layout(rect=[0, 0, 1, 0.95], pad=self._layout_pad)
         else:
-            self.fig.tight_layout(pad=self._layout_pad)
+            figure_dimensions = FigureDimensions(
+                width=self.fig.get_figwidth(),
+                height=self.fig.get_figheight(),
+                rows=self.rows,
+                cols=self.cols,
+                has_title=self.fig._suptitle is not None,
+                has_subplot_titles=self._has_subplot_titles(),
+            )
+
+            positioning_config = self.legend_config.positioning_config
+            if positioning_config:
+                calculator = PositioningCalculator(positioning_config)
+                rect = calculator.calculate_layout_rect(figure_dimensions)
+                if rect:
+                    self.fig.tight_layout(rect=rect, pad=self._layout_pad)
+                else:
+                    self.fig.tight_layout(pad=self._layout_pad)
+            else:
+                if self.fig._suptitle is not None or self._has_subplot_titles():
+                    default_config = PositioningConfig()
+                    calculator = PositioningCalculator(default_config)
+                    rect = calculator.calculate_layout_rect(figure_dimensions)
+                    if rect:
+                        self.fig.tight_layout(rect=rect, pad=self._layout_pad)
+                    else:
+                        self.fig.tight_layout(pad=self._layout_pad)
+                else:
+                    self.fig.tight_layout(pad=self._layout_pad)
 
     def _apply_axis_labels(self) -> None:
         if self.external_mode:
@@ -229,18 +295,7 @@ class FigureManager:
         if self.external_mode:
             return self.axes
 
-        if not hasattr(self.axes, "__len__"):
-            return self.axes
-        if self.axes.ndim == 1:
-            idx = col if col is not None else row
-            return self.axes[idx]
-        if row is not None and col is not None:
-            return self.axes[row, col]
-        elif row is not None:
-            return self.axes[row, :]
-        elif col is not None:
-            return self.axes[:, col]
-        return self.axes
+        return get_axes_from_grid(self.axes, row, col)
 
     def _add_plot(
         self,
@@ -261,8 +316,149 @@ class FigureManager:
         plotter = plotter_class(*plotter_args, figure_manager=self, **kwargs)
         plotter.render(ax)
 
+    def _resolve_faceting_config(
+        self, faceting: Optional[FacetingConfig], **kwargs
+    ) -> FacetingConfig:
+        faceting_params = {}
+
+        faceting_param_names = {
+            "rows",
+            "cols",
+            "lines",
+            "target_row",
+            "target_col",
+            "target_rows",
+            "target_cols",
+            "row_order",
+            "col_order",
+            "lines_order",
+            "x",
+            "y",
+            "x_labels",
+            "y_labels",
+            "xlim",
+            "ylim",
+            "subplot_titles",
+            "title_template",
+            "empty_subplot_strategy",
+            "color_wrap",
+        }
+
+        for param_name in faceting_param_names:
+            if param_name in kwargs:
+                faceting_params[param_name] = kwargs[param_name]
+
+        if faceting is None:
+            return FacetingConfig(**faceting_params)
+
+        config_dict = {k: v for k, v in faceting.__dict__.items()}
+        for key, value in faceting_params.items():
+            if value is not None:
+                config_dict[key] = value
+
+        return FacetingConfig(**config_dict)
+
+    def plot_faceted(
+        self,
+        data: pd.DataFrame,
+        plot_type: str,
+        faceting: Optional[FacetingConfig] = None,
+        **kwargs,
+    ) -> None:
+        assert not data.empty, "Cannot create faceted plot with empty DataFrame"
+
+        config = self._resolve_faceting_config(faceting, **kwargs)
+        config.validate()
+
+        assert config.x is not None, "x parameter is required for faceted plotting"
+        assert config.y is not None, "y parameter is required for faceted plotting"
+        assert config.rows or config.cols, "Must specify rows or cols for faceting"
+
+        if not config.rows and not config.cols:
+            self.plot(
+                plot_type,
+                0,
+                0,
+                data,
+                x=config.x,
+                y=config.y,
+                hue_by=config.lines,
+                **kwargs,
+            )
+            return
+
+        grid_shape = get_grid_dimensions(data, config)
+        self._validate_grid_dimensions(grid_shape[0], grid_shape[1], config)
+
+        data_subsets = prepare_faceted_subplots(data, config, grid_shape)
+        data_subsets = handle_empty_subplots(
+            data_subsets, config.empty_subplot_strategy
+        )
+
+        style_coordinator = self._get_or_create_style_coordinator()
+        if config.lines:
+            lines_values = sorted(data[config.lines].unique())
+            style_coordinator.register_dimension_values(config.lines, lines_values)
+
+        plot_kwargs = {
+            k: v for k, v in kwargs.items() if not hasattr(FacetingConfig, k)
+        }
+
+        plot_faceted_data(
+            self, data_subsets, plot_type, config, style_coordinator, **plot_kwargs
+        )
+
+    def _validate_grid_dimensions(
+        self, computed_rows: int, computed_cols: int, config: FacetingConfig
+    ) -> None:
+        figure_rows, figure_cols = self.figure_config.rows, self.figure_config.cols
+
+        if (computed_rows, computed_cols) != (figure_rows, figure_cols):
+            assert False, (
+                f"Grid dimension mismatch: FigureConfig({figure_rows}×{figure_cols}) "
+                f"vs required({computed_rows}×{computed_cols}). "
+                f"Fix: FigureConfig(rows={computed_rows}, cols={computed_cols})"
+            )
+
+    def _get_or_create_style_coordinator(self) -> FacetStyleCoordinator:
+        if (
+            not hasattr(self, "_facet_style_coordinator")
+            or self._facet_style_coordinator is None
+        ):
+            theme_info = None
+            if hasattr(self, "_theme") and self._theme:
+                theme_info = {
+                    "color_cycle": getattr(self._theme, "color_cycle", None),
+                    "marker_cycle": getattr(self._theme, "marker_cycle", None),
+                }
+            self._facet_style_coordinator = FacetStyleCoordinator(theme=theme_info)
+        return self._facet_style_coordinator
+
     def plot(
         self, plot_type: str, row: int, col: int, *args: Any, **kwargs: Any
     ) -> None:
+        is_faceted_plot = (
+            hasattr(self, "_facet_grid_info") and self._facet_grid_info is not None
+        )
+
+        if is_faceted_plot:
+            kwargs = self._apply_faceting_plot_enhancements(row, col, **kwargs)
+
+        from dr_plotter.plotters.base import BasePlotter
+
         plotter_class = BasePlotter.get_plotter(plot_type)
         self._add_plot(plotter_class, args, row, col, **kwargs)
+
+    def _apply_faceting_plot_enhancements(
+        self, row: int, col: int, **kwargs: Any
+    ) -> Dict[str, Any]:
+        if "_coordinated_colors" in kwargs:
+            coordinated_colors = kwargs.pop("_coordinated_colors")
+            kwargs.pop("_coordinated_markers", None)
+
+            if len(coordinated_colors) == 1:
+                kwargs["color"] = coordinated_colors[0]
+            elif len(coordinated_colors) > 1:
+                kwargs["palette"] = coordinated_colors
+
+        return kwargs

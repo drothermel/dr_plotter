@@ -12,7 +12,6 @@ Usage:
 """
 
 import argparse
-import os
 import sys
 import matplotlib.pyplot as plt
 from dr_plotter.plotters.curve import CurvePlotter
@@ -22,7 +21,9 @@ from dr_plotter.scripting.datadec_utils import safe_import_datadec, get_clean_da
 def load_datadec_data(data_dir="./test_data", verbose=False):
     """Load clean DataDecide data with error handling."""
     try:
-        return get_clean_datadec_df(filter_types=["ppl", "max_steps"], data_dir=data_dir, verbose=verbose)
+        return get_clean_datadec_df(
+            filter_types=["ppl", "max_steps"], data_dir=data_dir, verbose=verbose
+        )
     except ImportError as e:
         print(f"Error: {e}")
         sys.exit(1)
@@ -32,14 +33,18 @@ def prepare_scaling_data(df, metric_name, min_params=None):
     """Prepare data for scaling analysis."""
     DataDecide, _, _ = safe_import_datadec()
     from datadec import model_utils  # Import here to handle optional dependency
-    
+
     analysis_df = df
 
     # DataDecide guarantees metric availability, but check anyway
     if metric_name not in analysis_df.columns:
         available_metrics = [
-            col for col in analysis_df.columns 
-            if any(keyword in col.lower() for keyword in ["ppl", "acc", "metric", "prob", "correct"])
+            col
+            for col in analysis_df.columns
+            if any(
+                keyword in col.lower()
+                for keyword in ["ppl", "acc", "metric", "prob", "correct"]
+            )
         ]
         raise ValueError(
             f"Metric '{metric_name}' not found. Available: {available_metrics[:10]}..."
@@ -49,11 +54,15 @@ def prepare_scaling_data(df, metric_name, min_params=None):
     clean_df = analysis_df
     if min_params:
         min_params_numeric = model_utils.param_to_numeric(min_params)
-        clean_df["params_numeric"] = clean_df["params"].apply(model_utils.param_to_numeric)
+        clean_df["params_numeric"] = clean_df["params"].apply(
+            model_utils.param_to_numeric
+        )
         clean_df = clean_df[clean_df["params_numeric"] >= min_params_numeric]
-    
+
     if len(clean_df) == 0:
-        raise ValueError(f"No data available for metric '{metric_name}' with min_params={min_params}")
+        raise ValueError(
+            f"No data available for metric '{metric_name}' with min_params={min_params}"
+        )
 
     # Group by model size and data recipe, average across seeds
     scaling_data = (
