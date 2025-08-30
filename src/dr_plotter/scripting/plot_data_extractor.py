@@ -126,9 +126,8 @@ def extract_alphas(obj: Any) -> List[float]:
         alphas = []
         for line in obj:
             alpha = line.get_alpha()
-            assert alpha is not None, (
-                "Line object missing alpha value - check matplotlib configuration"
-            )
+            if alpha is None:
+                alpha = 1.0  # Matplotlib default when alpha is None
             alphas.append(float(alpha))
         return alphas
     else:
@@ -590,7 +589,7 @@ def validate_legend_properties(ax: plt.Axes) -> Dict[str, Any]:
     if not legend_props["visible"]:
         return {"visible": False, "entries": [], "entry_count": 0}
 
-    legend_colors = extract_colors(legend_props["handles"])
+    legend_colors = legend_props["colors"]
     legend_labels = legend_props["labels"]
 
     color_label_pairs = []
