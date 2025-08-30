@@ -2,13 +2,18 @@ from typing import Any, Dict, List, Optional, Protocol, Set, Tuple, Union
 import matplotlib.colors as mcolors
 from abc import ABC, abstractmethod
 
-from .plot_property_extraction import extract_subplot_properties
+from .plot_data_extractor import (
+    extract_subplot_properties,
+    convert_legend_size_to_scatter_size,
+    extract_channel_values_from_collections,
+    extract_all_plot_data_from_collections,
+    extract_legend_data_with_alphas,
+)
 from .comparison_utils import (
     count_unique_colors,
     count_unique_floats,
     get_default_tolerance_for_channel,
 )
-from .plot_data_extractor import convert_legend_size_to_scatter_size
 
 
 type VerificationParams = Dict[str, Any]
@@ -85,7 +90,7 @@ class ChannelVariationRule(BaseVerificationRule):
             result["message"] = f"No collections found to verify {channel} variation"
             return result
 
-        all_values = self._extract_channel_values(collections, channel)
+        all_values = extract_channel_values_from_collections(collections, channel)
 
         if channel == "unknown":
             result["message"] = f"Unknown channel: {channel}"
@@ -118,37 +123,6 @@ class ChannelVariationRule(BaseVerificationRule):
                 result["message"] += f"\n   - All points have {channel}: {sample_val}"
 
         return result
-
-    def _extract_channel_values(
-        self, collections: List[Dict[str, Any]], channel: str
-    ) -> List[Any]:
-        all_values = []
-
-        if channel == "size":
-            for collection in collections:
-                all_values.extend(collection["sizes"])
-        elif channel == "hue" or channel == "color":
-            for collection in collections:
-                all_values.extend(collection["colors"])
-        elif channel == "marker":
-            for collection in collections:
-                all_values.extend(collection["markers"])
-        elif channel == "alpha":
-            for collection in collections:
-                if "alphas" in collection and collection["alphas"]:
-                    all_values.extend(collection["alphas"])
-                else:
-                    for rgba in collection["colors"]:
-                        if len(rgba) == 4:
-                            all_values.append(rgba[3])
-                        else:
-                            all_values.append(1.0)
-        elif channel == "style":
-            for collection in collections:
-                if "styles" in collection:
-                    all_values.extend(collection["styles"])
-
-        return all_values
 
     def _count_unique_values(
         self, all_values: List[Any], channel: str
@@ -469,8 +443,8 @@ class LegendPlotConsistencyRule(BaseVerificationRule):
             "suggestions": [],
         }
 
-        all_plot_data = self._extract_all_plot_data(props["collections"])
-        legend_data = self._extract_legend_data(props["legend"])
+        all_plot_data = extract_all_plot_data_from_collections(props["collections"])
+        legend_data = extract_legend_data_with_alphas(props["legend"])
 
         if expected_varying_channels is None:
             expected_varying_channels = ["hue", "marker", "alpha", "size", "style"]
@@ -557,58 +531,6 @@ class LegendPlotConsistencyRule(BaseVerificationRule):
             )
 
         return result
-
-    def _extract_all_plot_data(
-        self, collections: List[Dict[str, Any]]
-    ) -> Dict[str, List[Any]]:
-        all_plot_markers = []
-        all_plot_colors = []
-        all_plot_sizes = []
-        all_plot_alphas = []
-        all_plot_styles = []
-
-        for collection in collections:
-            all_plot_markers.extend(collection["markers"])
-            all_plot_colors.extend(collection["colors"])
-            all_plot_sizes.extend(collection["sizes"])
-
-            if "alphas" in collection and collection["alphas"]:
-                all_plot_alphas.extend(collection["alphas"])
-            else:
-                for rgba_color in collection["colors"]:
-                    if len(rgba_color) >= 4:
-                        all_plot_alphas.append(rgba_color[3])
-                    else:
-                        all_plot_alphas.append(1.0)
-
-            if "styles" in collection:
-                all_plot_styles.extend(collection["styles"])
-
-        return {
-            "markers": all_plot_markers,
-            "colors": all_plot_colors,
-            "sizes": all_plot_sizes,
-            "alphas": all_plot_alphas,
-            "styles": all_plot_styles,
-        }
-
-    def _extract_legend_data(
-        self, legend_props: Dict[str, Any]
-    ) -> Dict[str, List[Any]]:
-        legend_alphas = []
-        for rgba_color in legend_props["colors"]:
-            if len(rgba_color) >= 4:
-                legend_alphas.append(rgba_color[3])
-            else:
-                legend_alphas.append(1.0)
-
-        return {
-            "markers": legend_props["markers"],
-            "colors": legend_props["colors"],
-            "sizes": legend_props["sizes"],
-            "styles": legend_props["styles"],
-            "alphas": legend_alphas,
-        }
 
 
 class FigureLegendStrategyRule(BaseVerificationRule):
@@ -796,3 +718,77 @@ def execute_verification(
 
 def register_verification_rule(name: str, rule: VerificationRule) -> None:
     _default_engine.register_rule(name, rule)
+
+
+def verify_plot_properties_for_subplot(
+    ax: Any,
+    expected_channels: List[str],
+    min_unique_threshold: int = 2,
+    tolerance: Optional[float] = None,
+) -> Dict[str, Any]:
+    props = extract_subplot_properties(ax)
+
+    result = {
+        "subplot_coord": getattr(ax, "_subplot_spec", "unknown"),
+        "collections_found": len(props["collections"]),
+        "channels": {},
+        "overall_passed": True,
+        "summary_message": "",
+        "suggestions": [],
+    }
+
+    if not props["collections"]:
+        result["overall_passed"] = False
+        result["summary_message"] = "No collections found in subplot"
+        result["suggestions"].append("Check if plot was created successfully")
+        return result
+
+    passed_channels = []
+    failed_channels = []
+
+    for channel in expected_channels:
+        channel_result = execute_verification(
+            "channel_variation",
+            {
+                "collections": props["collections"],
+                "channel": channel,
+                "min_unique_threshold": min_unique_threshold,
+            },
+        )
+        result["channels"][channel] = channel_result
+
+        if channel_result["passed"]:
+            passed_channels.append(channel)
+        else:
+            failed_channels.append(channel)
+
+    result["overall_passed"] = len(failed_channels) == 0
+
+    if result["overall_passed"]:
+        result["summary_message"] = (
+            f"All channels verified: {', '.join(passed_channels)}"
+        )
+    else:
+        result["summary_message"] = (
+            f"Channel verification failed: {', '.join(failed_channels)}"
+        )
+
+        for channel in failed_channels:
+            if channel == "size":
+                result["suggestions"].append(
+                    "Check if size_by parameter is properly configured"
+                )
+            elif channel in ["hue", "color"]:
+                result["suggestions"].append(
+                    "Check if hue_by parameter creates color variation"
+                )
+            elif channel == "marker":
+                result["suggestions"].append(
+                    "Check if marker_by parameter creates marker variation"
+                )
+            elif channel == "alpha":
+                result["suggestions"].append(
+                    "Check if alpha_by parameter creates alpha variation"
+                )
+
+    return result

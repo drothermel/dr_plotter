@@ -15,30 +15,17 @@ from .verification_formatter import (
     print_detailed_issues,
 )
 from .verification import verify_legend_visibility
-from .plot_verification import (
+from .unified_verification_engine import (
     verify_plot_properties_for_subplot,
-    verify_legend_plot_consistency,
-    verify_figure_legend_strategy,
+    execute_verification,
 )
-from .plot_data_extractor import extract_figure_legend_properties
-from .validation import validate_figure_result, validate_legend_properties
+from .plot_data_extractor import (
+    extract_figure_legend_properties,
+    validate_legend_properties,
+    validate_figure_result,
+    filter_main_grid_axes,
+)
 from dr_plotter.utils import get_axes_from_grid
-
-
-def filter_main_grid_axes(fig_axes):
-    grid_axes = []
-    main_gridspec = None
-
-    for ax in fig_axes:
-        if hasattr(ax, "get_gridspec") and ax.get_gridspec() is not None:
-            gs = ax.get_gridspec()
-            if main_gridspec is None:
-                main_gridspec = gs
-            # Only include axes from the main gridspec (exclude auxiliary axes)
-            if gs is main_gridspec:
-                grid_axes.append(ax)
-
-    return grid_axes
 
 
 type SubplotCoord = Tuple[int, int]
@@ -307,11 +294,16 @@ def verify_example(
                             subplot_coord, []
                         )
 
-                        consistency_result = verify_legend_plot_consistency(
-                            ax,
-                            expected_varying_channels,
-                            expected_legend_entries.get(subplot_coord),
-                            legend_tolerance,
+                        consistency_result = execute_verification(
+                            "legend_plot_consistency",
+                            {
+                                "ax": ax,
+                                "expected_varying_channels": expected_varying_channels,
+                                "expected_legend_entries": expected_legend_entries.get(
+                                    subplot_coord
+                                ),
+                                "tolerance": legend_tolerance,
+                            },
                         )
 
                         success = consistency_result["overall_passed"]
@@ -400,14 +392,17 @@ def verify_figure_legends(
 
             figure_props = extract_figure_legend_properties(fig)
 
-            verification_result = verify_figure_legend_strategy(
-                figure_props,
-                legend_strategy,
-                expected_legend_count,
-                expected_total_entries,
-                expected_channel_entries,
-                expected_channels,
-                tolerance,
+            verification_result = execute_verification(
+                "figure_legend_strategy",
+                {
+                    "figure_props": figure_props,
+                    "strategy": legend_strategy,
+                    "expected_count": expected_legend_count,
+                    "expected_total_entries": expected_total_entries,
+                    "expected_channel_entries": expected_channel_entries,
+                    "expected_channels": expected_channels,
+                    "tolerance": tolerance,
+                },
             )
 
             print_info(f"Figure legends found: {figure_props['legend_count']}")

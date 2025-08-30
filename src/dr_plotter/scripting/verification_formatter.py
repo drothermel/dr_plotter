@@ -1,5 +1,6 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import sys
+import matplotlib.pyplot as plt
 
 
 class VerificationFormatter:
@@ -208,3 +209,71 @@ def print_suggestions(suggestions: List[str], indent_level: int = 1) -> None:
 
 def print_detailed_issues(issues: List[Dict[str, Any]], indent_level: int = 1) -> None:
     _default_formatter.print_detailed_issues(issues, indent_level)
+
+
+def verify_legend_visibility_with_formatting(
+    figure: plt.Figure,
+    expected_visible_count: Optional[int] = None,
+    fail_on_missing: bool = True,
+) -> Dict[str, Any]:
+    from .plot_data_extractor import verify_legend_visibility_core
+
+    summary = verify_legend_visibility_core(figure, expected_visible_count)
+
+    results = summary["details"]
+    visible_count = summary["visible_legends"]
+    total_count = summary["total_subplots"]
+
+    print_section_header("LEGEND VISIBILITY VERIFICATION")
+    print_info(f"Total subplots: {total_count}")
+    print_info(f"Legends visible: {visible_count}")
+    if expected_visible_count is not None:
+        print_info(f"Expected visible: {expected_visible_count}")
+    print_info(f"Legends missing: {total_count - visible_count}")
+
+    for i, result in results.items():
+        if expected_visible_count is not None and expected_visible_count == 0:
+            if result["visible"]:
+                print_item_result(f"Subplot {i}", False, "Unexpected legend found", 1)
+            else:
+                print_item_result(f"Subplot {i}", True, "No legend (expected)", 1)
+        else:
+            print_item_result(f"Subplot {i}", result["visible"], result["reason"], 1)
+
+    if expected_visible_count is not None:
+        if visible_count != expected_visible_count:
+            if expected_visible_count == 0:
+                print_failure(
+                    f"EXPECTED no legends, but found {visible_count} unexpected legend(s)"
+                )
+            else:
+                print_failure(
+                    f"EXPECTED {expected_visible_count} visible legends, but found {visible_count}"
+                )
+        else:
+            if expected_visible_count == 0:
+                print_success("EXPECTED no legends and found none - perfect!")
+            else:
+                print_success(
+                    f"EXPECTED {expected_visible_count} legends and found {visible_count} - perfect!"
+                )
+    else:
+        if visible_count == 0:
+            if not fail_on_missing:
+                print_success("No legends found (not treated as failure)")
+            else:
+                summary["success"] = False
+                print_critical("CRITICAL: No legends are visible in any subplot!")
+        elif visible_count < total_count:
+            if fail_on_missing:
+                summary["success"] = False
+            print_warning(
+                f"WARNING: {total_count - visible_count} subplot(s) missing legends"
+            )
+
+    if summary["success"]:
+        print_success("All legend visibility checks passed!")
+    else:
+        print_failure("Legend visibility verification FAILED!")
+
+    return summary

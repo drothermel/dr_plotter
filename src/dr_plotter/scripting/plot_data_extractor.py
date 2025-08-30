@@ -1,6 +1,7 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 import numpy as np
 import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 from matplotlib.collections import PathCollection, PolyCollection
 from matplotlib.image import AxesImage
 from matplotlib.container import BarContainer
@@ -362,3 +363,469 @@ def _extract_image_properties(image: AxesImage) -> Dict[str, Any]:
             "vmax": image.get_clim()[1] if image.get_clim() else None,
         }
     }
+
+
+def extract_pathcollections_from_axis(ax: Any) -> List[PathCollection]:
+    collections = []
+    for collection in ax.collections:
+        if isinstance(collection, PathCollection):
+            collections.append(collection)
+    return collections
+
+
+def extract_polycollections_from_axis(ax: Any) -> List[PolyCollection]:
+    collections = []
+    for collection in ax.collections:
+        if isinstance(collection, PolyCollection):
+            collections.append(collection)
+    return collections
+
+
+def extract_barcontainers_from_axis(ax: Any) -> List[Any]:
+    return [c for c in getattr(ax, "containers", []) if isinstance(c, BarContainer)]
+
+
+def extract_lines_from_axis(ax: Any) -> List[Any]:
+    return [line for line in getattr(ax, "lines", []) if hasattr(line, "get_color")]
+
+
+def extract_images_from_axis(ax: Any) -> List[AxesImage]:
+    return [img for img in getattr(ax, "images", []) if isinstance(img, AxesImage)]
+
+
+def debug_legend_detection(ax: Any) -> Dict[str, Any]:
+    legend = ax.get_legend()
+    legend_props = extract_legend_properties(ax)
+
+    debug_info = {
+        "legend_exists": legend is not None,
+        "legend_object": legend,
+        "legend_visible": legend_props["visible"],
+        "legend_texts": legend_props["labels"],
+        "legend_handles": legend_props["handles"],
+        "all_legend_children": legend.get_children() if legend else [],
+    }
+
+    if legend:
+        debug_info["legend_numpoints"] = (
+            legend.numpoints if hasattr(legend, "numpoints") else None
+        )
+
+    return debug_info
+
+
+def extract_subplot_properties(ax: Any) -> Dict[str, Any]:
+    path_collections = extract_pathcollections_from_axis(ax)
+    poly_collections = extract_polycollections_from_axis(ax)
+    bar_containers = extract_barcontainers_from_axis(ax)
+    lines = extract_lines_from_axis(ax)
+    images = extract_images_from_axis(ax)
+    legend_props = extract_legend_properties(ax)
+    legend_debug = debug_legend_detection(ax)
+
+    result = {
+        "collections": [],
+        "legend": {
+            "handles": legend_props["handles"],
+            "markers": legend_props["markers"],
+            "colors": legend_props["colors"],
+            "sizes": legend_props["sizes"],
+            "labels": legend_props["labels"],
+            "styles": legend_props["styles"],
+            "debug": legend_debug,
+        },
+    }
+
+    for i, collection in enumerate(path_collections):
+        collection_props = extract_collection_properties(collection, "scatter")
+        collection_props["index"] = i
+        result["collections"].append(collection_props)
+
+    for i, collection in enumerate(poly_collections):
+        collection_props = extract_collection_properties(collection, "violin")
+        collection_props["index"] = len(path_collections) + i
+        result["collections"].append(collection_props)
+
+    for i, container in enumerate(bar_containers):
+        collection_props = extract_collection_properties(container, "bar")
+        collection_props["index"] = len(path_collections) + len(poly_collections) + i
+        result["collections"].append(collection_props)
+
+    if lines:
+        collection_props = extract_collection_properties(lines, "line")
+        collection_props["index"] = (
+            len(path_collections) + len(poly_collections) + len(bar_containers)
+        )
+        result["collections"].append(collection_props)
+
+    for i, image in enumerate(images):
+        collection_props = extract_collection_properties(image, "image")
+        collection_props["index"] = (
+            len(path_collections)
+            + len(poly_collections)
+            + len(bar_containers)
+            + len(lines)
+            + i
+        )
+        result["collections"].append(collection_props)
+
+    return result
+
+
+def identify_marker_from_path(path: Any) -> str:
+    return _identify_marker_from_path(path)
+
+
+def extract_channel_values_from_collections(
+    collections: List[Dict[str, Any]], channel: str
+) -> List[Any]:
+    all_values = []
+
+    if channel == "size":
+        for collection in collections:
+            all_values.extend(collection["sizes"])
+    elif channel == "hue" or channel == "color":
+        for collection in collections:
+            all_values.extend(collection["colors"])
+    elif channel == "marker":
+        for collection in collections:
+            all_values.extend(collection["markers"])
+    elif channel == "alpha":
+        for collection in collections:
+            if "alphas" in collection and collection["alphas"]:
+                all_values.extend(collection["alphas"])
+            else:
+                for rgba in collection["colors"]:
+                    if len(rgba) == 4:
+                        all_values.append(rgba[3])
+                    else:
+                        all_values.append(1.0)
+    elif channel == "style":
+        for collection in collections:
+            if "styles" in collection:
+                all_values.extend(collection["styles"])
+
+    return all_values
+
+
+def extract_all_plot_data_from_collections(
+    collections: List[Dict[str, Any]],
+) -> Dict[str, List[Any]]:
+    all_plot_markers = []
+    all_plot_colors = []
+    all_plot_sizes = []
+    all_plot_alphas = []
+    all_plot_styles = []
+
+    for collection in collections:
+        all_plot_markers.extend(collection["markers"])
+        all_plot_colors.extend(collection["colors"])
+        all_plot_sizes.extend(collection["sizes"])
+
+        if "alphas" in collection and collection["alphas"]:
+            all_plot_alphas.extend(collection["alphas"])
+        else:
+            for rgba_color in collection["colors"]:
+                if len(rgba_color) >= 4:
+                    all_plot_alphas.append(rgba_color[3])
+                else:
+                    all_plot_alphas.append(1.0)
+
+        if "styles" in collection:
+            all_plot_styles.extend(collection["styles"])
+
+    return {
+        "markers": all_plot_markers,
+        "colors": all_plot_colors,
+        "sizes": all_plot_sizes,
+        "alphas": all_plot_alphas,
+        "styles": all_plot_styles,
+    }
+
+
+def extract_legend_data_with_alphas(
+    legend_props: Dict[str, Any],
+) -> Dict[str, List[Any]]:
+    legend_alphas = []
+    for rgba_color in legend_props["colors"]:
+        if len(rgba_color) >= 4:
+            legend_alphas.append(rgba_color[3])
+        else:
+            legend_alphas.append(1.0)
+
+    return {
+        "markers": legend_props["markers"],
+        "colors": legend_props["colors"],
+        "sizes": legend_props["sizes"],
+        "styles": legend_props["styles"],
+        "alphas": legend_alphas,
+    }
+
+
+def validate_legend_properties(ax: plt.Axes) -> Dict[str, Any]:
+    legend_props = extract_legend_properties(ax)
+
+    if not legend_props["visible"]:
+        return {"visible": False, "entries": [], "entry_count": 0}
+
+    legend_colors = extract_colors(legend_props["handles"])
+    legend_labels = legend_props["labels"]
+
+    color_label_pairs = []
+    for i, (rgba_color, label) in enumerate(zip(legend_colors, legend_labels)):
+        hex_color = mcolors.to_hex(rgba_color)
+        color_label_pairs.append(
+            {
+                "index": i,
+                "color": hex_color,
+                "label": label.strip() if label else "(empty)",
+            }
+        )
+
+    return {
+        "visible": True,
+        "entries": color_label_pairs,
+        "entry_count": len(legend_labels),
+    }
+
+
+def is_legend_actually_visible(
+    ax: plt.Axes, figure: Optional[plt.Figure] = None
+) -> Dict[str, Any]:
+    result = {
+        "visible": False,
+        "exists": False,
+        "marked_visible": False,
+        "has_content": False,
+        "within_bounds": False,
+        "bbox_info": {},
+        "reason": "",
+    }
+
+    legend = ax.get_legend()
+    if legend is None:
+        result["reason"] = "No legend object exists"
+        return result
+
+    result["exists"] = True
+
+    if not legend.get_visible():
+        result["reason"] = "Legend exists but is marked as not visible"
+        return result
+
+    result["marked_visible"] = True
+
+    handles = (
+        legend.legend_handles
+        if hasattr(legend, "legend_handles")
+        else legend.get_lines()
+    )
+    labels = [t.get_text() for t in legend.get_texts()]
+
+    if not handles or not labels or all(not label.strip() for label in labels):
+        result["reason"] = "Legend exists and is visible but has no content"
+        return result
+
+    result["has_content"] = True
+
+    if figure is None:
+        figure = ax.get_figure()
+
+    figure.canvas.draw()
+
+    legend_bbox = legend.get_window_extent()
+    fig_bbox = figure.bbox
+
+    result["bbox_info"] = {
+        "legend_bbox": {
+            "x0": legend_bbox.x0,
+            "y0": legend_bbox.y0,
+            "x1": legend_bbox.x1,
+            "y1": legend_bbox.y1,
+            "width": legend_bbox.width,
+            "height": legend_bbox.height,
+        },
+        "figure_bbox": {
+            "x0": fig_bbox.x0,
+            "y0": fig_bbox.y0,
+            "x1": fig_bbox.x1,
+            "y1": fig_bbox.y1,
+            "width": fig_bbox.width,
+            "height": fig_bbox.height,
+        },
+    }
+
+    legend_in_figure = (
+        legend_bbox.x0 < fig_bbox.x1
+        and legend_bbox.x1 > fig_bbox.x0
+        and legend_bbox.y0 < fig_bbox.y1
+        and legend_bbox.y1 > fig_bbox.y0
+    )
+
+    if not legend_in_figure:
+        result["reason"] = "Legend is positioned outside the visible figure area"
+        return result
+
+    if legend_bbox.width <= 0 or legend_bbox.height <= 0:
+        result["reason"] = "Legend has zero width or height"
+        return result
+
+    result["within_bounds"] = True
+
+    visible_area = min(legend_bbox.x1, fig_bbox.x1) - max(legend_bbox.x0, fig_bbox.x0)
+    visible_area *= min(legend_bbox.y1, fig_bbox.y1) - max(legend_bbox.y0, fig_bbox.y0)
+    legend_area = legend_bbox.width * legend_bbox.height
+
+    if legend_area > 0:
+        visibility_ratio = visible_area / legend_area
+        result["bbox_info"]["visibility_ratio"] = visibility_ratio
+
+        if visibility_ratio < 0.1:
+            result["reason"] = (
+                f"Legend is mostly clipped (only {visibility_ratio:.1%} visible)"
+            )
+            return result
+
+    result["visible"] = True
+    result["reason"] = "Legend is fully visible and properly positioned"
+
+    return result
+
+
+def check_all_subplot_legends(figure: plt.Figure) -> Dict[int, Dict[str, Any]]:
+    results = {}
+
+    if hasattr(figure, "axes"):
+        for i, ax in enumerate(figure.axes):
+            results[i] = is_legend_actually_visible(ax, figure)
+
+    return results
+
+
+def verify_legend_visibility_core(
+    figure: plt.Figure, expected_visible_count: Optional[int] = None
+) -> Dict[str, Any]:
+    results = check_all_subplot_legends(figure)
+
+    visible_count = sum(1 for result in results.values() if result["visible"])
+    total_count = len(results)
+
+    summary = {
+        "total_subplots": total_count,
+        "visible_legends": visible_count,
+        "missing_legends": total_count - visible_count,
+        "success": True,
+        "issues": [],
+        "details": results,
+    }
+
+    for i, result in results.items():
+        if not result["visible"] and expected_visible_count != 0:
+            summary["issues"].append(
+                {
+                    "subplot": i,
+                    "reason": result["reason"],
+                    "exists": result["exists"],
+                    "marked_visible": result["marked_visible"],
+                    "has_content": result["has_content"],
+                }
+            )
+        elif result["visible"] and expected_visible_count == 0:
+            summary["issues"].append(
+                {
+                    "subplot": i,
+                    "reason": "Unexpected legend found",
+                    "exists": result["exists"],
+                    "marked_visible": result["marked_visible"],
+                    "has_content": result["has_content"],
+                }
+            )
+
+    if expected_visible_count is not None:
+        if visible_count != expected_visible_count:
+            summary["success"] = False
+
+    return summary
+
+
+def filter_main_grid_axes(fig_axes: List[Any]) -> List[Any]:
+    grid_axes = []
+    main_gridspec = None
+
+    for ax in fig_axes:
+        if hasattr(ax, "get_gridspec") and ax.get_gridspec() is not None:
+            gs = ax.get_gridspec()
+            if main_gridspec is None:
+                main_gridspec = gs
+            if gs is main_gridspec:
+                grid_axes.append(ax)
+
+    return grid_axes
+
+
+def get_main_grid_axes_from_figure(fig: plt.Figure) -> List[Any]:
+    main_grid_axes = []
+    for ax in fig.axes:
+        if hasattr(ax, "get_gridspec") and ax.get_gridspec() is not None:
+            main_grid_axes.append(ax)
+    return main_grid_axes
+
+
+def validate_subplot_coord_access(
+    fig: plt.Figure, subplot_coord: Tuple[int, int]
+) -> plt.Axes:
+    from dr_plotter.utils import get_axes_from_grid
+
+    row, col = subplot_coord
+    main_grid_axes = get_main_grid_axes_from_figure(fig)
+    assert len(main_grid_axes) > 0, "No main grid axes found in figure"
+    ax = get_axes_from_grid(main_grid_axes, row, col)
+    assert ax is not None, f"No axis found at position ({row}, {col})"
+    return ax
+
+
+def validate_figure_result(result: Any) -> plt.Figure:
+    assert isinstance(result, (plt.Figure, list, tuple)), (
+        f"Function must return Figure or list/tuple, got {type(result).__name__}"
+    )
+
+    if isinstance(result, plt.Figure):
+        return result
+    elif isinstance(result, (list, tuple)) and len(result) >= 1:
+        assert isinstance(result[0], plt.Figure), (
+            f"Function must return Figure(s), got {type(result[0]).__name__}"
+        )
+        return result[0]
+    else:
+        assert False, f"Invalid return type: {type(result).__name__}"
+
+
+def validate_figure_list_result(result: Any) -> List[plt.Figure]:
+    assert isinstance(result, (plt.Figure, list, tuple)), (
+        f"Function must return Figure or list/tuple, got {type(result).__name__}"
+    )
+
+    if isinstance(result, plt.Figure):
+        return [result]
+    elif isinstance(result, (list, tuple)) and len(result) >= 1:
+        if all(isinstance(f, plt.Figure) for f in result):
+            return list(result)
+        elif isinstance(result[0], plt.Figure):
+            return [result[0]]
+        else:
+            assert False, (
+                f"Function must return Figure(s), got {type(result[0]).__name__} in {type(result).__name__}"
+            )
+    else:
+        assert False, (
+            f"Function must return Figure or list of Figures, got {type(result).__name__}"
+        )
+
+
+def validate_axes_access(fig_axes: List[Any], row: int, col: int) -> plt.Axes:
+    from dr_plotter.utils import get_axes_from_grid
+
+    assert len(fig_axes) > 0, "No axes found in figure"
+    ax = get_axes_from_grid(fig_axes, row, col)
+    assert ax is not None, f"No axis found at position ({row}, {col})"
+    return ax
