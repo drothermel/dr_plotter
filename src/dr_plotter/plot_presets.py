@@ -20,7 +20,7 @@ TEMPORAL_OPTIMIZED_PALETTE = [
 ]
 DISTRIBUTION_PALETTE = [
     "#3182bd",
-    "#fd8d3c", 
+    "#fd8d3c",
     "#74c476",
     "#f03b20",
     "#9e9ac8",

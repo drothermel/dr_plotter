@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -29,7 +29,6 @@ from dr_plotter.faceting.faceting_core import (
     handle_empty_subplots,
 )
 from dr_plotter.faceting.style_coordination import FacetStyleCoordinator
-from .plotters import BasePlotter
 
 
 class FigureManager:
@@ -42,7 +41,7 @@ class FigureManager:
     ) -> None:
         if config is not None:
             figure, legend, theme = config._to_legacy_configs()
-        
+
         figure = figure or FigureConfig()
 
         if legend is None:
@@ -296,9 +295,26 @@ class FigureManager:
         faceting_params = {}
 
         faceting_param_names = {
-            "rows", "cols", "lines", "target_row", "target_col", "target_rows", "target_cols",
-            "row_order", "col_order", "lines_order", "x", "y", "x_labels", "y_labels", 
-            "xlim", "ylim", "subplot_titles", "title_template", "empty_subplot_strategy", "color_wrap"
+            "rows",
+            "cols",
+            "lines",
+            "target_row",
+            "target_col",
+            "target_rows",
+            "target_cols",
+            "row_order",
+            "col_order",
+            "lines_order",
+            "x",
+            "y",
+            "x_labels",
+            "y_labels",
+            "xlim",
+            "ylim",
+            "subplot_titles",
+            "title_template",
+            "empty_subplot_strategy",
+            "color_wrap",
         }
 
         for param_name in faceting_param_names:
@@ -323,32 +339,47 @@ class FigureManager:
         **kwargs,
     ) -> None:
         assert not data.empty, "Cannot create faceted plot with empty DataFrame"
-        
+
         config = self._resolve_faceting_config(faceting, **kwargs)
         config.validate()
-        
+
         assert config.x is not None, "x parameter is required for faceted plotting"
         assert config.y is not None, "y parameter is required for faceted plotting"
         assert config.rows or config.cols, "Must specify rows or cols for faceting"
 
         if not config.rows and not config.cols:
-            self.plot(plot_type, 0, 0, data, x=config.x, y=config.y, hue_by=config.lines, **kwargs)
+            self.plot(
+                plot_type,
+                0,
+                0,
+                data,
+                x=config.x,
+                y=config.y,
+                hue_by=config.lines,
+                **kwargs,
+            )
             return
 
         grid_shape = get_grid_dimensions(data, config)
         self._validate_grid_dimensions(grid_shape[0], grid_shape[1], config)
 
         data_subsets = prepare_faceted_subplots(data, config, grid_shape)
-        data_subsets = handle_empty_subplots(data_subsets, config.empty_subplot_strategy)
+        data_subsets = handle_empty_subplots(
+            data_subsets, config.empty_subplot_strategy
+        )
 
         style_coordinator = self._get_or_create_style_coordinator()
         if config.lines:
             lines_values = sorted(data[config.lines].unique())
             style_coordinator.register_dimension_values(config.lines, lines_values)
 
-        plot_kwargs = {k: v for k, v in kwargs.items() if not hasattr(FacetingConfig, k)}
-        
-        plot_faceted_data(self, data_subsets, plot_type, config, style_coordinator, **plot_kwargs)
+        plot_kwargs = {
+            k: v for k, v in kwargs.items() if not hasattr(FacetingConfig, k)
+        }
+
+        plot_faceted_data(
+            self, data_subsets, plot_type, config, style_coordinator, **plot_kwargs
+        )
 
     def _validate_grid_dimensions(
         self, computed_rows: int, computed_cols: int, config: FacetingConfig
@@ -363,7 +394,10 @@ class FigureManager:
             )
 
     def _get_or_create_style_coordinator(self) -> FacetStyleCoordinator:
-        if not hasattr(self, '_facet_style_coordinator') or self._facet_style_coordinator is None:
+        if (
+            not hasattr(self, "_facet_style_coordinator")
+            or self._facet_style_coordinator is None
+        ):
             theme_info = None
             if hasattr(self, "_theme") and self._theme:
                 theme_info = {
