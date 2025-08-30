@@ -5,6 +5,11 @@ import pandas as pd
 from matplotlib.patches import Patch
 
 from dr_plotter import consts
+from dr_plotter.artist_utils import (
+    extract_single_alpha_from_polycollection_list,
+    extract_single_color_from_polycollection_list,
+    extract_single_edgecolor_from_polycollection_list,
+)
 from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.theme import VIOLIN_THEME, Theme
 from dr_plotter.types import (
@@ -129,45 +134,9 @@ class ViolinPlotter(BasePlotter):
         if not bodies:
             return None
 
-        first_body = bodies[0]
-
-        assert hasattr(first_body, "get_facecolor"), (
-            "Body must have get_facecolor method"
-        )
-        facecolor = first_body.get_facecolor()
-
-        if hasattr(facecolor, "__len__") and len(facecolor) > 0:
-            fc = facecolor[0]
-            if isinstance(fc, np.ndarray) and fc.size >= 3:
-                facecolor = tuple(fc[:4] if fc.size >= 4 else list(fc[:3]) + [1.0])
-            else:
-                facecolor = self.figure_manager.legend_manager.get_error_color(
-                    "face", self.theme
-                )
-        else:
-            facecolor = self.figure_manager.legend_manager.get_error_color(
-                "face", self.theme
-            )
-
-        assert hasattr(first_body, "get_edgecolor"), (
-            "Body must have get_edgecolor method"
-        )
-        edgecolor = first_body.get_edgecolor()
-
-        if hasattr(edgecolor, "__len__") and len(edgecolor) > 0:
-            ec = edgecolor[0]
-            if isinstance(ec, np.ndarray) and ec.size >= 3:
-                edgecolor = tuple(ec[:4] if ec.size >= 4 else list(ec[:3]) + [1.0])
-            else:
-                edgecolor = self.figure_manager.legend_manager.get_error_color(
-                    "edge", self.theme
-                )
-        else:
-            edgecolor = self.figure_manager.legend_manager.get_error_color(
-                "edge", self.theme
-            )
-
-        alpha = first_body.get_alpha() if hasattr(first_body, "get_alpha") else 1.0
+        facecolor = extract_single_color_from_polycollection_list(bodies)
+        edgecolor = extract_single_edgecolor_from_polycollection_list(bodies)
+        alpha = extract_single_alpha_from_polycollection_list(bodies)
 
         return Patch(facecolor=facecolor, edgecolor=edgecolor, alpha=alpha)
 
@@ -180,7 +149,7 @@ class ViolinPlotter(BasePlotter):
         datasets = [gd[consts.Y_COL_NAME].dropna() for gd in group_data]
 
         label = kwargs.pop("label", None)
-        parts = ax.violinplot(datasets, **self._filtered_plot_kwargs)
+        parts = ax.violinplot(datasets, **self._build_plot_args())
 
         if len(groups) > 0:
             ax.set_xticks(np.arange(1, len(groups) + 1))
@@ -197,6 +166,11 @@ class ViolinPlotter(BasePlotter):
     ) -> None:
         label = kwargs.pop("label", None)
         has_x_labels = consts.X_COL_NAME in data.columns
+        base_plot_args = self._build_plot_args()
+        if "widths" not in base_plot_args and "width" in group_position:
+            base_plot_args["widths"] = group_position["width"]
+        elif "widths" in base_plot_args and "width" in group_position:
+            print("WARNING: Caculated width overritten by kwargs or theme")
 
         if has_x_labels:
             x_categories = group_position.get("x_categories")
@@ -217,8 +191,7 @@ class ViolinPlotter(BasePlotter):
                 parts = ax.violinplot(
                     dataset,
                     positions=positions,
-                    widths=group_position["width"],
-                    **self._filtered_plot_kwargs,
+                    **base_plot_args,
                 )
             else:
                 parts = {}
@@ -230,8 +203,7 @@ class ViolinPlotter(BasePlotter):
             parts = ax.violinplot(
                 [data[consts.Y_COL_NAME].dropna()],
                 positions=[group_position["offset"]],
-                widths=group_position["width"],
-                **self._filtered_plot_kwargs,
+                **base_plot_args,
             )
 
         self._apply_post_processing(parts, label)

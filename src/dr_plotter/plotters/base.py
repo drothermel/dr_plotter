@@ -11,13 +11,13 @@ from dr_plotter.theme import BASE_COLORS, BASE_THEME, DR_PLOTTER_STYLE_KEYS, The
 from dr_plotter.types import (
     BasePlotterParamName,
     ColName,
+    ComponentSchema,
+    GroupContext,
+    GroupInfo,
+    Phase,
     StyleAttrName,
     SubPlotterParamName,
     VisualChannel,
-    Phase,
-    ComponentSchema,
-    GroupInfo,
-    GroupContext,
 )
 
 BASE_PLOTTER_PARAMS = [
@@ -219,6 +219,18 @@ class BasePlotter:
             )
 
         self._plot_specific_data_prep()
+
+    def _build_plot_args(self) -> Dict[str, Any]:
+        main_plot_params = self.component_schema.get("plot", {}).get("main", set())
+        plot_args = {}
+        for key in main_plot_params:
+            if key in self._filtered_plot_kwargs:
+                plot_args[key] = self._filtered_plot_kwargs[key]
+            else:
+                style = self.styler.get_style(key)
+                if style is not None:
+                    plot_args[key] = style
+        return plot_args
 
     def _should_create_legend(self) -> bool:
         if not self.supports_legend:
