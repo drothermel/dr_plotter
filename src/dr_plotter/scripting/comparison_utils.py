@@ -1,12 +1,7 @@
-from typing import List, Set, Tuple, Union
+from typing import List, Set, Tuple
 import math
 
-
-type RGBA = Tuple[float, float, float, float]
-type RGB = Tuple[float, float, float]
-type ColorTuple = Union[RGBA, RGB]
-type NumericValue = Union[float, int]
-type ComparisonValue = Union[NumericValue, ColorTuple, str]
+from dr_plotter.types import ColorTuple, ComparisonValue
 
 
 DEFAULT_TOLERANCES = {

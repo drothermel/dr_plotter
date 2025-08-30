@@ -81,7 +81,6 @@ class ContourPlotter(BasePlotter):
         Z = -gmm.score_samples(np.c_[xx.ravel(), yy.ravel()])
         Z = Z.reshape(xx.shape)
 
-        # Store prepared data as instance attributes
         self.xx, self.yy, self.Z = xx, yy, Z
         return self.plot_data
 
@@ -90,7 +89,6 @@ class ContourPlotter(BasePlotter):
             "levels": self.style_applicator.get_style_with_fallback("levels"),
             "cmap": self.style_applicator.get_style_with_fallback("cmap"),
         }
-        # Add user contour kwargs (filter out scatter-specific ones)
         user_kwargs = kwargs.copy()
         for key in ["s", "scatter_size", "scatter_alpha"]:
             user_kwargs.pop(key, None)
@@ -103,7 +101,6 @@ class ContourPlotter(BasePlotter):
                 "scatter_color", BASE_COLORS[0]
             ),
         }
-        # Add user scatter kwargs
         if "s" in kwargs:
             scatter_kwargs["s"] = kwargs["s"]
         if "scatter_size" in kwargs:
@@ -115,7 +112,6 @@ class ContourPlotter(BasePlotter):
 
         ax.scatter(data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **scatter_kwargs)
 
-        # Store colorbar info for post-processing
         artists = {
             "colorbar": {
                 "plot_object": contour,
@@ -125,7 +121,6 @@ class ContourPlotter(BasePlotter):
         }
         self.style_applicator.apply_post_processing(self.plotter_name, artists)
 
-        # Apply base post-processing for title, xlabel, ylabel, grid
         self._apply_styling(ax)
 
     def _style_colorbar(

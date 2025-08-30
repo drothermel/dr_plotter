@@ -99,12 +99,10 @@ class BarPlotter(BasePlotter):
     ) -> None:
         label = kwargs.pop("label", None)
 
-        # Use shared x_categories from all groups if available
         x_categories = group_position.get("x_categories")
         if x_categories is None:
             x_categories = data[consts.X_COL_NAME].unique()
 
-        # Map data to positions based on shared categories
         x_positions = []
         y_values = []
         for i, cat in enumerate(x_categories):
@@ -113,14 +111,12 @@ class BarPlotter(BasePlotter):
                 x_positions.append(i + group_position["offset"])
                 y_values.append(cat_data[consts.Y_COL_NAME].values[0])
 
-        # Draw bars at offset positions
         patches = None
         if x_positions:
             patches = ax.bar(
                 x_positions, y_values, width=group_position["width"], **kwargs
             )
 
-        # Set x-axis labels (only on first group to avoid duplication)
         if group_position["index"] == 0:
             ax.set_xticks(np.arange(len(x_categories)))
             ax.set_xticklabels(x_categories)

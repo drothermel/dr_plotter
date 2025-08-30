@@ -1,6 +1,8 @@
-from typing import Dict, Tuple, Optional, List, Any
-import pandas as pd
+from typing import Any, Dict, List, Optional, Tuple
+
 import matplotlib.axes
+import pandas as pd
+
 from dr_plotter.faceting_config import FacetingConfig
 
 SUPPORTED_PLOT_TYPES = ["line", "scatter", "bar", "fill_between", "heatmap"]
@@ -184,7 +186,6 @@ def _plot_scatter_data(
 def _plot_bar_data(
     ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs
 ) -> None:
-    # Remove parameters that bar plots don't support
     filtered_kwargs = {k: v for k, v in kwargs.items() if k not in ["marker"]}
     ax.bar(data[config.x], data[config.y], **filtered_kwargs)
 

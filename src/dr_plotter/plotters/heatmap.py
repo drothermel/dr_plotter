@@ -75,24 +75,20 @@ class HeatmapPlotter(BasePlotter):
         )
 
     def _plot_specific_data_prep(self) -> None:
-        # Convert from tidy/long to matrix format using pivot
         plot_data = self.plot_data.pivot(
-            index=consts.Y_COL_NAME,  # rows
-            columns=consts.X_COL_NAME,  # columns
-            values=self.values,  # cell values
+            index=consts.Y_COL_NAME,
+            columns=consts.X_COL_NAME,
+            values=self.values,
         )
 
-        # Handle any missing values by filling with 0
         self.plot_data = plot_data.fillna(0)
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
-        # Set default cmap if not provided
         if "cmap" not in kwargs:
             kwargs["cmap"] = self.style_applicator.get_style_with_fallback("cmap")
 
         im = ax.imshow(data, **self._filtered_plot_kwargs)
 
-        # Store colorbar, ticks, and cell_text info for post-processing
         artists = {
             "colorbar": {
                 "plot_object": im,
@@ -104,7 +100,6 @@ class HeatmapPlotter(BasePlotter):
         }
         self.style_applicator.apply_post_processing(self.plotter_name, artists)
 
-        # Apply base post-processing for title, xlabel, ylabel, grid
         self._apply_styling(ax)
 
     def _style_colorbar(

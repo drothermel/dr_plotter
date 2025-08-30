@@ -14,12 +14,10 @@ from dr_plotter.theme import (
     BUMP_PLOT_THEME,
     CONTOUR_THEME,
 )
-from dr_plotter.types import ComponentSchema, Phase
+from dr_plotter.types import ComponentSchema, ComponentStyles, Phase
 
 if TYPE_CHECKING:
     from dr_plotter.plotters.style_engine import StyleEngine
-
-type ComponentStyles = Dict[str, Dict[str, Any]]
 
 
 class StyleApplicator:

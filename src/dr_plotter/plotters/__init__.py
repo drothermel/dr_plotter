@@ -1,14 +1,12 @@
-from .base import BasePlotter
-from .scatter import ScatterPlotter
-
-from .line import LinePlotter
 from .bar import BarPlotter
-from .histogram import HistogramPlotter
-from .violin import ViolinPlotter
-from .heatmap import HeatmapPlotter
-
+from .base import BasePlotter
 from .bump import BumpPlotter
 from .contour import ContourPlotter
+from .heatmap import HeatmapPlotter
+from .histogram import HistogramPlotter
+from .line import LinePlotter
+from .scatter import ScatterPlotter
+from .violin import ViolinPlotter
 
 __all__ = [
     "BasePlotter",

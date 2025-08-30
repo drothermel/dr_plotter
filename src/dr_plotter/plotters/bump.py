@@ -54,13 +54,11 @@ class BumpPlotter(BasePlotter):
         self.category_col = self.kwargs.get("category_col")
 
     def _plot_specific_data_prep(self) -> None:
-        # 1. Calculate rankings (existing logic)
         self.plot_data["rank"] = self.plot_data.groupby(self.time_col)[
             self.value_col
         ].rank(method="first", ascending=False)
         self.value_col = "rank"
 
-        # 2. Prepare category trajectories with styles
         categories = self.plot_data[self.category_col].unique()
         self.trajectory_data = []
 
@@ -68,7 +66,6 @@ class BumpPlotter(BasePlotter):
             cat_data = self.plot_data[self.plot_data[self.category_col] == category]
             cat_data = cat_data.sort_values(by=self.time_col).copy()
 
-            # Assign consistent styling per category
             style = self._get_category_style(category, i, len(categories))
             cat_data["_bump_color"] = style["color"]
             cat_data["_bump_linestyle"] = style.get("linestyle", "-")
@@ -79,7 +76,6 @@ class BumpPlotter(BasePlotter):
     def _get_category_style(
         self, category: Any, index: int, total_categories: int
     ) -> Dict[str, Any]:
-        # Create consistent category styling using theme colors
         base_colors = self.theme.get(
             "base_colors", ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
         )
@@ -87,7 +83,6 @@ class BumpPlotter(BasePlotter):
         return {"color": color, "linestyle": "-"}
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
-        # Process all trajectories in single unified method
         for traj_data in self.trajectory_data:
             if not traj_data.empty:
                 lines = ax.plot(
@@ -98,7 +93,6 @@ class BumpPlotter(BasePlotter):
                     **self._filtered_plot_kwargs,
                 )
 
-                # Add category labels at end of trajectories
                 last_point = traj_data.iloc[-1]
                 category_name = traj_data["_bump_label"].iloc[0]
                 text = ax.text(
@@ -120,10 +114,8 @@ class BumpPlotter(BasePlotter):
                     ]
                 )
 
-                # Register legend entries
                 self._register_legend_entry_if_valid(lines[0], category_name)
 
-        # Configure bump plot specific axes (only set once)
         if not hasattr(ax, "_bump_configured"):
             ax.invert_yaxis()
             max_rank = int(self.plot_data["rank"].max())

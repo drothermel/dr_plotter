@@ -14,12 +14,7 @@ from .comparison_utils import (
     count_unique_floats,
     get_default_tolerance_for_channel,
 )
-
-
-type VerificationParams = Dict[str, Any]
-type VerificationResult = Dict[str, Any]
-type SubplotCoord = Tuple[int, int]
-type ChannelName = str
+from dr_plotter.types import VerificationParams, VerificationResult
 
 
 class VerificationRule(Protocol):

@@ -1,37 +1,36 @@
 import functools
 import sys
-from typing import Optional, Callable, Any, Dict, List, Union, Tuple
-import matplotlib.pyplot as plt
+from typing import Any, Callable, Dict, List, Optional, Union
+
 import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+
+from dr_plotter.types import ExpectedChannels, SubplotCoord
+from dr_plotter.utils import get_axes_from_grid
+
+from .plot_data_extractor import (
+    extract_figure_legend_properties,
+    filter_main_grid_axes,
+    validate_figure_result,
+    validate_legend_properties,
+    verify_legend_visibility,
+)
+from .unified_verification_engine import (
+    execute_verification,
+    verify_plot_properties_for_subplot,
+)
 from .verification_formatter import (
-    print_section_header,
-    print_subsection_header,
-    print_success,
-    print_failure,
     print_critical,
+    print_detailed_issues,
+    print_failure,
     print_final_success,
     print_info,
     print_item_result,
+    print_section_header,
+    print_subsection_header,
+    print_success,
     print_suggestions,
-    print_detailed_issues,
 )
-from .plot_data_extractor import (
-    verify_legend_visibility,
-    extract_figure_legend_properties,
-    validate_legend_properties,
-    validate_figure_result,
-    filter_main_grid_axes,
-)
-from .unified_verification_engine import (
-    verify_plot_properties_for_subplot,
-    execute_verification,
-)
-from dr_plotter.utils import get_axes_from_grid
-
-
-type SubplotCoord = Tuple[int, int]
-type ChannelName = str
-type ExpectedChannels = Dict[SubplotCoord, List[ChannelName]]
 
 
 def _print_comprehensive_plot_info(ax: Any, subplot_index: int) -> Dict[str, Any]:
@@ -179,7 +178,6 @@ def verify_plot(
             properties_failed = False
             consistency_failed = False
 
-            # LEGEND VERIFICATION
             print_section_header("LEGEND VISIBILITY VERIFICATION")
 
             if len(figs) == 1:
@@ -220,7 +218,6 @@ def verify_plot(
                     )
                     print_info(f"- Failed plots: {', '.join(failed_plots)}", 1)
 
-            # PLOT PROPERTIES VERIFICATION
             if expected_channels:
                 print_section_header("PLOT PROPERTIES VERIFICATION")
 
@@ -279,7 +276,6 @@ def verify_plot(
                     )
                     print_info("Plot has been saved for visual debugging.", 1)
 
-            # LEGEND CONSISTENCY VERIFICATION
             if verify_legend_consistency and len(figs) == 1 and expected_channels:
                 print_section_header("LEGEND-PLOT CONSISTENCY VERIFICATION")
 
@@ -334,7 +330,6 @@ def verify_plot(
                             if consistency_result["suggestions"]:
                                 print_suggestions(consistency_result["suggestions"], 2)
 
-            # FINAL RESULTS
             failure_types = []
             if properties_failed:
                 failure_types.append("plot properties")
@@ -438,11 +433,9 @@ def inspect_plot_properties() -> Callable:
                 else:
                     print_info("(no legend found)", 2)
 
-            # Enhanced consistency analysis
             print_section_header("CONSISTENCY ANALYSIS")
 
             if subplot_infos:
-                # Line consistency
                 line_counts = [len(info["lines"]) for info in subplot_infos]
                 if line_counts and len(set(line_counts)) == 1:
                     print_success(
@@ -479,7 +472,6 @@ def inspect_plot_properties() -> Callable:
                         1,
                     )
 
-                # Collection consistency
                 collection_counts = [len(info["collections"]) for info in subplot_infos]
                 if collection_counts and any(count > 0 for count in collection_counts):
                     if len(set(collection_counts)) == 1:
@@ -493,7 +485,6 @@ def inspect_plot_properties() -> Callable:
                             1,
                         )
 
-                # Legend consistency
                 legend_states = [info["legend"]["visible"] for info in subplot_infos]
                 visible_count = sum(legend_states)
                 if visible_count == 0:

@@ -7,10 +7,7 @@ from matplotlib.image import AxesImage
 from matplotlib.container import BarContainer
 import matplotlib.legend
 
-
-type RGBA = Tuple[float, float, float, float]
-type Position = Tuple[float, float]
-type CollectionProperties = Dict[str, Any]
+from dr_plotter.types import RGBA, Position, CollectionProperties
 
 
 def extract_colors(obj: Any) -> List[RGBA]:
