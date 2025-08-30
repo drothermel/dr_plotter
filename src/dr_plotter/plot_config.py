@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dr_plotter.figure_config import FigureConfig
@@ -26,7 +26,7 @@ class StyleConfig:
     plot_styles: Optional[Dict[str, Any]] = field(default_factory=dict)
     fonts: Optional[Dict[str, Any]] = field(default_factory=dict)
     figure_styles: Optional[Dict[str, Any]] = field(default_factory=dict)
-    theme: Optional[str] = None
+    theme: Optional[Union[str, Theme]] = None
 
 
 @dataclass
@@ -46,36 +46,8 @@ class PlotConfig:
         preset_config = PLOT_CONFIGS[preset_name]
         return cls(**preset_config)
 
-    def with_layout(
-        self, *args: Union[int, Dict[str, Any]], **kwargs: Any
-    ) -> "PlotConfig":
-        if len(args) == 2 and isinstance(args[0], int) and isinstance(args[1], int):
-            layout_config = LayoutConfig(rows=args[0], cols=args[1], **kwargs)
-        elif len(args) == 1 and isinstance(args[0], LayoutConfig):
-            layout_config = args[0]
-        elif len(args) == 1 and isinstance(args[0], dict):
-            layout_config = LayoutConfig(**args[0], **kwargs)
-        else:
-            layout_config = LayoutConfig(**kwargs)
 
-        return replace(self, layout=layout_config)
 
-    def with_colors(self, colors: ColorPalette) -> "PlotConfig":
-        current_style = self._resolve_style_config()
-        new_style = replace(current_style, colors=colors)
-        return replace(self, style=new_style)
-
-    def with_legend(
-        self, style: Optional[str] = None, position: Optional[str] = None, **kwargs: Any
-    ) -> "PlotConfig":
-        legend_config = {}
-        if style is not None:
-            legend_config["style"] = style
-        if position is not None:
-            legend_config["position"] = position
-        legend_config.update(kwargs)
-
-        return replace(self, legend=legend_config)
 
     def _resolve_layout_config(self) -> LayoutConfig:
         if self.layout is None:
@@ -158,6 +130,9 @@ class PlotConfig:
     def _resolve_theme_from_style(self, style_config: StyleConfig) -> Optional[Theme]:
         if style_config.theme is None:
             return None
+
+        if isinstance(style_config.theme, Theme):
+            return style_config.theme
 
         from dr_plotter.theme import BASE_THEME, LINE_THEME, SCATTER_THEME, BAR_THEME
 
