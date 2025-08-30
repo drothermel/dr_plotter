@@ -3,10 +3,14 @@ from dr_plotter.figure import FigureManager
 from dr_plotter.figure_config import FigureConfig
 from dr_plotter.legend_manager import LegendConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_figure_legends
+from dr_plotter.scripting.verif_decorators import (
+    verify_figure_legends,
+    inspect_plot_properties,
+)
 from plot_data import ExampleData
 
 
+@inspect_plot_properties()
 @verify_figure_legends(
     expected_legend_count=1, legend_strategy="figure_below", expected_total_entries=4
 )

@@ -3,7 +3,7 @@ import itertools
 from dr_plotter.figure import FigureManager
 from dr_plotter.figure_config import FigureConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_example, verify_plot_properties
+from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from dr_plotter.theme import Theme, PlotStyles, BASE_THEME
 from plot_data import ExampleData
 
@@ -57,8 +57,8 @@ def create_vibrant_theme() -> Theme:
     )
 
 
-@verify_plot_properties(expected_channels=EXPECTED_CHANNELS)
-@verify_example(
+@inspect_plot_properties()
+@verify_plot(
     expected_legends=3,
     expected_channels=EXPECTED_CHANNELS,
     expected_legend_entries={

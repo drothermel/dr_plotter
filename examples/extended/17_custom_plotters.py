@@ -9,7 +9,7 @@ from dr_plotter.plotters.base import BasePlotter
 from dr_plotter.figure import FigureManager
 from dr_plotter.figure_config import FigureConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_example
+from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from dr_plotter.theme import BASE_THEME, Theme, PlotStyles
 from dr_plotter.types import VisualChannel
 from dr_plotter import consts
@@ -81,7 +81,8 @@ class ErrorBarPlotter(BasePlotter):
         )
 
 
-@verify_example(expected_legends=0)
+@inspect_plot_properties()
+@verify_plot(expected_legends=0)
 def main(args):
     # Verify our custom plotter is registered
     from dr_plotter.plotters import BasePlotter

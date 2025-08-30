@@ -69,6 +69,7 @@ class LegendRegistry:
 @dataclass
 class LegendConfig:
     strategy: str = "subplot"
+    layout_hint: Optional[str] = None
 
     def __post_init__(self) -> None:
         self.strategy = self._validate_and_convert_strategy(self.strategy)
@@ -236,7 +237,7 @@ class LegendManager:
         )
 
         result = self.positioning_calculator.calculate_positions(
-            figure_dimensions, legend_metadata
+            figure_dimensions, legend_metadata, layout_hint=self.config.layout_hint
         )
 
         default_pos = (
@@ -297,7 +298,7 @@ class LegendManager:
             )
 
             result = self.positioning_calculator.calculate_positions(
-                figure_dimensions, legend_metadata
+                figure_dimensions, legend_metadata, layout_hint=self.config.layout_hint
             )
 
             default_pos = (

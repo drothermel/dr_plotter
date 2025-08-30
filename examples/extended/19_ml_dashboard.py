@@ -6,12 +6,13 @@ Complete ML experiment visualization with multiple metrics and hyperparameters.
 from dr_plotter.figure import FigureManager
 from dr_plotter.figure_config import FigureConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_example
+from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from dr_plotter import consts
 from plot_data import ExampleData
 
 
-@verify_example(expected_legends=4)
+@inspect_plot_properties()
+@verify_plot(expected_legends=4)
 def main(args):
     # Generate comprehensive ML experiment data
     ml_data = ExampleData.ml_training_curves(

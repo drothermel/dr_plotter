@@ -20,7 +20,7 @@ from dr_plotter.theme import Theme, PlotStyles, AxesStyles, FigureStyles, BASE_T
 from dr_plotter import consts
 from dr_plotter.scripting.datadec_utils import get_datadec_functions
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import report_subplot_line_colors
+from dr_plotter.scripting.verif_decorators import inspect_plot_properties
 
 # Get DataDecide functions once at module level
 DataDecide, select_params, select_data = get_datadec_functions()
@@ -105,7 +105,7 @@ def subset_data_for_plotting(
     return filtered_df
 
 
-@report_subplot_line_colors()
+@inspect_plot_properties()
 def plot_training_curves(
     df: pd.DataFrame,
     target_recipes: List[str],

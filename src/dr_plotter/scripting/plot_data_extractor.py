@@ -18,8 +18,9 @@ def extract_colors(obj: Any) -> List[RGBA]:
         return [mcolors.to_rgba(color) for color in obj.get_facecolors()]
     elif isinstance(obj, PolyCollection):
         facecolors = obj.get_facecolors()
-        if len(facecolors) == 0:
-            return [(0.0, 0.0, 0.0, 1.0)]
+        assert len(facecolors) > 0, (
+            "PolyCollection has no facecolors - check matplotlib configuration"
+        )
         return [mcolors.to_rgba(color) for color in facecolors]
     elif isinstance(obj, BarContainer):
         return [mcolors.to_rgba(patch.get_facecolor()) for patch in obj.patches]
@@ -45,7 +46,9 @@ def extract_colors(obj: Any) -> List[RGBA]:
     elif hasattr(obj, "get_color"):
         return [mcolors.to_rgba(obj.get_color())]
     else:
-        return [(0.0, 0.0, 0.0, 1.0)]
+        assert False, (
+            f"Cannot extract colors from object type {type(obj)} - unsupported matplotlib object"
+        )
 
 
 def extract_markers(obj: Any) -> List[str]:
@@ -72,7 +75,9 @@ def extract_markers(obj: Any) -> List[str]:
         marker = obj.get_marker()
         return [str(marker) if marker and marker != "None" else "None"]
     else:
-        return ["unknown"]
+        assert False, (
+            f"Cannot extract markers from object type {type(obj)} - unsupported matplotlib object"
+        )
 
 
 def extract_sizes(obj: Any) -> List[float]:
@@ -88,7 +93,9 @@ def extract_sizes(obj: Any) -> List[float]:
     elif hasattr(obj, "get_markersize"):
         return [float(obj.get_markersize())]
     else:
-        return [1.0]
+        assert False, (
+            f"Cannot extract sizes from object type {type(obj)} - unsupported matplotlib object"
+        )
 
 
 def extract_positions(obj: Any) -> List[Position]:
@@ -107,16 +114,21 @@ def extract_alphas(obj: Any) -> List[float]:
         alpha = obj.get_alpha()
         if alpha is None:
             facecolors = obj.get_facecolors()
-            if len(facecolors) > 0 and len(facecolors[0]) >= 4:
-                return [float(facecolors[0][3])]
-            return [1.0]
+            assert len(facecolors) > 0, (
+                "PolyCollection has no facecolors for alpha extraction"
+            )
+            assert len(facecolors[0]) >= 4, (
+                "PolyCollection facecolor missing alpha channel"
+            )
+            return [float(facecolors[0][3])]
         return [float(alpha)]
     elif isinstance(obj, list) and obj and hasattr(obj[0], "get_alpha"):
         alphas = []
         for line in obj:
             alpha = line.get_alpha()
-            if alpha is None:
-                alpha = 1.0
+            assert alpha is not None, (
+                "Line object missing alpha value - check matplotlib configuration"
+            )
             alphas.append(float(alpha))
         return alphas
     else:
@@ -133,13 +145,17 @@ def extract_styles(obj: Any) -> List[str]:
             if edge_rgba[3] > 0 and linewidths[0] > 0:
                 return ["-"]
         return [""]
+    elif isinstance(obj, BarContainer):
+        return ["-"] * len(obj.patches)
     elif isinstance(obj, list) and obj and hasattr(obj[0], "get_linestyle"):
         return [line.get_linestyle() for line in obj]
     elif hasattr(obj, "get_linestyle"):
         style = obj.get_linestyle()
         return [str(style) if style is not None else "-"]
     else:
-        return ["-"]
+        assert False, (
+            f"Cannot extract styles from object type {type(obj)} - unsupported matplotlib object"
+        )
 
 
 def extract_legend_properties(ax: Any) -> Dict[str, Any]:
@@ -303,51 +319,57 @@ def _detect_collection_type(obj: Any) -> str:
 
 
 def _extract_color_from_handle(handle: Any) -> RGBA:
-    try:
-        if hasattr(handle, "get_markerfacecolor"):
-            color = handle.get_markerfacecolor()
-            if (isinstance(color, str) and color == "none") or color is None:
-                color = handle.get_color()
-        elif hasattr(handle, "get_facecolor"):
-            color = handle.get_facecolor()
-        elif hasattr(handle, "get_color"):
+    assert handle is not None, "Handle cannot be None for color extraction"
+
+    if hasattr(handle, "get_markerfacecolor"):
+        color = handle.get_markerfacecolor()
+        if (isinstance(color, str) and color == "none") or color is None:
             color = handle.get_color()
-        else:
-            color = "black"
-        return mcolors.to_rgba(color)
-    except (ValueError, TypeError):
-        return (0.0, 0.0, 0.0, 1.0)
+    elif hasattr(handle, "get_facecolor"):
+        color = handle.get_facecolor()
+    elif hasattr(handle, "get_color"):
+        color = handle.get_color()
+    else:
+        assert False, (
+            f"Handle {type(handle)} does not support color extraction - check matplotlib configuration"
+        )
+
+    assert color is not None, (
+        "Color extraction returned None - matplotlib handle may be invalid"
+    )
+    return mcolors.to_rgba(color)
 
 
 def _extract_marker_from_handle(handle: Any) -> str:
-    try:
-        if hasattr(handle, "get_marker"):
-            marker = handle.get_marker()
-            return str(marker) if marker and marker != "None" else "None"
-        else:
-            return "patch"
-    except (ValueError, TypeError):
-        return "unknown"
+    assert handle is not None, "Handle cannot be None for marker extraction"
+
+    if hasattr(handle, "get_marker"):
+        marker = handle.get_marker()
+        return str(marker) if marker and marker != "None" else "None"
+    else:
+        return "patch"
 
 
 def _extract_size_from_handle(handle: Any) -> float:
-    try:
-        if hasattr(handle, "get_markersize"):
-            return float(handle.get_markersize())
-        else:
-            return 1.0
-    except (ValueError, TypeError):
+    assert handle is not None, "Handle cannot be None for size extraction"
+
+    if hasattr(handle, "get_markersize"):
+        size = handle.get_markersize()
+        assert size is not None, (
+            "Marker size extraction returned None - matplotlib handle may be invalid"
+        )
+        return float(size)
+    else:
         return 1.0
 
 
 def _extract_style_from_handle(handle: Any) -> str:
-    try:
-        if hasattr(handle, "get_linestyle"):
-            style = handle.get_linestyle()
-            return str(style) if style is not None else "-"
-        else:
-            return "-"
-    except (ValueError, TypeError):
+    assert handle is not None, "Handle cannot be None for style extraction"
+
+    if hasattr(handle, "get_linestyle"):
+        style = handle.get_linestyle()
+        return str(style) if style is not None else "-"
+    else:
         return "-"
 
 
@@ -700,6 +722,112 @@ def check_all_subplot_legends(figure: plt.Figure) -> Dict[int, Dict[str, Any]]:
             results[i] = is_legend_actually_visible(ax, figure)
 
     return results
+
+
+def verify_legend_visibility(
+    figure: plt.Figure,
+    expected_visible_count: Optional[int] = None,
+    fail_on_missing: bool = True,
+) -> Dict[str, Any]:
+    from .verification_formatter import (
+        print_section_header,
+        print_success,
+        print_failure,
+        print_warning,
+        print_critical,
+        print_info,
+        print_item_result,
+    )
+
+    results = check_all_subplot_legends(figure)
+
+    visible_count = sum(1 for result in results.values() if result["visible"])
+    total_count = len(results)
+
+    summary = {
+        "total_subplots": total_count,
+        "visible_legends": visible_count,
+        "missing_legends": total_count - visible_count,
+        "success": True,
+        "issues": [],
+        "details": results,
+    }
+
+    print_section_header("LEGEND VISIBILITY VERIFICATION")
+    print_info(f"Total subplots: {total_count}")
+    print_info(f"Legends visible: {visible_count}")
+    if expected_visible_count is not None:
+        print_info(f"Expected visible: {expected_visible_count}")
+    print_info(f"Legends missing: {total_count - visible_count}")
+
+    for i, result in results.items():
+        if expected_visible_count is not None and expected_visible_count == 0:
+            if result["visible"]:
+                print_item_result(f"Subplot {i}", False, "Unexpected legend found", 1)
+            else:
+                print_item_result(f"Subplot {i}", True, "No legend (expected)", 1)
+        else:
+            print_item_result(f"Subplot {i}", result["visible"], result["reason"], 1)
+
+        if not result["visible"] and expected_visible_count != 0:
+            summary["issues"].append(
+                {
+                    "subplot": i,
+                    "reason": result["reason"],
+                    "exists": result["exists"],
+                    "marked_visible": result["marked_visible"],
+                    "has_content": result["has_content"],
+                }
+            )
+        elif result["visible"] and expected_visible_count == 0:
+            summary["issues"].append(
+                {
+                    "subplot": i,
+                    "reason": "Unexpected legend found",
+                    "exists": result["exists"],
+                    "marked_visible": result["marked_visible"],
+                    "has_content": result["has_content"],
+                }
+            )
+
+    if expected_visible_count is not None:
+        if visible_count != expected_visible_count:
+            summary["success"] = False
+            if expected_visible_count == 0:
+                print_failure(
+                    f"EXPECTED no legends, but found {visible_count} unexpected legend(s)"
+                )
+            else:
+                print_failure(
+                    f"EXPECTED {expected_visible_count} visible legends, but found {visible_count}"
+                )
+        else:
+            if expected_visible_count == 0:
+                print_success("EXPECTED no legends and found none - perfect!")
+            else:
+                print_success(
+                    f"EXPECTED {expected_visible_count} legends and found {visible_count} - perfect!"
+                )
+    else:
+        if visible_count == 0:
+            if not fail_on_missing:
+                print_success("No legends found (not treated as failure)")
+            else:
+                summary["success"] = False
+                print_critical("CRITICAL: No legends are visible in any subplot!")
+        elif visible_count < total_count:
+            if fail_on_missing:
+                summary["success"] = False
+            print_warning(
+                f"WARNING: {total_count - visible_count} subplot(s) missing legends"
+            )
+
+    if summary["success"]:
+        print_success("All legend visibility checks passed!")
+    else:
+        print_failure("Legend visibility verification FAILED!")
+
+    return summary
 
 
 def verify_legend_visibility_core(

@@ -6,11 +6,12 @@ Demonstrates creating publication-quality figures with proper styling.
 from dr_plotter.figure import FigureManager
 from dr_plotter.figure_config import FigureConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_example
+from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from plot_data import ExampleData
 
 
-@verify_example(expected_legends=2)
+@inspect_plot_properties()
+@verify_plot(expected_legends=2)
 def main(args):
     # Create publication-style figure
     with FigureManager(figure=FigureConfig(rows=2, cols=3, figsize=(18, 12))) as fm:

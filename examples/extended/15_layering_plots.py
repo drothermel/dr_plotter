@@ -6,11 +6,12 @@ Demonstrates combining different plot types in the same subplot.
 import dr_plotter.api as drp
 import matplotlib.pyplot as plt
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_example
+from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from plot_data import ExampleData
 
 
-@verify_example(expected_legends=2)
+@inspect_plot_properties()
+@verify_plot(expected_legends=2)
 def main(args):
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
     fig.suptitle("Layering: Combining Multiple Plot Types", fontsize=16)
