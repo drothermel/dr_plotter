@@ -8,17 +8,14 @@ from matplotlib.container import BarContainer
 import matplotlib.legend
 
 from dr_plotter.types import RGBA, Position, CollectionProperties
+from dr_plotter.artist_utils import extract_colors_from_polycollection
 
 
 def extract_colors(obj: Any) -> List[RGBA]:
     if isinstance(obj, PathCollection):
         return [mcolors.to_rgba(color) for color in obj.get_facecolors()]
     elif isinstance(obj, PolyCollection):
-        facecolors = obj.get_facecolors()
-        assert len(facecolors) > 0, (
-            "PolyCollection has no facecolors - check matplotlib configuration"
-        )
-        return [mcolors.to_rgba(color) for color in facecolors]
+        return extract_colors_from_polycollection(obj)
     elif isinstance(obj, BarContainer):
         return [mcolors.to_rgba(patch.get_facecolor()) for patch in obj.patches]
     elif isinstance(obj, list) and obj and hasattr(obj[0], "get_color"):
