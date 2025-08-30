@@ -64,13 +64,13 @@ class HeatmapPlotter(BasePlotter):
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
-        self.style_applicator.register_post_processor(
+        self.styler.register_post_processor(
             self.plotter_name, "colorbar", self._style_colorbar
         )
-        self.style_applicator.register_post_processor(
+        self.styler.register_post_processor(
             self.plotter_name, "ticks", self._style_ticks
         )
-        self.style_applicator.register_post_processor(
+        self.styler.register_post_processor(
             self.plotter_name, "cell_text", self._style_cell_text
         )
 
@@ -85,7 +85,7 @@ class HeatmapPlotter(BasePlotter):
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         if "cmap" not in kwargs:
-            kwargs["cmap"] = self.style_applicator.get_style_with_fallback("cmap")
+            kwargs["cmap"] = self.styler.get_style("cmap")
 
         im = ax.imshow(data, **self._filtered_plot_kwargs)
 
@@ -98,7 +98,7 @@ class HeatmapPlotter(BasePlotter):
             "ticks": ax,
             "cell_text": ax,
         }
-        self.style_applicator.apply_post_processing(self.plotter_name, artists)
+        self.styler.apply_post_processing(self.plotter_name, artists)
 
         self._apply_styling(ax)
 
@@ -122,7 +122,7 @@ class HeatmapPlotter(BasePlotter):
                 label_text,
                 fontsize=styles.get(
                     "fontsize",
-                    self.style_applicator.get_style_with_fallback("label_fontsize"),
+                    self.styler.get_style("label_fontsize"),
                 ),
                 color=styles.get("color", self.theme.get("label_color")),
             )
@@ -135,7 +135,7 @@ class HeatmapPlotter(BasePlotter):
         ax.set_xticklabels(data.columns)
         ax.set_yticklabels(data.index)
 
-        xlabel_pos = self.style_applicator.get_style_with_fallback("xlabel_pos")
+        xlabel_pos = self.styler.get_style("xlabel_pos")
         if xlabel_pos == "top":
             ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False)
             plt.setp(

@@ -62,12 +62,10 @@ class ViolinPlotter(BasePlotter):
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
-        self.style_applicator.register_post_processor(
+        self.styler.register_post_processor(
             "violin", "bodies", self._style_violin_bodies
         )
-        self.style_applicator.register_post_processor(
-            "violin", "stats", self._style_violin_stats
-        )
+        self.styler.register_post_processor("violin", "stats", self._style_violin_stats)
 
     def _style_violin_bodies(self, bodies: Any, styles: Dict[str, Any]) -> None:
         for pc in bodies:
@@ -101,12 +99,12 @@ class ViolinPlotter(BasePlotter):
         self, parts: Dict[str, Any], label: Optional[str] = None
     ) -> None:
         artists = self._collect_all_parts_to_style(parts)
-        self.style_applicator.apply_post_processing("violin", artists)
+        self.styler.apply_post_processing("violin", artists)
         if self._should_create_legend():
             label = (
                 label
                 if label is not None
-                else self.style_applicator.get_style_with_fallback("missing_label_str")
+                else self.styler.get_style("missing_label_str")
             )
             proxy = self._create_proxy_artist_from_bodies(parts["bodies"])
             self._register_legend_entry_if_valid(proxy, label)
@@ -116,9 +114,9 @@ class ViolinPlotter(BasePlotter):
             "bodies": parts["bodies"],
         }
         stats_parts = [parts[bar] for bar in ["cbars", "cmins", "cmaxes"]]
-        if self.style_applicator.get_style_with_fallback("showmeans"):
+        if self.styler.get_style("showmeans") and "cmeans" in parts:
             stats_parts.append(parts["cmeans"])
-        if self.style_applicator.get_style_with_fallback("showmedians"):
+        if self.styler.get_style("showmedians") and "cmedians" in parts:
             stats_parts.append(parts["cmedians"])
         artists["stats"] = stats_parts
         return artists

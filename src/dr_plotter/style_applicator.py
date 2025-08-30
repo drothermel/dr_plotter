@@ -134,7 +134,7 @@ class StyleApplicator:
             artist_type=artist_type,
         )
 
-    def get_style_with_fallback(self, key: str, default: Any = None) -> Any:
+    def get_style(self, key: str, default: Any = None) -> Any:
         """
         Get style with enhanced fallback resolution.
         Priority: kwargs → theme → default
@@ -145,9 +145,7 @@ class StyleApplicator:
         """
         Get computed style value (e.g., size multiplication).
         """
-        base_value = self.get_style_with_fallback(
-            base_key, 1.0 if "size" in base_key else 0.0
-        )
+        base_value = self.get_style(base_key, 1.0 if "size" in base_key else 0.0)
 
         if operation == "multiply":
             return base_value * factor
