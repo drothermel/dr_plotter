@@ -98,7 +98,7 @@ class ViolinPlotter(BasePlotter):
     def _apply_post_processing(
         self, parts: Dict[str, Any], label: Optional[str] = None
     ) -> None:
-        artists = self._collect_all_parts_to_style(parts)
+        artists = self._collect_artists_to_style(parts)
         self.styler.apply_post_processing("violin", artists)
         if self._should_create_legend():
             label = (
@@ -109,17 +109,21 @@ class ViolinPlotter(BasePlotter):
             proxy = self._create_proxy_artist_from_bodies(parts["bodies"])
             self._register_legend_entry_if_valid(proxy, label)
 
-    def _collect_all_parts_to_style(self, parts: Dict[str, Any]) -> Dict[str, Any]:
-        artists = {
+    def _collect_artists_to_style(self, parts: Dict[str, Any]) -> Dict[str, Any]:
+        assert "bodies" in parts, "Bodies must be present"
+        stats_parts = [parts["cbars"]]
+        for sub_part, gate_key in [
+            ("cmeans", "showmeans"),
+            ("cmedians", "showmedians"),
+            ("cmins", "showextrema"),
+            ("cmaxes", "showextrema"),
+        ]:
+            if self.styler.get_style(gate_key):
+                stats_parts.append(parts[sub_part])
+        return {
+            "stats": stats_parts,
             "bodies": parts["bodies"],
         }
-        stats_parts = [parts[bar] for bar in ["cbars", "cmins", "cmaxes"]]
-        if self.styler.get_style("showmeans") and "cmeans" in parts:
-            stats_parts.append(parts["cmeans"])
-        if self.styler.get_style("showmedians") and "cmedians" in parts:
-            stats_parts.append(parts["cmedians"])
-        artists["stats"] = stats_parts
-        return artists
 
     def _create_proxy_artist_from_bodies(self, bodies: List[Any]) -> Optional[Patch]:
         if not bodies:
