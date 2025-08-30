@@ -100,29 +100,28 @@ class ViolinPlotter(BasePlotter):
     def _apply_post_processing(
         self, parts: Dict[str, Any], label: Optional[str] = None
     ) -> None:
-        if not self._should_create_legend():
-            return
-
-        artists = {}
-        if "bodies" in parts:
-            artists["bodies"] = parts["bodies"]
-
-        stats_parts = []
-        for part_name in ("cbars", "cmins", "cmaxes", "cmeans"):
-            if part_name in parts:
-                stats_parts.append(parts[part_name])
-
-        if stats_parts:
-            for stats in stats_parts:
-                artists["stats"] = stats
-                self.style_applicator.apply_post_processing("violin", {"stats": stats})
-
-        if artists:
-            self.style_applicator.apply_post_processing("violin", artists)
-
-        if label and "bodies" in parts and parts["bodies"]:
+        artists = self._collect_all_parts_to_style(parts)
+        self.style_applicator.apply_post_processing("violin", artists)
+        if self._should_create_legend():
+            label = (
+                label
+                if label is not None
+                else self.style_applicator.get_style_with_fallback("missing_label_str")
+            )
             proxy = self._create_proxy_artist_from_bodies(parts["bodies"])
             self._register_legend_entry_if_valid(proxy, label)
+
+    def _collect_all_parts_to_style(self, parts: Dict[str, Any]) -> Dict[str, Any]:
+        artists = {
+            "bodies": parts["bodies"],
+        }
+        stats_parts = [parts[bar] for bar in ["cbars", "cmins", "cmaxes"]]
+        if self.style_applicator.get_style_with_fallback("showmeans"):
+            stats_parts.append(parts["cmeans"])
+        if self.style_applicator.get_style_with_fallback("showmedians"):
+            stats_parts.append(parts["cmedians"])
+        artists["stats"] = stats_parts
+        return artists
 
     def _create_proxy_artist_from_bodies(self, bodies: List[Any]) -> Optional[Patch]:
         if not bodies:

@@ -167,6 +167,7 @@ BASE_THEME = Theme(
     text_va="center",
     alpha_min=0.3,
     alpha_max=1.0,
+    missing_label_str="(empty label)",
     **{
         consts.get_cycle_key("hue"): itertools.cycle(BASE_COLORS),
         consts.get_cycle_key("style"): itertools.cycle(["-", "--", ":", "-."]),
