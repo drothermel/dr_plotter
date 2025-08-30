@@ -46,9 +46,6 @@ class PlotConfig:
         preset_config = PLOT_CONFIGS[preset_name]
         return cls(**preset_config)
 
-
-
-
     def _resolve_layout_config(self) -> LayoutConfig:
         if self.layout is None:
             return LayoutConfig()

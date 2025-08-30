@@ -1,7 +1,6 @@
 from typing import Any
 from dr_plotter.figure import FigureManager
-from dr_plotter.figure_config import FigureConfig
-from dr_plotter.legend_manager import LegendConfig
+from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import (
     verify_figure_legends,
@@ -33,14 +32,10 @@ def main(args: Any) -> Any:
     assert len(filtered_data.groupby("algorithm")) == 3
 
     with FigureManager(
-        figure=FigureConfig(rows=1, cols=2, figsize=(16, 6)),
-        legend=LegendConfig(
-            strategy="grouped",
-            ncol=2,
-            layout_bottom_margin=0.1,
-            bbox_y_offset=0.1,
-            channel_titles={"hue": "Experiment Type", "marker": "Test Condition"},
-        ),
+        PlotConfig(
+            layout={"rows": 1, "cols": 2, "figsize": (16, 6)},
+            legend={"strategy": "grouped"},
+        )
     ) as fm:
         fm.fig.suptitle(
             "Example 9: Cross Group-By + Legend Types - Split Legend System",

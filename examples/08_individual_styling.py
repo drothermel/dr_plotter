@@ -1,7 +1,7 @@
 from typing import Any
 import itertools
 from dr_plotter.figure import FigureManager
-from dr_plotter.figure_config import FigureConfig
+from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from dr_plotter.theme import Theme, PlotStyles, BASE_THEME
@@ -71,12 +71,20 @@ def main(args: Any) -> Any:
     data = ExampleData.get_individual_styling_data()
 
     with FigureManager(
-        figure=FigureConfig(
-            rows=2,
-            cols=3,
-            figsize=(18, 12),
-            x_labels=[[None, None, None], ["Category", "Values", "Column Index"]],
-            y_labels=[["Y Coordinate", "Performance", "Value"], ["Count", None, None]],
+        PlotConfig(
+            layout={
+                "rows": 2,
+                "cols": 3,
+                "figsize": (18, 12),
+                "x_labels": [
+                    [None, None, None],
+                    ["Category", "Values", "Column Index"],
+                ],
+                "y_labels": [
+                    ["Y Coordinate", "Performance", "Value"],
+                    ["Count", None, None],
+                ],
+            }
         )
     ) as fm:
         fm.fig.suptitle("Individual Styling: Per-Subplot Customization", fontsize=16)

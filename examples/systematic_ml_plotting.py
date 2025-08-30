@@ -7,13 +7,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import datadec.constants
 from dr_plotter.figure import FigureManager
-from dr_plotter.figure_config import FigureConfig
-from dr_plotter.legend_manager import LegendConfig
-from dr_plotter.scripting.datadec_utils import (
-    get_clean_datadec_df,
-    validate_cli_params,
-    validate_cli_data,
-)
+from dr_plotter.plot_config import PlotConfig
+from dr_plotter.scripting.datadec_utils import get_datadec_functions
+
+DataDecide, select_params, select_data = get_datadec_functions()
 
 
 CUSTOM_RECIPE_FAMILIES = {
@@ -125,7 +122,8 @@ OLMES_PERFORMANCE_RECIPE_CHUNKS = {
 
 
 def get_available_data_info() -> Tuple[List[str], List[str], List[str], List[str]]:
-    df = get_clean_datadec_df(filter_types=["ppl", "max_steps"])
+    dd = DataDecide()
+    df = dd.full_eval
     available_recipes = sorted(df["data"].unique())
     available_sizes = sorted(df["params"].unique())
 
@@ -150,7 +148,8 @@ def load_and_prepare_data(include_seeds: bool = False) -> pd.DataFrame:
         filter_types.append("seed")
 
     try:
-        return get_clean_datadec_df(filter_types=filter_types)
+        dd = DataDecide()
+        return dd.full_eval
     except ImportError as e:
         print(f"Error: {e}")
         sys.exit(1)
@@ -249,20 +248,22 @@ def create_single_metric_plots(
     figheight = 6.0  # Fixed height for single row
 
     with FigureManager(
-        figure=FigureConfig(
-            rows=1,  # Single row
-            cols=len(model_sizes),
-            figsize=(figwidth, figheight),
-            tight_layout_pad=0.8,
-            subplot_kwargs={"sharey": True},
-        ),
-        legend=LegendConfig(
-            strategy="figure",
-            ncol=min(len(target_recipes), 4),  # Reduce columns
-            layout_top_margin=0.15,  # More space for suptitle
-            layout_bottom_margin=0.25,  # Adjust legend space
-            bbox_y_offset=0.08,  # Reduce offset
-        ),
+        PlotConfig(
+            layout={
+                "rows": 1,  # Single row
+                "cols": len(model_sizes),
+                "figsize": (figwidth, figheight),
+                "tight_layout_pad": 0.8,
+                "subplot_kwargs": {"sharey": True},
+            },
+            legend={
+                "strategy": "figure",
+                "ncol": min(len(target_recipes), 4),  # Reduce columns
+                "layout_top_margin": 0.15,  # More space for suptitle
+                "layout_bottom_margin": 0.25,  # Adjust legend space
+                "bbox_y_offset": 0.08,  # Reduce offset
+            },
+        )
     ) as fm:
         fm.fig.suptitle(
             f"{metric_labels[metric_name]}: {len(target_recipes)} Recipes × {len(model_sizes)} Model Sizes",
@@ -394,20 +395,22 @@ def create_ppl_group_plots(
     figheight = len(model_sizes) * 5.5  # No max limit - scale indefinitely
 
     with FigureManager(
-        figure=FigureConfig(
-            rows=len(model_sizes),
-            cols=len(target_recipes),
-            figsize=(figwidth, figheight),
-            tight_layout_pad=0.5,
-            subplot_kwargs={"sharey": "row"},
-        ),
-        legend=LegendConfig(
-            strategy="figure",
-            ncol=min(len(ppl_metrics), 4),
-            layout_top_margin=0.05,
-            layout_bottom_margin=0.4,
-            bbox_y_offset=0.02,
-        ),
+        PlotConfig(
+            layout={
+                "rows": len(model_sizes),
+                "cols": len(target_recipes),
+                "figsize": (figwidth, figheight),
+                "tight_layout_pad": 0.5,
+                "subplot_kwargs": {"sharey": "row"},
+            },
+            legend={
+                "strategy": "figure",
+                "ncol": min(len(ppl_metrics), 4),
+                "layout_top_margin": 0.05,
+                "layout_bottom_margin": 0.4,
+                "bbox_y_offset": 0.02,
+            },
+        )
     ) as fm:
         fm.fig.suptitle(
             f"Perplexity Metrics: {len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
@@ -502,20 +505,22 @@ def create_olmes_group_plots(
     figheight = len(model_sizes) * 5.5  # No max limit - scale indefinitely
 
     with FigureManager(
-        figure=FigureConfig(
-            rows=len(model_sizes),
-            cols=len(target_recipes),
-            figsize=(figwidth, figheight),
-            tight_layout_pad=0.5,
-            subplot_kwargs={"sharey": "row"},
-        ),
-        legend=LegendConfig(
-            strategy="figure",
-            ncol=min(len(olmes_metrics), 4),
-            layout_top_margin=0.05,
-            layout_bottom_margin=0.4,
-            bbox_y_offset=0.02,
-        ),
+        PlotConfig(
+            layout={
+                "rows": len(model_sizes),
+                "cols": len(target_recipes),
+                "figsize": (figwidth, figheight),
+                "tight_layout_pad": 0.5,
+                "subplot_kwargs": {"sharey": "row"},
+            },
+            legend={
+                "strategy": "figure",
+                "ncol": min(len(olmes_metrics), 4),
+                "layout_top_margin": 0.05,
+                "layout_bottom_margin": 0.4,
+                "bbox_y_offset": 0.02,
+            },
+        )
     ) as fm:
         fm.fig.suptitle(
             f"OLMES Task Metrics: {len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
@@ -643,20 +648,22 @@ def create_recipe_family_chunk_plots(
     figheight = len(model_sizes) * 4.5  # No max limit - scale indefinitely
 
     with FigureManager(
-        figure=FigureConfig(
-            rows=len(model_sizes),
-            cols=len(target_recipes),
-            figsize=(figwidth, figheight),
-            tight_layout_pad=0.5,
-            subplot_kwargs={"sharey": "row"},
-        ),
-        legend=LegendConfig(
-            strategy="figure",
-            ncol=min(len(selected_metrics), 4),
-            layout_top_margin=0.05,
-            layout_bottom_margin=0.4,
-            bbox_y_offset=0.02,
-        ),
+        PlotConfig(
+            layout={
+                "rows": len(model_sizes),
+                "cols": len(target_recipes),
+                "figsize": (figwidth, figheight),
+                "tight_layout_pad": 0.5,
+                "subplot_kwargs": {"sharey": "row"},
+            },
+            legend={
+                "strategy": "figure",
+                "ncol": min(len(selected_metrics), 4),
+                "layout_top_margin": 0.05,
+                "layout_bottom_margin": 0.4,
+                "bbox_y_offset": 0.02,
+            },
+        )
     ) as fm:
         fm.fig.suptitle(
             f"Recipe Family '{family_name}': {len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
@@ -763,19 +770,21 @@ def create_size_chunk_plots(
     figwidth = max(15, len(size_chunk) * 3.5)
 
     with FigureManager(
-        figure=FigureConfig(
-            rows=len(selected_metrics),
-            cols=len(size_chunk),
-            figsize=(figwidth, len(selected_metrics) * 3),
-            tight_layout_pad=0.3,
-            subplot_kwargs={"sharey": "row"},
-        ),
-        legend=LegendConfig(
-            strategy="figure",
-            ncol=min(len(target_recipes), 6),
-            layout_top_margin=0.1,
-            layout_bottom_margin=0.4,
-        ),
+        PlotConfig(
+            layout={
+                "rows": len(selected_metrics),
+                "cols": len(size_chunk),
+                "figsize": (figwidth, len(selected_metrics) * 3),
+                "tight_layout_pad": 0.3,
+                "subplot_kwargs": {"sharey": "row"},
+            },
+            legend={
+                "strategy": "figure",
+                "ncol": min(len(target_recipes), 6),
+                "layout_top_margin": 0.1,
+                "layout_bottom_margin": 0.4,
+            },
+        )
     ) as fm:
         fm.fig.suptitle(
             f"Model Size Chunk {chunk_idx}: {len(selected_metrics)} Metrics × {len(size_chunk)} Sizes",
@@ -944,8 +953,8 @@ def main() -> None:
         return
 
     try:
-        validated_recipes = validate_cli_data(args.recipes)
-        validated_model_sizes = validate_cli_params(args.model_sizes)
+        validated_recipes = args.recipes
+        validated_model_sizes = args.model_sizes
     except ImportError as e:
         print(f"Error: {e}")
         sys.exit(1)

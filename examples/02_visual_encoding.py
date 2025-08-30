@@ -4,7 +4,7 @@ Demonstrates hue_by, marker_by, and other visual encoding parameters.
 """
 
 from dr_plotter.figure import FigureManager
-from dr_plotter.figure_config import FigureConfig
+from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from plot_data import ExampleData
@@ -31,12 +31,17 @@ EXPECTED_CHANNELS = {
 )
 def main(args):
     with FigureManager(
-        figure=FigureConfig(
-            rows=2,
-            cols=2,
-            figsize=(15, 12),
-            x_labels=[["Time (units)", "X Coordinate"], ["Category", "Time (units)"]],
-            y_labels=[["Value", None], ["Distribution", None]],
+        PlotConfig(
+            layout={
+                "rows": 2,
+                "cols": 2,
+                "figsize": (15, 12),
+                "x_labels": [
+                    ["Time (units)", "X Coordinate"],
+                    ["Category", "Time (units)"],
+                ],
+                "y_labels": [["Value", None], ["Distribution", None]],
+            }
         )
     ) as fm:
         fm.fig.suptitle(

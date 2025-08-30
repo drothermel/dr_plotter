@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from dr_plotter.figure import FigureManager
-from dr_plotter.figure_config import FigureConfig
+from dr_plotter.plot_config import PlotConfig
 
 
 def create_ml_training_data() -> pd.DataFrame:
@@ -37,7 +37,9 @@ def example_1_basic_2d_faceting() -> None:
 
     data = create_ml_training_data()
 
-    with FigureManager(figure=FigureConfig(rows=4, cols=3, figsize=(18, 16))) as fm:
+    with FigureManager(
+        PlotConfig(layout={"rows": 4, "cols": 3, "figsize": (18, 16)})
+    ) as fm:
         fm.plot_faceted(
             data=data,
             plot_type="line",
@@ -77,7 +79,9 @@ def example_2_grid_layouts() -> None:
     data["metric_row"] = data["metric"].map(lambda m: metric_to_grid[m][0])
     data["metric_col"] = data["metric"].map(lambda m: metric_to_grid[m][1])
 
-    with FigureManager(figure=FigureConfig(rows=2, cols=3, figsize=(18, 12))) as fm:
+    with FigureManager(
+        PlotConfig(layout={"rows": 2, "cols": 3, "figsize": (18, 12)})
+    ) as fm:
         fm.plot_faceted(
             data=data,
             plot_type="scatter",
@@ -102,7 +106,9 @@ def example_3_layered_faceting() -> None:
     scatter_data = data[data["step"] % 50 == 0]
     line_data = data[data["step"] % 20 == 0]
 
-    with FigureManager(figure=FigureConfig(rows=4, cols=3, figsize=(18, 16))) as fm:
+    with FigureManager(
+        PlotConfig(layout={"rows": 4, "cols": 3, "figsize": (18, 16)})
+    ) as fm:
         fm.plot_faceted(
             data=scatter_data,
             plot_type="scatter",
@@ -138,7 +144,9 @@ def example_4_targeted_plotting() -> None:
 
     data = create_ml_training_data()
 
-    with FigureManager(figure=FigureConfig(rows=4, cols=3, figsize=(18, 16))) as fm:
+    with FigureManager(
+        PlotConfig(layout={"rows": 4, "cols": 3, "figsize": (18, 16)})
+    ) as fm:
         fm.plot_faceted(
             data=data,
             plot_type="line",
@@ -184,7 +192,9 @@ def example_5_custom_subplot_configuration() -> None:
 
     xlim = [[(0, 500), (0, 800), (100, 900)], [(50, 600), (0, 1000), (200, 800)]]
 
-    with FigureManager(figure=FigureConfig(rows=4, cols=3, figsize=(18, 16))) as fm:
+    with FigureManager(
+        PlotConfig(layout={"rows": 4, "cols": 3, "figsize": (18, 16)})
+    ) as fm:
         fm.plot_faceted(
             data=data,
             plot_type="scatter",
@@ -243,7 +253,9 @@ def example_6_migration_comparison() -> None:
     print(")")
     print("```")
 
-    with FigureManager(figure=FigureConfig(rows=4, cols=3, figsize=(18, 16))) as fm:
+    with FigureManager(
+        PlotConfig(layout={"rows": 4, "cols": 3, "figsize": (18, 16)})
+    ) as fm:
         fm.plot_faceted(
             data=data,
             plot_type="line",

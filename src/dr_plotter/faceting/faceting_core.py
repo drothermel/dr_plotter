@@ -184,7 +184,9 @@ def _plot_scatter_data(
 def _plot_bar_data(
     ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs
 ) -> None:
-    ax.bar(data[config.x], data[config.y], **kwargs)
+    # Remove parameters that bar plots don't support
+    filtered_kwargs = {k: v for k, v in kwargs.items() if k not in ["marker"]}
+    ax.bar(data[config.x], data[config.y], **filtered_kwargs)
 
 
 def _plot_fill_between_data(

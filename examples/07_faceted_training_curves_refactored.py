@@ -5,18 +5,16 @@ import time
 import pandas as pd
 import matplotlib.pyplot as plt
 from dr_plotter.figure import FigureManager
-from dr_plotter.figure_config import FigureConfig
-from dr_plotter.legend_manager import LegendConfig
-from dr_plotter.scripting.datadec_utils import (
-    get_clean_datadec_df,
-    validate_cli_params,
-    validate_cli_data,
-)
+from dr_plotter.plot_config import PlotConfig
+from dr_plotter.scripting.datadec_utils import get_datadec_functions
+
+DataDecide, select_params, select_data = get_datadec_functions()
 
 
 def load_and_prepare_data() -> pd.DataFrame:
     try:
-        return get_clean_datadec_df(filter_types=["ppl", "max_steps"])
+        dd = DataDecide()
+        return dd.full_eval
     except ImportError as e:
         print(f"Error: {e}")
         sys.exit(1)
@@ -78,20 +76,18 @@ def plot_training_curves_faceted(
     figwidth = max(12, len(target_recipes) * 3.5)
 
     with FigureManager(
-        figure=FigureConfig(
-            rows=2,  # 2 metrics
-            cols=len(target_recipes),  # N recipes
-            figsize=(figwidth, 9),
-            tight_layout_pad=0.3,
-            subplot_kwargs={"sharey": "row"},
-        ),
-        legend=LegendConfig(
-            strategy="figure",
-            ncol=min(num_model_sizes, 8),
-            layout_top_margin=0.1,
-            layout_bottom_margin=0.5,
-            bbox_y_offset=0.02,
-        ),
+        PlotConfig(
+            layout={
+                "rows": 2,  # 2 metrics
+                "cols": len(target_recipes),  # N recipes
+                "figsize": (figwidth, 9),
+                "tight_layout_pad": 0.3,
+                "subplot_kwargs": {"sharey": "row"},
+            },
+            legend={
+                "strategy": "figure",
+            },
+        )
     ) as fm:
         fm.fig.suptitle(
             f"Faceted Training Curves: 2 Metrics × {len(target_recipes)} Data Recipes",
@@ -159,7 +155,7 @@ def plot_training_curves_faceted(
 
     plt.tight_layout()
     plt.savefig(
-        "examples/plots/07_faceted_training_curves_refactored.png",
+        "plots/07_faceted_training_curves_refactored.png",
         dpi=150,
         bbox_inches="tight",
     )
@@ -217,8 +213,8 @@ def main() -> None:
 
     # Validate CLI arguments using DataDecide utilities
     try:
-        validated_recipes = validate_cli_data(args.recipes)
-        validated_model_sizes = validate_cli_params(args.model_sizes)
+        validated_recipes = select_data(args.recipes)
+        validated_model_sizes = select_params(args.model_sizes)
     except ImportError as e:
         print(f"Error: {e}")
         sys.exit(1)

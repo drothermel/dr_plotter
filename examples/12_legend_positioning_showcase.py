@@ -1,7 +1,6 @@
 from typing import Any
 from dr_plotter.figure import FigureManager
-from dr_plotter.figure_config import FigureConfig
-from dr_plotter.legend_manager import LegendConfig
+from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import (
     verify_figure_legends,
@@ -43,7 +42,10 @@ def section_1_subplot_string_interface(args: Any) -> Any:
     multi_channel_data = create_multi_channel_data()
 
     with FigureManager(
-        figure=FigureConfig(rows=2, cols=2, figsize=(16, 12)), legend="subplot"
+        PlotConfig(
+            layout={"rows": 2, "cols": 2, "figsize": (16, 12)},
+            legend={"strategy": "subplot"},
+        )
     ) as fm:
         fm.fig.suptitle(
             'Section 1A: String Interface - legend="subplot"', fontsize=16, y=0.95
@@ -114,7 +116,10 @@ def section_1_figure_string_interface(args: Any) -> Any:
     multi_channel_data = create_multi_channel_data()
 
     with FigureManager(
-        figure=FigureConfig(rows=2, cols=2, figsize=(16, 12)), legend="figure"
+        PlotConfig(
+            layout={"rows": 2, "cols": 2, "figsize": (16, 12)},
+            legend={"strategy": "figure"},
+        )
     ) as fm:
         fm.fig.suptitle(
             'Section 1B: String Interface - legend="figure"', fontsize=16, y=0.95
@@ -181,7 +186,10 @@ def section_2_grouped_string_interface(args: Any) -> Any:
     multi_channel_data = create_multi_channel_data()
 
     with FigureManager(
-        figure=FigureConfig(rows=2, cols=2, figsize=(16, 12)), legend="grouped"
+        PlotConfig(
+            layout={"rows": 2, "cols": 2, "figsize": (16, 12)},
+            legend={"strategy": "grouped"},
+        )
     ) as fm:
         fm.fig.suptitle(
             'Section 2A: String Interface - legend="grouped" (Multi-Channel)',
@@ -252,7 +260,10 @@ def section_2_none_string_interface(args: Any) -> Any:
     multi_channel_data = create_multi_channel_data()
 
     with FigureManager(
-        figure=FigureConfig(rows=2, cols=2, figsize=(16, 12)), legend="none"
+        PlotConfig(
+            layout={"rows": 2, "cols": 2, "figsize": (16, 12)},
+            legend={"strategy": "none"},
+        )
     ) as fm:
         fm.fig.suptitle(
             'Section 2B: String Interface - legend="none"', fontsize=16, y=0.95
@@ -323,12 +334,14 @@ def section_3_positioning_calculator_integration(args: Any) -> Any:
     positioning_data = create_multi_channel_data()
 
     with FigureManager(
-        figure=FigureConfig(rows=1, cols=3, figsize=(18, 6)),
-        legend=LegendConfig(
-            strategy="figure",
-            ncol=None,
-            layout_bottom_margin=0.15,
-        ),
+        PlotConfig(
+            layout={"rows": 1, "cols": 3, "figsize": (18, 6)},
+            legend={
+                "strategy": "figure",
+                "ncol": None,
+                "layout_bottom_margin": 0.15,
+            },
+        )
     ) as fm:
         fm.fig.suptitle(
             "Section 3: PositioningCalculator Integration - Figure-Width Responsive",
@@ -391,8 +404,10 @@ def section_4_layout_hints_demonstration(args: Any) -> Any:
 
     # Section 4A: "below" hint
     with FigureManager(
-        figure=FigureConfig(rows=1, cols=2, figsize=(12, 6)),
-        legend=LegendConfig(strategy="figure", layout_hint="below"),
+        PlotConfig(
+            layout={"rows": 1, "cols": 2, "figsize": (12, 6)},
+            legend={"strategy": "figure", "layout_hint": "below"},
+        )
     ) as fm_below:
         fm_below.fig.suptitle(
             'Section 4A: Layout Hints - layout_hint="below"', fontsize=16, y=0.95
@@ -430,8 +445,10 @@ def section_4_layout_hints_demonstration(args: Any) -> Any:
 
     # Section 4B: "side" hint
     with FigureManager(
-        figure=FigureConfig(rows=1, cols=2, figsize=(12, 6)),
-        legend=LegendConfig(strategy="figure", layout_hint="side"),
+        PlotConfig(
+            layout={"rows": 1, "cols": 2, "figsize": (12, 6)},
+            legend={"strategy": "figure", "layout_hint": "side"},
+        )
     ) as fm_side:
         fm_side.fig.suptitle(
             'Section 4B: Layout Hints - layout_hint="side"', fontsize=16, y=0.95
@@ -467,8 +484,10 @@ def section_4_layout_hints_demonstration(args: Any) -> Any:
 
     # Section 4C: "compact" vs "spacious" comparison
     with FigureManager(
-        figure=FigureConfig(rows=1, cols=2, figsize=(16, 6)),
-        legend=LegendConfig(strategy="figure", layout_hint="compact"),
+        PlotConfig(
+            layout={"rows": 1, "cols": 2, "figsize": (16, 6)},
+            legend={"strategy": "figure", "layout_hint": "compact"},
+        )
     ) as fm_compact:
         fm_compact.fig.suptitle(
             'Section 4C: Layout Hints - layout_hint="compact"', fontsize=16, y=0.95
@@ -504,8 +523,10 @@ def section_4_layout_hints_demonstration(args: Any) -> Any:
 
     # Section 4D: "spacious" hint
     with FigureManager(
-        figure=FigureConfig(rows=1, cols=2, figsize=(16, 6)),
-        legend=LegendConfig(strategy="figure", layout_hint="spacious"),
+        PlotConfig(
+            layout={"rows": 1, "cols": 2, "figsize": (16, 6)},
+            legend={"strategy": "figure", "layout_hint": "spacious"},
+        )
     ) as fm_spacious:
         fm_spacious.fig.suptitle(
             'Section 4D: Layout Hints - layout_hint="spacious"', fontsize=16, y=0.95

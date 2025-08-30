@@ -32,6 +32,29 @@ def get_axes_from_grid(
 
     # Handle numpy array case (FigureManager's self.axes)
     if hasattr(axes, "ndim") and axes.ndim == 1:
+        # For 1D axes arrays, determine if this is row-major (vertical) or col-major (horizontal)
+        # by checking if we have more than 1 axis and examining gridspec layout
+        if len(axes) > 1:
+            first_ax = axes[0]
+            if (
+                hasattr(first_ax, "get_gridspec")
+                and first_ax.get_gridspec() is not None
+            ):
+                gs = first_ax.get_gridspec()
+                nrows, ncols = gs.nrows, gs.ncols
+
+                # If single column (nrows > 1, ncols = 1), use row index
+                if ncols == 1 and nrows > 1:
+                    assert row is not None, "Must specify row for vertical grid layout"
+                    return axes[row]
+                # If single row (nrows = 1, ncols > 1), use col index
+                elif nrows == 1 and ncols > 1:
+                    assert col is not None, (
+                        "Must specify col for horizontal grid layout"
+                    )
+                    return axes[col]
+
+        # Fallback: use col if specified, otherwise row
         idx = col if col is not None else row
         assert idx is not None, "Must specify either row or col for 1D axes array"
         return axes[idx]

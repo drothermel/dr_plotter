@@ -1,7 +1,7 @@
 from typing import Any, Dict
 import pandas as pd
 from dr_plotter.figure import FigureManager
-from dr_plotter.figure_config import FigureConfig
+from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from plot_data import ExampleData
@@ -34,20 +34,22 @@ def main(args: Any) -> Any:
     data_dict: Dict[str, pd.DataFrame] = ExampleData.get_all_plot_types_data()
 
     with FigureManager(
-        figure=FigureConfig(
-            rows=3,
-            cols=3,
-            figsize=(14, 14),
-            x_labels=[
-                [None, None, None],
-                [None, None, None],
-                ["X Coordinate", "Category", "Column"],
-            ],
-            y_labels=[
-                ["Y Coordinate", "Value", "Count"],
-                ["Y Coordinate", "Response", None],
-                ["Count", None, None],
-            ],
+        PlotConfig(
+            layout={
+                "rows": 3,
+                "cols": 3,
+                "figsize": (14, 14),
+                "x_labels": [
+                    [None, None, None],
+                    [None, None, None],
+                    ["X Coordinate", "Category", "Column"],
+                ],
+                "y_labels": [
+                    ["Y Coordinate", "Value", "Count"],
+                    ["Y Coordinate", "Response", None],
+                    ["Count", None, None],
+                ],
+            }
         )
     ) as fm:
         fm.fig.suptitle(

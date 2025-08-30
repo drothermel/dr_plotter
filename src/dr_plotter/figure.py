@@ -32,30 +32,57 @@ from dr_plotter.faceting.style_coordination import FacetStyleCoordinator
 
 
 class FigureManager:
-    def __init__(
-        self,
-        config: Optional[PlotConfig] = None,
-        figure: Optional["FigureConfig"] = None,
-        legend: Optional[Union[str, LegendConfig]] = None,
-        theme: Optional[Any] = None,
-    ) -> None:
-        if config is not None:
-            figure, legend, theme = config._to_legacy_configs()
+    def __init__(self, config: Optional[PlotConfig] = None, **kwargs: Any) -> None:
+        old_params = {"figure", "legend", "theme"}
+        used_old_params = old_params.intersection(kwargs.keys())
 
-        figure = figure or FigureConfig()
+        if used_old_params:
+            example_conversion = self._generate_conversion_example(kwargs)
+            assert False, (
+                f"FigureManager no longer accepts {sorted(used_old_params)} parameters. "
+                f"Use PlotConfig instead:\n\n"
+                f"OLD: FigureManager({', '.join(f'{k}=...' for k in sorted(used_old_params))})\n"
+                f"NEW: {example_conversion}\n\n"
+                f"See PlotConfig documentation for complete conversion patterns."
+            )
 
-        if legend is None:
-            legend = LegendConfig()
+        if config is None:
+            config = PlotConfig()
+
+        figure_config, legend_config, theme = config._to_legacy_configs()
+
+        figure_config.validate()
+        if hasattr(legend_config, "validate"):
+            legend_config.validate()
+
+        self._init_from_configs(figure_config, legend_config, theme)
+
+    def _generate_conversion_example(self, kwargs: Dict[str, Any]) -> str:
+        conversions = []
+
+        if "figure" in kwargs:
+            fig_config = kwargs["figure"]
+            if hasattr(fig_config, "rows") and hasattr(fig_config, "cols"):
+                conversions.append(
+                    f"layout={{'rows': {fig_config.rows}, 'cols': {fig_config.cols}}}"
+                )
+            if hasattr(fig_config, "figsize"):
+                conversions.append(f"figsize={fig_config.figsize}")
+
+        if "legend" in kwargs:
+            legend = kwargs["legend"]
+            if isinstance(legend, str):
+                conversions.append(f"legend={{'strategy': '{legend}'}}")
+            else:
+                conversions.append("legend={...}")
+
+        if "theme" in kwargs:
+            conversions.append("style={...}")
+
+        if conversions:
+            return f"FigureManager(PlotConfig({', '.join(conversions)}))"
         else:
-            legend = resolve_legend_config(legend)
-
-        if theme and hasattr(theme, "legend_config") and theme.legend_config:
-            legend = theme.legend_config
-
-        figure.validate()
-        legend.validate() if hasattr(legend, "validate") else None
-
-        self._init_from_configs(figure, legend, theme)
+            return "FigureManager(PlotConfig(...))"
 
     def _init_from_configs(
         self,
@@ -406,3 +433,32 @@ class FigureManager:
                 }
             self._facet_style_coordinator = FacetStyleCoordinator(theme=theme_info)
         return self._facet_style_coordinator
+
+    def plot(
+        self, plot_type: str, row: int, col: int, *args: Any, **kwargs: Any
+    ) -> None:
+        is_faceted_plot = (
+            hasattr(self, "_facet_grid_info") and self._facet_grid_info is not None
+        )
+
+        if is_faceted_plot:
+            kwargs = self._apply_faceting_plot_enhancements(row, col, **kwargs)
+
+        from dr_plotter.plotters.base import BasePlotter
+
+        plotter_class = BasePlotter.get_plotter(plot_type)
+        self._add_plot(plotter_class, args, row, col, **kwargs)
+
+    def _apply_faceting_plot_enhancements(
+        self, row: int, col: int, **kwargs: Any
+    ) -> Dict[str, Any]:
+        if "_coordinated_colors" in kwargs:
+            coordinated_colors = kwargs.pop("_coordinated_colors")
+            kwargs.pop("_coordinated_markers", None)
+
+            if len(coordinated_colors) == 1:
+                kwargs["color"] = coordinated_colors[0]
+            elif len(coordinated_colors) > 1:
+                kwargs["palette"] = coordinated_colors
+
+        return kwargs
