@@ -388,34 +388,36 @@ def section_3_positioning_calculator_integration(args: Any) -> Any:
 @inspect_plot_properties()
 def section_4_layout_hints_demonstration(args: Any) -> Any:
     hint_data = create_multi_channel_data()
-    
+
     # Section 4A: "below" hint
     with FigureManager(
         figure=FigureConfig(rows=1, cols=2, figsize=(12, 6)),
-        legend=LegendConfig(strategy="figure", layout_hint="below")
+        legend=LegendConfig(strategy="figure", layout_hint="below"),
     ) as fm_below:
         fm_below.fig.suptitle(
             'Section 4A: Layout Hints - layout_hint="below"', fontsize=16, y=0.95
         )
-        
+
         fm_below.plot(
             "scatter",
             0,
             0,
             hint_data,
             x="performance",
-            y="accuracy", 
+            y="accuracy",
             hue_by="experiment",
             s=60,
             alpha=0.8,
             title="Bottom Positioning (y=0.05)",
         )
-        
+
         fm_below.plot(
             "line",
             0,
             1,
-            hint_data.groupby(["experiment", "performance"]).agg({"accuracy": "mean"}).reset_index(),
+            hint_data.groupby(["experiment", "performance"])
+            .agg({"accuracy": "mean"})
+            .reset_index(),
             x="performance",
             y="accuracy",
             hue_by="experiment",
@@ -423,18 +425,18 @@ def section_4_layout_hints_demonstration(args: Any) -> Any:
             alpha=0.8,
             title="Smart Bottom Center Layout",
         )
-    
+
     show_or_save_plot(fm_below.fig, args, "12_legend_showcase_section4a_below")
-    
-    # Section 4B: "side" hint  
+
+    # Section 4B: "side" hint
     with FigureManager(
         figure=FigureConfig(rows=1, cols=2, figsize=(12, 6)),
-        legend=LegendConfig(strategy="figure", layout_hint="side")
+        legend=LegendConfig(strategy="figure", layout_hint="side"),
     ) as fm_side:
         fm_side.fig.suptitle(
             'Section 4B: Layout Hints - layout_hint="side"', fontsize=16, y=0.95
         )
-        
+
         fm_side.plot(
             "scatter",
             0,
@@ -447,7 +449,7 @@ def section_4_layout_hints_demonstration(args: Any) -> Any:
             alpha=0.8,
             title="Right-Side Positioning",
         )
-        
+
         fm_side.plot(
             "scatter",
             0,
@@ -460,18 +462,18 @@ def section_4_layout_hints_demonstration(args: Any) -> Any:
             alpha=0.8,
             title="Responsive to Figure Width",
         )
-    
+
     show_or_save_plot(fm_side.fig, args, "12_legend_showcase_section4b_side")
-    
+
     # Section 4C: "compact" vs "spacious" comparison
     with FigureManager(
         figure=FigureConfig(rows=1, cols=2, figsize=(16, 6)),
-        legend=LegendConfig(strategy="figure", layout_hint="compact")
+        legend=LegendConfig(strategy="figure", layout_hint="compact"),
     ) as fm_compact:
         fm_compact.fig.suptitle(
             'Section 4C: Layout Hints - layout_hint="compact"', fontsize=16, y=0.95
         )
-        
+
         fm_compact.plot(
             "scatter",
             0,
@@ -484,31 +486,31 @@ def section_4_layout_hints_demonstration(args: Any) -> Any:
             alpha=0.8,
             title="Compact Spacing (y_offset=-0.02)",
         )
-        
+
         fm_compact.plot(
             "scatter",
             0,
             1,
             hint_data,
             x="runtime",
-            y="performance", 
+            y="performance",
             hue_by="algorithm",
             s=60,
             alpha=0.8,
             title="Minimized Legend Space",
         )
-    
+
     show_or_save_plot(fm_compact.fig, args, "12_legend_showcase_section4c_compact")
-    
+
     # Section 4D: "spacious" hint
     with FigureManager(
         figure=FigureConfig(rows=1, cols=2, figsize=(16, 6)),
-        legend=LegendConfig(strategy="figure", layout_hint="spacious")
+        legend=LegendConfig(strategy="figure", layout_hint="spacious"),
     ) as fm_spacious:
         fm_spacious.fig.suptitle(
             'Section 4D: Layout Hints - layout_hint="spacious"', fontsize=16, y=0.95
         )
-        
+
         fm_spacious.plot(
             "scatter",
             0,
@@ -521,12 +523,14 @@ def section_4_layout_hints_demonstration(args: Any) -> Any:
             alpha=0.8,
             title="Spacious Layout (y_offset=+0.03)",
         )
-        
+
         fm_spacious.plot(
             "line",
             0,
             1,
-            hint_data.groupby(["model_size", "performance"]).agg({"accuracy": "mean"}).reset_index(),
+            hint_data.groupby(["model_size", "performance"])
+            .agg({"accuracy": "mean"})
+            .reset_index(),
             x="performance",
             y="accuracy",
             hue_by="model_size",
@@ -534,9 +538,9 @@ def section_4_layout_hints_demonstration(args: Any) -> Any:
             alpha=0.8,
             title="Extra Spacing for Readability",
         )
-    
+
     show_or_save_plot(fm_spacious.fig, args, "12_legend_showcase_section4d_spacious")
-    
+
     return [fm_below.fig, fm_side.fig, fm_compact.fig, fm_spacious.fig]
 
 
@@ -557,7 +561,7 @@ def main(args: Any) -> Any:
 
     print("\n=== Section 3: PositioningCalculator Integration ===")
     section_3_positioning_calculator_integration(args)
-    
+
     print("\n=== Section 4: Layout Hints Demonstration ===")
     section_4_layout_hints_demonstration(args)
 
@@ -565,7 +569,7 @@ def main(args: Any) -> Any:
     print("Generated 9 comprehensive test figures demonstrating:")
     print("- String interface functionality (subplot, figure, grouped, none)")
     print("- Smart defaults and context-aware features")
-    print("- PositioningCalculator integration and responsive behavior")  
+    print("- PositioningCalculator integration and responsive behavior")
     print("- Layout hints system (below, side, compact, spacious)")
     return None
 
