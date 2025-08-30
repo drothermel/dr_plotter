@@ -9,10 +9,10 @@ from dr_plotter.grouping_config import GroupingConfig
 from dr_plotter.theme import VIOLIN_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
+    ComponentSchema,
+    Phase,
     SubPlotterParamName,
     VisualChannel,
-    Phase,
-    ComponentSchema,
 )
 
 from .base import BasePlotter
@@ -94,9 +94,7 @@ class ViolinPlotter(BasePlotter):
                 setter(value)
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
-        if self._has_groups:
-            pass
-        else:
+        if not self._has_groups:
             self._draw_simple(ax, data, **kwargs)
 
     def _apply_post_processing(
@@ -197,8 +195,9 @@ class ViolinPlotter(BasePlotter):
         **kwargs: Any,
     ) -> None:
         label = kwargs.pop("label", None)
+        has_x_labels = consts.X_COL_NAME in data.columns
 
-        if consts.X_COL_NAME in data.columns:
+        if has_x_labels:
             x_categories = group_position.get("x_categories")
             if x_categories is None:
                 x_categories = data[consts.X_COL_NAME].unique()
