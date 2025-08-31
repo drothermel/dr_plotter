@@ -4,7 +4,7 @@ import pandas as pd
 from matplotlib.patches import Patch
 
 from dr_plotter import consts
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.theme import HISTOGRAM_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,

@@ -4,7 +4,7 @@ import pandas as pd
 
 from dr_plotter import consts
 from dr_plotter.channel_metadata import ChannelRegistry
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.plotters.style_engine import StyleEngine
 from dr_plotter.style_applicator import StyleApplicator
 from dr_plotter.theme import BASE_COLORS, BASE_THEME, DR_PLOTTER_STYLE_KEYS, Theme

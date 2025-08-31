@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Set
 import matplotlib.patheffects as path_effects
 import pandas as pd
 
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.theme import BUMP_PLOT_THEME, Theme
 from dr_plotter.types import VisualChannel, Phase, ComponentSchema
 

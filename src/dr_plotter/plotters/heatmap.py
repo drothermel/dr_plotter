@@ -13,7 +13,7 @@ from dr_plotter.plotters.base import (
 )
 from dr_plotter.theme import HEATMAP_THEME, Theme
 from dr_plotter.types import VisualChannel, Phase, ComponentSchema
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 
 
 class HeatmapPlotter(BasePlotter):

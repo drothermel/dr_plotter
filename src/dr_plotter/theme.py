@@ -2,7 +2,7 @@ import itertools
 from typing import Any, Dict, List, Optional
 
 from dr_plotter import consts
-from dr_plotter.legend_manager import LegendConfig
+from dr_plotter.configs.legend_config import LegendConfig
 
 DR_PLOTTER_STYLE_KEYS = [
     "title",

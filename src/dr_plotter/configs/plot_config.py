@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from dr_plotter.figure_config import FigureConfig
-from dr_plotter.legend_manager import LegendConfig
+from dr_plotter.configs.figure_config import FigureConfig
+from dr_plotter.configs.legend_config import LegendConfig
 from dr_plotter.theme import Theme
 from dr_plotter.types import ColorPalette
 

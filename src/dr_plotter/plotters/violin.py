@@ -10,7 +10,7 @@ from dr_plotter.artist_utils import (
     extract_single_color_from_polycollection_list,
     extract_single_edgecolor_from_polycollection_list,
 )
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.theme import VIOLIN_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,

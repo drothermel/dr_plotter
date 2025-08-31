@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter import consts
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.theme import LINE_THEME, Theme
 from dr_plotter.types import VisualChannel, Phase, ComponentSchema
 

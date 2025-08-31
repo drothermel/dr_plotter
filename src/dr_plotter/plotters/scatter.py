@@ -5,7 +5,7 @@ import pandas as pd
 from matplotlib.lines import Line2D
 
 from dr_plotter import consts
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.theme import SCATTER_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
