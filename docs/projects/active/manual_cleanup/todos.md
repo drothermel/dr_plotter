@@ -1,5 +1,11 @@
 # Manual Cleanup TODOs
 
+## Small Additional Todos
+- what is plotter_params used for if component schema seems to take its place?
+- FacetingConfig rows -> rows_key cols -> cols_key lines -> lines_key
+- It might make more sense for targetting to be functional not facet-config bound
+- How many of the functions in BasePlotter are actually used?
+
 ## Theme-to-Matplotlib Parameter Flow Issue
 
 ### Problem Discovered
