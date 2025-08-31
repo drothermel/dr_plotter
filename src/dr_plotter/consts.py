@@ -6,7 +6,6 @@ from dr_plotter.types import (
 )
 
 VISUAL_CHANNELS: List[VisualChannel] = ["hue", "style", "size", "marker", "alpha"]
-DEFAULT_VISUAL_CHANNEL: VisualChannel = "hue"
 
 CHANNEL_TO_ATTR: Dict[VisualChannel, StyleAttrName] = {
     "hue": "color",

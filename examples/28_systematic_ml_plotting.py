@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import datadec.constants
-from dr_plotter.figure import FigureManager
+from dr_plotter.figure_manager import FigureManager
 from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.datadec_utils import get_datadec_functions
 

@@ -5,7 +5,7 @@ import pandas as pd
 from matplotlib.patches import Patch
 
 from dr_plotter import consts
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.theme import BAR_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
@@ -56,9 +56,7 @@ class BarPlotter(BasePlotter):
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
-        self.style_applicator.register_post_processor(
-            "bar", "patches", self._style_bar_patches
-        )
+        self.styler.register_post_processor("bar", "patches", self._style_bar_patches)
 
     def _style_bar_patches(self, patches: Any, styles: Dict[str, Any]) -> None:
         for patch in patches:
@@ -76,7 +74,7 @@ class BarPlotter(BasePlotter):
         patches = ax.bar(data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **kwargs)
 
         artists = {"patches": patches}
-        self.style_applicator.apply_post_processing("bar", artists)
+        self.styler.apply_post_processing("bar", artists)
 
         self._apply_post_processing(patches, label)
 

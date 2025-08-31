@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter import consts
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.theme import LINE_THEME, Theme
 from dr_plotter.types import VisualChannel, Phase, ComponentSchema
 
@@ -65,7 +65,7 @@ class LinePlotter(BasePlotter):
         if self.figure_manager and label and lines:
             line = lines[0] if isinstance(lines, list) else lines
             for channel in self.grouping_params.active_channels_ordered:
-                entry = self.style_applicator.create_legend_entry(
+                entry = self.styler.create_legend_entry(
                     line, label, self.current_axis, explicit_channel=channel
                 )
                 if entry:

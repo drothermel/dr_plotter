@@ -3,7 +3,7 @@ Example 9: Scatter Plot Showcase - All scatter plot features.
 Demonstrates all visual encoding options for scatter plots.
 """
 
-from dr_plotter.figure import FigureManager
+from dr_plotter.figure_manager import FigureManager
 from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties

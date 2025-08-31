@@ -1,5 +1,5 @@
 from typing import Any
-from dr_plotter.figure import FigureManager
+from dr_plotter.figure_manager import FigureManager
 from dr_plotter.figure_config import FigureConfig
 from dr_plotter.legend_manager import LegendConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot

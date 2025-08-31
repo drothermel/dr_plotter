@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, Optional, Set, TYPE_CHECKING
 
 from dr_plotter.consts import VISUAL_CHANNELS
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.legend_manager import LegendEntry, LegendStrategy
 from dr_plotter.theme import (
     Theme,
@@ -134,7 +134,7 @@ class StyleApplicator:
             artist_type=artist_type,
         )
 
-    def get_style_with_fallback(self, key: str, default: Any = None) -> Any:
+    def get_style(self, key: str, default: Any = None) -> Any:
         """
         Get style with enhanced fallback resolution.
         Priority: kwargs → theme → default
@@ -145,9 +145,7 @@ class StyleApplicator:
         """
         Get computed style value (e.g., size multiplication).
         """
-        base_value = self.get_style_with_fallback(
-            base_key, 1.0 if "size" in base_key else 0.0
-        )
+        base_value = self.get_style(base_key, 1.0 if "size" in base_key else 0.0)
 
         if operation == "multiply":
             return base_value * factor

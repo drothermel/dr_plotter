@@ -15,7 +15,7 @@ from dr_plotter.types import (
     ComponentSchema,
 )
 from .base import BasePlotter
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 
 
 class ContourPlotter(BasePlotter):
@@ -59,7 +59,7 @@ class ContourPlotter(BasePlotter):
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
-        self.style_applicator.register_post_processor(
+        self.styler.register_post_processor(
             self.plotter_name, "colorbar", self._style_colorbar
         )
 
@@ -86,8 +86,8 @@ class ContourPlotter(BasePlotter):
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         contour_kwargs = {
-            "levels": self.style_applicator.get_style_with_fallback("levels"),
-            "cmap": self.style_applicator.get_style_with_fallback("cmap"),
+            "levels": self.styler.get_style("levels"),
+            "cmap": self.styler.get_style("cmap"),
         }
         user_kwargs = kwargs.copy()
         for key in ["s", "scatter_size", "scatter_alpha"]:
@@ -95,11 +95,9 @@ class ContourPlotter(BasePlotter):
         contour_kwargs.update(user_kwargs)
 
         scatter_kwargs = {
-            "s": self.style_applicator.get_style_with_fallback("scatter_size"),
-            "alpha": self.style_applicator.get_style_with_fallback("scatter_alpha"),
-            "color": self.style_applicator.get_style_with_fallback(
-                "scatter_color", BASE_COLORS[0]
-            ),
+            "s": self.styler.get_style("scatter_size"),
+            "alpha": self.styler.get_style("scatter_alpha"),
+            "color": self.styler.get_style("scatter_color", BASE_COLORS[0]),
         }
         if "s" in kwargs:
             scatter_kwargs["s"] = kwargs["s"]
@@ -119,7 +117,7 @@ class ContourPlotter(BasePlotter):
                 "fig": ax.get_figure(),
             }
         }
-        self.style_applicator.apply_post_processing(self.plotter_name, artists)
+        self.styler.apply_post_processing(self.plotter_name, artists)
 
         self._apply_styling(ax)
 
@@ -143,7 +141,7 @@ class ContourPlotter(BasePlotter):
                 label_text,
                 fontsize=styles.get(
                     "fontsize",
-                    self.style_applicator.get_style_with_fallback("label_fontsize"),
+                    self.styler.get_style("label_fontsize"),
                 ),
                 color=styles.get("color", self.theme.get("label_color")),
             )

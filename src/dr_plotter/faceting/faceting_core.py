@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import matplotlib.axes
 import pandas as pd
 
-from dr_plotter.faceting_config import FacetingConfig
+from dr_plotter.configs.faceting_config import FacetingConfig
 
 SUPPORTED_PLOT_TYPES = ["line", "scatter", "bar", "fill_between", "heatmap"]
 

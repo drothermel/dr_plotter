@@ -433,6 +433,7 @@ class LegendPlotConsistencyRule(BaseVerificationRule):
 
         result = {
             "consistency_checks": {},
+            "legend_entry_checks": {},
             "overall_passed": True,
             "message": "",
             "suggestions": [],
@@ -440,6 +441,47 @@ class LegendPlotConsistencyRule(BaseVerificationRule):
 
         all_plot_data = extract_all_plot_data_from_collections(props["collections"])
         legend_data = extract_legend_data_with_alphas(props["legend"])
+
+        if expected_legend_entries:
+            for entry_type, expected_count in expected_legend_entries.items():
+                if entry_type == "legend_count":
+                    actual_count = (
+                        len(props["legend"]["labels"])
+                        if props["legend"]["labels"]
+                        else 0
+                    )
+                elif entry_type == "hue":
+                    actual_count = (
+                        len(legend_data["colors"]) if legend_data["colors"] else 0
+                    )
+                elif entry_type == "marker":
+                    actual_count = (
+                        len(legend_data["markers"]) if legend_data["markers"] else 0
+                    )
+                elif entry_type == "alpha":
+                    actual_count = (
+                        len(legend_data["alphas"]) if legend_data["alphas"] else 0
+                    )
+                elif entry_type == "size":
+                    actual_count = (
+                        len(legend_data["sizes"]) if legend_data["sizes"] else 0
+                    )
+                elif entry_type == "style":
+                    actual_count = (
+                        len(legend_data["styles"]) if legend_data["styles"] else 0
+                    )
+                else:
+                    continue
+
+                entry_check = {
+                    "passed": actual_count == expected_count,
+                    "message": f"{entry_type}: expected {expected_count}, got {actual_count}",
+                    "expected": expected_count,
+                    "actual": actual_count,
+                }
+                result["legend_entry_checks"][entry_type] = entry_check
+                if not entry_check["passed"]:
+                    result["overall_passed"] = False
 
         if expected_varying_channels is None:
             expected_varying_channels = ["hue", "marker", "alpha", "size", "style"]
@@ -514,12 +556,22 @@ class LegendPlotConsistencyRule(BaseVerificationRule):
 
         if result["overall_passed"]:
             checks = list(result["consistency_checks"].keys())
-            result["message"] = f"Legend-plot consistency: PASS ({', '.join(checks)})"
+            entry_checks = list(result["legend_entry_checks"].keys())
+            all_checks = checks + entry_checks
+            result["message"] = (
+                f"Legend-plot consistency: PASS ({', '.join(all_checks)})"
+            )
         else:
-            failed = [
+            failed_consistency = [
                 k for k, v in result["consistency_checks"].items() if not v["passed"]
             ]
-            result["message"] = f"Legend-plot consistency: FAIL ({', '.join(failed)})"
+            failed_entries = [
+                k for k, v in result["legend_entry_checks"].items() if not v["passed"]
+            ]
+            all_failed = failed_consistency + failed_entries
+            result["message"] = (
+                f"Legend-plot consistency: FAIL ({', '.join(all_failed)})"
+            )
             result["suggestions"].append("Check legend proxy artist creation")
             result["suggestions"].append(
                 "Verify legend manager is creating correct entries"

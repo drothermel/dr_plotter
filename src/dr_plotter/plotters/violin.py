@@ -5,14 +5,19 @@ import pandas as pd
 from matplotlib.patches import Patch
 
 from dr_plotter import consts
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.artist_utils import (
+    extract_single_alpha_from_polycollection_list,
+    extract_single_color_from_polycollection_list,
+    extract_single_edgecolor_from_polycollection_list,
+)
+from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.theme import VIOLIN_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
+    ComponentSchema,
+    Phase,
     SubPlotterParamName,
     VisualChannel,
-    Phase,
-    ComponentSchema,
 )
 
 from .base import BasePlotter
@@ -62,12 +67,10 @@ class ViolinPlotter(BasePlotter):
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
-        self.style_applicator.register_post_processor(
+        self.styler.register_post_processor(
             "violin", "bodies", self._style_violin_bodies
         )
-        self.style_applicator.register_post_processor(
-            "violin", "stats", self._style_violin_stats
-        )
+        self.styler.register_post_processor("violin", "stats", self._style_violin_stats)
 
     def _style_violin_bodies(self, bodies: Any, styles: Dict[str, Any]) -> None:
         for pc in bodies:
@@ -94,81 +97,46 @@ class ViolinPlotter(BasePlotter):
                 setter(value)
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
-        if self._has_groups:
-            pass
-        else:
+        if not self._has_groups:
             self._draw_simple(ax, data, **kwargs)
 
     def _apply_post_processing(
         self, parts: Dict[str, Any], label: Optional[str] = None
     ) -> None:
-        if not self._should_create_legend():
-            return
-
-        artists = {}
-        if "bodies" in parts:
-            artists["bodies"] = parts["bodies"]
-
-        stats_parts = []
-        for part_name in ("cbars", "cmins", "cmaxes", "cmeans"):
-            if part_name in parts:
-                stats_parts.append(parts[part_name])
-
-        if stats_parts:
-            for stats in stats_parts:
-                artists["stats"] = stats
-                self.style_applicator.apply_post_processing("violin", {"stats": stats})
-
-        if artists:
-            self.style_applicator.apply_post_processing("violin", artists)
-
-        if label and "bodies" in parts and parts["bodies"]:
+        artists = self._collect_artists_to_style(parts)
+        self.styler.apply_post_processing("violin", artists)
+        if self._should_create_legend():
+            label = (
+                label
+                if label is not None
+                else self.styler.get_style("missing_label_str")
+            )
             proxy = self._create_proxy_artist_from_bodies(parts["bodies"])
             self._register_legend_entry_if_valid(proxy, label)
+
+    def _collect_artists_to_style(self, parts: Dict[str, Any]) -> Dict[str, Any]:
+        assert "bodies" in parts, "Bodies must be present"
+        stats_parts = [parts["cbars"]]
+        for sub_part, gate_key in [
+            ("cmeans", "showmeans"),
+            ("cmedians", "showmedians"),
+            ("cmins", "showextrema"),
+            ("cmaxes", "showextrema"),
+        ]:
+            if self.styler.get_style(gate_key):
+                stats_parts.append(parts[sub_part])
+        return {
+            "stats": stats_parts,
+            "bodies": parts["bodies"],
+        }
 
     def _create_proxy_artist_from_bodies(self, bodies: List[Any]) -> Optional[Patch]:
         if not bodies:
             return None
 
-        first_body = bodies[0]
-
-        assert hasattr(first_body, "get_facecolor"), (
-            "Body must have get_facecolor method"
-        )
-        facecolor = first_body.get_facecolor()
-
-        if hasattr(facecolor, "__len__") and len(facecolor) > 0:
-            fc = facecolor[0]
-            if isinstance(fc, np.ndarray) and fc.size >= 3:
-                facecolor = tuple(fc[:4] if fc.size >= 4 else list(fc[:3]) + [1.0])
-            else:
-                facecolor = self.figure_manager.legend_manager.get_error_color(
-                    "face", self.theme
-                )
-        else:
-            facecolor = self.figure_manager.legend_manager.get_error_color(
-                "face", self.theme
-            )
-
-        assert hasattr(first_body, "get_edgecolor"), (
-            "Body must have get_edgecolor method"
-        )
-        edgecolor = first_body.get_edgecolor()
-
-        if hasattr(edgecolor, "__len__") and len(edgecolor) > 0:
-            ec = edgecolor[0]
-            if isinstance(ec, np.ndarray) and ec.size >= 3:
-                edgecolor = tuple(ec[:4] if ec.size >= 4 else list(ec[:3]) + [1.0])
-            else:
-                edgecolor = self.figure_manager.legend_manager.get_error_color(
-                    "edge", self.theme
-                )
-        else:
-            edgecolor = self.figure_manager.legend_manager.get_error_color(
-                "edge", self.theme
-            )
-
-        alpha = first_body.get_alpha() if hasattr(first_body, "get_alpha") else 1.0
+        facecolor = extract_single_color_from_polycollection_list(bodies)
+        edgecolor = extract_single_edgecolor_from_polycollection_list(bodies)
+        alpha = extract_single_alpha_from_polycollection_list(bodies)
 
         return Patch(facecolor=facecolor, edgecolor=edgecolor, alpha=alpha)
 
@@ -181,7 +149,7 @@ class ViolinPlotter(BasePlotter):
         datasets = [gd[consts.Y_COL_NAME].dropna() for gd in group_data]
 
         label = kwargs.pop("label", None)
-        parts = ax.violinplot(datasets, **self._filtered_plot_kwargs)
+        parts = ax.violinplot(datasets, **self._build_plot_args())
 
         if len(groups) > 0:
             ax.set_xticks(np.arange(1, len(groups) + 1))
@@ -197,8 +165,14 @@ class ViolinPlotter(BasePlotter):
         **kwargs: Any,
     ) -> None:
         label = kwargs.pop("label", None)
+        has_x_labels = consts.X_COL_NAME in data.columns
+        base_plot_args = self._build_plot_args()
+        if "widths" not in base_plot_args and "width" in group_position:
+            base_plot_args["widths"] = group_position["width"]
+        elif "widths" in base_plot_args and "width" in group_position:
+            print("WARNING: Caculated width overritten by kwargs or theme")
 
-        if consts.X_COL_NAME in data.columns:
+        if has_x_labels:
             x_categories = group_position.get("x_categories")
             if x_categories is None:
                 x_categories = data[consts.X_COL_NAME].unique()
@@ -217,8 +191,7 @@ class ViolinPlotter(BasePlotter):
                 parts = ax.violinplot(
                     dataset,
                     positions=positions,
-                    widths=group_position["width"],
-                    **self._filtered_plot_kwargs,
+                    **base_plot_args,
                 )
             else:
                 parts = {}
@@ -230,8 +203,7 @@ class ViolinPlotter(BasePlotter):
             parts = ax.violinplot(
                 [data[consts.Y_COL_NAME].dropna()],
                 positions=[group_position["offset"]],
-                widths=group_position["width"],
-                **self._filtered_plot_kwargs,
+                **base_plot_args,
             )
 
         self._apply_post_processing(parts, label)

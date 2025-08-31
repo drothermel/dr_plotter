@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from dr_plotter.figure import FigureManager
+from dr_plotter.figure_manager import FigureManager
 from dr_plotter.figure_config import FigureConfig
 from dr_plotter.faceting_config import FacetingConfig
 from dr_plotter.legend_manager import LegendConfig

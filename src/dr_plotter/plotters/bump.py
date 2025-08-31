@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Set
 import matplotlib.patheffects as path_effects
 import pandas as pd
 
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.theme import BUMP_PLOT_THEME, Theme
 from dr_plotter.types import VisualChannel, Phase, ComponentSchema
 
@@ -100,12 +100,8 @@ class BumpPlotter(BasePlotter):
                     last_point[self.value_col],
                     f" {category_name}",
                     va="center",
-                    color=self.style_applicator.get_style_with_fallback(
-                        "text_color", "black"
-                    ),
-                    fontweight=self.style_applicator.get_style_with_fallback(
-                        "fontweight", "bold"
-                    ),
+                    color=self.styler.get_style("text_color", "black"),
+                    fontweight=self.styler.get_style("fontweight", "bold"),
                 )
                 text.set_path_effects(
                     [
@@ -121,7 +117,5 @@ class BumpPlotter(BasePlotter):
             max_rank = int(self.plot_data["rank"].max())
             ax.set_yticks(range(1, max_rank + 1))
             ax.margins(x=0.15)
-            ax.set_ylabel(
-                self.style_applicator.get_style_with_fallback("ylabel", "Rank")
-            )
+            ax.set_ylabel(self.styler.get_style("ylabel", "Rank"))
             ax._bump_configured = True

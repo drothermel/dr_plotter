@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from dr_plotter.figure import FigureManager
+from dr_plotter.figure_manager import FigureManager
 from dr_plotter.plot_config import PlotConfig
 
 

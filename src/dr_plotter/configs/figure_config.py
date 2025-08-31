@@ -1,11 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
-
-
-if TYPE_CHECKING:
-    from dr_plotter.figure import FigureManager
 
 
 @dataclass
@@ -56,17 +52,3 @@ class FigureConfig:
                 assert len(row) == self.cols, (
                     f"y_labels row {row_idx} must have {self.cols} columns, got {len(row)}"
                 )
-
-
-def create_figure_manager(
-    figure: Optional[FigureConfig] = None,
-    legend: Optional["LegendConfig"] = None,
-    theme: Optional[Any] = None,
-) -> "FigureManager":
-    from dr_plotter.figure import FigureManager
-
-    figure = figure or FigureConfig()
-
-    figure.validate()
-
-    return FigureManager._create_from_configs(figure, legend, theme)

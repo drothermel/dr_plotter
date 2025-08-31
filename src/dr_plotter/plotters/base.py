@@ -4,20 +4,20 @@ import pandas as pd
 
 from dr_plotter import consts
 from dr_plotter.channel_metadata import ChannelRegistry
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.plotters.style_engine import StyleEngine
 from dr_plotter.style_applicator import StyleApplicator
 from dr_plotter.theme import BASE_COLORS, BASE_THEME, DR_PLOTTER_STYLE_KEYS, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
     ColName,
+    ComponentSchema,
+    GroupContext,
+    GroupInfo,
+    Phase,
     StyleAttrName,
     SubPlotterParamName,
     VisualChannel,
-    Phase,
-    ComponentSchema,
-    GroupInfo,
-    GroupContext,
 )
 
 BASE_PLOTTER_PARAMS = [
@@ -92,7 +92,7 @@ class BasePlotter:
         self.grouping_params: GroupingConfig = grouping_cfg
         self.theme = self.__class__.default_theme if theme is None else theme
         self.style_engine: StyleEngine = StyleEngine(self.theme, self.figure_manager)
-        self.style_applicator: StyleApplicator = StyleApplicator(
+        self.styler: StyleApplicator = StyleApplicator(
             self.theme,
             self.kwargs,
             self.grouping_params,
@@ -103,16 +103,16 @@ class BasePlotter:
         self.plot_data: Optional[pd.DataFrame] = None
         self._initialize_subplot_specific_params()
 
-        self.style_applicator.register_post_processor(
+        self.styler.register_post_processor(
             self.__class__.plotter_name, "title", self._style_title
         )
-        self.style_applicator.register_post_processor(
+        self.styler.register_post_processor(
             self.__class__.plotter_name, "xlabel", self._style_xlabel
         )
-        self.style_applicator.register_post_processor(
+        self.styler.register_post_processor(
             self.__class__.plotter_name, "ylabel", self._style_ylabel
         )
-        self.style_applicator.register_post_processor(
+        self.styler.register_post_processor(
             self.__class__.plotter_name, "grid", self._style_grid
         )
 
@@ -183,7 +183,7 @@ class BasePlotter:
         if self._has_groups:
             self._render_with_grouped_method(ax)
         else:
-            component_styles = self.style_applicator.get_component_styles(
+            component_styles = self.styler.get_component_styles(
                 self.__class__.plotter_name
             )
             style_kwargs = component_styles.get("main", {})
@@ -195,7 +195,7 @@ class BasePlotter:
             )
 
         if self._has_groups:
-            self.style_applicator.clear_group_context()
+            self.styler.clear_group_context()
 
         self._apply_styling(ax)
 
@@ -220,6 +220,18 @@ class BasePlotter:
 
         self._plot_specific_data_prep()
 
+    def _build_plot_args(self) -> Dict[str, Any]:
+        main_plot_params = self.component_schema.get("plot", {}).get("main", set())
+        plot_args = {}
+        for key in main_plot_params:
+            if key in self._filtered_plot_kwargs:
+                plot_args[key] = self._filtered_plot_kwargs[key]
+            else:
+                style = self.styler.get_style(key)
+                if style is not None:
+                    plot_args[key] = style
+        return plot_args
+
     def _should_create_legend(self) -> bool:
         if not self.supports_legend:
             return False
@@ -234,9 +246,7 @@ class BasePlotter:
         if not self._should_create_legend():
             return
         if self.figure_manager and label and artist:
-            entry = self.style_applicator.create_legend_entry(
-                artist, label, self.current_axis
-            )
+            entry = self.styler.create_legend_entry(artist, label, self.current_axis)
             if entry:
                 self.figure_manager.register_legend_entry(entry)
 
@@ -247,9 +257,7 @@ class BasePlotter:
             "ylabel": ax,
             "grid": ax,
         }
-        self.style_applicator.apply_post_processing(
-            self.__class__.plotter_name, artists
-        )
+        self.styler.apply_post_processing(self.__class__.plotter_name, artists)
 
     def _render_with_grouped_method(self, ax: Any) -> None:
         grouped_data = self._process_grouped_data()
@@ -310,10 +318,8 @@ class BasePlotter:
         }
 
     def _resolve_group_plot_kwargs(self, group_context: GroupContext) -> Dict[str, Any]:
-        self.style_applicator.set_group_context(group_context["values"])
-        component_styles = self.style_applicator.get_component_styles(
-            self.__class__.plotter_name
-        )
+        self.styler.set_group_context(group_context["values"])
+        component_styles = self.styler.get_component_styles(self.__class__.plotter_name)
         plot_kwargs = component_styles.get("main", {})
         plot_kwargs["label"] = self._build_group_label(
             group_context["name"], group_context["categorical_cols"]
@@ -364,9 +370,7 @@ class BasePlotter:
 
         plot_kwargs = {
             "color": default_color,
-            "alpha": styles.get(
-                "alpha", self.style_applicator.get_style_with_fallback("alpha", 1.0)
-            ),
+            "alpha": styles.get("alpha", self.styler.get_style("alpha", 1.0)),
         }
 
         if "linestyle" in styles:
@@ -375,11 +379,11 @@ class BasePlotter:
             plot_kwargs["marker"] = styles["marker"]
         if "size_mult" in styles:
             if hasattr(self, "line_width"):
-                plot_kwargs["linewidth"] = self.style_applicator.get_computed_style(
+                plot_kwargs["linewidth"] = self.styler.get_computed_style(
                     "line_width", "multiply", styles["size_mult"]
                 )
             elif hasattr(self, "marker_size"):
-                plot_kwargs["s"] = self.style_applicator.get_computed_style(
+                plot_kwargs["s"] = self.styler.get_computed_style(
                     "marker_size", "multiply", styles["size_mult"]
                 )
 
@@ -425,9 +429,7 @@ class BasePlotter:
         return str(name)
 
     def _style_title(self, ax: Any, styles: Dict[str, Any]) -> None:
-        title_text = styles.get(
-            "text", self.style_applicator.get_style_with_fallback("title")
-        )
+        title_text = styles.get("text", self.styler.get_style("title"))
         if title_text:
             ax.set_title(
                 title_text,
@@ -438,14 +440,14 @@ class BasePlotter:
     def _style_xlabel(self, ax: Any, styles: Dict[str, Any]) -> None:
         xlabel_text = styles.get(
             "text",
-            self.style_applicator.get_style_with_fallback("xlabel", None),
+            self.styler.get_style("xlabel", None),
         )
         if xlabel_text:
             ax.set_xlabel(
                 xlabel_text,
                 fontsize=styles.get(
                     "fontsize",
-                    self.style_applicator.get_style_with_fallback("label_fontsize"),
+                    self.styler.get_style("label_fontsize"),
                 ),
                 color=styles.get("color", self.theme.get("label_color")),
             )
@@ -453,22 +455,20 @@ class BasePlotter:
     def _style_ylabel(self, ax: Any, styles: Dict[str, Any]) -> None:
         ylabel_text = styles.get(
             "text",
-            self.style_applicator.get_style_with_fallback("ylabel", None),
+            self.styler.get_style("ylabel", None),
         )
         if ylabel_text:
             ax.set_ylabel(
                 ylabel_text,
                 fontsize=styles.get(
                     "fontsize",
-                    self.style_applicator.get_style_with_fallback("label_fontsize"),
+                    self.styler.get_style("label_fontsize"),
                 ),
                 color=styles.get("color", self.theme.get("label_color")),
             )
 
     def _style_grid(self, ax: Any, styles: Dict[str, Any]) -> None:
-        grid_visible = styles.get(
-            "visible", self.style_applicator.get_style_with_fallback("grid", True)
-        )
+        grid_visible = styles.get("visible", self.styler.get_style("grid", True))
         if grid_visible:
             ax.grid(
                 True,

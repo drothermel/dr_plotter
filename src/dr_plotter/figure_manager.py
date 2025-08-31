@@ -3,22 +3,22 @@ from typing import Any, Dict, Optional, Tuple, Union
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from dr_plotter.cycle_config import CycleConfig
-from dr_plotter.plot_config import PlotConfig
-from dr_plotter.faceting_config import FacetingConfig
-from dr_plotter.figure_config import FigureConfig
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.cycle_config import CycleConfig
+from dr_plotter.configs.plot_config import PlotConfig
+from dr_plotter.configs.faceting_config import FacetingConfig
+from dr_plotter.configs.figure_config import FigureConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
+from dr_plotter.configs.legend_config import LegendConfig
 from dr_plotter.legend_manager import (
-    LegendConfig,
     LegendEntry,
     LegendManager,
     LegendStrategy,
     resolve_legend_config,
 )
+from dr_plotter.configs.positioning_config import PositioningConfig
 from dr_plotter.positioning_calculator import (
     FigureDimensions,
     PositioningCalculator,
-    PositioningConfig,
 )
 from dr_plotter.utils import get_axes_from_grid
 from dr_plotter.theme import BASE_THEME, Theme

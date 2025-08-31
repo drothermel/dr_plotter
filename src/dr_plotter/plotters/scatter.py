@@ -5,7 +5,7 @@ import pandas as pd
 from matplotlib.lines import Line2D
 
 from dr_plotter import consts
-from dr_plotter.grouping_config import GroupingConfig
+from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.theme import SCATTER_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
@@ -64,7 +64,7 @@ class ScatterPlotter(BasePlotter):
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
-        self.style_applicator.register_post_processor(
+        self.styler.register_post_processor(
             "scatter", "collection", self._style_scatter_collection
         )
 
@@ -111,7 +111,7 @@ class ScatterPlotter(BasePlotter):
         )
 
         artists = {"collection": collection}
-        self.style_applicator.apply_post_processing("scatter", artists)
+        self.styler.apply_post_processing("scatter", artists)
 
         self._apply_post_processing(collection, label)
 
@@ -125,7 +125,7 @@ class ScatterPlotter(BasePlotter):
             for channel in self.grouping_params.active_channels_ordered:
                 proxy = self._create_channel_specific_proxy(collection, channel)
                 if proxy:
-                    entry = self.style_applicator.create_legend_entry(
+                    entry = self.styler.create_legend_entry(
                         proxy, label, self.current_axis, explicit_channel=channel
                     )
                     if entry:
@@ -152,14 +152,14 @@ class ScatterPlotter(BasePlotter):
                 "edge", self.theme
             )
 
-        marker_size = self.style_applicator.get_style_with_fallback("marker_size", 8)
+        marker_size = self.styler.get_style_with_fallback("marker_size", 8)
         if len(sizes) > 0:
             marker_size = np.sqrt(sizes[0] / np.pi) * 2
 
         marker_style = "o"
-        if self.style_applicator.group_values:
+        if self.styler.group_values:
             styles = self.style_engine.get_styles_for_group(
-                self.style_applicator.group_values, self.grouping_params
+                self.styler.group_values, self.grouping_params
             )
             marker_style = styles.get("marker", "o")
 
