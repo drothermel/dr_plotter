@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter import consts
-from dr_plotter.configs import FigureConfig
+from dr_plotter.configs import LayoutConfig, PlotConfig
 from dr_plotter.figure_manager import FigureManager
 from dr_plotter.legend_manager import LegendConfig
 from dr_plotter.positioning_calculator import PositioningConfig
@@ -123,21 +123,23 @@ def plot_training_curves(
     figwidth = max(12, len(target_recipes) * 3.5)
 
     with FigureManager(
-        figure=FigureConfig(
-            rows=2,
-            cols=len(target_recipes),
-            figsize=(figwidth, 9),
-            tight_layout_pad=0.3,
-            subplot_kwargs={"sharey": "row"},
-        ),
-        legend=LegendConfig(
-            strategy="figure",
-            ncol=min(num_model_sizes, 8),
-            layout_top_margin=0.1,
-            layout_bottom_margin=0.12,
-            positioning_config=PositioningConfig(legend_y_offset_factor=0.02),
-        ),
-        theme=custom_theme,
+        PlotConfig(
+            layout=LayoutConfig(
+                rows=2,
+                cols=len(target_recipes),
+                figsize=(figwidth, 9),
+                tight_layout_pad=0.3,
+                subplot_kwargs={"sharey": "row"},
+            ),
+            legend=LegendConfig(
+                strategy="figure",
+                ncol=min(num_model_sizes, 8),
+                layout_top_margin=0.1,
+                layout_bottom_margin=0.12,
+                positioning_config=PositioningConfig(legend_y_offset_factor=0.02),
+            ),
+            style={"theme": custom_theme},
+        )
     ) as fm:
         fm.fig.suptitle(
             f"Faceted Training Curves: 2 Metrics × {len(target_recipes)} Data Recipes",

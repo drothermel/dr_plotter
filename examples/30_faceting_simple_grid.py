@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter import FigureManager
-from dr_plotter.configs import FacetingConfig, FigureConfig, LegendConfig, PlotConfig
+from dr_plotter.configs import FacetingConfig, LayoutConfig, LegendConfig, PlotConfig
 from dr_plotter.scripting.datadec_utils import get_datadec_functions
 
 
@@ -40,7 +40,7 @@ def load_and_prepare_data() -> pd.DataFrame:
 def plot_simple_grid(df: pd.DataFrame) -> None:
     with FigureManager(
         config=PlotConfig(
-            figure=FigureConfig(
+            layout=LayoutConfig(
                 rows=2,  # 2 data recipes: C4, DCLM-Baseline
                 cols=2,  # 2 model sizes: 150M, 1B
                 figsize=(12, 8),

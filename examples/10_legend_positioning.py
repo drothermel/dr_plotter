@@ -2,7 +2,7 @@ from typing import Any
 
 from plot_data import ExampleData
 
-from dr_plotter.configs import FigureConfig
+from dr_plotter.configs import LayoutConfig, PlotConfig
 from dr_plotter.figure_manager import FigureManager
 from dr_plotter.legend_manager import LegendConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
@@ -28,13 +28,14 @@ def main(args: Any) -> Any:
     assert len(shared_data.groupby("category_group")) == EXPECTED_CATEGORY_GROUP_COUNT
 
     with FigureManager(
-        figure=FigureConfig(rows=2, cols=2, figsize=(16, 12)),
-        legend=LegendConfig(
-            strategy="figure",
-            ncol=4,
-            layout_bottom_margin=0.08,
-            bbox_y_offset=0.025,
-        ),
+        PlotConfig(
+            layout=LayoutConfig(rows=2, cols=2, figsize=(16, 12)),
+            legend=LegendConfig(
+                strategy="figure",
+                ncol=4,
+                layout_bottom_margin=0.08,
+            ),
+        )
     ) as fm:
         fm.fig.suptitle(
             "Example 10: Legend Positioning + Management - Shared Figure Legend",
