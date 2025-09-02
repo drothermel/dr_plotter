@@ -88,20 +88,22 @@ extend-select = [
 ]
 ignore = [
     "D",                    # docstring styling
-    "PT018",                # enable long asserts
-    "ANN401",               # allow Any
-    "ARG001",               # callbacks
-    "COM812", "ISC001",     # Overlap with each other in formatting
-    "EXE",                  # Files generally don't need to be executable
-    "FBT001", "FBT002",     # bool kwargs common
+    "EXE",                  # Files needn't be executable
     "I",                    # sort imports: covered by ruff format
-    "ICN002", "ICN003",     # import rules that are overly restrictive
     "INT",                  # Gettext rules, unused
     "ISC",                  # String concat rules, strict
     "LOG",                  # logger usage, strict
+    "TD",                   # TODOs are fine
+    "B011",                 # enable assert False
+    "PT018",                # enable long asserts
+    "PT015",                # enable asserts that always fail
+    "ANN401",               # allow Any
+    "ARG001",               # callbacks
+    "COM812", "ISC001",     # Overlap with each other in formatting
+    "FBT001", "FBT002",     # bool kwargs common
+    "ICN002", "ICN003",     # import rules that are overly restrictive
     "PLR0913",              # Too many args, rough with ML code
     "S101",                 # asserts for invariants
-    "TD",                   # TODOs are fine
     "D203",                 # either D203 or D211
     "D213",                 # either D212 or D213
 ]
