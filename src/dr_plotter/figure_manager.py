@@ -40,7 +40,6 @@ class FigureManager:
         assert legend_config is not None, "LegendConfig is required"
 
         figure_config.validate()
-        legend_config.validate()
 
         self._init_from_configs(figure_config, legend_config, theme)
 

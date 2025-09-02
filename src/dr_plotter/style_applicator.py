@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Callable
 from dr_plotter.configs import GroupingConfig
 from dr_plotter.consts import VISUAL_CHANNELS
 from dr_plotter.legend_manager import LegendEntry, LegendStrategy
-from dr_plotter.plotters import BasePlotter
 from dr_plotter.theme import (
     BAR_THEME,
     BUMP_PLOT_THEME,
@@ -382,6 +381,8 @@ class StyleApplicator:
     def _get_component_schema(
         self, plot_type: str, phase: Phase = "plot"
     ) -> ComponentSchema:
+        from dr_plotter.plotters.base import BasePlotter
+
         plotter_cls = BasePlotter.get_plotter(plot_type)
         if plotter_cls and hasattr(plotter_cls, "component_schema"):
             return plotter_cls.component_schema.get(phase, {})

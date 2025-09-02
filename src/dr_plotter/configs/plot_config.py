@@ -34,7 +34,7 @@ class StyleConfig:
 class PlotConfig:
     layout: tuple[int, int] | dict[str, Any] | LayoutConfig | None = None
     style: str | dict[str, Any] | StyleConfig | None = None
-    legend: str | dict[str, Any] | None = None
+    legend: str | dict[str, Any] | LegendConfig | None = None
 
     @classmethod
     def from_preset(cls, preset_name: str) -> PlotConfig:
@@ -106,13 +106,16 @@ class PlotConfig:
         if self.legend is None:
             return LegendConfig()
 
+        if isinstance(self.legend, LegendConfig):
+            return self.legend
+
         if isinstance(self.legend, str):
             from dr_plotter.legend_manager import resolve_legend_config
 
             return resolve_legend_config(self.legend)
 
         assert isinstance(self.legend, dict), (
-            f"Legend must be string or dict, got {type(self.legend)}"
+            f"Legend must be string, dict, or LegendConfig, got {type(self.legend)}"
         )
         return self._convert_legend_dict_to_config(self.legend)
 
