@@ -50,13 +50,17 @@ class LayoutConfig:
         return {**self.figure_kwargs, **self.subplot_kwargs}
 
     @classmethod
-    def from_input(cls, value: tuple[int, int] | dict[str, Any] | LayoutConfig | None) -> LayoutConfig:
+    def from_input(
+        cls, value: tuple[int, int] | dict[str, Any] | LayoutConfig | None
+    ) -> LayoutConfig:
         if value is None:
             return cls()
         elif isinstance(value, cls):
             return value
         elif isinstance(value, tuple):
-            assert len(value) in {2, 3}, f"Tuple must have 2 or 3 elements, got {len(value)}"
+            assert len(value) in {2, 3}, (
+                f"Tuple must have 2 or 3 elements, got {len(value)}"
+            )
             if len(value) == 2:
                 return cls(rows=value[0], cols=value[1])
             else:

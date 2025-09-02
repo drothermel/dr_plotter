@@ -138,9 +138,11 @@ class Theme:
         self.all_styles["post"] = PostStyles.from_input(post_styles)
         self.all_styles["axes"] = AxesStyles.from_input(axes_styles)
         self.all_styles["figure"] = FigureStyles.from_input(figure_styles)
-        
+
         if styles is not None:
-            self.all_styles["general"] = Style(**styles) if isinstance(styles, dict) else styles
+            self.all_styles["general"] = (
+                Style(**styles) if isinstance(styles, dict) else styles
+            )
         else:
             self.all_styles["general"] = Style()
 

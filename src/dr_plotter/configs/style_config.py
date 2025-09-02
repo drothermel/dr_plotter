@@ -60,7 +60,9 @@ class StyleConfig:
         self.theme = THEME_MAP[DEFAULT_THEME_STR if self.theme is None else self.theme]
 
     @classmethod
-    def from_input(cls, value: str | dict[str, Any] | StyleConfig | None) -> StyleConfig:
+    def from_input(
+        cls, value: str | dict[str, Any] | StyleConfig | None
+    ) -> StyleConfig:
         if value is None:
             return cls()
         elif isinstance(value, cls):

@@ -393,7 +393,6 @@ class BasePlotter:
 
         return plot_kwargs
 
-
     def _get_x_metric_column_name(self) -> ColName | None:
         subplotter_x_metric = "x"
         return self.kwargs.get(subplotter_x_metric)

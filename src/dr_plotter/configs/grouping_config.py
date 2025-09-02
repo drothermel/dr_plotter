@@ -53,7 +53,9 @@ class GroupingConfig:
         assert len(unsupported) == 0, f"Unsupported groupings: {unsupported}"
 
     @classmethod
-    def from_input(cls, value: dict[str, Any] | GroupingConfig | None) -> GroupingConfig:
+    def from_input(
+        cls, value: dict[str, Any] | GroupingConfig | None
+    ) -> GroupingConfig:
         if value is None:
             return cls()
         elif isinstance(value, cls):
