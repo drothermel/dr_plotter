@@ -92,19 +92,19 @@ class ScatterPlotter(BasePlotter):
 
         if "size" in self.grouping_params.active_channels:
             size_col = self.grouping_params.size
-            if size_col and size_col in data.columns:
-                sizes = []
-                for value in data[size_col]:
-                    style = self.style_engine._get_continuous_style(
-                        "size", size_col, value
-                    )
-                    size_mult = style.get("size_mult", 1.0)
-                    base_size = plot_args.get("s", 50)
-                    assert isinstance(base_size, (int, float)), (
-                        f"Base size must be numeric, got {type(base_size)}: {base_size}"
-                    )
-                    sizes.append(base_size * size_mult)
-                plot_args["s"] = sizes
+            assert size_col is not None and size_col in data.columns, (
+                "Size column is required when grouped by"
+            )
+            base_size = plot_args.get("s", 50)
+            sizes = []
+            for value in data[size_col]:
+                style = self.style_engine._get_continuous_style("size", size_col, value)
+                size_mult = style.get("size_mult", 1.0)
+                assert isinstance(base_size, (int, float)), (
+                    f"Base size must be numeric, got {type(base_size)}: {base_size}"
+                )
+                sizes.append(base_size * size_mult)
+            plot_args["s"] = sizes
 
         collection = ax.scatter(
             data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **plot_args
