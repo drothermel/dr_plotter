@@ -204,7 +204,9 @@ class BasePlotter:
         self.plot_data = self.raw_data.copy()
 
         if self.x_col is not None:
-            self.plot_data = self.plot_data.rename(columns={self.x_col: consts.X_COL_NAME})
+            self.plot_data = self.plot_data.rename(
+                columns={self.x_col: consts.X_COL_NAME}
+            )
 
         if len(self.y_cols) > 0:
             df_cols = set(self.plot_data.columns)
@@ -239,9 +241,7 @@ class BasePlotter:
         legend_param = self.kwargs.get("legend", self.theme.get("legend"))
         return legend_param is not False
 
-    def _register_legend_entry_if_valid(
-        self, artist: Any, label: str | None
-    ) -> None:
+    def _register_legend_entry_if_valid(self, artist: Any, label: str | None) -> None:
         if not self._should_create_legend():
             return
         if self.figure_manager and label and artist:

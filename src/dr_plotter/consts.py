@@ -1,4 +1,3 @@
-
 from dr_plotter.types import (
     StyleAttrName,
     VisualChannel,

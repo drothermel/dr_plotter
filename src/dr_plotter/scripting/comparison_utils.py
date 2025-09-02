@@ -69,7 +69,9 @@ def count_unique_values(
     return unique
 
 
-def floats_are_equal(val1: float, val2: float, tolerance: Optional[float] = None) -> bool:
+def floats_are_equal(
+    val1: float, val2: float, tolerance: Optional[float] = None
+) -> bool:
     if tolerance is None:
         tolerance = DEFAULT_TOLERANCES["float"]
     return _floats_are_equal(val1, val2, tolerance)
@@ -83,7 +85,9 @@ def colors_are_equal(
     return _tuples_are_equal(color1, color2, tolerance)
 
 
-def count_unique_floats(values: list[float], tolerance: Optional[float] = None) -> set[float]:
+def count_unique_floats(
+    values: list[float], tolerance: Optional[float] = None
+) -> set[float]:
     if tolerance is None:
         tolerance = DEFAULT_TOLERANCES["float"]
     return count_unique_values(values, tolerance)

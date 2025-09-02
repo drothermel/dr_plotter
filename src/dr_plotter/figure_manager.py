@@ -207,8 +207,9 @@ class FigureManager:
         self.finalize_legends()
         self._apply_axis_labels()
 
-        needs_legend_space = (
-            self.legend_config.strategy in (LegendStrategy.GROUPED_BY_CHANNEL, LegendStrategy.FIGURE_BELOW)
+        needs_legend_space = self.legend_config.strategy in (
+            LegendStrategy.GROUPED_BY_CHANNEL,
+            LegendStrategy.FIGURE_BELOW,
         )
 
         if self._layout_rect is not None:
