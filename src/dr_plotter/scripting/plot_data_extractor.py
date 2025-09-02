@@ -238,9 +238,8 @@ def extract_figure_legend_properties(fig: Any) -> Dict[str, Any]:
         elif hasattr(legend, "get_lines") and hasattr(legend, "get_patches"):
             handles.extend(legend.get_lines())
             handles.extend(legend.get_patches())
-        else:
-            if hasattr(legend, "_legend_handles"):
-                handles.extend(legend._legend_handles)
+        elif hasattr(legend, "_legend_handles"):
+            handles.extend(legend._legend_handles)
 
         legend_props = {
             "index": i,
@@ -516,7 +515,7 @@ def extract_channel_values_from_collections(
             all_values.extend(collection["markers"])
     elif channel == "alpha":
         for collection in collections:
-            if "alphas" in collection and collection["alphas"]:
+            if collection.get("alphas"):
                 all_values.extend(collection["alphas"])
             else:
                 for rgba in collection["colors"]:
@@ -546,7 +545,7 @@ def extract_all_plot_data_from_collections(
         all_plot_colors.extend(collection["colors"])
         all_plot_sizes.extend(collection["sizes"])
 
-        if "alphas" in collection and collection["alphas"]:
+        if collection.get("alphas"):
             all_plot_alphas.extend(collection["alphas"])
         else:
             for rgba_color in collection["colors"]:
@@ -803,26 +802,24 @@ def verify_legend_visibility(
                 print_failure(
                     f"EXPECTED {expected_visible_count} visible legends, but found {visible_count}"
                 )
+        elif expected_visible_count == 0:
+            print_success("EXPECTED no legends and found none - perfect!")
         else:
-            if expected_visible_count == 0:
-                print_success("EXPECTED no legends and found none - perfect!")
-            else:
-                print_success(
-                    f"EXPECTED {expected_visible_count} legends and found {visible_count} - perfect!"
-                )
-    else:
-        if visible_count == 0:
-            if not fail_on_missing:
-                print_success("No legends found (not treated as failure)")
-            else:
-                summary["success"] = False
-                print_critical("CRITICAL: No legends are visible in any subplot!")
-        elif visible_count < total_count:
-            if fail_on_missing:
-                summary["success"] = False
-            print_warning(
-                f"WARNING: {total_count - visible_count} subplot(s) missing legends"
+            print_success(
+                f"EXPECTED {expected_visible_count} legends and found {visible_count} - perfect!"
             )
+    elif visible_count == 0:
+        if not fail_on_missing:
+            print_success("No legends found (not treated as failure)")
+        else:
+            summary["success"] = False
+            print_critical("CRITICAL: No legends are visible in any subplot!")
+    elif visible_count < total_count:
+        if fail_on_missing:
+            summary["success"] = False
+        print_warning(
+            f"WARNING: {total_count - visible_count} subplot(s) missing legends"
+        )
 
     if summary["success"]:
         print_success("All legend visibility checks passed!")

@@ -20,7 +20,7 @@ def get_all_example_files():
 
 def extract_plotter_usage(file_path):
     """Extract all plotter usage patterns from an example file."""
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         content = f.read()
 
     used_plotters = set()
@@ -65,7 +65,7 @@ def extract_plotter_usage(file_path):
 
 def extract_feature_usage(file_path):
     """Extract visual encoding features used in an example."""
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         content = f.read()
 
     features = set()

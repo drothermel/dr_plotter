@@ -240,17 +240,16 @@ class FigureManager:
                     self.fig.tight_layout(rect=rect, pad=self._layout_pad)
                 else:
                     self.fig.tight_layout(pad=self._layout_pad)
-            else:
-                if self.fig._suptitle is not None or self._has_subplot_titles():
-                    default_config = PositioningConfig()
-                    calculator = PositioningCalculator(default_config)
-                    rect = calculator.calculate_layout_rect(figure_dimensions)
-                    if rect:
-                        self.fig.tight_layout(rect=rect, pad=self._layout_pad)
-                    else:
-                        self.fig.tight_layout(pad=self._layout_pad)
+            elif self.fig._suptitle is not None or self._has_subplot_titles():
+                default_config = PositioningConfig()
+                calculator = PositioningCalculator(default_config)
+                rect = calculator.calculate_layout_rect(figure_dimensions)
+                if rect:
+                    self.fig.tight_layout(rect=rect, pad=self._layout_pad)
                 else:
                     self.fig.tight_layout(pad=self._layout_pad)
+            else:
+                self.fig.tight_layout(pad=self._layout_pad)
 
     def _apply_axis_labels(self) -> None:
         if self.external_mode:

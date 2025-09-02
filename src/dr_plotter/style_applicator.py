@@ -300,9 +300,7 @@ class StyleApplicator:
 
         extracted = {}
         for k, v in self.kwargs.items():
-            if k in attrs and not self._is_reserved_kwarg(k):
-                extracted[k] = v
-            elif (
+            if (k in attrs and not self._is_reserved_kwarg(k)) or (
                 not self._is_reserved_kwarg(k)
                 and not k.endswith("_by")
                 and k not in axes_specific

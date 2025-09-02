@@ -83,7 +83,7 @@ class HistogramPlotter(BasePlotter):
     def _apply_post_processing(
         self, parts: Dict[str, Any], label: Optional[str] = None
     ) -> None:
-        if "patches" in parts and parts["patches"]:
+        if parts.get("patches"):
             first_patch = parts["patches"][0]
             proxy = Patch(
                 facecolor=first_patch.get_facecolor(),
