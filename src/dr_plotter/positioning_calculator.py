@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from dr_plotter.configs import PositioningConfig
+from dr_plotter.configs.positioning_config import PositioningConfig
 
 
 @dataclass

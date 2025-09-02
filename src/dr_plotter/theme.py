@@ -1,9 +1,11 @@
 from __future__ import annotations
 import itertools
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from dr_plotter import consts
-from dr_plotter.configs import LegendConfig
+
+if TYPE_CHECKING:
+    from dr_plotter.configs import LegendConfig
 
 ALPHA_MIN_DEFAULT = 0.3
 ALPHA_MAX_DEFAULT = 1.0
@@ -79,11 +81,14 @@ class Theme:
     ) -> None:
         self.name = name
         self.parent = parent
-        self.legend_config = (
-            legend_config
-            or (parent.legend_config if parent else None)
-            or LegendConfig()
-        )
+        if legend_config is not None:
+            self.legend_config = legend_config
+        elif parent and parent.legend_config:
+            self.legend_config = parent.legend_config
+        else:
+            from dr_plotter.configs.legend_config import LegendConfig
+
+            self.legend_config = LegendConfig()
         self.all_styles: dict[str, Style] = {}
         for cls, cls_dict in [
             (PlotStyles, plot_styles),
