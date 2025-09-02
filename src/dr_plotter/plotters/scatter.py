@@ -5,7 +5,7 @@ import pandas as pd
 from matplotlib.lines import Line2D
 
 from dr_plotter import consts
-from dr_plotter.configs.grouping_config import GroupingConfig
+from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import SCATTER_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
@@ -152,7 +152,7 @@ class ScatterPlotter(BasePlotter):
                 "edge", self.theme
             )
 
-        marker_size = self.styler.get_style_with_fallback("marker_size", 8)
+        marker_size = self.styler.get_style("marker_size", 8)
         if len(sizes) > 0:
             marker_size = np.sqrt(sizes[0] / np.pi) * 2
 

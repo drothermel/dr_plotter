@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 
-from dr_plotter.configs.positioning_config import PositioningConfig
+from dr_plotter.configs import PositioningConfig
 
 
 @dataclass

@@ -1,8 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from dr_plotter.channel_metadata import ChannelRegistry
-from dr_plotter.configs.cycle_config import CycleConfig
-from dr_plotter.configs.grouping_config import GroupingConfig
+from dr_plotter.configs import CycleConfig, GroupingConfig
 from dr_plotter.theme import Theme
 
 

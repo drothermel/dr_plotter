@@ -15,7 +15,7 @@ from dr_plotter.types import (
     ComponentSchema,
 )
 from .base import BasePlotter
-from dr_plotter.configs.grouping_config import GroupingConfig
+from dr_plotter.configs import GroupingConfig
 
 
 class ContourPlotter(BasePlotter):

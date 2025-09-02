@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, Optional, Set, TYPE_CHECKING
 
 from dr_plotter.consts import VISUAL_CHANNELS
-from dr_plotter.configs.grouping_config import GroupingConfig
+from dr_plotter.configs import GroupingConfig
 from dr_plotter.legend_manager import LegendEntry, LegendStrategy
 from dr_plotter.theme import (
     Theme,
