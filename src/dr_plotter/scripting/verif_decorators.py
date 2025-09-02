@@ -7,8 +7,6 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 
 from dr_plotter.types import ExpectedChannels, SubplotCoord
-
-MAX_DISPLAY_ITEMS = 3
 from dr_plotter.utils import get_axes_from_grid
 
 from .plot_data_extractor import (
@@ -34,6 +32,8 @@ from .verification_formatter import (
     print_success,
     print_suggestions,
 )
+
+MAX_DISPLAY_ITEMS = 3
 
 
 def _print_comprehensive_plot_info(ax: Any, subplot_index: int) -> dict[str, Any]:

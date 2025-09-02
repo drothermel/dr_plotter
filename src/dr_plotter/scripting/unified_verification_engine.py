@@ -3,9 +3,6 @@ from typing import Any, Protocol
 import matplotlib.colors as mcolors
 from abc import ABC, abstractmethod
 
-MIN_RGB_TUPLE_LENGTH = 3
-RANGE_OVERLAP_THRESHOLD = 0.5
-
 from .plot_data_extractor import (
     extract_subplot_properties,
     convert_legend_size_to_scatter_size,
@@ -19,6 +16,9 @@ from .comparison_utils import (
     get_default_tolerance_for_channel,
 )
 from dr_plotter.types import VerificationParams, VerificationResult
+
+MIN_RGB_TUPLE_LENGTH = 3
+RANGE_OVERLAP_THRESHOLD = 0.5
 
 
 class VerificationRule(Protocol):
@@ -92,7 +92,7 @@ class ChannelVariationRule(BaseVerificationRule):
         all_values = extract_channel_values_from_collections(collections, channel)
 
         if channel == "unknown":
-            result["message"] = f"Unknown channel: "
+            result["message"] = "Unknown channel: "
             f"{channel}"
             return result
 
@@ -154,7 +154,7 @@ class ChannelUniformityRule(BaseVerificationRule):
 
         if not values:
             result["message"] = f"{channel.title()} uniformity: "
-            f"No values to check"
+            "No values to check"
             return result
 
         if tolerance is None:
@@ -184,7 +184,7 @@ class ChannelUniformityRule(BaseVerificationRule):
                 else sorted(unique_values)[:3]
             )
             formatted_samples = self._format_sample_values(raw_samples, max_count=3)
-            result["message"] += f"\n   - Plot sample values: "
+            result["message"] += "\n   - Plot sample values: "
             f"{formatted_samples}"
 
         return result
@@ -294,9 +294,9 @@ class ConsistencyCheckRule(BaseVerificationRule):
             )
         else:
             result["message"] = "Color consistency: FAIL"
-            result["message"] += f"\n   - Plot colors: "
+            result["message"] += "\n   - Plot colors: "
             f"{result['plot_colors']}"
-            result["message"] += f"\n   - Legend colors: "
+            result["message"] += "\n   - Legend colors: "
             f"{result['legend_colors']}"
 
         return result
@@ -386,7 +386,7 @@ class ConsistencyCheckRule(BaseVerificationRule):
             result["message"] = "Size consistency: PASS (ranges match within tolerance)"
         else:
             result["message"] = "Size consistency: FAIL"
-            result["message"] += f"\n   - Plot size range: "
+            result["message"] += "\n   - Plot size range: "
             f"{result['plot_size_range']}"
             result["message"] += (
                 f"\n   - Legend size range: {result['legend_size_range']}"
@@ -649,7 +649,7 @@ class FigureLegendStrategyRule(BaseVerificationRule):
             )
         else:
             result["passed"] = False
-            result["message"] = f"Unknown strategy: "
+            result["message"] = "Unknown strategy: "
             f"{strategy}"
             return result
 

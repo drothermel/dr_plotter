@@ -1,14 +1,5 @@
 from __future__ import annotations
 
-"""
-Faceted Training Curves Example
-
-Requires DataDecide integration:
-    uv add "dr_plotter[datadec]"
-
-This example demonstrates advanced faceted plotting with real ML training data.
-"""
-
 import argparse
 import itertools
 import pandas as pd
@@ -22,6 +13,15 @@ from dr_plotter import consts
 from dr_plotter.scripting.datadec_utils import get_datadec_functions
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import inspect_plot_properties
+
+"""
+Faceted Training Curves Example
+
+Requires DataDecide integration:
+    uv add "dr_plotter[datadec]"
+
+This example demonstrates advanced faceted plotting with real ML training data.
+"""
 
 # Get DataDecide functions once at module level
 DataDecide, select_params, select_data = get_datadec_functions()
