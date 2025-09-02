@@ -8,9 +8,7 @@ import pandas as pd
 from dr_plotter.configs import (
     CycleConfig,
     FacetingConfig,
-    FigureConfig,
     GroupingConfig,
-    LegendConfig,
     PlotConfig,
 )
 from dr_plotter.faceting.faceting_core import (
@@ -25,7 +23,6 @@ from dr_plotter.legend_manager import (
     LegendManager,
 )
 from dr_plotter.plotters.base import BasePlotter
-from dr_plotter.theme import Theme
 from dr_plotter.utils import get_axes_from_grid
 
 
@@ -33,82 +30,40 @@ class FigureManager:
     def __init__(self, config: PlotConfig | None = None, **kwargs: Any) -> None:
         assert not any(k in kwargs for k in {"figure", "legend", "theme"})
         config = PlotConfig() if config is None else config
-        self._init_from_config(config)
 
-        figure_config, legend_config, theme = config._to_legacy_configs()
-
-        assert theme is not None, "Theme is required"
-        assert figure_config is not None, "FigureConfig is required"
-        assert legend_config is not None, "LegendConfig is required"
-
-        self._init_from_configs(figure_config, legend_config, theme)
-
-    def _init_from_config(self, config: PlotConfig) -> None:
-        self.layout_config = config._resolve_layout_config()
-        self.style_config = config._resolve_style_config()
-        self.legend_config = config._resolve_legend_config()
-        self.theme = config.style_config.theme
-    def _init_from_configs(
-        self,
-        figure: FigureConfig,
-        legend: LegendConfig,
-        theme: Theme,
-    ) -> None:
-        self.figure_config = figure
-        self._layout_pad = figure.tight_layout_pad
-        self.rows = figure.rows
-        self.cols = figure.cols
-
-        fig, axes, external_mode = self._create_figure_axes(
-            figure.external_ax,
-            figure.figure_kwargs,
-            figure.subplot_kwargs,
-            figure.figsize,
-            figure.rows,
-            figure.cols,
+        self.layout_config = config.layout
+        self.style_config = config.style
+        self.legend_config = config.legend
+        self.legend_manager = LegendManager(self, self.legend_config)
+        self.theme = self.style_config.theme
+        self.shared_styling = self.style_config.shared_styling
+        self.shared_cycle_config = (
+            CycleConfig(self.theme) if self.shared_styling else None
         )
-        self.fig = fig
-        self.figure = fig
-        self.axes = axes
-        self.external_mode = external_mode
-
-        # This needs fixing
-        legend_config = next(
-            (c for c in [legend, theme.legend_config] if c is not None), LegendConfig()
-        )
-        self.legend_manager = LegendManager(self, legend_config)
-        self.legend_config = self.legend_manager.config
-        self._layout_rect = [
-            self.legend_config.layout_left_margin,
-            self.legend_config.layout_bottom_margin,
-            self.legend_config.layout_right_margin,
-            self.legend_config.layout_top_margin,
-        ]
-
-        self.shared_styling = figure.shared_styling
-        self.shared_cycle_config = CycleConfig(theme) if self.shared_styling else None
 
         self._facet_grid_info: dict[str, Any] | None = None
         self._facet_style_coordinator: FacetStyleCoordinator | None = None
+        self._external_mode = False
 
-    def _create_figure_axes(
-        self,
-        external_ax: plt.Axes | None,
-        figure_kwargs: dict[str, Any],
-        subplot_kwargs: dict[str, Any],
-        figsize: tuple[int, int],
-        rows: int,
-        cols: int,
-    ) -> tuple[plt.Figure, plt.Axes, bool]:
-        if external_ax is not None:
-            return external_ax.get_figure(), external_ax, True
+        self.fig, self.axes = plt.subplots(
+            self.layout_config.rows,
+            self.layout_config.cols,
+            constrained_layout=self.layout_config.constrained_layout,
+            **{
+                **self.layout_config.combined_kwargs,
+                "figsize": self.layout_config.figsize,
+            },
+        )
 
-        combined_kwargs = {**figure_kwargs, **subplot_kwargs}
-        if "figsize" not in combined_kwargs:
-            combined_kwargs["figsize"] = figsize
-
+    def _create_figure_axes(self) -> tuple[plt.Figure, plt.Axes, bool]:
         fig, axes = plt.subplots(
-            rows, cols, constrained_layout=False, **combined_kwargs
+            self.layout_config.rows,
+            self.layout_config.cols,
+            constrained_layout=self.layout_config.constrained_layout,
+            **{
+                **self.layout_config.combined_kwargs,
+                "figsize": self.layout_config.figsize,
+            },
         )
         return fig, axes, False
 
@@ -118,21 +73,21 @@ class FigureManager:
     def register_legend_entry(self, entry: LegendEntry) -> None:
         self.legend_manager.registry.add_entry(entry)
 
-    def finalize_legends(self) -> None:
-        self.legend_manager.finalize()
-
     def finalize_layout(self) -> None:
-        self.finalize_legends()
+        self.legend_manager.finalize()
         self._apply_axis_labels()
-        rect = self._layout_rect if any(self._layout_rect) else None
-        self.fig.tight_layout(rect=rect, pad=self._layout_pad)
+        if self.layout_config.tight_layout:
+            self.fig.tight_layout(
+                rect=self.layout_config.tight_layout_rect,
+                pad=self.layout_config.tight_layout_pad,
+            )
 
     def _apply_axis_labels(self) -> None:
-        if self.external_mode:
+        if self._external_mode:
             return
 
-        if self.figure_config.x_labels is not None:
-            for row_idx, row_labels in enumerate(self.figure_config.x_labels):
+        if self.layout_config.x_labels is not None:
+            for row_idx, row_labels in enumerate(self.layout_config.x_labels):
                 for col_idx, label in enumerate(row_labels):
                     ax = self.get_axes(row_idx, col_idx)
                     if label is not None:
@@ -140,8 +95,8 @@ class FigureManager:
                     else:
                         ax.set_xlabel("")
 
-        if self.figure_config.y_labels is not None:
-            for row_idx, row_labels in enumerate(self.figure_config.y_labels):
+        if self.layout_config.y_labels is not None:
+            for row_idx, row_labels in enumerate(self.layout_config.y_labels):
                 for col_idx, label in enumerate(row_labels):
                     ax = self.get_axes(row_idx, col_idx)
                     if label is not None:
@@ -164,7 +119,7 @@ class FigureManager:
         return any(ax.get_title() for ax in axes_to_check)
 
     def get_axes(self, row: int | None = None, col: int | None = None) -> plt.Axes:
-        if self.external_mode:
+        if self._external_mode:
             return self.axes
 
         return get_axes_from_grid(self.axes, row, col)
@@ -177,7 +132,7 @@ class FigureManager:
         col: int,
         **kwargs: Any,
     ) -> None:
-        ax = self.axes if self.external_mode else self.get_axes(row, col)
+        ax = self.axes if self._external_mode else self.get_axes(row, col)
 
         kwargs["grouping_cfg"] = GroupingConfig()
         kwargs["grouping_cfg"].set_kwargs(kwargs)
@@ -277,15 +232,15 @@ class FigureManager:
 
     def _validate_grid_dimensions(self, grid_shape: tuple[int, int]) -> None:
         computed_rows, computed_cols = grid_shape
-        figure_rows, figure_cols = self.figure_config.rows, self.figure_config.cols
+        figure_rows, figure_cols = self.layout_config.rows, self.layout_config.cols
 
         if (computed_rows, computed_cols) != (figure_rows, figure_cols):
             assert False, (
                 f"Grid dimension mismatch: "
-                f"FigureConfig({figure_rows}×{figure_cols}) "
+                f"LayoutConfig({figure_rows}×{figure_cols}) "
                 f"vs required({computed_rows}×{computed_cols}). "
                 f"Fix: "
-                f"FigureConfig(rows={computed_rows}, cols={computed_cols})"
+                f"LayoutConfig(rows={computed_rows}, cols={computed_cols})"
             )
 
     def _get_or_create_style_coordinator(self) -> FacetStyleCoordinator:
