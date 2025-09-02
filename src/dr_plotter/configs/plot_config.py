@@ -1,35 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from dr_plotter.configs.figure_config import FigureConfig
+from dr_plotter.configs.layout_config import LayoutConfig
 from dr_plotter.configs.legend_config import LegendConfig
+from dr_plotter.configs.style_config import StyleConfig
 from dr_plotter.legend_manager import resolve_legend_config
 from dr_plotter.plot_presets import PLOT_CONFIGS
 from dr_plotter.theme import BAR_THEME, BASE_THEME, LINE_THEME, SCATTER_THEME, Theme
-from dr_plotter.types import ColorPalette
-
-
-@dataclass
-class LayoutConfig:
-    rows: int = 1
-    cols: int = 1
-    figsize: tuple[float, float] = (12.0, 8.0)
-    tight_layout_pad: float = 0.5
-    figure_kwargs: dict[str, Any] = field(default_factory=dict)
-    subplot_kwargs: dict[str, Any] = field(default_factory=dict)
-    x_labels: list[list[str | None]] | None = None
-    y_labels: list[list[str | None]] | None = None
-
-
-@dataclass
-class StyleConfig:
-    colors: ColorPalette | None = None
-    plot_styles: dict[str, Any] | None = field(default_factory=dict)
-    fonts: dict[str, Any] | None = field(default_factory=dict)
-    figure_styles: dict[str, Any] | None = field(default_factory=dict)
-    theme: str | Theme | None = None
 
 
 @dataclass
@@ -37,6 +17,12 @@ class PlotConfig:
     layout: tuple[int, int] | dict[str, Any] | LayoutConfig | None = None
     style: str | dict[str, Any] | StyleConfig | None = None
     legend: str | dict[str, Any] | LegendConfig | None = None
+
+    def __post_init__(self) -> None:
+        self.validate()
+
+    def validate(self) -> None:
+        pass
 
     @classmethod
     def from_preset(cls, preset_name: str) -> PlotConfig:

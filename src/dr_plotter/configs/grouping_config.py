@@ -14,6 +14,12 @@ class GroupingConfig:
     marker: ColName | None = None
     alpha: ColName | None = None
 
+    def __post_init__(self) -> None:
+        self.validate()
+
+    def validate(self) -> None:
+        pass
+
     @property
     def channel_strs(self) -> list[str]:
         return [f"{field.name}_by" for field in fields(self)]

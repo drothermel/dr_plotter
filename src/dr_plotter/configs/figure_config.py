@@ -22,6 +22,9 @@ class FigureConfig:
     x_labels: list[list[str | None]] | None = None
     y_labels: list[list[str | None]] | None = None
 
+    def __post_init__(self) -> None:
+        self.validate()
+
     def validate(self) -> None:
         assert self.rows > 0, f"Rows must be positive, got {self.rows}"
         assert self.cols > 0, f"Cols must be positive, got {self.cols}"

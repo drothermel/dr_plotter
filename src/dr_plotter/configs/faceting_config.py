@@ -33,6 +33,8 @@ class FacetingConfig:
 
     color_wrap: bool = False
 
+    def __post_init__(self) -> None:
+        self.validate()
     def validate(self) -> None:
         if not (self.rows or self.cols):
             assert False, (

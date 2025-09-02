@@ -34,13 +34,12 @@ class FigureManager:
         assert not any(k in kwargs for k in {"figure", "legend", "theme"})
         config = PlotConfig() if config is None else config
         self._init_from_config(config)
+
         figure_config, legend_config, theme = config._to_legacy_configs()
 
         assert theme is not None, "Theme is required"
         assert figure_config is not None, "FigureConfig is required"
         assert legend_config is not None, "LegendConfig is required"
-
-        figure_config.validate()
 
         self._init_from_configs(figure_config, legend_config, theme)
 
@@ -55,8 +54,6 @@ class FigureManager:
         legend: LegendConfig,
         theme: Theme,
     ) -> None:
-        figure.validate()
-
         self.figure_config = figure
         self._layout_pad = figure.tight_layout_pad
         self.rows = figure.rows
@@ -240,7 +237,6 @@ class FigureManager:
         assert not data.empty, "Cannot create faceted plot with empty DataFrame"
 
         config = self._resolve_faceting_config(faceting, **kwargs)
-        config.validate()
 
         assert config.x is not None, "x parameter is required for faceted plotting"
         assert config.y is not None, "y parameter is required for faceted plotting"

@@ -24,3 +24,9 @@ class PositioningConfig:
     medium_spacing_max: float = 0.3
     wide_span_factor: float = 0.8
     medium_span_factor: float = 0.7
+
+    def __post_init__(self) -> None:
+        self.validate()
+
+    def validate(self) -> None:
+        pass
