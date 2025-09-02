@@ -20,8 +20,11 @@
 - Heatmap
   - _style_ticks gets passed styles but then doesn't use them
 
-## Style Applicator
+## Style Applicator & General Styling
+- PositioningCalculator has a _calculate_figure_legend_position() that takes manual_overrides BUT THEN DOESNT USE THEM!!!
+- Generally, PositioningCalculator isn't really fully implemented
 - so many hardcoded things and confusing ensted ifs
+- removed hint modifiers from positioning calculator because they weren't implemented and so lets just not do that.
 
 ## Theme-to-Matplotlib Parameter Flow Issue
 

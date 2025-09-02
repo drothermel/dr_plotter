@@ -1,12 +1,13 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Any
 
 from dr_plotter.configs import LegendConfig, LegendStrategy, PositioningConfig
 from dr_plotter.positioning_calculator import (
-    PositioningCalculator,
     FigureDimensions,
     LegendMetadata,
+    PositioningCalculator,
 )
 
 
@@ -132,35 +133,18 @@ class LegendManager:
 
         return channel.title()
 
-    def calculate_optimal_ncol(
-        self, legend_entries: list[LegendEntry], figure_width: float | None = None
-    ) -> int:
+    def calculate_optimal_ncol(self, legend_entries: list[LegendEntry]) -> int:
         if self.config.ncol is not None:
             return self.config.ncol
-
-        num_entries = len(legend_entries)
-        if num_entries <= 1:
-            return 1
-
-        if figure_width is None:
-            figure_width = getattr(self.fm.fig, "get_figwidth", lambda: 10)()
-
-        if num_entries <= 3:
-            return num_entries
-        elif figure_width >= 12:
-            return min(5, num_entries)
-        elif figure_width >= 8:
-            return min(4, num_entries)
-        else:
-            return min(3, num_entries)
+        return len(legend_entries) if len(legend_entries) > 0 else 1
 
     def _get_figure_dimensions(self) -> FigureDimensions:
         figure_width = getattr(self.fm.fig, "get_figwidth", lambda: 10)()
         figure_height = getattr(self.fm.fig, "get_figheight", lambda: 8)()
 
-        has_title = self.fm.fig._suptitle is not None
+        has_title = self.fm.fig._suptitle is not None  # noqa: SLF001
         has_subplot_titles = (
-            self.fm._has_subplot_titles()
+            self.fm._has_subplot_titles()  # noqa: SLF001
             if hasattr(self.fm, "_has_subplot_titles")
             else False
         )
