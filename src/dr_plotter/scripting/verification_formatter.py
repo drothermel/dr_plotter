@@ -1,4 +1,5 @@
-from typing import Any, Optional
+from __future__ import annotations
+from typing import Any
 import sys
 import matplotlib.pyplot as plt
 
@@ -213,7 +214,7 @@ def print_detailed_issues(issues: list[dict[str, Any]], indent_level: int = 1) -
 
 def verify_legend_visibility_with_formatting(
     figure: plt.Figure,
-    expected_visible_count: Optional[int] = None,
+    expected_visible_count: int | None = None,
     fail_on_missing: bool = True,
 ) -> dict[str, Any]:
     from .plot_data_extractor import verify_legend_visibility_core

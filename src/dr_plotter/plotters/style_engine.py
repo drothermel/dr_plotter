@@ -1,4 +1,5 @@
-from typing import Any, Optional
+from __future__ import annotations
+from typing import Any
 
 from dr_plotter.channel_metadata import ChannelRegistry
 from dr_plotter.configs import CycleConfig, GroupingConfig
@@ -6,7 +7,7 @@ from dr_plotter.theme import Theme
 
 
 class StyleEngine:
-    def __init__(self, theme: Theme, figure_manager: Optional[Any] = None) -> None:
+    def __init__(self, theme: Theme, figure_manager: Any | None = None) -> None:
         self.theme = theme
         self.figure_manager = figure_manager
         self._local_cycle_config = CycleConfig(theme)

@@ -1,10 +1,10 @@
-from typing import Optional
+from __future__ import annotations
 
 import matplotlib.pyplot as plt
 
 
 def get_axes_from_grid(
-    axes: plt.Axes, row: Optional[int] = None, col: Optional[int] = None
+    axes: plt.Axes, row: int | None = None, col: int | None = None
 ) -> plt.Axes:
     if not hasattr(axes, "__len__"):
         return axes

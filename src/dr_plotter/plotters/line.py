@@ -1,4 +1,5 @@
-from typing import Any, Optional
+from __future__ import annotations
+from typing import Any
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -42,8 +43,8 @@ class LinePlotter(BasePlotter):
         self,
         data: pd.DataFrame,
         grouping_cfg: GroupingConfig,
-        theme: Optional[Theme] = None,
-        figure_manager: Optional[Any] = None,
+        theme: Theme | None = None,
+        figure_manager: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
@@ -57,7 +58,7 @@ class LinePlotter(BasePlotter):
 
         self._apply_post_processing(lines, label)
 
-    def _apply_post_processing(self, lines: Any, label: Optional[str] = None) -> None:
+    def _apply_post_processing(self, lines: Any, label: str | None = None) -> None:
         if not self._should_create_legend():
             self._apply_styling(self.current_axis)
             return

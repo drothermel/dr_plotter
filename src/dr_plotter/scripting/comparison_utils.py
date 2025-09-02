@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 import math
 
 from dr_plotter.types import ColorTuple, ComparisonValue
@@ -26,7 +26,7 @@ def get_default_tolerance_for_channel(channel: str) -> float:
 
 
 def values_are_equal(
-    a: ComparisonValue, b: ComparisonValue, tolerance: Optional[float] = None
+    a: ComparisonValue, b: ComparisonValue, tolerance: float | None = None
 ) -> bool:
     if tolerance is None:
         tolerance = _get_default_tolerance(a, b)
@@ -47,7 +47,7 @@ def values_are_equal(
 
 
 def count_unique_values(
-    values: list[ComparisonValue], tolerance: Optional[float] = None
+    values: list[ComparisonValue], tolerance: float | None = None
 ) -> set[ComparisonValue]:
     if not values:
         return set()
@@ -70,7 +70,7 @@ def count_unique_values(
 
 
 def floats_are_equal(
-    val1: float, val2: float, tolerance: Optional[float] = None
+    val1: float, val2: float, tolerance: float | None = None
 ) -> bool:
     if tolerance is None:
         tolerance = DEFAULT_TOLERANCES["float"]
@@ -78,7 +78,7 @@ def floats_are_equal(
 
 
 def colors_are_equal(
-    color1: ColorTuple, color2: ColorTuple, tolerance: Optional[float] = None
+    color1: ColorTuple, color2: ColorTuple, tolerance: float | None = None
 ) -> bool:
     if tolerance is None:
         tolerance = DEFAULT_TOLERANCES["color"]
@@ -86,7 +86,7 @@ def colors_are_equal(
 
 
 def count_unique_floats(
-    values: list[float], tolerance: Optional[float] = None
+    values: list[float], tolerance: float | None = None
 ) -> set[float]:
     if tolerance is None:
         tolerance = DEFAULT_TOLERANCES["float"]
@@ -94,7 +94,7 @@ def count_unique_floats(
 
 
 def count_unique_colors(
-    values: list[ColorTuple], tolerance: Optional[float] = None
+    values: list[ColorTuple], tolerance: float | None = None
 ) -> set[ColorTuple]:
     if tolerance is None:
         tolerance = DEFAULT_TOLERANCES["color"]

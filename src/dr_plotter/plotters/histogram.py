@@ -1,4 +1,5 @@
-from typing import Any, Optional
+from __future__ import annotations
+from typing import Any
 
 import pandas as pd
 from matplotlib.patches import Patch
@@ -55,8 +56,8 @@ class HistogramPlotter(BasePlotter):
         self,
         data: pd.DataFrame,
         grouping_cfg: GroupingConfig,
-        theme: Optional[Theme] = None,
-        figure_manager: Optional[Any] = None,
+        theme: Theme | None = None,
+        figure_manager: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
@@ -81,7 +82,7 @@ class HistogramPlotter(BasePlotter):
         self._apply_post_processing({"patches": patches}, label)
 
     def _apply_post_processing(
-        self, parts: dict[str, Any], label: Optional[str] = None
+        self, parts: dict[str, Any], label: str | None = None
     ) -> None:
         if parts.get("patches"):
             first_patch = parts["patches"][0]

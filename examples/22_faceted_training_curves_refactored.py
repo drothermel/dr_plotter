@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 import argparse
 import sys
 import time
@@ -69,8 +69,8 @@ def plot_training_curves_faceted(
     target_recipes: list[str],
     x_log: bool = False,
     y_log: bool = False,
-    xlim: Optional[tuple[float, float]] = None,
-    ylim: Optional[tuple[float, float]] = None,
+    xlim: tuple[float, float] | None = None,
+    ylim: tuple[float, float] | None = None,
 ) -> None:
     figwidth = max(12, len(target_recipes) * 3.5)
 

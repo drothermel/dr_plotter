@@ -1,4 +1,5 @@
-from typing import Any, Optional
+from __future__ import annotations
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -62,8 +63,8 @@ class ViolinPlotter(BasePlotter):
         self,
         data: pd.DataFrame,
         grouping_cfg: GroupingConfig,
-        theme: Optional[Theme] = None,
-        figure_manager: Optional[Any] = None,
+        theme: Theme | None = None,
+        figure_manager: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
@@ -101,7 +102,7 @@ class ViolinPlotter(BasePlotter):
             self._draw_simple(ax, data, **kwargs)
 
     def _apply_post_processing(
-        self, parts: dict[str, Any], label: Optional[str] = None
+        self, parts: dict[str, Any], label: str | None = None
     ) -> None:
         artists = self._collect_artists_to_style(parts)
         self.styler.apply_post_processing("violin", artists)
@@ -130,7 +131,7 @@ class ViolinPlotter(BasePlotter):
             "bodies": parts["bodies"],
         }
 
-    def _create_proxy_artist_from_bodies(self, bodies: list[Any]) -> Optional[Patch]:
+    def _create_proxy_artist_from_bodies(self, bodies: list[Any]) -> Patch | None:
         if not bodies:
             return None
 

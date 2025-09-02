@@ -1,6 +1,7 @@
+from __future__ import annotations
 import functools
 import sys
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -98,7 +99,7 @@ def _print_failure_message(
     name: str,
     expected: int,
     result: dict[str, Any],
-    descriptions: Optional[dict[int, str]] = None,
+    descriptions: dict[int, str] | None = None,
 ) -> None:
     print_critical(f"PLOT {name.upper()} FAILED: Legend visibility issues detected!")
 
@@ -133,15 +134,13 @@ def _print_failure_message(
 
 def verify_plot(
     expected_legends: int = 0,
-    expected_channels: Optional[ExpectedChannels] = None,
-    expected_legend_entries: Optional[
-        dict[SubplotCoord, dict[str, Union[int, str]]]
-    ] = None,
+    expected_channels: ExpectedChannels | None = None,
+    expected_legend_entries: dict[SubplotCoord, dict[str, int | str]] | None = None,
     verify_legend_consistency: bool = False,
     min_unique_threshold: int = 2,
-    tolerance: Optional[float] = None,
+    tolerance: float | None = None,
     fail_on_missing: bool = True,
-    subplot_descriptions: Optional[dict[int, str]] = None,
+    subplot_descriptions: dict[int, str] | None = None,
 ) -> Callable:
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
@@ -514,10 +513,10 @@ def inspect_plot_properties() -> Callable:
 def verify_figure_legends(
     expected_legend_count: int,
     legend_strategy: str,
-    expected_total_entries: Optional[int] = None,
-    expected_channel_entries: Optional[dict[str, int]] = None,
-    expected_channels: Optional[list[str]] = None,
-    tolerance: Optional[float] = None,
+    expected_total_entries: int | None = None,
+    expected_channel_entries: dict[str, int] | None = None,
+    expected_channels: list[str] | None = None,
+    tolerance: float | None = None,
     fail_on_missing: bool = True,
 ) -> Callable:
     def decorator(func: Callable) -> Callable:

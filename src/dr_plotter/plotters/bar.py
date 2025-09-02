@@ -1,4 +1,5 @@
-from typing import Any, Optional
+from __future__ import annotations
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -51,8 +52,8 @@ class BarPlotter(BasePlotter):
         self,
         data: pd.DataFrame,
         grouping_cfg: GroupingConfig,
-        theme: Optional[Theme] = None,
-        figure_manager: Optional[Any] = None,
+        theme: Theme | None = None,
+        figure_manager: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
@@ -78,7 +79,7 @@ class BarPlotter(BasePlotter):
 
         self._apply_post_processing(patches, label)
 
-    def _apply_post_processing(self, patches: Any, label: Optional[str] = None) -> None:
+    def _apply_post_processing(self, patches: Any, label: str | None = None) -> None:
         if patches:
             first_patch = patches[0]
             proxy = Patch(

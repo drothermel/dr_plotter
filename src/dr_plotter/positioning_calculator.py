@@ -1,5 +1,6 @@
+from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from dr_plotter.configs import PositioningConfig
 
@@ -25,21 +26,21 @@ class LegendMetadata:
 @dataclass
 class PositioningResult:
     legend_positions: dict[int, tuple[float, float]]
-    layout_rect: Optional[tuple[float, float, float, float]] = None
+    layout_rect: tuple[float, float, float, float] | None = None
     tight_layout_pad: float = 0.5
-    margin_adjustments: Optional[dict[str, float]] = None
+    margin_adjustments: dict[str, float] | None = None
 
 
 class PositioningCalculator:
-    def __init__(self, config: Optional[PositioningConfig] = None) -> None:
+    def __init__(self, config: PositioningConfig | None = None) -> None:
         self.config = config or PositioningConfig()
 
     def calculate_positions(
         self,
         figure_dimensions: FigureDimensions,
         legend_metadata: LegendMetadata,
-        manual_overrides: Optional[dict[str, Any]] = None,
-        layout_hint: Optional[str] = None,
+        manual_overrides: dict[str, Any] | None = None,
+        layout_hint: str | None = None,
     ) -> PositioningResult:
         return self._resolve_positioning_hierarchy(
             figure_dimensions, legend_metadata, manual_overrides or {}, layout_hint
@@ -50,7 +51,7 @@ class PositioningCalculator:
         figure_dimensions: FigureDimensions,
         legend_metadata: LegendMetadata,
         manual_overrides: dict[str, Any],
-        layout_hint: Optional[str] = None,
+        layout_hint: str | None = None,
     ) -> PositioningResult:
         if "bbox_to_anchor" in manual_overrides:
             return self._handle_manual_positioning(manual_overrides, figure_dimensions)
@@ -79,7 +80,7 @@ class PositioningCalculator:
         figure_dimensions: FigureDimensions,
         legend_metadata: LegendMetadata,
         manual_overrides: dict[str, Any],
-        layout_hint: Optional[str] = None,
+        layout_hint: str | None = None,
     ) -> PositioningResult:
         num_legends = legend_metadata.num_legends
 
@@ -151,12 +152,12 @@ class PositioningCalculator:
 
     def calculate_layout_rect(
         self, figure_dimensions: FigureDimensions
-    ) -> Optional[tuple[float, float, float, float]]:
+    ) -> tuple[float, float, float, float] | None:
         return self._calculate_layout_rect(figure_dimensions)
 
     def _calculate_layout_rect(
         self, figure_dimensions: FigureDimensions
-    ) -> Optional[tuple[float, float, float, float]]:
+    ) -> tuple[float, float, float, float] | None:
         if figure_dimensions.has_title or figure_dimensions.has_subplot_titles:
             return (0.0, 0.0, 1.0, self.config.title_space_factor)
         return None
@@ -175,7 +176,7 @@ class PositioningCalculator:
         self,
         figure_dimensions: FigureDimensions,
         legend_metadata: LegendMetadata,
-        layout_hint: Optional[str] = None,
+        layout_hint: str | None = None,
     ) -> PositioningResult:
         positions = {
             0: (

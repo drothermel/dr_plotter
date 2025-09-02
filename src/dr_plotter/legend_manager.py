@@ -1,5 +1,6 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Any, Optional, Union
+from typing import Any
 
 from dr_plotter.configs import LegendConfig, LegendStrategy, PositioningConfig
 from dr_plotter.positioning_calculator import (
@@ -14,16 +15,16 @@ class LegendEntry:
     artist: Any
     label: str
     axis: Any = None
-    visual_channel: Optional[str] = None
+    visual_channel: str | None = None
     channel_value: Any = None
-    source_column: Optional[str] = None
+    source_column: str | None = None
     group_key: dict[str, Any] = field(default_factory=dict)
     plotter_type: str = "unknown"
     artist_type: str = "main"
 
 
 class LegendRegistry:
-    def __init__(self, strategy: Optional[LegendStrategy] = None) -> None:
+    def __init__(self, strategy: LegendStrategy | None = None) -> None:
         self._entries: list[LegendEntry] = []
         self._seen_keys: set[tuple] = set()
         self.strategy = strategy
@@ -58,7 +59,7 @@ class LegendRegistry:
         self._seen_keys.clear()
 
 
-def resolve_legend_config(legend_input: Union[str, LegendConfig]) -> LegendConfig:
+def resolve_legend_config(legend_input: str | LegendConfig) -> LegendConfig:
     if isinstance(legend_input, str):
         positioning_config = PositioningConfig()
         grouped_config = PositioningConfig(default_margin_bottom=0.2)
@@ -92,7 +93,7 @@ def resolve_legend_config(legend_input: Union[str, LegendConfig]) -> LegendConfi
 
 class LegendManager:
     def __init__(
-        self, figure_manager: Any, config: Optional[LegendConfig] = None
+        self, figure_manager: Any, config: LegendConfig | None = None
     ) -> None:
         self.fm = figure_manager
         self.config = config or LegendConfig()
@@ -133,7 +134,7 @@ class LegendManager:
         return channel.title()
 
     def calculate_optimal_ncol(
-        self, legend_entries: list[LegendEntry], figure_width: Optional[float] = None
+        self, legend_entries: list[LegendEntry], figure_width: float | None = None
     ) -> int:
         if self.config.ncol is not None:
             return self.config.ncol
@@ -175,7 +176,7 @@ class LegendManager:
         )
 
     def calculate_optimal_positioning(
-        self, num_legends: int, legend_index: int, figure_width: Optional[float] = None
+        self, num_legends: int, legend_index: int, figure_width: float | None = None
     ) -> tuple[float, float]:
         figure_dimensions = self._get_figure_dimensions()
         if figure_width:
@@ -200,7 +201,7 @@ class LegendManager:
         return result.legend_positions.get(legend_index, default_pos)
 
     def get_error_color(
-        self, color_type: str = "face", theme: Optional[Any] = None
+        self, color_type: str = "face", theme: Any | None = None
     ) -> str:
         assert False, (
             f"Legend proxy creation failed for {color_type}. "

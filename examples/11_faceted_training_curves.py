@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Faceted Training Curves Example
 
@@ -7,7 +8,6 @@ Requires DataDecide integration:
 This example demonstrates advanced faceted plotting with real ML training data.
 """
 
-from typing import Optional
 import argparse
 import itertools
 import pandas as pd
@@ -33,7 +33,7 @@ def load_and_prepare_data() -> pd.DataFrame:
 
 
 def create_faceted_training_curves_theme(
-    x_log: bool = False, y_log: bool = False, model_sizes: Optional[list[str]] = None
+    x_log: bool = False, y_log: bool = False, model_sizes: list[str] | None = None
 ) -> Theme:
     model_sizes = select_params(model_sizes or "all")
 
@@ -112,8 +112,8 @@ def plot_training_curves(
     args: argparse.Namespace,
     x_log: bool = False,
     y_log: bool = False,
-    xlim: Optional[tuple[float, float]] = None,
-    ylim: Optional[tuple[float, float]] = None,
+    xlim: tuple[float, float] | None = None,
+    ylim: tuple[float, float] | None = None,
 ) -> plt.Figure:
     num_model_sizes = len(df["params"].cat.categories)
     custom_theme = create_faceted_training_curves_theme(x_log=x_log, y_log=y_log)

@@ -1,4 +1,5 @@
-from typing import Any, Callable, Optional, TYPE_CHECKING
+from __future__ import annotations
+from typing import Any, Callable, TYPE_CHECKING
 
 from dr_plotter.consts import VISUAL_CHANNELS
 from dr_plotter.configs import GroupingConfig
@@ -25,11 +26,11 @@ class StyleApplicator:
         self,
         theme: Theme,
         kwargs: dict[str, Any],
-        grouping_cfg: Optional[GroupingConfig] = None,
-        group_values: Optional[dict[str, Any]] = None,
-        figure_manager: Optional[Any] = None,
-        plot_type: Optional[str] = None,
-        style_engine: Optional["StyleEngine"] = None,
+        grouping_cfg: GroupingConfig | None = None,
+        group_values: dict[str, Any] | None = None,
+        figure_manager: Any | None = None,
+        plot_type: str | None = None,
+        style_engine: StyleEngine | None = None,
     ) -> None:
         self.theme = theme
         self.kwargs = kwargs
@@ -94,8 +95,8 @@ class StyleApplicator:
         label: str,
         axis: Any = None,
         artist_type: str = "main",
-        explicit_channel: Optional[str] = None,
-    ) -> Optional[LegendEntry]:
+        explicit_channel: str | None = None,
+    ) -> LegendEntry | None:
         if not label:
             return None
 

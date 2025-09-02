@@ -1,4 +1,5 @@
-from typing import Any, Optional
+from __future__ import annotations
+from typing import Any
 import numpy as np
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -613,7 +614,7 @@ def validate_legend_properties(ax: plt.Axes) -> dict[str, Any]:
 
 
 def is_legend_actually_visible(
-    ax: plt.Axes, figure: Optional[plt.Figure] = None
+    ax: plt.Axes, figure: plt.Figure | None = None
 ) -> dict[str, Any]:
     result = {
         "visible": False,
@@ -727,7 +728,7 @@ def check_all_subplot_legends(figure: plt.Figure) -> dict[int, dict[str, Any]]:
 
 def verify_legend_visibility(
     figure: plt.Figure,
-    expected_visible_count: Optional[int] = None,
+    expected_visible_count: int | None = None,
     fail_on_missing: bool = True,
 ) -> dict[str, Any]:
     from .verification_formatter import (
@@ -830,7 +831,7 @@ def verify_legend_visibility(
 
 
 def verify_legend_visibility_core(
-    figure: plt.Figure, expected_visible_count: Optional[int] = None
+    figure: plt.Figure, expected_visible_count: int | None = None
 ) -> dict[str, Any]:
     results = check_all_subplot_legends(figure)
 

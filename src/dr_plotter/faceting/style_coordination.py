@@ -1,4 +1,5 @@
-from typing import Any, Optional
+from __future__ import annotations
+from typing import Any
 import pandas as pd
 
 DEFAULT_COLOR_CYCLE = [
@@ -18,7 +19,7 @@ DEFAULT_MARKER_CYCLE = ["o", "s", "^", "D", "v", "<", ">", "p", "*", "h"]
 
 
 class FacetStyleCoordinator:
-    def __init__(self, theme: Optional[dict[str, Any]] = None) -> None:
+    def __init__(self, theme: dict[str, Any] | None = None) -> None:
         self._style_assignments: dict[str, dict[Any, dict[str, Any]]] = {}
         self._color_cycle = _get_theme_colors(theme)
         self._marker_cycle = _get_theme_markers(theme)
@@ -60,7 +61,7 @@ class FacetStyleCoordinator:
         self,
         row: int,
         col: int,
-        dimension: Optional[str],
+        dimension: str | None,
         subplot_data: pd.DataFrame,
         **plot_kwargs,
     ) -> dict[str, Any]:
@@ -79,13 +80,13 @@ class FacetStyleCoordinator:
         return plot_kwargs
 
 
-def _get_theme_colors(theme: Optional[dict[str, Any]]) -> list[str]:
+def _get_theme_colors(theme: dict[str, Any] | None) -> list[str]:
     if theme and "color_cycle" in theme:
         return theme["color_cycle"]
     return DEFAULT_COLOR_CYCLE
 
 
-def _get_theme_markers(theme: Optional[dict[str, Any]]) -> list[str]:
+def _get_theme_markers(theme: dict[str, Any] | None) -> list[str]:
     if theme and "marker_cycle" in theme:
         return theme["marker_cycle"]
     return DEFAULT_MARKER_CYCLE

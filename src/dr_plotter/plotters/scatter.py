@@ -1,4 +1,5 @@
-from typing import Any, Optional
+from __future__ import annotations
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -59,8 +60,8 @@ class ScatterPlotter(BasePlotter):
         self,
         data: pd.DataFrame,
         grouping_cfg: GroupingConfig,
-        theme: Optional[Theme] = None,
-        figure_manager: Optional[Any] = None,
+        theme: Theme | None = None,
+        figure_manager: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
@@ -116,7 +117,7 @@ class ScatterPlotter(BasePlotter):
         self._apply_post_processing(collection, label)
 
     def _apply_post_processing(
-        self, collection: Any, label: Optional[str] = None
+        self, collection: Any, label: str | None = None
     ) -> None:
         if not self._should_create_legend():
             return
@@ -133,7 +134,7 @@ class ScatterPlotter(BasePlotter):
 
     def _create_channel_specific_proxy(
         self, collection: Any, channel: str
-    ) -> Optional[Any]:
+    ) -> Any | None:
         facecolors = collection.get_facecolors()
         edgecolors = collection.get_edgecolors()
         sizes = collection.get_sizes()

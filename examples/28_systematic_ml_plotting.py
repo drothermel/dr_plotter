@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 import argparse
 import sys
 import time
@@ -362,7 +362,7 @@ def create_ppl_group_plots(
     target_recipes: list[str],
     model_sizes: list[str],
     output_dir: str = "plots/systematic",
-    ppl_metrics: Optional[list[str]] = None,
+    ppl_metrics: list[str] | None = None,
     show_plots: bool = True,
 ) -> None:
     print("Creating PPL group plots...")
@@ -468,7 +468,7 @@ def create_olmes_group_plots(
     target_recipes: list[str],
     model_sizes: list[str],
     output_dir: str = "plots/systematic",
-    olmes_metrics: Optional[list[str]] = None,
+    olmes_metrics: list[str] | None = None,
     show_plots: bool = True,
 ) -> None:
     print("Creating OLMES group plots...")

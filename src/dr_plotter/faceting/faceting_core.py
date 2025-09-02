@@ -1,4 +1,5 @@
-from typing import Any, Optional, TYPE_CHECKING
+from __future__ import annotations
+from typing import Any, TYPE_CHECKING
 
 import matplotlib.axes
 import pandas as pd
@@ -39,7 +40,7 @@ def prepare_faceted_subplots(
 
 
 def _extract_dimension_values(
-    data: pd.DataFrame, column: Optional[str], order: Optional[list[str]]
+    data: pd.DataFrame, column: str | None, order: list[str] | None
 ) -> list[Any]:
     if not column:
         return [None]
@@ -75,11 +76,11 @@ def _create_data_subset(
 
 
 def plot_faceted_data(
-    fm: "FigureManager",
+    fm: FigureManager,
     data_subsets: dict[tuple[int, int], pd.DataFrame],
     plot_type: str,
     config: FacetingConfig,
-    style_coordinator: "FacetStyleCoordinator",
+    style_coordinator: FacetStyleCoordinator,
     **kwargs,
 ) -> None:
     assert data_subsets, "Cannot plot with empty data_subsets"
@@ -93,13 +94,13 @@ def plot_faceted_data(
 
 
 def _plot_subplot_at_position(
-    fm: "FigureManager",
+    fm: FigureManager,
     row: int,
     col: int,
     subplot_data: pd.DataFrame,
     plot_type: str,
     config: FacetingConfig,
-    style_coordinator: "FacetStyleCoordinator",
+    style_coordinator: FacetStyleCoordinator,
     **kwargs,
 ) -> None:
     if config.lines and config.lines in subplot_data.columns:
@@ -115,13 +116,13 @@ def _plot_subplot_at_position(
 
 
 def _plot_with_style_coordination(
-    fm: "FigureManager",
+    fm: FigureManager,
     row: int,
     col: int,
     subplot_data: pd.DataFrame,
     plot_type: str,
     config: FacetingConfig,
-    style_coordinator: "FacetStyleCoordinator",
+    style_coordinator: FacetStyleCoordinator,
     **kwargs,
 ) -> None:
     ax = fm.get_axes(row, col)
@@ -144,7 +145,7 @@ def _plot_with_style_coordination(
 
 
 def _plot_single_series_at_position(
-    fm: "FigureManager",
+    fm: FigureManager,
     row: int,
     col: int,
     subplot_data: pd.DataFrame,
@@ -210,14 +211,14 @@ def _plot_heatmap_data(
 
 
 def _apply_subplot_customization(
-    fm: "FigureManager", row: int, col: int, config: FacetingConfig
+    fm: FigureManager, row: int, col: int, config: FacetingConfig
 ) -> None:
     _apply_axis_labels(fm, row, col, config)
     _apply_axis_limits(fm, row, col, config)
 
 
 def _apply_axis_labels(
-    fm: "FigureManager", row: int, col: int, config: FacetingConfig
+    fm: FigureManager, row: int, col: int, config: FacetingConfig
 ) -> None:
     ax = fm.get_axes(row, col)
 
@@ -233,7 +234,7 @@ def _apply_axis_labels(
 
 
 def _apply_axis_limits(
-    fm: "FigureManager", row: int, col: int, config: FacetingConfig
+    fm: FigureManager, row: int, col: int, config: FacetingConfig
 ) -> None:
     ax = fm.get_axes(row, col)
 
@@ -248,7 +249,7 @@ def _apply_axis_limits(
             ax.set_ylim(ylim)
 
 
-def _has_custom_label(labels: Optional[list[list[Any]]], row: int, col: int) -> bool:
+def _has_custom_label(labels: list[list[Any]] | None, row: int, col: int) -> bool:
     return labels is not None and row < len(labels) and col < len(labels[row])
 
 

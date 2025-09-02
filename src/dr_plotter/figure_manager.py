@@ -1,4 +1,5 @@
-from typing import Any, Optional, Union
+from __future__ import annotations
+from typing import Any
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -34,7 +35,7 @@ from dr_plotter.faceting.style_coordination import FacetStyleCoordinator
 
 
 class FigureManager:
-    def __init__(self, config: Optional[PlotConfig] = None, **kwargs: Any) -> None:
+    def __init__(self, config: PlotConfig | None = None, **kwargs: Any) -> None:
         old_params = {"figure", "legend", "theme"}
         used_old_params = old_params.intersection(kwargs.keys())
 
@@ -88,9 +89,9 @@ class FigureManager:
 
     def _init_from_configs(
         self,
-        figure: "FigureConfig",
-        legend: Optional[Union[str, LegendConfig]],
-        theme: Optional[Any] = None,
+        figure: FigureConfig,
+        legend: str | LegendConfig | None,
+        theme: Any | None = None,
     ) -> None:
         figure.validate()
 
@@ -116,23 +117,23 @@ class FigureManager:
 
         self._coordinate_styling(theme, figure.shared_styling)
 
-        self._facet_grid_info: Optional[dict[str, Any]] = None
-        self._facet_style_coordinator: Optional[FacetStyleCoordinator] = None
+        self._facet_grid_info: dict[str, Any] | None = None
+        self._facet_style_coordinator: FacetStyleCoordinator | None = None
 
     @classmethod
     def _create_from_configs(
         cls,
-        figure: "FigureConfig",
-        legend: Optional[Union[str, LegendConfig]],
-        theme: Optional[Any] = None,
-    ) -> "FigureManager":
+        figure: FigureConfig,
+        legend: str | LegendConfig | None,
+        theme: Any | None = None,
+    ) -> FigureManager:
         instance = cls.__new__(cls)
         instance._init_from_configs(figure, legend, theme)
         return instance
 
     def _create_figure_axes(
         self,
-        external_ax: Optional[plt.Axes],
+        external_ax: plt.Axes | None,
         figure_kwargs: dict[str, Any],
         subplot_kwargs: dict[str, Any],
         figsize: tuple[int, int],
@@ -151,7 +152,7 @@ class FigureManager:
         )
         return fig, axes, False
 
-    def _setup_layout_configuration(self, figure: "FigureConfig") -> None:
+    def _setup_layout_configuration(self, figure: FigureConfig) -> None:
         self._layout_rect = None
         self._layout_pad = figure.tight_layout_pad
         self.rows = figure.rows
@@ -159,8 +160,8 @@ class FigureManager:
 
     def _build_legend_system(
         self,
-        legend_config: Optional[Union[str, LegendConfig]],
-        theme: Optional[Theme],
+        legend_config: str | LegendConfig | None,
+        theme: Theme | None,
     ) -> LegendManager:
         if legend_config is not None:
             effective_config = resolve_legend_config(legend_config)
@@ -173,8 +174,8 @@ class FigureManager:
 
     def _coordinate_styling(
         self,
-        theme: Optional[Theme],
-        shared_styling: Optional[bool],
+        theme: Theme | None,
+        shared_styling: bool | None,
     ) -> None:
         self.shared_styling = shared_styling
 
@@ -194,7 +195,7 @@ class FigureManager:
         }
         return self.legend_config.strategy in coordination_strategies
 
-    def __enter__(self) -> "FigureManager":
+    def __enter__(self) -> FigureManager:
         return self
 
     def register_legend_entry(self, entry: LegendEntry) -> None:
@@ -288,7 +289,7 @@ class FigureManager:
         return any(ax.get_title() for ax in axes_to_check)
 
     def get_axes(
-        self, row: Optional[int] = None, col: Optional[int] = None
+        self, row: int | None = None, col: int | None = None
     ) -> plt.Axes:
         if self.external_mode:
             return self.axes
@@ -312,7 +313,7 @@ class FigureManager:
         plotter.render(ax)
 
     def _resolve_faceting_config(
-        self, faceting: Optional[FacetingConfig], **kwargs
+        self, faceting: FacetingConfig | None, **kwargs
     ) -> FacetingConfig:
         faceting_params = {}
 
@@ -357,7 +358,7 @@ class FigureManager:
         self,
         data: pd.DataFrame,
         plot_type: str,
-        faceting: Optional[FacetingConfig] = None,
+        faceting: FacetingConfig | None = None,
         **kwargs,
     ) -> None:
         assert not data.empty, "Cannot create faceted plot with empty DataFrame"
