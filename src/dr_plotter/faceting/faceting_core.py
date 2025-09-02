@@ -1,9 +1,13 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 import matplotlib.axes
 import pandas as pd
 
 from dr_plotter.configs import FacetingConfig
+
+if TYPE_CHECKING:
+    from dr_plotter.figure_manager import FigureManager
+    from dr_plotter.faceting.style_coordination import FacetStyleCoordinator
 
 SUPPORTED_PLOT_TYPES = ["line", "scatter", "bar", "fill_between", "heatmap"]
 

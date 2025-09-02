@@ -8,7 +8,7 @@ from dr_plotter.configs.plot_config import LayoutConfig, StyleConfig, PlotConfig
 
 __all__ = [
     "CycleConfig",
-    "FacetingConfig", 
+    "FacetingConfig",
     "FigureConfig",
     "GroupingConfig",
     "LayoutConfig",
