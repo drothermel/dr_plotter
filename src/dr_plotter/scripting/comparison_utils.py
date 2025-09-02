@@ -69,9 +69,7 @@ def count_unique_values(
     return unique
 
 
-def floats_are_equal(
-    val1: float, val2: float, tolerance: float | None = None
-) -> bool:
+def floats_are_equal(val1: float, val2: float, tolerance: float | None = None) -> bool:
     if tolerance is None:
         tolerance = DEFAULT_TOLERANCES["float"]
     return _floats_are_equal(val1, val2, tolerance)

@@ -92,9 +92,7 @@ def resolve_legend_config(legend_input: str | LegendConfig) -> LegendConfig:
 
 
 class LegendManager:
-    def __init__(
-        self, figure_manager: Any, config: LegendConfig | None = None
-    ) -> None:
+    def __init__(self, figure_manager: Any, config: LegendConfig | None = None) -> None:
         self.fm = figure_manager
         self.config = config or LegendConfig()
         if self.config.positioning_config is None:

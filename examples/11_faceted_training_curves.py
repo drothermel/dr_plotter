@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 Faceted Training Curves Example
 

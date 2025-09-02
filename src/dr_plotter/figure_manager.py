@@ -288,9 +288,7 @@ class FigureManager:
 
         return any(ax.get_title() for ax in axes_to_check)
 
-    def get_axes(
-        self, row: int | None = None, col: int | None = None
-    ) -> plt.Axes:
+    def get_axes(self, row: int | None = None, col: int | None = None) -> plt.Axes:
         if self.external_mode:
             return self.axes
 

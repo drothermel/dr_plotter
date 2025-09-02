@@ -116,9 +116,7 @@ class ScatterPlotter(BasePlotter):
 
         self._apply_post_processing(collection, label)
 
-    def _apply_post_processing(
-        self, collection: Any, label: str | None = None
-    ) -> None:
+    def _apply_post_processing(self, collection: Any, label: str | None = None) -> None:
         if not self._should_create_legend():
             return
 
