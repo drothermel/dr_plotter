@@ -18,7 +18,7 @@ from dr_plotter.theme import (
 from dr_plotter.types import ComponentSchema, ComponentStyles, Phase
 
 if TYPE_CHECKING:
-    from dr_plotter.plotters.style_engine import StyleEngine
+    from dr_plotter.style_engine import StyleEngine
 
 
 class StyleApplicator:
@@ -366,7 +366,7 @@ class StyleApplicator:
             return {}
 
         if not self.style_engine:
-            from dr_plotter.plotters.style_engine import StyleEngine
+            from dr_plotter.style_engine import StyleEngine
 
             self.style_engine = StyleEngine(self.theme, self.figure_manager)
 
