@@ -32,3 +32,18 @@ datadec = ["datadec @ git+https://github.com/drothermel/datadec.git"]
 dev = [
     "pytest>=8.4.1",
 ]
+
+[tool.ruff]
+include = [
+    "src/**/*.py",
+    "examples/**/*.py",
+    "scripts/**/*.py",
+    "tests/**/*.py",
+]
+line-length = 88
+cache-dir = ".ruff_cache"
+exclude = ["outputs/*", "notebooks/*", "plots/*", "data/*", "docs/*"]
+
+[tool.ruff.format]
+indent-style = "space"
+quote-style = "double"
