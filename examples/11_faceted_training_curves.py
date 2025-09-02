@@ -2,17 +2,19 @@ from __future__ import annotations
 
 import argparse
 import itertools
-import pandas as pd
+
 import matplotlib.pyplot as plt
+import pandas as pd
+
+from dr_plotter import consts
+from dr_plotter.configs import FigureConfig
 from dr_plotter.figure_manager import FigureManager
-from dr_plotter.figure_config import FigureConfig
 from dr_plotter.legend_manager import LegendConfig
 from dr_plotter.positioning_calculator import PositioningConfig
-from dr_plotter.theme import Theme, PlotStyles, AxesStyles, FigureStyles, BASE_THEME
-from dr_plotter import consts
 from dr_plotter.scripting.datadec_utils import get_datadec_functions
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import inspect_plot_properties
+from dr_plotter.theme import BASE_THEME, AxesStyles, FigureStyles, PlotStyles, Theme
 
 """
 Faceted Training Curves Example

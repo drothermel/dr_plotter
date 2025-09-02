@@ -1,11 +1,14 @@
 from __future__ import annotations
+
 import argparse
 import sys
 import time
-import pandas as pd
+
 import matplotlib.pyplot as plt
+import pandas as pd
+
+from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.datadec_utils import get_datadec_functions
 
 DataDecide, select_params, select_data = get_datadec_functions()
@@ -94,7 +97,8 @@ def plot_training_curves_faceted(
             y=0.96,
         )
 
-        # Here's the magic: replace 95+ lines of manual loops with a single faceted call!
+        # Here's the magic: replace 95+ lines of manual
+        # loops with a single faceted call!
         fm.plot_faceted(
             data=df,
             plot_type="line",
@@ -150,7 +154,7 @@ def plot_training_curves_faceted(
                 if ylim:
                     ax.set_ylim(ylim)
 
-                ax.grid(True, alpha=0.3)
+                ax.grid(visible=True, alpha=0.3)
 
     plt.tight_layout()
     plt.savefig(

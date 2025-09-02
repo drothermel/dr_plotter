@@ -1,19 +1,20 @@
 from typing import Any
-from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
-from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import (
-    verify_figure_legends,
-    inspect_plot_properties,
-)
+
+import numpy as np
+import pandas as pd
 from plot_data import ExampleData
 
+from dr_plotter.configs import PlotConfig
+from dr_plotter.figure_manager import FigureManager
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import (
+    inspect_plot_properties,
+    verify_figure_legends,
+)
 
-def create_multi_channel_data():
+
+def create_multi_channel_data() -> pd.DataFrame:
     base_data = ExampleData.get_cross_groupby_legends_data()
-
-    import pandas as pd
-    import numpy as np
 
     np.random.seed(800)
     model_sizes = ["small_model", "medium_model", "large_model", "xl_model"]

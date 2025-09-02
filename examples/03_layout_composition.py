@@ -1,13 +1,11 @@
-"""
-Example 3: Layout & Composition - Multi-subplot coordination and theme consistency.
-Demonstrates FigureManager's ability to coordinate complex multi-plot layouts.
-"""
+from typing import Any
 
-from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
-from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from plot_data import ExampleData
+
+from dr_plotter.configs import PlotConfig
+from dr_plotter.figure_manager import FigureManager
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import inspect_plot_properties, verify_plot
 
 EXPECTED_COORD_GROUP_COUNT = 3
 
@@ -30,7 +28,7 @@ EXPECTED_CHANNELS = {
         (1, 1): {"hue": 3},
     },
 )
-def main(args):
+def main(args: Any) -> Any:
     with FigureManager(
         PlotConfig(
             layout={

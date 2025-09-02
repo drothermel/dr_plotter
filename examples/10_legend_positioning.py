@@ -1,13 +1,15 @@
 from typing import Any
+
+from plot_data import ExampleData
+
+from dr_plotter.configs import FigureConfig
 from dr_plotter.figure_manager import FigureManager
-from dr_plotter.figure_config import FigureConfig
 from dr_plotter.legend_manager import LegendConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import (
-    verify_figure_legends,
     inspect_plot_properties,
+    verify_figure_legends,
 )
-from plot_data import ExampleData
 
 EXPECTED_CATEGORY_GROUP_COUNT = 4
 

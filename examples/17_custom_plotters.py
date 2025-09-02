@@ -1,20 +1,16 @@
-"""
-Example 17: Custom Plotters - Creating new plotters using the registry.
-Demonstrates how to create and register a custom plotter class.
-"""
+from typing import Any, ClassVar
 
-from typing import Any
 import pandas as pd
-from dr_plotter.plotters.base import BasePlotter
-from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
-from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
-from dr_plotter.theme import BASE_THEME, Theme, PlotStyles
-from dr_plotter.types import VisualChannel
-from dr_plotter import consts
 from plot_data import ExampleData
 
+from dr_plotter import consts
+from dr_plotter.configs import PlotConfig
+from dr_plotter.figure_manager import FigureManager
+from dr_plotter.plotters.base import BasePlotter
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import inspect_plot_properties, verify_plot
+from dr_plotter.theme import BASE_THEME, PlotStyles, Theme
+from dr_plotter.types import VisualChannel
 
 # Create a custom theme following the expected pattern
 ERRORBAR_THEME = Theme(
@@ -31,21 +27,20 @@ ERRORBAR_THEME = Theme(
 
 
 class ErrorBarPlotter(BasePlotter):
-    """
-    Custom plotter for error bar plots.
-    Demonstrates declarative pattern for custom plotters following dr_plotter architecture.
-    """
-
     plotter_name: str = "errorbar"
-    plotter_params: list[str] = ["error"]  # Only custom params, x/y are handled by base
-    param_mapping: dict[str, str] = {"error": "error"}
-    enabled_channels: set[VisualChannel] = set()  # No visual channels for simplicity
-    default_theme: Theme = ERRORBAR_THEME
-    use_style_applicator: bool = True
-    use_legend_manager: bool = True
+    plotter_params: ClassVar[list[str]] = [
+        "error"
+    ]  # Only custom params, x/y are handled by base
+    param_mapping: ClassVar[dict[str, str]] = {"error": "error"}
+    enabled_channels: ClassVar[set[VisualChannel]] = (
+        set()
+    )  # No visual channels for simplicity
+    default_theme: ClassVar[Theme] = ERRORBAR_THEME
+    use_style_applicator: ClassVar[bool] = True
+    use_legend_manager: ClassVar[bool] = True
 
     # Define what styling attributes are available
-    component_schema: dict[str, dict[str, set[str]]] = {
+    component_schema: ClassVar[dict[str, dict[str, set[str]]]] = {
         "plot": {
             "main": {
                 "capsize",
@@ -82,7 +77,7 @@ class ErrorBarPlotter(BasePlotter):
 
 @inspect_plot_properties()
 @verify_plot(expected_legends=0)
-def main(args):
+def main(args: Any) -> Any:
     # Verify our custom plotter is registered
     from dr_plotter.plotters import BasePlotter
 

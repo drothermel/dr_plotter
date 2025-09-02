@@ -1,9 +1,12 @@
 import itertools
+from typing import Any
+
 import pandas as pd
-from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
-from dr_plotter.theme import Theme, PlotStyles, AxesStyles, BASE_THEME
 from plot_data import ExampleData
+
+from dr_plotter.configs import PlotConfig
+from dr_plotter.figure_manager import FigureManager
+from dr_plotter.theme import BASE_THEME, AxesStyles, PlotStyles, Theme
 
 
 def create_coordinated_theme() -> Theme:
@@ -23,7 +26,7 @@ def create_coordinated_theme() -> Theme:
     )
 
 
-def create_color_coordination_example() -> None:
+def create_color_coordination_example() -> Any:
     coordinated_theme: Theme = create_coordinated_theme()
     data_dict: dict[str, pd.DataFrame] = ExampleData.get_color_coordination_data()
 
