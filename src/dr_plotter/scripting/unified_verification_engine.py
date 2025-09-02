@@ -36,8 +36,7 @@ class VerificationEngine:
     def execute_verification(
         self, rule_name: str, params: VerificationParams
     ) -> VerificationResult:
-        assert rule_name in self._rules, f"Unknown verification rule: "
-            f"{rule_name}"
+        assert rule_name in self._rules, f"Unknown verification rule: {rule_name}"
         return self._rules[rule_name].execute(params)
 
     def _register_standard_rules(self) -> None:
@@ -113,12 +112,12 @@ class ChannelVariationRule(BaseVerificationRule):
         if result["passed"]:
             result["message"] = (
                 f"{channel.title()} variation: "
-            f"PASS ({len(unique_values)} unique values found)"
+                f"PASS ({len(unique_values)} unique values found)"
             )
         else:
             result["message"] = (
                 f"{channel.title()} variation: "
-            f"FAIL (only {len(unique_values)} unique values, expected ≥{min_unique_threshold})"
+                f"FAIL (only {len(unique_values)} unique values, expected ≥{min_unique_threshold})"
             )
 
             if len(unique_values) == 1:
@@ -172,12 +171,12 @@ class ChannelUniformityRule(BaseVerificationRule):
             )
             result["message"] = (
                 f"{channel.title()} uniformity: "
-            f"PASS (all plot values are {result['uniform_value']})"
+                f"PASS (all plot values are {result['uniform_value']})"
             )
         else:
             result["message"] = (
                 f"{channel.title()} uniformity: "
-            f"FAIL ({len(unique_values)} different plot values found)"
+                f"FAIL ({len(unique_values)} different plot values found)"
             )
             raw_samples = (
                 list(unique_values)[:3]
@@ -224,8 +223,7 @@ class ConsistencyCheckRule(BaseVerificationRule):
                 plot_data, legend_data, expected_unique
             )
         else:
-            return {"passed": False, "message": f"Unknown channel: "
-            f"{channel}"}
+            return {"passed": False, "message": f"Unknown channel: {channel}"}
 
     def _verify_marker_consistency(
         self,
@@ -254,20 +252,17 @@ class ConsistencyCheckRule(BaseVerificationRule):
 
         if result["passed"]:
             result["message"] = (
-                f"Marker consistency: "
-            f"PASS ({len(plot_unique)} unique markers match)"
+                f"Marker consistency: PASS ({len(plot_unique)} unique markers match)"
             )
         else:
             result["message"] = "Marker consistency: FAIL"
             if result["missing_from_legend"]:
                 result["message"] += (
-                    f"\n   - Missing from legend: "
-            f"{result['missing_from_legend']}"
+                    f"\n   - Missing from legend: {result['missing_from_legend']}"
                 )
             if result["extra_in_legend"]:
                 result["message"] += (
-                    f"\n   - Extra in legend: "
-            f"{result['extra_in_legend']}"
+                    f"\n   - Extra in legend: {result['extra_in_legend']}"
                 )
 
         return result
@@ -295,8 +290,7 @@ class ConsistencyCheckRule(BaseVerificationRule):
 
         if result["passed"]:
             result["message"] = (
-                f"Color consistency: "
-            f"PASS ({len(plot_unique)} unique colors match)"
+                f"Color consistency: PASS ({len(plot_unique)} unique colors match)"
             )
         else:
             result["message"] = "Color consistency: FAIL"
@@ -349,18 +343,15 @@ class ConsistencyCheckRule(BaseVerificationRule):
                 result["message"] = "Alpha consistency: FAIL (ranges don't overlap)"
         elif result["passed"]:
             result["message"] = (
-                f"Alpha consistency: "
-            f"PASS ({len(plot_unique)} alpha values match)"
+                f"Alpha consistency: PASS ({len(plot_unique)} alpha values match)"
             )
         else:
             result["message"] = "Alpha consistency: FAIL"
             result["message"] += (
-                f"\n   - Plot alpha range: "
-            f"{result['plot_alpha_range']}"
+                f"\n   - Plot alpha range: {result['plot_alpha_range']}"
             )
             result["message"] += (
-                f"\n   - Legend alpha range: "
-            f"{result['legend_alpha_range']}"
+                f"\n   - Legend alpha range: {result['legend_alpha_range']}"
             )
 
         return result
@@ -398,8 +389,7 @@ class ConsistencyCheckRule(BaseVerificationRule):
             result["message"] += f"\n   - Plot size range: "
             f"{result['plot_size_range']}"
             result["message"] += (
-                f"\n   - Legend size range: "
-            f"{result['legend_size_range']}"
+                f"\n   - Legend size range: {result['legend_size_range']}"
             )
 
         return result
@@ -431,20 +421,17 @@ class ConsistencyCheckRule(BaseVerificationRule):
 
         if result["passed"]:
             result["message"] = (
-                f"Style consistency: "
-            f"PASS ({len(plot_unique)} unique styles match)"
+                f"Style consistency: PASS ({len(plot_unique)} unique styles match)"
             )
         else:
             result["message"] = "Style consistency: FAIL"
             if result["missing_from_legend"]:
                 result["message"] += (
-                    f"\n   - Missing from legend: "
-            f"{result['missing_from_legend']}"
+                    f"\n   - Missing from legend: {result['missing_from_legend']}"
                 )
             if result["extra_in_legend"]:
                 result["message"] += (
-                    f"\n   - Extra in legend: "
-            f"{result['extra_in_legend']}"
+                    f"\n   - Extra in legend: {result['extra_in_legend']}"
                 )
 
         return result
@@ -504,7 +491,7 @@ class LegendPlotConsistencyRule(BaseVerificationRule):
                 entry_check = {
                     "passed": actual_count == expected_count,
                     "message": f"{entry_type}: "
-            f"expected {expected_count}, got {actual_count}",
+                    f"expected {expected_count}, got {actual_count}",
                     "expected": expected_count,
                     "actual": actual_count,
                 }
@@ -560,10 +547,10 @@ class LegendPlotConsistencyRule(BaseVerificationRule):
 
                 message = (
                     f"{channel.title()} variation: "
-            f"VERIFIED (plot shows expected variation, legend data missing)"
+                    f"VERIFIED (plot shows expected variation, legend data missing)"
                     if variation_check["passed"]
                     else f"{channel.title()} variation: "
-            f"MISSING (expected variation not found in plot)"
+                    f"MISSING (expected variation not found in plot)"
                 )
 
                 special_check = {
@@ -590,8 +577,7 @@ class LegendPlotConsistencyRule(BaseVerificationRule):
             entry_checks = list(result["legend_entry_checks"].keys())
             all_checks = checks + entry_checks
             result["message"] = (
-                f"Legend-plot consistency: "
-            f"PASS ({', '.join(all_checks)})"
+                f"Legend-plot consistency: PASS ({', '.join(all_checks)})"
             )
         else:
             failed_consistency = [
@@ -602,8 +588,7 @@ class LegendPlotConsistencyRule(BaseVerificationRule):
             ]
             all_failed = failed_consistency + failed_entries
             result["message"] = (
-                f"Legend-plot consistency: "
-            f"FAIL ({', '.join(all_failed)})"
+                f"Legend-plot consistency: FAIL ({', '.join(all_failed)})"
             )
             result["suggestions"].append("Check legend proxy artist creation")
             result["suggestions"].append(
@@ -639,13 +624,12 @@ class FigureLegendStrategyRule(BaseVerificationRule):
 
         if count_check["passed"]:
             count_check["message"] = (
-                f"Legend count: "
-            f"PASS ({expected_count} legends found)"
+                f"Legend count: PASS ({expected_count} legends found)"
             )
         else:
             count_check["message"] = (
                 f"Legend count: "
-            f"FAIL (expected {expected_count}, got {figure_props['legend_count']})"
+                f"FAIL (expected {expected_count}, got {figure_props['legend_count']})"
             )
             result["passed"] = False
 
@@ -692,13 +676,12 @@ class FigureLegendStrategyRule(BaseVerificationRule):
 
             if entries_check["passed"]:
                 entries_check["message"] = (
-                    f"Entry count: "
-            f"PASS ({expected_total_entries} entries)"
+                    f"Entry count: PASS ({expected_total_entries} entries)"
                 )
             else:
                 entries_check["message"] = (
                     f"Entry count: "
-            f"FAIL (expected {expected_total_entries}, got {legend['entry_count']})"
+                    f"FAIL (expected {expected_total_entries}, got {legend['entry_count']})"
                 )
                 result["passed"] = False
 
@@ -708,8 +691,7 @@ class FigureLegendStrategyRule(BaseVerificationRule):
             "passed": legend["title"] is None or legend["title"] == "",
             "message": "No channel title: PASS (unified legend)"
             if (legend["title"] is None or legend["title"] == "")
-            else f"Unexpected title: "
-            f"{legend['title']}",
+            else f"Unexpected title: {legend['title']}",
         }
 
         result["checks"]["unified_title"] = title_check
@@ -753,19 +735,16 @@ class FigureLegendStrategyRule(BaseVerificationRule):
 
             if channels_check["passed"]:
                 channels_check["message"] = (
-                    f"Channel coverage: "
-            f"PASS ({len(expected_set)} channels)"
+                    f"Channel coverage: PASS ({len(expected_set)} channels)"
                 )
             else:
                 missing = expected_set - found_set
                 extra = found_set - expected_set
                 channels_check["message"] = "Channel coverage: FAIL"
                 if missing:
-                    channels_check["message"] += f" (missing: "
-            f"{sorted(missing)})"
+                    channels_check["message"] += f" (missing: {sorted(missing)})"
                 if extra:
-                    channels_check["message"] += f" (extra: "
-            f"{sorted(extra)})"
+                    channels_check["message"] += f" (extra: {sorted(extra)})"
                 result["passed"] = False
 
             result["checks"]["channel_coverage"] = channels_check
@@ -780,10 +759,10 @@ class FigureLegendStrategyRule(BaseVerificationRule):
                         "expected": expected_entries,
                         "actual": legend["entry_count"],
                         "message": f"{channel.title()} entries: "
-            f"PASS ({expected_entries})"
+                        f"PASS ({expected_entries})"
                         if legend["entry_count"] == expected_entries
                         else f"{channel.title()} entries: "
-            f"FAIL (expected {expected_entries}, got {legend['entry_count']})",
+                        f"FAIL (expected {expected_entries}, got {legend['entry_count']})",
                     }
 
                     result["checks"][f"{channel}_entries"] = entries_check
@@ -857,13 +836,11 @@ def verify_plot_properties_for_subplot(
 
     if result["overall_passed"]:
         result["summary_message"] = (
-            f"All channels verified: "
-            f"{', '.join(passed_channels)}"
+            f"All channels verified: {', '.join(passed_channels)}"
         )
     else:
         result["summary_message"] = (
-            f"Channel verification failed: "
-            f"{', '.join(failed_channels)}"
+            f"Channel verification failed: {', '.join(failed_channels)}"
         )
 
         for channel in failed_channels:
