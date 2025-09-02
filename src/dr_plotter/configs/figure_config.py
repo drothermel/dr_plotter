@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 import matplotlib.pyplot as plt
 
@@ -11,14 +13,14 @@ class FigureConfig:
     figsize: tuple[int, int] = (12, 8)
     tight_layout_pad: float = 0.5
 
-    external_ax: Optional[plt.Axes] = None
-    shared_styling: Optional[bool] = None
+    external_ax: plt.Axes | None = None
+    shared_styling: bool | None = None
 
     figure_kwargs: dict[str, Any] = field(default_factory=dict)
     subplot_kwargs: dict[str, Any] = field(default_factory=dict)
 
-    x_labels: Optional[list[list[Optional[str]]]] = None
-    y_labels: Optional[list[list[Optional[str]]]] = None
+    x_labels: list[list[str | None]] | None = None
+    y_labels: list[list[str | None]] | None = None
 
     def validate(self) -> None:
         assert self.rows > 0, f"Rows must be positive, got {self.rows}"

@@ -1,16 +1,18 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, fields
-from typing import Any, Optional
+from typing import Any
 
 from dr_plotter.types import ColName, VisualChannel
 
 
 @dataclass
 class GroupingConfig:
-    hue: Optional[ColName] = None
-    style: Optional[ColName] = None
-    size: Optional[ColName] = None
-    marker: Optional[ColName] = None
-    alpha: Optional[ColName] = None
+    hue: ColName | None = None
+    style: ColName | None = None
+    size: ColName | None = None
+    marker: ColName | None = None
+    alpha: ColName | None = None
 
     @property
     def channel_strs(self) -> list[str]:
