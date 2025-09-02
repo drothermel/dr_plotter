@@ -5,6 +5,7 @@ from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from plot_data import ExampleData
 
+MIN_CATEGORY_GROUP_COUNT = 2
 
 EXPECTED_CHANNELS = {
     (0, 0): [],
@@ -37,7 +38,7 @@ def main(args: Any) -> Any:
     assert "x_categorical" in shared_data.columns
     assert "category_group" in shared_data.columns
     assert "time_series" in shared_data.columns
-    assert len(shared_data.groupby("category_group")) >= 2
+    assert len(shared_data.groupby("category_group")) >= MIN_CATEGORY_GROUP_COUNT
 
     aggregated_data = (
         shared_data.groupby("x_categorical")["y_continuous"].mean().reset_index()

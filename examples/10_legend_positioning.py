@@ -9,6 +9,8 @@ from dr_plotter.scripting.verif_decorators import (
 )
 from plot_data import ExampleData
 
+EXPECTED_CATEGORY_GROUP_COUNT = 4
+
 
 @inspect_plot_properties()
 @verify_figure_legends(
@@ -21,7 +23,7 @@ def main(args: Any) -> Any:
     assert "category_group" in shared_data.columns
     assert "performance" in shared_data.columns
     assert "accuracy" in shared_data.columns
-    assert len(shared_data.groupby("category_group")) == 4
+    assert len(shared_data.groupby("category_group")) == EXPECTED_CATEGORY_GROUP_COUNT
 
     with FigureManager(
         figure=FigureConfig(rows=2, cols=2, figsize=(16, 12)),

@@ -9,6 +9,9 @@ from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from plot_data import ExampleData
 
+EXPECTED_GROUP_COUNT_COLOR = 3
+EXPECTED_GROUP_COUNT_CATEGORICAL = 2
+EXPECTED_GROUP_COUNT_STYLE = 4
 
 EXPECTED_CHANNELS = {
     (0, 0): ["hue"],
@@ -53,7 +56,7 @@ def main(args):
         assert "time" in color_data.columns
         assert "value" in color_data.columns
         assert "group" in color_data.columns
-        assert len(color_data.groupby("group")) == 3
+        assert len(color_data.groupby("group")) == EXPECTED_GROUP_COUNT_COLOR
 
         fm.plot(
             "scatter",
@@ -96,7 +99,9 @@ def main(args):
         assert "category" in categorical_data.columns
         assert "value" in categorical_data.columns
         assert "group" in categorical_data.columns
-        assert len(categorical_data.groupby("group")) == 2
+        assert (
+            len(categorical_data.groupby("group")) == EXPECTED_GROUP_COUNT_CATEGORICAL
+        )
 
         fm.plot(
             "violin",
@@ -115,7 +120,7 @@ def main(args):
         assert "time" in style_data.columns
         assert "value" in style_data.columns
         assert "group" in style_data.columns
-        assert len(style_data.groupby("group")) == 4
+        assert len(style_data.groupby("group")) == EXPECTED_GROUP_COUNT_STYLE
 
         fm.plot(
             "line",

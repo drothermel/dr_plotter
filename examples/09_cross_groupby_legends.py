@@ -8,6 +8,10 @@ from dr_plotter.scripting.verif_decorators import (
 )
 from plot_data import ExampleData
 
+EXPECTED_EXPERIMENT_COUNT = 2
+EXPECTED_CONDITION_COUNT = 2
+EXPECTED_ALGORITHM_COUNT = 3
+
 
 @inspect_plot_properties()
 @verify_figure_legends(
@@ -27,9 +31,9 @@ def main(args: Any) -> Any:
     assert "algorithm" in filtered_data.columns
     assert "performance" in filtered_data.columns
     assert "accuracy" in filtered_data.columns
-    assert len(filtered_data.groupby("experiment")) == 2
-    assert len(filtered_data.groupby("condition")) == 2
-    assert len(filtered_data.groupby("algorithm")) == 3
+    assert len(filtered_data.groupby("experiment")) == EXPECTED_EXPERIMENT_COUNT
+    assert len(filtered_data.groupby("condition")) == EXPECTED_CONDITION_COUNT
+    assert len(filtered_data.groupby("algorithm")) == EXPECTED_ALGORITHM_COUNT
 
     with FigureManager(
         PlotConfig(

@@ -9,6 +9,8 @@ from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from plot_data import ExampleData
 
+EXPECTED_COORD_GROUP_COUNT = 3
+
 EXPECTED_CHANNELS = {
     (0, 0): ["hue"],
     (0, 1): ["hue", "marker"],
@@ -104,7 +106,7 @@ def main(args):
         assert "time" in coord_data.columns
         assert "value" in coord_data.columns
         assert "group" in coord_data.columns
-        assert len(coord_data.groupby("group")) == 3
+        assert len(coord_data.groupby("group")) == EXPECTED_COORD_GROUP_COUNT
 
         fm.plot(
             "line",

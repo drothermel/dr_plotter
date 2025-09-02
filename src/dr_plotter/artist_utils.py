@@ -2,6 +2,8 @@ import matplotlib.colors as mcolors
 from matplotlib.collections import PolyCollection
 from dr_plotter.types import RGBA
 
+DEFAULT_ALPHA_VALUE = 1.0
+
 
 def extract_facecolor_from_polycollection(obj: PolyCollection) -> RGBA:
     facecolors = obj.get_facecolors()
@@ -17,7 +19,7 @@ def extract_edgecolor_from_polycollection(obj: PolyCollection) -> RGBA:
 
 def extract_alpha_from_artist(obj) -> float:
     alpha = obj.get_alpha()
-    return float(alpha) if alpha is not None else 1.0
+    return float(alpha) if alpha is not None else DEFAULT_ALPHA_VALUE
 
 
 def extract_colors_from_polycollection(obj: PolyCollection) -> list[RGBA]:

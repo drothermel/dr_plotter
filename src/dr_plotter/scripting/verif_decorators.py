@@ -7,6 +7,8 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 
 from dr_plotter.types import ExpectedChannels, SubplotCoord
+
+MAX_DISPLAY_ITEMS = 3
 from dr_plotter.utils import get_axes_from_grid
 
 from .plot_data_extractor import (
@@ -405,11 +407,19 @@ def inspect_plot_properties() -> Callable:
                                 2,
                             )
                         else:
-                            colors_str = ", ".join(coll_info["colors"][:3]) + (
-                                "..." if len(coll_info["colors"]) > 3 else ""
+                            colors_str = ", ".join(
+                                coll_info["colors"][:MAX_DISPLAY_ITEMS]
+                            ) + (
+                                "..."
+                                if len(coll_info["colors"]) > MAX_DISPLAY_ITEMS
+                                else ""
                             )
-                            sizes_str = ", ".join(map(str, coll_info["sizes"][:3])) + (
-                                "..." if len(coll_info["sizes"]) > 3 else ""
+                            sizes_str = ", ".join(
+                                map(str, coll_info["sizes"][:MAX_DISPLAY_ITEMS])
+                            ) + (
+                                "..."
+                                if len(coll_info["sizes"]) > MAX_DISPLAY_ITEMS
+                                else ""
                             )
                             print_info(
                                 f"{coll_info['type']} {coll_info['index']}: colors=[{colors_str}], sizes=[{sizes_str}]",

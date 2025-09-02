@@ -3,6 +3,9 @@ from typing import Any, Protocol
 import matplotlib.colors as mcolors
 from abc import ABC, abstractmethod
 
+MIN_RGB_TUPLE_LENGTH = 3
+RANGE_OVERLAP_THRESHOLD = 0.5
+
 from .plot_data_extractor import (
     extract_subplot_properties,
     convert_legend_size_to_scatter_size,
@@ -54,7 +57,7 @@ class BaseVerificationRule(ABC):
         formatted_values = []
 
         for value in limited_values:
-            if isinstance(value, (tuple, list)) and len(value) >= 3:
+            if isinstance(value, (tuple, list)) and len(value) >= MIN_RGB_TUPLE_LENGTH:
                 if all(isinstance(x, float) for x in value):
                     formatted_values.append(tuple(round(x, 3) for x in value))
                 else:
@@ -320,7 +323,7 @@ class ConsistencyCheckRule(BaseVerificationRule):
                 min(plot_max, legend_max) - max(plot_min, legend_min)
             ) / max((plot_max - plot_min), 0.1)
 
-            if range_overlap > 0.5:
+            if range_overlap > RANGE_OVERLAP_THRESHOLD:
                 result["passed"] = True
                 result["message"] = (
                     "Alpha consistency: PASS (ranges overlap sufficiently)"

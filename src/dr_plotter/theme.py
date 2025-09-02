@@ -5,6 +5,10 @@ from typing import Any
 from dr_plotter import consts
 from dr_plotter.configs import LegendConfig
 
+ALPHA_MIN_DEFAULT = 0.3
+ALPHA_MAX_DEFAULT = 1.0
+DEFAULT_TEXT_FONTSIZE = 10
+
 DR_PLOTTER_STYLE_KEYS = [
     "title",
     "xlabel",
@@ -165,11 +169,11 @@ BASE_THEME = Theme(
     error_edge_color="#FF0000",
     default_color=BASE_COLORS[0],
     text_color="#000000",
-    text_fontsize=10,
+    text_fontsize=DEFAULT_TEXT_FONTSIZE,
     text_ha="center",
     text_va="center",
-    alpha_min=0.3,
-    alpha_max=1.0,
+    alpha_min=ALPHA_MIN_DEFAULT,
+    alpha_max=ALPHA_MAX_DEFAULT,
     missing_label_str="(empty label)",
     **{
         consts.get_cycle_key("hue"): itertools.cycle(BASE_COLORS),

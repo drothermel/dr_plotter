@@ -11,6 +11,10 @@ import matplotlib.legend
 from dr_plotter.types import RGBA, Position, CollectionProperties
 from dr_plotter.artist_utils import extract_colors_from_polycollection
 
+RGB_CHANNEL_COUNT = 3
+RGBA_CHANNEL_COUNT = 4
+DEFAULT_LINE_ALPHA = 1.0
+
 
 def extract_colors(obj: Any) -> list[RGBA]:
     if isinstance(obj, PathCollection):
@@ -23,12 +27,14 @@ def extract_colors(obj: Any) -> list[RGBA]:
         colors = []
         for line in obj:
             color = line.get_color()
-            alpha = line.get_alpha() if line.get_alpha() is not None else 1.0
+            alpha = (
+                line.get_alpha() if line.get_alpha() is not None else DEFAULT_LINE_ALPHA
+            )
             rgba = mcolors.to_rgba(color)
-            if len(rgba) == 3:
+            if len(rgba) == RGB_CHANNEL_COUNT:
                 rgba = (*rgba, alpha)
-            elif len(rgba) == 4:
-                rgba = (*rgba[:3], alpha)
+            elif len(rgba) == RGBA_CHANNEL_COUNT:
+                rgba = (*rgba[:RGB_CHANNEL_COUNT], alpha)
             colors.append(rgba)
         return colors
     elif hasattr(obj, "get_markerfacecolor"):
@@ -111,7 +117,10 @@ def extract_positions(obj: Any) -> list[Position]:
 def extract_alphas(obj: Any) -> list[float]:
     if isinstance(obj, PathCollection):
         facecolors = obj.get_facecolors()
-        return [float(color[3]) if len(color) >= 4 else 1.0 for color in facecolors]
+        return [
+            float(color[3]) if len(color) >= RGBA_CHANNEL_COUNT else DEFAULT_LINE_ALPHA
+            for color in facecolors
+        ]
     elif isinstance(obj, PolyCollection):
         alpha = obj.get_alpha()
         if alpha is None:
@@ -119,7 +128,7 @@ def extract_alphas(obj: Any) -> list[float]:
             assert len(facecolors) > 0, (
                 "PolyCollection has no facecolors for alpha extraction"
             )
-            assert len(facecolors[0]) >= 4, (
+            assert len(facecolors[0]) >= RGBA_CHANNEL_COUNT, (
                 "PolyCollection facecolor missing alpha channel"
             )
             return [float(facecolors[0][3])]
@@ -134,7 +143,10 @@ def extract_alphas(obj: Any) -> list[float]:
         return alphas
     else:
         colors = extract_colors(obj)
-        return [float(color[3]) if len(color) >= 4 else 1.0 for color in colors]
+        return [
+            float(color[3]) if len(color) >= RGBA_CHANNEL_COUNT else DEFAULT_LINE_ALPHA
+            for color in colors
+        ]
 
 
 def extract_styles(obj: Any) -> list[str]:
@@ -520,7 +532,7 @@ def extract_channel_values_from_collections(
                 all_values.extend(collection["alphas"])
             else:
                 for rgba in collection["colors"]:
-                    if len(rgba) == 4:
+                    if len(rgba) == RGBA_CHANNEL_COUNT:
                         all_values.append(rgba[3])
                     else:
                         all_values.append(1.0)
@@ -550,7 +562,7 @@ def extract_all_plot_data_from_collections(
             all_plot_alphas.extend(collection["alphas"])
         else:
             for rgba_color in collection["colors"]:
-                if len(rgba_color) >= 4:
+                if len(rgba_color) >= RGBA_CHANNEL_COUNT:
                     all_plot_alphas.append(rgba_color[3])
                 else:
                     all_plot_alphas.append(1.0)
@@ -572,7 +584,7 @@ def extract_legend_data_with_alphas(
 ) -> dict[str, list[Any]]:
     legend_alphas = []
     for rgba_color in legend_props["colors"]:
-        if len(rgba_color) >= 4:
+        if len(rgba_color) >= RGBA_CHANNEL_COUNT:
             legend_alphas.append(rgba_color[3])
         else:
             legend_alphas.append(1.0)

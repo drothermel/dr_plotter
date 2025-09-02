@@ -9,6 +9,9 @@ from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from plot_data import ExampleData
 
+EXPECTED_CONTOUR_SAMPLE_COUNT = 400
+EXPECTED_VIOLIN_GROUP_COUNT = 2
+
 EXPECTED_CHANNELS = {
     (0, 0): [],  # Heatmap
     (0, 1): [],  # Contour
@@ -68,7 +71,7 @@ def main(args):
         )
         assert "x" in contour_data.columns
         assert "y" in contour_data.columns
-        assert len(contour_data) == 400
+        assert len(contour_data) == EXPECTED_CONTOUR_SAMPLE_COUNT
 
         fm.plot(
             "contour",
@@ -89,7 +92,7 @@ def main(args):
         assert "category" in violin_data.columns
         assert "value" in violin_data.columns
         assert "group" in violin_data.columns
-        assert len(violin_data.groupby("group")) == 2
+        assert len(violin_data.groupby("group")) == EXPECTED_VIOLIN_GROUP_COUNT
 
         fm.plot(
             "violin",

@@ -10,6 +10,8 @@ from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_prop
 from dr_plotter import consts
 from plot_data import ExampleData
 
+FILTER_LEARNING_RATE = 0.01
+
 EXPECTED_CHANNELS = {
     (0, 0): ["hue"],
     (0, 1): ["hue", "style"],
@@ -40,7 +42,9 @@ def main(args):
         ml_data = ExampleData.ml_training_curves()
 
         # Basic multi-metrics: color by METRICS (filter to single learning rate for clarity)
-        single_lr_data = ml_data[ml_data["learning_rate"] == 0.01].copy()
+        single_lr_data = ml_data[
+            ml_data["learning_rate"] == FILTER_LEARNING_RATE
+        ].copy()
         fm.plot(
             "line",
             0,
