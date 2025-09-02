@@ -1,12 +1,11 @@
+import importlib.util
 from typing import Any, Tuple
 
 
 def check_datadec_available() -> bool:
-    try:
-        import datadec
-
+    if importlib.util.find_spec("datadec") is not None:
         return True
-    except ImportError:
+    else:
         raise ImportError(
             "DataDecide integration requires the 'datadec' optional dependency.\n"
             "Install with: uv add 'dr_plotter[datadec]' or pip install 'dr_plotter[datadec]'"
