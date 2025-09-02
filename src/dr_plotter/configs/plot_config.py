@@ -83,7 +83,7 @@ class PlotConfig:
         style_config = self._resolve_style_config()
 
         figure_config = self._create_figure_config_from_layout(layout_config)
-        legend_config = self._create_legend_config_from_params()
+        legend_config = self._resolve_legend_config()
         theme = self._resolve_theme_from_style(style_config)
 
         return figure_config, legend_config, theme
@@ -102,7 +102,7 @@ class PlotConfig:
             y_labels=layout_config.y_labels,
         )
 
-    def _create_legend_config_from_params(self) -> LegendConfig:
+    def _resolve_legend_config(self) -> LegendConfig:
         if self.legend is None:
             return LegendConfig()
 
