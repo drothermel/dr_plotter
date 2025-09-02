@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from dr_plotter.faceting.style_coordination import FacetStyleCoordinator
 
 SUPPORTED_PLOT_TYPES = ["line", "scatter", "bar", "fill_between", "heatmap"]
+GRID_SHAPE_DIMENSIONS = 2
 
 
 def prepare_faceted_subplots(
@@ -18,7 +19,7 @@ def prepare_faceted_subplots(
 ) -> dict[tuple[int, int], pd.DataFrame]:
     assert not data.empty, "Cannot facet empty DataFrame"
     assert config.rows or config.cols, "Must specify rows or cols for faceting"
-    assert isinstance(grid_shape, tuple) and len(grid_shape) == 2, (
+    assert isinstance(grid_shape, tuple) and len(grid_shape) == GRID_SHAPE_DIMENSIONS, (
         "grid_shape must be (rows, cols) tuple"
     )
 
@@ -81,7 +82,7 @@ def plot_faceted_data(
     plot_type: str,
     config: FacetingConfig,
     style_coordinator: FacetStyleCoordinator,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     assert data_subsets, "Cannot plot with empty data_subsets"
     assert plot_type in SUPPORTED_PLOT_TYPES, f"Unsupported plot type: {plot_type}"
@@ -101,7 +102,7 @@ def _plot_subplot_at_position(
     plot_type: str,
     config: FacetingConfig,
     style_coordinator: FacetStyleCoordinator,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     if config.lines and config.lines in subplot_data.columns:
         _plot_with_style_coordination(
@@ -123,7 +124,7 @@ def _plot_with_style_coordination(
     plot_type: str,
     config: FacetingConfig,
     style_coordinator: FacetStyleCoordinator,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     ax = fm.get_axes(row, col)
 
@@ -151,7 +152,7 @@ def _plot_single_series_at_position(
     subplot_data: pd.DataFrame,
     plot_type: str,
     config: FacetingConfig,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     ax = fm.get_axes(row, col)
     _execute_plot_call(ax, plot_type, subplot_data, config, **kwargs)
@@ -162,7 +163,7 @@ def _execute_plot_call(
     plot_type: str,
     data: pd.DataFrame,
     config: FacetingConfig,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     plot_handlers = {
         "line": _plot_line_data,
@@ -175,32 +176,32 @@ def _execute_plot_call(
 
 
 def _plot_line_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs
+    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
 ) -> None:
     ax.plot(data[config.x], data[config.y], **kwargs)
 
 
 def _plot_scatter_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs
+    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
 ) -> None:
     ax.scatter(data[config.x], data[config.y], **kwargs)
 
 
 def _plot_bar_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs
+    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
 ) -> None:
     filtered_kwargs = {k: v for k, v in kwargs.items() if k not in ["marker"]}
     ax.bar(data[config.x], data[config.y], **filtered_kwargs)
 
 
 def _plot_fill_between_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs
+    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
 ) -> None:
     ax.fill_between(data[config.x], data[config.y], **kwargs)
 
 
 def _plot_heatmap_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs
+    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
 ) -> None:
     values = data.pivot_table(index=config.y, columns=config.x, values="value")
     ax.imshow(values, **kwargs)

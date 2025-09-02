@@ -63,7 +63,7 @@ class FacetStyleCoordinator:
         col: int,
         dimension: str | None,
         subplot_data: pd.DataFrame,
-        **plot_kwargs,
+        **plot_kwargs: Any,
     ) -> dict[str, Any]:
         if dimension is None or dimension not in subplot_data.columns:
             return plot_kwargs
