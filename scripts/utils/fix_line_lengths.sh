@@ -41,9 +41,14 @@ echo "$files_with_violations" | while read -r file; do
     # Apply general fixes using sed
     sed -i '' \
         -e 's/\(help="[^"]*\)\. \([^"]*"\)/\1. "\n        "\2/' \
+        -e 's/\(help="[^"]*\) (e\.g\., \([^"]*"\)/\1 "\n        "(e.g., \2/' \
+        -e 's/\(help="[^"]*\)\. Use \([^"]*"\)/\1. "\n        "Use \2/' \
         -e 's/\(description="[^"]*\) - \([^"]*"\)/\1 "\n        "- \2/' \
-        -e 's/\(f"[^"]*[^:]\): \([^"]*"\)/\1: " \\\n            f"\2/' \
+        -e 's/\(f"[^"]*\): \([^"]*"\)/\1: "\n            f"\2/' \
         -e 's/\(assert [^,]*, (\)$/\1\n        /' \
+        -e 's/\(# [^:]*\): \([^!]*!\)$/\1:\n        # \2/' \
+        -e 's/\(# [^(]*\) (\([^)]*\))$/\1\n        # (\2)/' \
+        -e 's/\([^"]*following [^"]*\) \([^"]*\)/\1\n    \2/' \
         "$file"
     
     # Check if the file is still valid Python
