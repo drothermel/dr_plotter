@@ -1,32 +1,33 @@
 from __future__ import annotations
-from typing import Any
+
+from typing import Any, ClassVar
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from dr_plotter import consts
+from dr_plotter.configs import GroupingConfig
 from dr_plotter.plotters.base import (
     BasePlotter,
     BasePlotterParamName,
     SubPlotterParamName,
 )
 from dr_plotter.theme import HEATMAP_THEME, Theme
-from dr_plotter.types import VisualChannel, Phase, ComponentSchema
-from dr_plotter.configs import GroupingConfig
+from dr_plotter.types import ComponentSchema, Phase, VisualChannel
 
 
 class HeatmapPlotter(BasePlotter):
     plotter_name: str = "heatmap"
-    plotter_params: list[str] = ["values", "annot"]
-    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: set[VisualChannel] = set()
-    default_theme: Theme = HEATMAP_THEME
+    plotter_params: ClassVar[list[str]] = ["values", "annot"]
+    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
+    enabled_channels: ClassVar[set[VisualChannel]] = set()
+    default_theme: ClassVar[Theme] = HEATMAP_THEME
     supports_legend: bool = False
     supports_grouped: bool = False
 
-    component_schema: dict[Phase, ComponentSchema] = {
+    component_schema: ClassVar[dict[Phase, ComponentSchema]] = {
         "plot": {
             "main": {
                 "cmap",
@@ -76,7 +77,7 @@ class HeatmapPlotter(BasePlotter):
         )
 
     def _plot_specific_data_prep(self) -> None:
-        plot_data = self.plot_data.pivot(
+        plot_data = self.plot_data.pivot_table(
             index=consts.Y_COL_NAME,
             columns=consts.X_COL_NAME,
             values=self.values,

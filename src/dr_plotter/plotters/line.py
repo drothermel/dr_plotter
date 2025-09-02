@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Any
+
+from typing import Any, ClassVar
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -7,19 +8,25 @@ import pandas as pd
 from dr_plotter import consts
 from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import LINE_THEME, Theme
-from dr_plotter.types import VisualChannel, Phase, ComponentSchema
+from dr_plotter.types import ComponentSchema, Phase, VisualChannel
 
 from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
 
 
 class LinePlotter(BasePlotter):
     plotter_name: str = "line"
-    plotter_params: list[str] = []
-    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: set[VisualChannel] = {"hue", "style", "size", "marker", "alpha"}
-    default_theme: Theme = LINE_THEME
+    plotter_params: ClassVar[list[str]] = []
+    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
+    enabled_channels: ClassVar[set[VisualChannel]] = {
+        "hue",
+        "style",
+        "size",
+        "marker",
+        "alpha",
+    }
+    default_theme: ClassVar[Theme] = LINE_THEME
 
-    component_schema: dict[Phase, ComponentSchema] = {
+    component_schema: ClassVar[dict[Phase, ComponentSchema]] = {
         "plot": {
             "main": {
                 "color",

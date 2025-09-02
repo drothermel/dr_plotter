@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Any
+
+from typing import Any, ClassVar
 
 import numpy as np
 import pandas as pd
@@ -10,10 +11,10 @@ from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import BAR_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
+    ComponentSchema,
+    Phase,
     SubPlotterParamName,
     VisualChannel,
-    Phase,
-    ComponentSchema,
 )
 
 from .base import BasePlotter
@@ -21,12 +22,12 @@ from .base import BasePlotter
 
 class BarPlotter(BasePlotter):
     plotter_name: str = "bar"
-    plotter_params: list[str] = []
-    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: set[VisualChannel] = {"hue"}
-    default_theme: Theme = BAR_THEME
+    plotter_params: ClassVar[list[str]] = []
+    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
+    enabled_channels: ClassVar[set[VisualChannel]] = {"hue"}
+    default_theme: ClassVar[Theme] = BAR_THEME
 
-    component_schema: dict[Phase, ComponentSchema] = {
+    component_schema: ClassVar[dict[Phase, ComponentSchema]] = {
         "plot": {
             "main": {
                 "color",
@@ -108,7 +109,7 @@ class BarPlotter(BasePlotter):
             cat_data = data[data[consts.X_COL_NAME] == cat]
             if not cat_data.empty:
                 x_positions.append(i + group_position["offset"])
-                y_values.append(cat_data[consts.Y_COL_NAME].values[0])
+                y_values.append(cat_data[consts.Y_COL_NAME].to_numpy()[0])
 
         patches = None
         if x_positions:

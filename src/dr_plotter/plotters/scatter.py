@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Any
+
+from typing import Any, ClassVar
 
 import numpy as np
 import pandas as pd
@@ -10,10 +11,10 @@ from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import SCATTER_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
+    ComponentSchema,
+    Phase,
     SubPlotterParamName,
     VisualChannel,
-    Phase,
-    ComponentSchema,
 )
 
 from .base import BasePlotter
@@ -21,12 +22,12 @@ from .base import BasePlotter
 
 class ScatterPlotter(BasePlotter):
     plotter_name: str = "scatter"
-    plotter_params: list[str] = []
-    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: set[VisualChannel] = {"hue", "size", "marker", "alpha"}
-    default_theme: Theme = SCATTER_THEME
+    plotter_params: ClassVar[list[str]] = []
+    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
+    enabled_channels: ClassVar[set[VisualChannel]] = {"hue", "size", "marker", "alpha"}
+    default_theme: ClassVar[Theme] = SCATTER_THEME
 
-    component_schema: dict[Phase, ComponentSchema] = {
+    component_schema: ClassVar[dict[Phase, ComponentSchema]] = {
         "plot": {
             "main": {
                 "s",

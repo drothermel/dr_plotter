@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Any
+
+from typing import Any, ClassVar
 
 import numpy as np
 import pandas as pd
@@ -26,7 +27,7 @@ from .base import BasePlotter
 
 class ViolinPlotter(BasePlotter):
     plotter_name: str = "violin"
-    plotter_params: list[str] = [
+    plotter_params: ClassVar[list[str]] = [
         "alpha",
         "color",
         "label",
@@ -35,11 +36,11 @@ class ViolinPlotter(BasePlotter):
         "style_by",
         "size_by",
     ]
-    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: set[VisualChannel] = {"hue"}
-    default_theme: Theme = VIOLIN_THEME
+    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
+    enabled_channels: ClassVar[set[VisualChannel]] = {"hue"}
+    default_theme: ClassVar[Theme] = VIOLIN_THEME
 
-    component_schema: dict[Phase, ComponentSchema] = {
+    component_schema: ClassVar[dict[Phase, ComponentSchema]] = {
         "plot": {
             "main": {
                 "showmeans",

@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Any
+
+from typing import Any, ClassVar
 
 import pandas as pd
 from matplotlib.patches import Patch
@@ -9,10 +10,10 @@ from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import HISTOGRAM_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
+    ComponentSchema,
+    Phase,
     SubPlotterParamName,
     VisualChannel,
-    Phase,
-    ComponentSchema,
 )
 
 from .base import BasePlotter
@@ -20,13 +21,13 @@ from .base import BasePlotter
 
 class HistogramPlotter(BasePlotter):
     plotter_name: str = "histogram"
-    plotter_params: list[str] = []
-    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: set[VisualChannel] = set()
-    default_theme: Theme = HISTOGRAM_THEME
+    plotter_params: ClassVar[list[str]] = []
+    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
+    enabled_channels: ClassVar[set[VisualChannel]] = set()
+    default_theme: ClassVar[Theme] = HISTOGRAM_THEME
     supports_grouped: bool = False
 
-    component_schema: dict[Phase, ComponentSchema] = {
+    component_schema: ClassVar[dict[Phase, ComponentSchema]] = {
         "plot": {
             "main": {
                 "color",

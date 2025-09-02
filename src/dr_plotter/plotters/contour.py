@@ -1,34 +1,36 @@
 from __future__ import annotations
-from typing import Any
+
+from typing import Any, ClassVar
 
 import numpy as np
 import pandas as pd
-from sklearn.mixture import GaussianMixture
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from sklearn.mixture import GaussianMixture
 
 from dr_plotter import consts
-from dr_plotter.theme import CONTOUR_THEME, BASE_COLORS, Theme
+from dr_plotter.configs import GroupingConfig
+from dr_plotter.theme import BASE_COLORS, CONTOUR_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
+    ComponentSchema,
+    Phase,
     SubPlotterParamName,
     VisualChannel,
-    Phase,
-    ComponentSchema,
 )
+
 from .base import BasePlotter
-from dr_plotter.configs import GroupingConfig
 
 
 class ContourPlotter(BasePlotter):
     plotter_name: str = "contour"
-    plotter_params: list[str] = []
-    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: set[VisualChannel] = set()
-    default_theme: Theme = CONTOUR_THEME
+    plotter_params: ClassVar[list[str]] = []
+    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
+    enabled_channels: ClassVar[set[VisualChannel]] = set()
+    default_theme: ClassVar[Theme] = CONTOUR_THEME
     supports_legend: bool = False
     supports_grouped: bool = False
 
-    component_schema: dict[Phase, ComponentSchema] = {
+    component_schema: ClassVar[dict[Phase, ComponentSchema]] = {
         "plot": {
             "contour": {
                 "levels",

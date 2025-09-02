@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Any
+
+from typing import Any, ClassVar
 
 import pandas as pd
 
@@ -46,9 +47,9 @@ def ylabel_from_metrics(metrics: list[ColName]) -> str | None:
 
 
 class BasePlotter:
-    _registry = {}
+    _registry: ClassVar[dict[str, type]] = {}
 
-    def __init_subclass__(cls, **kwargs) -> None:
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         BasePlotter._registry[cls.plotter_name] = cls
 
@@ -61,14 +62,14 @@ class BasePlotter:
         return sorted(cls._registry.keys())
 
     plotter_name: str = "base"
-    plotter_params: list[str] = []
-    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: set[VisualChannel] = set()
-    default_theme: Theme = BASE_THEME
+    plotter_params: ClassVar[list[str]] = []
+    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
+    enabled_channels: ClassVar[set[VisualChannel]] = set()
+    default_theme: ClassVar[Theme] = BASE_THEME
     supports_legend: bool = True
-    supports_grouped: bool = True
+    supports_grouped: ClassVar[bool] = True
 
-    component_schema: dict[Phase, ComponentSchema] = {
+    component_schema: ClassVar[dict[Phase, ComponentSchema]] = {
         "plot": {"main": set()},
         "axes": {
             "title": {"text", "fontsize", "color"},
@@ -467,10 +468,12 @@ class BasePlotter:
             )
 
     def _style_grid(self, ax: Any, styles: dict[str, Any]) -> None:
-        grid_visible = styles.get("visible", self.styler.get_style("grid", True))
+        grid_visible = styles.get(
+            "visible", self.styler.get_style("grid", default=True)
+        )
         if grid_visible:
             ax.grid(
-                True,
+                visible=True,
                 alpha=styles.get("alpha", self.theme.get("grid_alpha")),
                 color=styles.get("color", self.theme.get("grid_color")),
                 linestyle=styles.get(
@@ -478,4 +481,4 @@ class BasePlotter:
                 ),
             )
         else:
-            ax.grid(False)
+            ax.grid(visible=False)
