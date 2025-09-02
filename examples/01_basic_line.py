@@ -40,47 +40,14 @@ def main(args: Any) -> Any:
         medium_span_factor=0.7,
     )
 
-    legend_config = LegendConfig(
-        strategy="subplot",
-        layout_hint=None,
-        collect_strategy="smart",
-        position="lower center",
-        deduplication=True,
-        ncol=None,
-        max_col=4,
-        spacing=0.1,
-        remove_axes_legends=True,
-        channel_titles=None,
-        layout_left_margin=0.0,
-        layout_bottom_margin=0.15,
-        layout_right_margin=1.0,
-        layout_top_margin=0.95,
-        positioning_config=positioning_config,
-    )
-
-    layout_config = LayoutConfig(
-        rows=1,
-        cols=1,
-        figsize=(8.0, 6.0),
-        tight_layout_pad=0.5,
-        figure_kwargs={},
-        subplot_kwargs={},
-        x_labels=None,
-        y_labels=None,
-    )
-
-    style_config = StyleConfig(
-        colors=None,
-        plot_styles={"linewidth": 2.0, "alpha": 0.9},
-        fonts=None,
-        figure_styles=None,
-        theme="line",
-    )
-
     plot_config = PlotConfig(
-        layout=layout_config,
-        style=style_config,
-        legend=legend_config,
+        layout=(1, 1, {"figsize": (8.0, 6.0)}),
+        style={"plot_styles": {"linewidth": 2.0, "alpha": 0.9}, "theme": "line"},
+        legend={
+            "strategy": "subplot",
+            "position": "lower center", 
+            "positioning_config": positioning_config
+        },
     )
 
     with FigureManager(plot_config) as fm:
