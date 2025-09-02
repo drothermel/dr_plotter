@@ -33,6 +33,7 @@ class FigureManager:
     def __init__(self, config: PlotConfig | None = None, **kwargs: Any) -> None:
         assert not any(k in kwargs for k in {"figure", "legend", "theme"})
         config = PlotConfig() if config is None else config
+        self._init_from_config(config)
         figure_config, legend_config, theme = config._to_legacy_configs()
 
         assert theme is not None, "Theme is required"
@@ -43,6 +44,11 @@ class FigureManager:
 
         self._init_from_configs(figure_config, legend_config, theme)
 
+    def _init_from_config(self, config: PlotConfig) -> None:
+        self.layout_config = config._resolve_layout_config()
+        self.style_config = config._resolve_style_config()
+        self.legend_config = config._resolve_legend_config()
+        self.theme = config.style_config.theme
     def _init_from_configs(
         self,
         figure: FigureConfig,
