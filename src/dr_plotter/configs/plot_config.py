@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from dr_plotter.configs.figure_config import FigureConfig
 from dr_plotter.configs.layout_config import LayoutConfig
 from dr_plotter.configs.legend_config import LegendConfig
 from dr_plotter.configs.style_config import StyleConfig
@@ -19,6 +18,9 @@ class PlotConfig:
 
     def __post_init__(self) -> None:
         self.validate()
+        self.layout = self._resolve_layout_config()
+        self.style = self._resolve_style_config()
+        self.legend = self._resolve_legend_config()
 
     def validate(self) -> None:
         pass
@@ -62,30 +64,6 @@ class PlotConfig:
             return StyleConfig(**self.style)
 
         return StyleConfig()
-
-    def _to_legacy_configs(self) -> tuple[FigureConfig, LegendConfig, Theme | None]:
-        layout_config = self._resolve_layout_config()
-        style_config = self._resolve_style_config()
-
-        figure_config = self._create_figure_config_from_layout(layout_config)
-        legend_config = self._resolve_legend_config()
-        theme = self._resolve_theme_from_style(style_config)
-
-        return figure_config, legend_config, theme
-
-    def _create_figure_config_from_layout(
-        self, layout_config: LayoutConfig
-    ) -> FigureConfig:
-        return FigureConfig(
-            rows=layout_config.rows,
-            cols=layout_config.cols,
-            figsize=layout_config.figsize,
-            tight_layout_pad=layout_config.tight_layout_pad,
-            figure_kwargs=layout_config.figure_kwargs,
-            subplot_kwargs=layout_config.subplot_kwargs,
-            x_labels=layout_config.x_labels,
-            y_labels=layout_config.y_labels,
-        )
 
     def _resolve_legend_config(self) -> LegendConfig:
         if self.legend is None:
