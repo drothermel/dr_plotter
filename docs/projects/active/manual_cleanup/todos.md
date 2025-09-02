@@ -297,6 +297,79 @@ color = extract_simple_color(artist)  # Fails clearly if misconfigured
 
 **The goal**: Code that clearly expresses expectations and fails fast when those expectations are violated, leading to proper architectural fixes rather than defensive workarounds.
 
+## Parameter Filtering Investigation
+
+### Problem Discovered
+**Question about `_filtered_plot_kwargs` filtering logic**: During ScatterPlotter cleanup, discovered that `_filtered_plot_kwargs` removes parameters based on several filter key sets:
+
+```python
+filter_keys = set(
+    DR_PLOTTER_STYLE_KEYS + 
+    self.grouping_params.channel_strs + 
+    BASE_PLOTTER_PARAMS + 
+    self.__class__.plotter_params
+)
+```
+
+**Concerns**:
+- **Over-filtering**: Are valid matplotlib parameters being incorrectly filtered out?
+- **Under-filtering**: Are invalid parameters making it through to matplotlib?
+- **Inconsistent filtering**: Do different plotters filter different parameter sets?
+- **Filter maintenance**: How do we ensure filter keys stay in sync with matplotlib API changes?
+
+**Investigation Needed**:
+1. **Audit each filter key set** to understand what parameters they remove and why
+2. **Check matplotlib compatibility** - are we filtering parameters that matplotlib would accept?
+3. **Verify plotter-specific filtering** - do `plotter_params` make sense for each plotter type?
+4. **Test edge cases** - what happens when users pass valid matplotlib parameters that get filtered?
+
+**Potential Issues**:
+- Parameters like `s="invalid"` (non-numeric size) pass through filtering but break during use
+- Valid matplotlib parameters might be getting filtered out unnecessarily
+- Filter logic might be defensive programming hiding parameter flow problems
+
+**Next Steps**:
+- Map each filter category to actual parameter names for each plotter
+- Test boundary cases where filtering might be too aggressive or too permissive
+- Consider if filtering should happen at `_build_plot_args()` level instead
+
+## Upfront Parameter Validation
+
+### Architectural Improvement Opportunity
+**Schema-driven validation at construction time**: Instead of scattered validation throughout the styling process, validate user parameters against `component_schema` upfront in `BasePlotter.__init__()`.
+
+**Current Problem**:
+- Validation happens during rendering (like `assert isinstance(base_size, (int, float))` in ScatterPlotter)
+- Error messages unclear about which parameter caused the issue
+- Scattered validation logic across different methods and plotters
+- Users don't discover parameter issues until plot rendering
+
+**Proposed Solution**:
+```python
+def __init__(...):
+    # ... existing init code ...
+    self._validate_plot_parameters()  # Fail fast at construction
+
+def _validate_plot_parameters(self) -> None:
+    # Validate known problematic parameters against component schema
+    # Focus on type mismatches that commonly cause issues
+    # Provide clear error messages with supported parameter lists
+```
+
+**Benefits**:
+1. **Fail fast**: Parameter issues caught at construction time, not during rendering
+2. **Schema-driven**: Uses existing `component_schema["plot"]["main"]` as source of truth
+3. **Clear error messages**: "Parameter 's' must be numeric, got str: 'invalid'. Supported: ['alpha', 's', 'vmin']"
+4. **Consistent**: Same validation logic across all plotters
+5. **Not over-engineered**: Only validates known problematic cases, lets matplotlib handle the rest
+6. **Removes scattered assertions**: Can eliminate validation throughout _draw methods
+
+**Implementation Strategy**:
+- Add single validation call to `BasePlotter.__init__()`
+- Focus on numeric parameters (`s`, `linewidth`, `alpha`, etc.) and string parameters (`color`, `marker`)
+- Provide helpful warnings for parameters not in component schema
+- Remove scattered validation from individual plotter methods
+
 ### Success Criteria
 - [ ] All plotters use `_build_plot_args()` instead of `_filtered_plot_kwargs`
 - [ ] Theme values for matplotlib parameters reach matplotlib correctly
@@ -308,3 +381,4 @@ color = extract_simple_color(artist)  # Fails clearly if misconfigured
 - [ ] All matplotlib color extraction uses `mcolors.to_rgba()` for consistency
 - [ ] Component existence checks are explicit about expectations vs. defensive
 - [ ] Failed assertions lead to investigation of root configuration issues
+- [ ] Parameter filtering logic is well-understood and properly scoped
