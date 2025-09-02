@@ -94,6 +94,8 @@ ignore = [
     "ISC",                  # String concat rules, strict
     "LOG",                  # logger usage, strict
     "TD",                   # TODOs are fine
+    "PD901",                # let me use df for dataframes
+    "RUF001",               # Don't worry about ambig str chars
     "B011",                 # enable assert False
     "PT018",                # enable long asserts
     "PT015",                # enable asserts that always fail
