@@ -72,7 +72,6 @@ def plot_training_curves_faceted(
     xlim: Tuple[float, float] = None,
     ylim: Tuple[float, float] = None,
 ) -> None:
-    num_model_sizes = len(df["params"].cat.categories)
     figwidth = max(12, len(target_recipes) * 3.5)
 
     with FigureManager(

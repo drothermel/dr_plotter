@@ -278,7 +278,7 @@ def main() -> None:
     config_desc = " + ".join(config_info) if config_info else "default settings"
 
     print(f"Creating faceted training curves visualization with {config_desc}...")
-    figure = plot_training_curves(
+    plot_training_curves(
         filtered_df,
         validated_recipes,
         args,
