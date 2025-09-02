@@ -48,4 +48,8 @@ uv run ruff check --select UP007 --fix --unsafe-fixes --quiet
 echo "  Cleaning up imports..." 
 uv run ruff check --select F401,UP037 --fix --quiet
 
+# Format code to fix line lengths and other style issues
+echo "  Formatting code..."
+uv run ruff format --quiet
+
 echo "✅ Type annotation modernization complete!"
