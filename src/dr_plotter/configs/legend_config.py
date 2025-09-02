@@ -16,6 +16,19 @@ class LegendStrategy(Enum):
 class LegendConfig:
     strategy: str = "subplot"
     layout_hint: Optional[str] = None
+    collect_strategy: str = "smart"
+    position: str = "lower center"
+    deduplication: bool = True
+    ncol: Optional[int] = None
+    max_col: int = 4
+    spacing: float = 0.1
+    remove_axes_legends: bool = True
+    channel_titles: Optional[Dict[str, str]] = None
+    layout_left_margin: float = 0.0
+    layout_bottom_margin: float = 0.15
+    layout_right_margin: float = 1.0
+    layout_top_margin: float = 0.95
+    positioning_config: Optional[PositioningConfig] = None
 
     def __post_init__(self) -> None:
         self.strategy = self._validate_and_convert_strategy(self.strategy)
@@ -33,19 +46,3 @@ class LegendConfig:
             f"Invalid legend strategy '{strategy}'. Valid options: {list(string_to_enum.keys())}"
         )
         return string_to_enum[strategy]
-
-    collect_strategy: str = "smart"
-    position: str = "lower center"
-    deduplication: bool = True
-    ncol: Optional[int] = None
-    max_col: int = 4
-    spacing: float = 0.1
-    remove_axes_legends: bool = True
-    channel_titles: Optional[Dict[str, str]] = None
-
-    layout_left_margin: float = 0.0
-    layout_bottom_margin: float = 0.15
-    layout_right_margin: float = 1.0
-    layout_top_margin: float = 0.95
-
-    positioning_config: Optional[PositioningConfig] = None
