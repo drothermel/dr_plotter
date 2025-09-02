@@ -9,7 +9,6 @@ from dr_plotter.configs.legend_config import LegendConfig
 from dr_plotter.configs.style_config import StyleConfig
 from dr_plotter.legend_manager import resolve_legend_config
 from dr_plotter.plot_presets import PLOT_CONFIGS
-from dr_plotter.theme import BAR_THEME, BASE_THEME, LINE_THEME, SCATTER_THEME, Theme
 
 
 @dataclass
@@ -113,21 +112,3 @@ class PlotConfig:
             else:
                 legend_kwargs[key] = value
         return LegendConfig(**legend_kwargs)
-
-    def _resolve_theme_from_style(self, style_config: StyleConfig) -> Theme | None:
-        if style_config.theme is None:
-            return None
-
-        if isinstance(style_config.theme, Theme):
-            return style_config.theme
-
-        theme_map = {
-            "base": BASE_THEME,
-            "line": LINE_THEME,
-            "scatter": SCATTER_THEME,
-            "bar": BAR_THEME,
-        }
-        assert style_config.theme in theme_map, (
-            f"Unknown theme: {style_config.theme}. Available: {list(theme_map.keys())}"
-        )
-        return theme_map[style_config.theme]
