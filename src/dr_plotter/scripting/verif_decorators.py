@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import functools
 import sys
 from typing import Any, Callable
@@ -84,7 +85,7 @@ def _print_comprehensive_plot_info(ax: Any, subplot_index: int) -> dict[str, Any
                     "sizes": sample_sizes,
                 }
             )
-        except Exception as e:
+        except Exception as e:  # noqa: PERF203
             info["collections"].append(
                 {
                     "index": i,
@@ -134,7 +135,7 @@ def _print_failure_message(
     print_info("Plot has been saved for visual debugging.", 1)
 
 
-def verify_plot(
+def verify_plot(  # noqa: C901, PLR0915
     expected_legends: int = 0,
     expected_channels: ExpectedChannels | None = None,
     expected_legend_entries: dict[SubplotCoord, dict[str, int | str]] | None = None,
@@ -144,9 +145,9 @@ def verify_plot(
     fail_on_missing: bool = True,
     subplot_descriptions: dict[int, str] | None = None,
 ) -> Callable:
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable) -> Callable:  # noqa: C901, PLR0915
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:  # noqa: C901, PLR0915, PLR0912
             result = func(*args, **kwargs)
 
             assert isinstance(result, (plt.Figure, list, tuple)), (
@@ -366,18 +367,18 @@ def verify_plot(
             return result
 
         wrapper.__wrapped__ = func
-        wrapper._verify_expected = expected_legends
-        wrapper._verify_consistency = verify_legend_consistency
+        wrapper._verify_expected = expected_legends  # noqa: SLF001
+        wrapper._verify_consistency = verify_legend_consistency  # noqa: SLF001
 
         return wrapper
 
     return decorator
 
 
-def inspect_plot_properties() -> Callable:
-    def decorator(func: Callable) -> Callable:
+def inspect_plot_properties() -> Callable:  # noqa: C901
+    def decorator(func: Callable) -> Callable:  # noqa: C901
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:  # noqa: C901, PLR0912
             result = func(*args, **kwargs)
 
             fig = validate_figure_result(result)

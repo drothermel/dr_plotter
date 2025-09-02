@@ -1,6 +1,8 @@
 from __future__ import annotations
-from typing import Any
+
 import sys
+from typing import Any
+
 import matplotlib.pyplot as plt
 
 LEGEND_CHECK_FAILED = False
@@ -161,7 +163,7 @@ def get_default_formatter() -> VerificationFormatter:
 
 
 def set_default_formatter(formatter: VerificationFormatter) -> None:
-    global _default_formatter
+    global _default_formatter  # noqa: PLW0603
     _default_formatter = formatter
 
 

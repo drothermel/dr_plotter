@@ -1,15 +1,17 @@
 from __future__ import annotations
-from typing import Any
-import numpy as np
-import matplotlib.colors as mcolors
-import matplotlib.pyplot as plt
-from matplotlib.collections import PathCollection, PolyCollection
-from matplotlib.image import AxesImage
-from matplotlib.container import BarContainer
-import matplotlib.legend
 
-from dr_plotter.types import RGBA, Position, CollectionProperties
+from typing import Any
+
+import matplotlib.colors as mcolors
+import matplotlib.legend
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.collections import PathCollection, PolyCollection
+from matplotlib.container import BarContainer
+from matplotlib.image import AxesImage
+
 from dr_plotter.artist_utils import extract_colors_from_polycollection
+from dr_plotter.types import RGBA, CollectionProperties, Position
 
 RGB_CHANNEL_COUNT = 3
 RGBA_CHANNEL_COUNT = 4
@@ -202,7 +204,7 @@ def extract_legend_properties(ax: Any) -> dict[str, Any]:
         handles.extend(legend.get_lines())
         handles.extend(legend.get_patches())
     elif hasattr(legend, "_legend_handles"):
-        handles = legend._legend_handles
+        handles = legend._legend_handles  # noqa: SLF001
 
     return {
         "handles": handles,
@@ -260,7 +262,7 @@ def extract_figure_legend_properties(fig: Any) -> dict[str, Any]:
             handles.extend(legend.get_lines())
             handles.extend(legend.get_patches())
         elif hasattr(legend, "_legend_handles"):
-            handles.extend(legend._legend_handles)
+            handles.extend(legend._legend_handles)  # noqa: SLF001
 
         legend_props = {
             "index": i,
@@ -292,37 +294,17 @@ def convert_legend_size_to_scatter_size(legend_size: float) -> float:
 def _identify_marker_from_path(path: Any) -> str:
     if not hasattr(path, "vertices"):
         return "unknown"
-
+    marker_by_vertices = {
+        1: ".",
+        2: "|",
+        3: "^",
+        4: "D",
+        5: "s",
+        6: "p",
+        10: "o",
+    }
     vertices = path.vertices
-    num_vertices = len(vertices)
-
-    if num_vertices == 1:
-        return "."
-    elif num_vertices == 2:
-        return "|"
-    elif num_vertices == 3:
-        return "^"
-    elif num_vertices == 4:
-        return "D"
-    elif num_vertices == 5:
-        return "s"
-    elif num_vertices == 6:
-        return "p"
-    elif num_vertices > 10 and _is_circle_approximation(vertices):
-        return "o"
-    else:
-        return f"custom_{num_vertices}"
-
-
-def _is_circle_approximation(vertices: np.ndarray) -> bool:
-    if len(vertices) < 8:
-        return False
-
-    center = np.mean(vertices, axis=0)
-    distances = np.linalg.norm(vertices - center, axis=1)
-    distance_variation = np.std(distances) / np.mean(distances)
-
-    return distance_variation < 0.1
+    return marker_by_vertices.get(len(vertices), f"custom_{len(vertices)}")
 
 
 def _detect_collection_type(obj: Any) -> str:
@@ -722,15 +704,15 @@ def is_legend_actually_visible(
     legend_area = legend_bbox.width * legend_bbox.height
 
     if legend_area > 0:
+        fully_visible = 1.0
         visibility_ratio = visible_area / legend_area
         result["bbox_info"]["visibility_ratio"] = visibility_ratio
 
-        if visibility_ratio < 0.1:
+        if visibility_ratio < fully_visible:
             result["reason"] = (
                 f"Legend is mostly clipped (only {visibility_ratio:.1%} visible)"
             )
             return result
-
     result["visible"] = True
     result["reason"] = "Legend is fully visible and properly positioned"
 
@@ -747,19 +729,19 @@ def check_all_subplot_legends(figure: plt.Figure) -> dict[int, dict[str, Any]]:
     return results
 
 
-def verify_legend_visibility(
+def verify_legend_visibility(  # noqa: PLR0912, C901
     figure: plt.Figure,
     expected_visible_count: int | None = None,
     fail_on_missing: bool = True,
 ) -> dict[str, Any]:
     from .verification_formatter import (
-        print_section_header,
-        print_success,
-        print_failure,
-        print_warning,
         print_critical,
+        print_failure,
         print_info,
         print_item_result,
+        print_section_header,
+        print_success,
+        print_warning,
     )
 
     results = check_all_subplot_legends(figure)
@@ -897,10 +879,8 @@ def verify_legend_visibility_core(
                 }
             )
 
-    if expected_visible_count is not None:
-        if visible_count != expected_visible_count:
-            summary["success"] = False
-
+    if (expected_visible_count is not None) and (expected_visible_count != 0):
+        summary["success"] = False
     return summary
 
 
