@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 from plot_data import ExampleData
 
