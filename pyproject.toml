@@ -131,6 +131,9 @@ ignore = [
 "*_notebook.py" = [
     "E402",                 # Import order OK in notebooks
     "F401",                 # Unused imports OK in notebooks
+]
+"examples/**" = [
+    "INP001",               # Examples are standalone scripts, not packages
 ]  
 
 [tool.ruff.lint.mccabe]
