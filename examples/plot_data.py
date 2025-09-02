@@ -1,6 +1,7 @@
-from typing import Dict
-import pandas as pd
+from __future__ import annotations
+
 import numpy as np
+import pandas as pd
 
 
 class ExampleData:
@@ -12,7 +13,9 @@ class ExampleData:
         return pd.DataFrame({"x": x, "y": y})
 
     @staticmethod
-    def time_series(periods=100, series=1, seed=42):
+    def time_series(
+        periods: int = 100, series: int = 1, seed: int = 42
+    ) -> pd.DataFrame:
         """Time series data with optional multiple series."""
         np.random.seed(seed)
         data = {"time": np.arange(periods)}
@@ -26,7 +29,9 @@ class ExampleData:
         return pd.DataFrame(data)
 
     @staticmethod
-    def time_series_grouped(periods=50, groups=3, seed=42):
+    def time_series_grouped(
+        periods: int = 50, groups: int = 3, seed: int = 42
+    ) -> pd.DataFrame:
         """Time series with categorical groups (for hue encoding)."""
         np.random.seed(seed)
         group_names = [f"Group_{chr(65 + i)}" for i in range(groups)]
@@ -41,7 +46,9 @@ class ExampleData:
         return pd.DataFrame(records)
 
     @staticmethod
-    def categorical_data(n_categories=5, n_per_category=20, seed=42):
+    def categorical_data(
+        n_categories: int = 5, n_per_category: int = 20, seed: int = 42
+    ) -> pd.DataFrame:
         """Data with categorical x-axis for bar/violin plots."""
         np.random.seed(seed)
         categories = [f"Cat_{chr(65 + i)}" for i in range(n_categories)]
@@ -52,14 +59,14 @@ class ExampleData:
             mean = np.random.randn() * 2
             std = 0.5 + np.random.rand() * 1.5
             values = np.random.normal(mean, std, n_per_category)
-
-            for val in values:
-                records.append({"category": cat, "value": val})
+            records.extend([{"category": cat, "value": val} for val in values])
 
         return pd.DataFrame(records)
 
     @staticmethod
-    def grouped_categories(n_categories=4, n_groups=3, n_per_combo=10, seed=42):
+    def grouped_categories(
+        n_categories: int = 4, n_groups: int = 3, n_per_combo: int = 10, seed: int = 42
+    ) -> pd.DataFrame:
         """Categorical data with additional grouping variable."""
         np.random.seed(seed)
         categories = [f"Cat_{chr(65 + i)}" for i in range(n_categories)]
@@ -72,14 +79,16 @@ class ExampleData:
                 base = np.random.randn() * 2
                 group_effect = np.random.randn()
                 values = np.random.normal(base + group_effect, 0.8, n_per_combo)
-
-                for val in values:
-                    records.append({"category": cat, "group": group, "value": val})
+                records.extend(
+                    [{"category": cat, "group": group, "value": val} for val in values]
+                )
 
         return pd.DataFrame(records)
 
     @staticmethod
-    def distribution_data(n_samples=1000, distributions=1, seed=42):
+    def distribution_data(
+        n_samples: int = 1000, distributions: int = 1, seed: int = 42
+    ) -> pd.DataFrame:
         """Data for histograms with optional multiple distributions."""
         np.random.seed(seed)
 
@@ -101,14 +110,11 @@ class ExampleData:
                             np.random.normal(2, 0.5, n_samples // 2),
                         ]
                     )
-
-                for val in values:
-                    records.append({"value": val, "distribution": dist})
-
+                records.extend([{"value": val, "distribution": dist} for val in values])
             return pd.DataFrame(records)
 
     @staticmethod
-    def heatmap_data(rows=10, cols=8, seed=42):
+    def heatmap_data(rows: int = 10, cols: int = 8, seed: int = 42) -> pd.DataFrame:
         """Data for heatmap in tidy/long format."""
         np.random.seed(seed)
 
@@ -134,7 +140,9 @@ class ExampleData:
         return pd.DataFrame(records)
 
     @staticmethod
-    def ranking_data(time_points=20, categories=6, seed=42):
+    def ranking_data(
+        time_points: int = 20, categories: int = 6, seed: int = 42
+    ) -> pd.DataFrame:
         """Data for bump plots showing rankings over time."""
         np.random.seed(seed)
 
@@ -155,7 +163,9 @@ class ExampleData:
         return pd.DataFrame(records)
 
     @staticmethod
-    def gaussian_mixture(n_components=3, n_samples=500, seed=42):
+    def gaussian_mixture(
+        n_components: int = 3, n_samples: int = 500, seed: int = 42
+    ) -> pd.DataFrame:
         """2D data from gaussian mixture for contour plots."""
         np.random.seed(seed)
 
@@ -176,7 +186,12 @@ class ExampleData:
         return pd.DataFrame(all_samples, columns=["x", "y"])
 
     @staticmethod
-    def ml_training_curves(epochs=50, learning_rates=None, metrics=None, seed=42):
+    def ml_training_curves(
+        epochs: int = 50,
+        learning_rates: list[float] | None = None,
+        metrics: list[str] | None = None,
+        seed: int = 42,
+    ) -> pd.DataFrame:
         """ML experiment data with train/val metrics."""
         np.random.seed(seed)
 
@@ -231,7 +246,7 @@ class ExampleData:
         return pd.DataFrame(records)
 
     @staticmethod
-    def experiment_time_series(time_points=20, seed=401) -> pd.DataFrame:
+    def experiment_time_series(time_points: int = 20, seed: int = 401) -> pd.DataFrame:
         np.random.seed(seed)
 
         experiments = ["Exp_A", "Exp_B"]
@@ -272,7 +287,7 @@ class ExampleData:
         return pd.DataFrame(records)
 
     @staticmethod
-    def multi_metric_data(n_samples=100, seed=42):
+    def multi_metric_data(n_samples: int = 100, seed: int = 42) -> pd.DataFrame:
         """Data with multiple y-columns for multi-metric plotting."""
         np.random.seed(seed)
 
@@ -289,7 +304,7 @@ class ExampleData:
         )
 
     @staticmethod
-    def complex_encoding_data(n_samples=120, seed=42):
+    def complex_encoding_data(n_samples: int = 120, seed: int = 42) -> pd.DataFrame:
         """Data with multiple grouping variables for complex visual encoding."""
         np.random.seed(seed)
 
@@ -311,10 +326,7 @@ class ExampleData:
                     else:
                         x_offset, y_offset = 2, 1
 
-                    if algo == "Algo_1":
-                        spread = 1
-                    else:
-                        spread = 1.5
+                    spread = 1 if algo == "Algo_1" else 1.5
 
                     x = np.random.randn(n) * spread + x_offset
                     y = np.random.randn(n) * spread + y_offset
@@ -360,7 +372,7 @@ class ExampleData:
         )
 
     @staticmethod
-    def get_all_plot_types_data() -> Dict[str, pd.DataFrame]:
+    def get_all_plot_types_data() -> dict[str, pd.DataFrame]:
         np.random.seed(100)
 
         scatter_data = ExampleData.simple_scatter(n=80, seed=100)
@@ -408,7 +420,7 @@ class ExampleData:
         }
 
     @staticmethod
-    def get_color_coordination_data() -> Dict[str, pd.DataFrame]:
+    def get_color_coordination_data() -> dict[str, pd.DataFrame]:
         np.random.seed(200)
         shared_categories = ["Alpha", "Beta", "Gamma", "Delta"]
 
@@ -480,8 +492,8 @@ class ExampleData:
                     base_accuracy = np.random.uniform(0.6, 0.95)
 
                     n_samples = 15
-                    for _ in range(n_samples):
-                        records.append(
+                    records.extend(
+                        [
                             {
                                 "experiment": exp,
                                 "condition": cond,
@@ -492,12 +504,13 @@ class ExampleData:
                                 "runtime": np.random.uniform(10, 200),
                                 "time_point": np.random.randint(0, 20),
                             }
-                        )
-
+                            for _ in range(n_samples)
+                        ]
+                    )
         return pd.DataFrame(records)
 
     @staticmethod
-    def get_individual_styling_data() -> Dict[str, pd.DataFrame]:
+    def get_individual_styling_data() -> dict[str, pd.DataFrame]:
         np.random.seed(300)
 
         scatter_data = ExampleData.simple_scatter(n=80, seed=300)
@@ -543,8 +556,8 @@ class ExampleData:
             center_x = np.random.uniform(-2, 2)
             center_y = np.random.uniform(-2, 2)
 
-            for _ in range(n_samples_per_category):
-                records.append(
+            records.extend(
+                [
                     {
                         "category_group": category,
                         "performance": center_x + np.random.normal(0, 0.8),
@@ -552,12 +565,16 @@ class ExampleData:
                         "runtime": np.random.uniform(10, 100),
                         "memory": np.random.uniform(50, 500),
                     }
-                )
+                    for _ in range(n_samples_per_category)
+                ]
+            )
 
         return pd.DataFrame(records)
 
     @staticmethod
-    def get_category_time_series(time_points=15, seed=502) -> pd.DataFrame:
+    def get_category_time_series(
+        time_points: int = 15, seed: int = 502
+    ) -> pd.DataFrame:
         np.random.seed(seed)
 
         categories = ["Alpha", "Beta", "Gamma", "Delta"]
@@ -590,34 +607,3 @@ class ExampleData:
                 )
 
         return pd.DataFrame(records)
-
-
-# Validation to ensure all data generators work
-if __name__ == "__main__":
-    print("Testing all data generators...")
-
-    generators = [
-        ("simple_scatter", ExampleData.simple_scatter),
-        ("time_series", ExampleData.time_series),
-        ("time_series_grouped", ExampleData.time_series_grouped),
-        ("categorical_data", ExampleData.categorical_data),
-        ("grouped_categories", ExampleData.grouped_categories),
-        ("distribution_data", ExampleData.distribution_data),
-        ("heatmap_data", ExampleData.heatmap_data),
-        ("ranking_data", ExampleData.ranking_data),
-        ("gaussian_mixture", ExampleData.gaussian_mixture),
-        ("ml_training_curves", ExampleData.ml_training_curves),
-        ("multi_metric_data", ExampleData.multi_metric_data),
-        ("complex_encoding_data", ExampleData.complex_encoding_data),
-    ]
-
-    for name, generator in generators:
-        try:
-            df = generator()
-            assert isinstance(df, pd.DataFrame)
-            assert len(df) > 0
-            print(f"✅ {name}: {df.shape}")
-        except Exception as e:
-            print(f"❌ {name}: {e}")
-
-    print("\nAll data generators validated!")

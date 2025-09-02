@@ -1,19 +1,25 @@
-from typing import Any, Dict, List, Optional, Tuple
+from __future__ import annotations
+from typing import Any, TYPE_CHECKING
 
 import matplotlib.axes
 import pandas as pd
 
-from dr_plotter.configs.faceting_config import FacetingConfig
+from dr_plotter.configs import FacetingConfig
+
+if TYPE_CHECKING:
+    from dr_plotter.figure_manager import FigureManager
+    from dr_plotter.faceting.style_coordination import FacetStyleCoordinator
 
 SUPPORTED_PLOT_TYPES = ["line", "scatter", "bar", "fill_between", "heatmap"]
+GRID_SHAPE_DIMENSIONS = 2
 
 
 def prepare_faceted_subplots(
-    data: pd.DataFrame, config: FacetingConfig, grid_shape: Tuple[int, int]
-) -> Dict[Tuple[int, int], pd.DataFrame]:
+    data: pd.DataFrame, config: FacetingConfig, grid_shape: tuple[int, int]
+) -> dict[tuple[int, int], pd.DataFrame]:
     assert not data.empty, "Cannot facet empty DataFrame"
     assert config.rows or config.cols, "Must specify rows or cols for faceting"
-    assert isinstance(grid_shape, tuple) and len(grid_shape) == 2, (
+    assert isinstance(grid_shape, tuple) and len(grid_shape) == GRID_SHAPE_DIMENSIONS, (
         "grid_shape must be (rows, cols) tuple"
     )
 
@@ -35,8 +41,8 @@ def prepare_faceted_subplots(
 
 
 def _extract_dimension_values(
-    data: pd.DataFrame, column: Optional[str], order: Optional[List[str]]
-) -> List[Any]:
+    data: pd.DataFrame, column: str | None, order: list[str] | None
+) -> list[Any]:
     if not column:
         return [None]
 
@@ -54,9 +60,7 @@ def _should_include_position(row: int, col: int, config: FacetingConfig) -> bool
         return False
     if config.target_rows is not None and row not in config.target_rows:
         return False
-    if config.target_cols is not None and col not in config.target_cols:
-        return False
-    return True
+    return not (config.target_cols is not None and col not in config.target_cols)
 
 
 def _create_data_subset(
@@ -73,12 +77,12 @@ def _create_data_subset(
 
 
 def plot_faceted_data(
-    fm: "FigureManager",
-    data_subsets: Dict[Tuple[int, int], pd.DataFrame],
+    fm: FigureManager,
+    data_subsets: dict[tuple[int, int], pd.DataFrame],
     plot_type: str,
     config: FacetingConfig,
-    style_coordinator: "FacetStyleCoordinator",
-    **kwargs,
+    style_coordinator: FacetStyleCoordinator,
+    **kwargs: Any,
 ) -> None:
     assert data_subsets, "Cannot plot with empty data_subsets"
     assert plot_type in SUPPORTED_PLOT_TYPES, f"Unsupported plot type: {plot_type}"
@@ -91,14 +95,14 @@ def plot_faceted_data(
 
 
 def _plot_subplot_at_position(
-    fm: "FigureManager",
+    fm: FigureManager,
     row: int,
     col: int,
     subplot_data: pd.DataFrame,
     plot_type: str,
     config: FacetingConfig,
-    style_coordinator: "FacetStyleCoordinator",
-    **kwargs,
+    style_coordinator: FacetStyleCoordinator,
+    **kwargs: Any,
 ) -> None:
     if config.lines and config.lines in subplot_data.columns:
         _plot_with_style_coordination(
@@ -113,14 +117,14 @@ def _plot_subplot_at_position(
 
 
 def _plot_with_style_coordination(
-    fm: "FigureManager",
+    fm: FigureManager,
     row: int,
     col: int,
     subplot_data: pd.DataFrame,
     plot_type: str,
     config: FacetingConfig,
-    style_coordinator: "FacetStyleCoordinator",
-    **kwargs,
+    style_coordinator: FacetStyleCoordinator,
+    **kwargs: Any,
 ) -> None:
     ax = fm.get_axes(row, col)
 
@@ -142,13 +146,13 @@ def _plot_with_style_coordination(
 
 
 def _plot_single_series_at_position(
-    fm: "FigureManager",
+    fm: FigureManager,
     row: int,
     col: int,
     subplot_data: pd.DataFrame,
     plot_type: str,
     config: FacetingConfig,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     ax = fm.get_axes(row, col)
     _execute_plot_call(ax, plot_type, subplot_data, config, **kwargs)
@@ -159,7 +163,7 @@ def _execute_plot_call(
     plot_type: str,
     data: pd.DataFrame,
     config: FacetingConfig,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     plot_handlers = {
         "line": _plot_line_data,
@@ -172,32 +176,32 @@ def _execute_plot_call(
 
 
 def _plot_line_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs
+    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
 ) -> None:
     ax.plot(data[config.x], data[config.y], **kwargs)
 
 
 def _plot_scatter_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs
+    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
 ) -> None:
     ax.scatter(data[config.x], data[config.y], **kwargs)
 
 
 def _plot_bar_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs
+    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
 ) -> None:
     filtered_kwargs = {k: v for k, v in kwargs.items() if k not in ["marker"]}
     ax.bar(data[config.x], data[config.y], **filtered_kwargs)
 
 
 def _plot_fill_between_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs
+    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
 ) -> None:
     ax.fill_between(data[config.x], data[config.y], **kwargs)
 
 
 def _plot_heatmap_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs
+    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
 ) -> None:
     values = data.pivot_table(index=config.y, columns=config.x, values="value")
     ax.imshow(values, **kwargs)
@@ -208,14 +212,14 @@ def _plot_heatmap_data(
 
 
 def _apply_subplot_customization(
-    fm: "FigureManager", row: int, col: int, config: FacetingConfig
+    fm: FigureManager, row: int, col: int, config: FacetingConfig
 ) -> None:
     _apply_axis_labels(fm, row, col, config)
     _apply_axis_limits(fm, row, col, config)
 
 
 def _apply_axis_labels(
-    fm: "FigureManager", row: int, col: int, config: FacetingConfig
+    fm: FigureManager, row: int, col: int, config: FacetingConfig
 ) -> None:
     ax = fm.get_axes(row, col)
 
@@ -231,7 +235,7 @@ def _apply_axis_labels(
 
 
 def _apply_axis_limits(
-    fm: "FigureManager", row: int, col: int, config: FacetingConfig
+    fm: FigureManager, row: int, col: int, config: FacetingConfig
 ) -> None:
     ax = fm.get_axes(row, col)
 
@@ -246,11 +250,11 @@ def _apply_axis_limits(
             ax.set_ylim(ylim)
 
 
-def _has_custom_label(labels: Optional[List[List[Any]]], row: int, col: int) -> bool:
+def _has_custom_label(labels: list[list[Any]] | None, row: int, col: int) -> bool:
     return labels is not None and row < len(labels) and col < len(labels[row])
 
 
-def get_grid_dimensions(data: pd.DataFrame, config: FacetingConfig) -> Tuple[int, int]:
+def get_grid_dimensions(data: pd.DataFrame, config: FacetingConfig) -> tuple[int, int]:
     assert not data.empty, "Cannot compute dimensions from empty DataFrame"
 
     n_rows = len(data[config.rows].unique()) if config.rows else 1
@@ -259,8 +263,8 @@ def get_grid_dimensions(data: pd.DataFrame, config: FacetingConfig) -> Tuple[int
 
 
 def handle_empty_subplots(
-    data_subsets: Dict[Tuple[int, int], pd.DataFrame], strategy: str
-) -> Dict[Tuple[int, int], pd.DataFrame]:
+    data_subsets: dict[tuple[int, int], pd.DataFrame], strategy: str
+) -> dict[tuple[int, int], pd.DataFrame]:
     assert strategy in ["error", "warn", "silent"], f"Invalid strategy: {strategy}"
 
     if strategy == "error":

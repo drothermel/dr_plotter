@@ -7,9 +7,11 @@ Requires DataDecide integration:
 Explores available metrics, data recipes, and model sizes in the dataset.
 """
 
-from typing import Any, Dict, List
 import sys
+from typing import Any
+
 import pandas as pd
+
 from dr_plotter.scripting.datadec_utils import get_clean_datadec_df
 
 
@@ -22,7 +24,7 @@ def load_parquet_data() -> pd.DataFrame:
         sys.exit(1)
 
 
-def get_data_summary(df: pd.DataFrame) -> Dict[str, Any]:
+def get_data_summary(df: pd.DataFrame) -> dict[str, Any]:
     """Get basic data summary - DataDecide guarantees structure."""
     return {
         "total_columns": len(df.columns),
@@ -33,7 +35,7 @@ def get_data_summary(df: pd.DataFrame) -> Dict[str, Any]:
     }
 
 
-def extract_available_metrics(df: pd.DataFrame) -> List[str]:
+def extract_available_metrics(df: pd.DataFrame) -> list[str]:
     non_metric_columns = [
         "params",
         "data",
@@ -52,15 +54,15 @@ def extract_available_metrics(df: pd.DataFrame) -> List[str]:
     return sorted(metric_columns)
 
 
-def extract_data_recipes(df: pd.DataFrame) -> List[str]:
+def extract_data_recipes(df: pd.DataFrame) -> list[str]:
     return sorted(df["data"].unique().tolist())
 
 
-def extract_model_sizes(df: pd.DataFrame) -> List[str]:
+def extract_model_sizes(df: pd.DataFrame) -> list[str]:
     return sorted(df["params"].unique().tolist())
 
 
-def analyze_data_completeness(df: pd.DataFrame) -> Dict[str, Any]:
+def analyze_data_completeness(df: pd.DataFrame) -> dict[str, Any]:
     model_sizes = extract_model_sizes(df)
     data_recipes = extract_data_recipes(df)
     metrics = extract_available_metrics(df)
@@ -81,7 +83,7 @@ def analyze_data_completeness(df: pd.DataFrame) -> Dict[str, Any]:
 
     metric_completeness = {}
     for metric in metrics[:10]:
-        null_count = df[metric].isnull().sum()
+        null_count = df[metric].isna().sum()
         metric_completeness[metric] = {
             "null_count": null_count,
             "null_percentage": (null_count / len(df)) * 100,
@@ -106,7 +108,8 @@ def main() -> None:
 
     df = load_parquet_data()
     print(
-        f"Successfully loaded dataset with {len(df):,} rows and {len(df.columns):,} columns"
+        f"Successfully loaded dataset with {len(df):,}"
+        f"rows and {len(df.columns):,} columns"
     )
 
     print("\n" + "=" * 50)
@@ -136,10 +139,8 @@ def main() -> None:
     model_sizes = extract_model_sizes(df)
 
     print(f"Available metrics ({len(metrics)} total):")
-    for i, metric in enumerate(metrics[:15]):
+    for i, metric in enumerate(metrics):
         print(f"  {i + 1:2d}. {metric}")
-    if len(metrics) > 15:
-        print(f"  ... and {len(metrics) - 15} more metrics")
 
     print(f"\nData recipes ({len(data_recipes)} total):")
     for i, recipe in enumerate(data_recipes):
@@ -157,7 +158,8 @@ def main() -> None:
     # Note: DataDecide provides pre-filtered, clean data with guaranteed completeness
 
     print(
-        f"Total expected combinations (model_size × data_recipe): {completeness['total_expected_combinations']:,}"
+        f"Total expected combinations (model_size × data_recipe): "
+        f"{completeness['total_expected_combinations']:,}"
     )
     print(f"Existing combinations: {completeness['existing_combinations']:,}")
     print(f"Missing combinations: {completeness['missing_combinations_count']:,}")
@@ -165,7 +167,8 @@ def main() -> None:
 
     if completeness["missing_combinations_count"] > 0:
         print(
-            f"\nFirst {min(10, len(completeness['missing_combinations']))} missing combinations:"
+            f"\nFirst {min(10, len(completeness['missing_combinations']))}"
+            "missing combinations:"
         )
         for i, (model_size, recipe) in enumerate(
             completeness["missing_combinations"][:10]
@@ -182,7 +185,8 @@ def main() -> None:
     print("\nSample metric completeness (first 10 metrics):")
     for metric, stats in list(completeness["sample_metric_completeness"].items())[:10]:
         print(
-            f"  {metric}: {stats['null_count']:,} nulls ({stats['null_percentage']:.1f}%)"
+            f"  {metric}: "
+            f"{stats['null_count']:,} nulls ({stats['null_percentage']:.1f}%)"
         )
 
     print("\n" + "=" * 50)
@@ -190,19 +194,24 @@ def main() -> None:
     print("=" * 50)
 
     print(
-        f"Dataset contains {len(metrics):,} metrics across {len(data_recipes)} data recipes and {len(model_sizes)} model sizes"
+        f"Dataset contains {len(metrics):,}"
+        f"metrics across {len(data_recipes)} data recipes"
+        "and {len(model_sizes)} model sizes"
     )
     print(
-        f"Data coverage is {completeness['data_density_percentage']:.1f}% with {completeness['missing_combinations_count']} missing combinations"
+        f"Data coverage is {completeness['data_density_percentage']:.1f}% with"
+        f"{completeness['missing_combinations_count']} missing combinations"
     )
 
     step_range = sorted(df["step"].unique())
     print(f"Training steps range from {step_range[0]:.0f} to {step_range[-1]:.0f}")
 
-    if completeness["data_density_percentage"] < 100:
+    full_percentage = 100.0
+    if completeness["data_density_percentage"] < full_percentage:
         print("\nLIMITATIONS DISCOVERED:")
         print(
-            f"- {completeness['missing_combinations_count']} model_size × data_recipe combinations missing"
+            f"- {completeness['missing_combinations_count']}"
+            " model_size x data_recipe combinations missing"
         )
         print("- May impact plotting for specific combinations")
 

@@ -1,10 +1,13 @@
 import argparse
-import os
+from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 
 
-def setup_arg_parser(description: str = "dr_plotter example script"):
+def setup_arg_parser(
+    description: str = "dr_plotter example script",
+) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         "--save-dir",
@@ -18,10 +21,11 @@ def setup_arg_parser(description: str = "dr_plotter example script"):
     return parser
 
 
-def show_or_save_plot(fig, args, filename: str):
+def show_or_save_plot(fig: Any, args: Any, filename: str) -> None:
     if args.save_dir:
-        os.makedirs(args.save_dir, exist_ok=True)
-        savename = os.path.join(args.save_dir, f"{filename}.png")
+        save_dir = Path(args.save_dir)
+        save_dir.mkdir(parents=True, exist_ok=True)
+        savename = save_dir / f"{filename}.png"
         fig.savefig(savename, dpi=300)
         print(f"Plot saved to {savename}")
     else:
@@ -31,6 +35,8 @@ def show_or_save_plot(fig, args, filename: str):
     plt.close(fig)
 
 
-def create_and_render_plot(ax, plotter_class, plotter_args, **kwargs):
+def create_and_render_plot(
+    ax: Any, plotter_class: Any, plotter_args: Any, **kwargs: Any
+) -> None:
     plotter = plotter_class(*plotter_args, **kwargs)
     plotter.render(ax)

@@ -1,12 +1,13 @@
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from __future__ import annotations
 
-from dr_plotter.configs.legend_config import LegendConfig, LegendStrategy
-from dr_plotter.configs.positioning_config import PositioningConfig
+from dataclasses import dataclass, field
+from typing import Any
+
+from dr_plotter.configs import LegendConfig, LegendStrategy, PositioningConfig
 from dr_plotter.positioning_calculator import (
-    PositioningCalculator,
     FigureDimensions,
     LegendMetadata,
+    PositioningCalculator,
 )
 
 
@@ -15,18 +16,18 @@ class LegendEntry:
     artist: Any
     label: str
     axis: Any = None
-    visual_channel: Optional[str] = None
+    visual_channel: str | None = None
     channel_value: Any = None
-    source_column: Optional[str] = None
-    group_key: Dict[str, Any] = field(default_factory=dict)
+    source_column: str | None = None
+    group_key: dict[str, Any] = field(default_factory=dict)
     plotter_type: str = "unknown"
     artist_type: str = "main"
 
 
 class LegendRegistry:
-    def __init__(self, strategy: Optional[LegendStrategy] = None) -> None:
-        self._entries: List[LegendEntry] = []
-        self._seen_keys: Set[tuple] = set()
+    def __init__(self, strategy: LegendStrategy | None = None) -> None:
+        self._entries: list[LegendEntry] = []
+        self._seen_keys: set[tuple] = set()
         self.strategy = strategy
 
     def add_entry(self, entry: LegendEntry) -> None:
@@ -48,10 +49,10 @@ class LegendRegistry:
         }
         return self.strategy in shared_strategies
 
-    def get_unique_entries(self) -> List[LegendEntry]:
+    def get_unique_entries(self) -> list[LegendEntry]:
         return self._entries.copy()
 
-    def get_by_channel(self, channel: str) -> List[LegendEntry]:
+    def get_by_channel(self, channel: str) -> list[LegendEntry]:
         return [e for e in self._entries if e.visual_channel == channel]
 
     def clear(self) -> None:
@@ -59,7 +60,7 @@ class LegendRegistry:
         self._seen_keys.clear()
 
 
-def resolve_legend_config(legend_input: Union[str, LegendConfig]) -> LegendConfig:
+def resolve_legend_config(legend_input: str | LegendConfig) -> LegendConfig:
     if isinstance(legend_input, str):
         positioning_config = PositioningConfig()
         grouped_config = PositioningConfig(default_margin_bottom=0.2)
@@ -81,7 +82,8 @@ def resolve_legend_config(legend_input: Union[str, LegendConfig]) -> LegendConfi
             ),
         }
         assert legend_input in string_mappings, (
-            f"Invalid legend string '{legend_input}'. Valid options: {list(string_mappings.keys())}"
+            f"Invalid legend string '{legend_input}'. Valid options: "
+            f"{list(string_mappings.keys())}"
         )
         return string_mappings[legend_input]
 
@@ -92,9 +94,7 @@ def resolve_legend_config(legend_input: Union[str, LegendConfig]) -> LegendConfi
 
 
 class LegendManager:
-    def __init__(
-        self, figure_manager: Any, config: Optional[LegendConfig] = None
-    ) -> None:
+    def __init__(self, figure_manager: Any, config: LegendConfig | None = None) -> None:
         self.fm = figure_manager
         self.config = config or LegendConfig()
         if self.config.positioning_config is None:
@@ -119,7 +119,7 @@ class LegendManager:
 
         return column_name.capitalize()
 
-    def generate_channel_title(self, channel: str, entries: List[LegendEntry]) -> str:
+    def generate_channel_title(self, channel: str, entries: list[LegendEntry]) -> str:
         if self.config.channel_titles and channel in self.config.channel_titles:
             return self.config.channel_titles[channel]
 
@@ -133,35 +133,18 @@ class LegendManager:
 
         return channel.title()
 
-    def calculate_optimal_ncol(
-        self, legend_entries: List[LegendEntry], figure_width: Optional[float] = None
-    ) -> int:
+    def calculate_optimal_ncol(self, legend_entries: list[LegendEntry]) -> int:
         if self.config.ncol is not None:
             return self.config.ncol
-
-        num_entries = len(legend_entries)
-        if num_entries <= 1:
-            return 1
-
-        if figure_width is None:
-            figure_width = getattr(self.fm.fig, "get_figwidth", lambda: 10)()
-
-        if num_entries <= 3:
-            return num_entries
-        elif figure_width >= 12:
-            return min(5, num_entries)
-        elif figure_width >= 8:
-            return min(4, num_entries)
-        else:
-            return min(3, num_entries)
+        return len(legend_entries) if len(legend_entries) > 0 else 1
 
     def _get_figure_dimensions(self) -> FigureDimensions:
         figure_width = getattr(self.fm.fig, "get_figwidth", lambda: 10)()
         figure_height = getattr(self.fm.fig, "get_figheight", lambda: 8)()
 
-        has_title = self.fm.fig._suptitle is not None
+        has_title = self.fm.fig._suptitle is not None  # noqa: SLF001
         has_subplot_titles = (
-            self.fm._has_subplot_titles()
+            self.fm._has_subplot_titles()  # noqa: SLF001
             if hasattr(self.fm, "_has_subplot_titles")
             else False
         )
@@ -176,8 +159,8 @@ class LegendManager:
         )
 
     def calculate_optimal_positioning(
-        self, num_legends: int, legend_index: int, figure_width: Optional[float] = None
-    ) -> Tuple[float, float]:
+        self, num_legends: int, legend_index: int, figure_width: float | None = None
+    ) -> tuple[float, float]:
         figure_dimensions = self._get_figure_dimensions()
         if figure_width:
             figure_dimensions.width = figure_width
@@ -200,14 +183,6 @@ class LegendManager:
         )
         return result.legend_positions.get(legend_index, default_pos)
 
-    def get_error_color(
-        self, color_type: str = "face", theme: Optional[Any] = None
-    ) -> str:
-        assert False, (
-            f"Legend proxy creation failed for {color_type}. "
-            f"This indicates a problem with legend configuration that should be fixed."
-        )
-
     def finalize(self) -> None:
         if self.config.strategy == LegendStrategy.NONE:
             return
@@ -220,8 +195,8 @@ class LegendManager:
             self._create_per_axes_legends()
 
     def _process_entries_by_channel_type(
-        self, entries: List[LegendEntry]
-    ) -> List[LegendEntry]:
+        self, entries: list[LegendEntry]
+    ) -> list[LegendEntry]:
         return entries
 
     def _create_figure_legend(self) -> None:
@@ -315,7 +290,7 @@ class LegendManager:
             if entry.visual_channel:
                 channels.add(entry.visual_channel)
 
-        channel_list = sorted(list(channels))
+        channel_list = sorted(channels)
 
         if self.config.strategy == LegendStrategy.GROUPED_BY_CHANNEL:
             num_legends = len(channel_list)

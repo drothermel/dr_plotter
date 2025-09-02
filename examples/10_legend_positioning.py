@@ -1,13 +1,17 @@
 from typing import Any
+
+from plot_data import ExampleData
+
+from dr_plotter.configs import FigureConfig
 from dr_plotter.figure_manager import FigureManager
-from dr_plotter.figure_config import FigureConfig
 from dr_plotter.legend_manager import LegendConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import (
-    verify_figure_legends,
     inspect_plot_properties,
+    verify_figure_legends,
 )
-from plot_data import ExampleData
+
+EXPECTED_CATEGORY_GROUP_COUNT = 4
 
 
 @inspect_plot_properties()
@@ -21,7 +25,7 @@ def main(args: Any) -> Any:
     assert "category_group" in shared_data.columns
     assert "performance" in shared_data.columns
     assert "accuracy" in shared_data.columns
-    assert len(shared_data.groupby("category_group")) == 4
+    assert len(shared_data.groupby("category_group")) == EXPECTED_CATEGORY_GROUP_COUNT
 
     with FigureManager(
         figure=FigureConfig(rows=2, cols=2, figsize=(16, 12)),

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 PUBLICATION_COLORS = ["#2E86AB", "#A23B72", "#F18F01", "#C73E1D"]
 BUMP_OPTIMIZED_PALETTE = [
@@ -66,7 +66,7 @@ HIGH_VISIBILITY_PALETTE = [
 ]
 NOTEBOOK_PALETTE = ["#4472C4", "#E70200", "#70AD47", "#7030A0", "#FF6600", "#264478"]
 
-PLOT_CONFIGS: Dict[str, Dict[str, Any]] = {
+PLOT_CONFIGS: dict[str, dict[str, Any]] = {
     "default": {
         "layout": (1, 1),
         "style": {"theme": "base"},

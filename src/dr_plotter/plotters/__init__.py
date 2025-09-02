@@ -9,13 +9,13 @@ from .scatter import ScatterPlotter
 from .violin import ViolinPlotter
 
 __all__ = [
-    "BasePlotter",
-    "ScatterPlotter",
-    "LinePlotter",
     "BarPlotter",
-    "HistogramPlotter",
-    "ViolinPlotter",
-    "HeatmapPlotter",
+    "BasePlotter",
     "BumpPlotter",
     "ContourPlotter",
+    "HeatmapPlotter",
+    "HistogramPlotter",
+    "LinePlotter",
+    "ScatterPlotter",
+    "ViolinPlotter",
 ]

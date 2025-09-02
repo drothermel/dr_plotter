@@ -1,10 +1,10 @@
-from typing import Optional
+from __future__ import annotations
 
 import matplotlib.pyplot as plt
 
 
 def get_axes_from_grid(
-    axes: plt.Axes, row: Optional[int] = None, col: Optional[int] = None
+    axes: plt.Axes, row: int | None = None, col: int | None = None
 ) -> plt.Axes:
     if not hasattr(axes, "__len__"):
         return axes
@@ -23,7 +23,8 @@ def get_axes_from_grid(
         )
         linear_index = row * ncols + col
         assert linear_index < len(axes), (
-            f"Index {linear_index} (row={row}, col={col}) out of bounds for {len(axes)} axes"
+            f"Index {linear_index} (row={row}, col={col}) "
+            f"out of bounds for {len(axes)} axes"
         )
         return axes[linear_index]
 

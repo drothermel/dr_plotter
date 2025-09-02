@@ -1,12 +1,18 @@
 from typing import Any
+
+from plot_data import ExampleData
+
+from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import (
-    verify_figure_legends,
     inspect_plot_properties,
+    verify_figure_legends,
 )
-from plot_data import ExampleData
+
+EXPECTED_EXPERIMENT_COUNT = 2
+EXPECTED_CONDITION_COUNT = 2
+EXPECTED_ALGORITHM_COUNT = 3
 
 
 @inspect_plot_properties()
@@ -27,9 +33,9 @@ def main(args: Any) -> Any:
     assert "algorithm" in filtered_data.columns
     assert "performance" in filtered_data.columns
     assert "accuracy" in filtered_data.columns
-    assert len(filtered_data.groupby("experiment")) == 2
-    assert len(filtered_data.groupby("condition")) == 2
-    assert len(filtered_data.groupby("algorithm")) == 3
+    assert len(filtered_data.groupby("experiment")) == EXPECTED_EXPERIMENT_COUNT
+    assert len(filtered_data.groupby("condition")) == EXPECTED_CONDITION_COUNT
+    assert len(filtered_data.groupby("algorithm")) == EXPECTED_ALGORITHM_COUNT
 
     with FigureManager(
         PlotConfig(

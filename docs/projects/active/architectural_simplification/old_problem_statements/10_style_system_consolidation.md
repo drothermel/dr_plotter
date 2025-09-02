@@ -15,7 +15,7 @@ The style system has multiple overlapping components with unclear boundaries and
 # From BasePlotter.__init__ - multiple overlapping style systems
 self.theme = self.__class__.default_theme if theme is None else theme
 self.style_engine: StyleEngine = StyleEngine(self.theme, self.figure_manager)
-self.style_applicator: StyleApplicator = StyleApplicator(
+self.styler: StyleApplicator = StyleApplicator(
     self.theme, self.kwargs, self.grouping_params, figure_manager=self.figure_manager
 )
 # Plus shared_cycle_config in FigureManager

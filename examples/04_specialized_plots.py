@@ -1,13 +1,14 @@
-"""
-Example 4: Specialized Plots - Heatmap, contour, and distribution plot types.
-Demonstrates dr_plotter's handling of specialized plot types with unique data requirements.
-"""
+from typing import Any
 
-from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
-from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from plot_data import ExampleData
+
+from dr_plotter.configs import PlotConfig
+from dr_plotter.figure_manager import FigureManager
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import inspect_plot_properties, verify_plot
+
+EXPECTED_CONTOUR_SAMPLE_COUNT = 400
+EXPECTED_VIOLIN_GROUP_COUNT = 2
 
 EXPECTED_CHANNELS = {
     (0, 0): [],  # Heatmap
@@ -25,7 +26,7 @@ EXPECTED_CHANNELS = {
         (1, 0): {"hue": 2},
     },
 )
-def main(args):
+def main(args: Any) -> Any:
     with FigureManager(
         PlotConfig(
             layout={
@@ -68,7 +69,7 @@ def main(args):
         )
         assert "x" in contour_data.columns
         assert "y" in contour_data.columns
-        assert len(contour_data) == 400
+        assert len(contour_data) == EXPECTED_CONTOUR_SAMPLE_COUNT
 
         fm.plot(
             "contour",
@@ -89,7 +90,7 @@ def main(args):
         assert "category" in violin_data.columns
         assert "value" in violin_data.columns
         assert "group" in violin_data.columns
-        assert len(violin_data.groupby("group")) == 2
+        assert len(violin_data.groupby("group")) == EXPECTED_VIOLIN_GROUP_COUNT
 
         fm.plot(
             "violin",

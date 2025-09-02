@@ -1,18 +1,20 @@
-from typing import Any, Dict, List, Optional, Set
+from __future__ import annotations
+
+from typing import Any, ClassVar
 
 import numpy as np
 import pandas as pd
 from matplotlib.lines import Line2D
 
 from dr_plotter import consts
-from dr_plotter.configs.grouping_config import GroupingConfig
+from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import SCATTER_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
+    ComponentSchema,
+    Phase,
     SubPlotterParamName,
     VisualChannel,
-    Phase,
-    ComponentSchema,
 )
 
 from .base import BasePlotter
@@ -20,12 +22,12 @@ from .base import BasePlotter
 
 class ScatterPlotter(BasePlotter):
     plotter_name: str = "scatter"
-    plotter_params: List[str] = []
-    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = {"hue", "size", "marker", "alpha"}
-    default_theme: Theme = SCATTER_THEME
+    plotter_params: ClassVar[list[str]] = []
+    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
+    enabled_channels: ClassVar[set[VisualChannel]] = {"hue", "size", "marker", "alpha"}
+    default_theme: ClassVar[Theme] = SCATTER_THEME
 
-    component_schema: Dict[Phase, ComponentSchema] = {
+    component_schema: ClassVar[dict[Phase, ComponentSchema]] = {
         "plot": {
             "main": {
                 "s",
@@ -59,8 +61,8 @@ class ScatterPlotter(BasePlotter):
         self,
         data: pd.DataFrame,
         grouping_cfg: GroupingConfig,
-        theme: Optional[Theme] = None,
-        figure_manager: Optional[Any] = None,
+        theme: Theme | None = None,
+        figure_manager: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
@@ -69,7 +71,7 @@ class ScatterPlotter(BasePlotter):
         )
 
     def _style_scatter_collection(
-        self, collection: Any, styles: Dict[str, Any]
+        self, collection: Any, styles: dict[str, Any]
     ) -> None:
         for attr, value in styles.items():
             if attr == "sizes" and hasattr(collection, "set_sizes"):
@@ -115,9 +117,7 @@ class ScatterPlotter(BasePlotter):
 
         self._apply_post_processing(collection, label)
 
-    def _apply_post_processing(
-        self, collection: Any, label: Optional[str] = None
-    ) -> None:
+    def _apply_post_processing(self, collection: Any, label: str | None = None) -> None:
         if not self._should_create_legend():
             return
 
@@ -133,29 +133,18 @@ class ScatterPlotter(BasePlotter):
 
     def _create_channel_specific_proxy(
         self, collection: Any, channel: str
-    ) -> Optional[Any]:
+    ) -> Any | None:
         facecolors = collection.get_facecolors()
         edgecolors = collection.get_edgecolors()
         sizes = collection.get_sizes()
+        assert len(facecolors) > 0
+        assert len(edgecolors) > 0
 
-        if len(facecolors) > 0:
-            face_color = facecolors[0]
-        else:
-            face_color = self.figure_manager.legend_manager.get_error_color(
-                "face", self.theme
-            )
-
-        if len(edgecolors) > 0:
-            edge_color = edgecolors[0]
-        else:
-            edge_color = self.figure_manager.legend_manager.get_error_color(
-                "edge", self.theme
-            )
-
-        marker_size = self.styler.get_style_with_fallback("marker_size", 8)
+        face_color = facecolors[0]
+        edge_color = edgecolors[0]
+        marker_size = self.styler.get_style("marker_size", 8)
         if len(sizes) > 0:
             marker_size = np.sqrt(sizes[0] / np.pi) * 2
-
         marker_style = "o"
         if self.styler.group_values:
             styles = self.style_engine.get_styles_for_group(
@@ -173,5 +162,4 @@ class ScatterPlotter(BasePlotter):
             markersize=marker_size,
             linestyle="",
         )
-
         return proxy

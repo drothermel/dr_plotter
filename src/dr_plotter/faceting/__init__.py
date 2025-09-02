@@ -7,9 +7,9 @@ from .faceting_core import (
 from .style_coordination import FacetStyleCoordinator
 
 __all__ = [
-    "prepare_faceted_subplots",
-    "plot_faceted_data",
+    "FacetStyleCoordinator",
     "get_grid_dimensions",
     "handle_empty_subplots",
-    "FacetStyleCoordinator",
+    "plot_faceted_data",
+    "prepare_faceted_subplots",
 ]

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 from dr_plotter.configs.figure_config import FigureConfig
 from dr_plotter.configs.legend_config import LegendConfig
@@ -11,31 +13,31 @@ from dr_plotter.types import ColorPalette
 class LayoutConfig:
     rows: int = 1
     cols: int = 1
-    figsize: Tuple[float, float] = (12.0, 8.0)
+    figsize: tuple[float, float] = (12.0, 8.0)
     tight_layout_pad: float = 0.5
-    figure_kwargs: Dict[str, Any] = field(default_factory=dict)
-    subplot_kwargs: Dict[str, Any] = field(default_factory=dict)
-    x_labels: Optional[List[List[Optional[str]]]] = None
-    y_labels: Optional[List[List[Optional[str]]]] = None
+    figure_kwargs: dict[str, Any] = field(default_factory=dict)
+    subplot_kwargs: dict[str, Any] = field(default_factory=dict)
+    x_labels: list[list[str | None]] | None = None
+    y_labels: list[list[str | None]] | None = None
 
 
 @dataclass
 class StyleConfig:
-    colors: Optional[ColorPalette] = None
-    plot_styles: Optional[Dict[str, Any]] = field(default_factory=dict)
-    fonts: Optional[Dict[str, Any]] = field(default_factory=dict)
-    figure_styles: Optional[Dict[str, Any]] = field(default_factory=dict)
-    theme: Optional[Union[str, Theme]] = None
+    colors: ColorPalette | None = None
+    plot_styles: dict[str, Any] | None = field(default_factory=dict)
+    fonts: dict[str, Any] | None = field(default_factory=dict)
+    figure_styles: dict[str, Any] | None = field(default_factory=dict)
+    theme: str | Theme | None = None
 
 
 @dataclass
 class PlotConfig:
-    layout: Optional[Union[Tuple[int, int], Dict[str, Any], LayoutConfig]] = None
-    style: Optional[Union[str, Dict[str, Any], StyleConfig]] = None
-    legend: Optional[Union[str, Dict[str, Any]]] = None
+    layout: tuple[int, int] | dict[str, Any] | LayoutConfig | None = None
+    style: str | dict[str, Any] | StyleConfig | None = None
+    legend: str | dict[str, Any] | None = None
 
     @classmethod
-    def from_preset(cls, preset_name: str) -> "PlotConfig":
+    def from_preset(cls, preset_name: str) -> PlotConfig:
         from dr_plotter.plot_presets import PLOT_CONFIGS
 
         assert preset_name in PLOT_CONFIGS, (
@@ -51,12 +53,14 @@ class PlotConfig:
         elif isinstance(self.layout, LayoutConfig):
             return self.layout
         elif isinstance(self.layout, tuple):
-            if len(self.layout) == 2:
-                return LayoutConfig(rows=self.layout[0], cols=self.layout[1])
-            elif len(self.layout) == 3:
+            assert len(self.layout) in {2, 3}
+            kwarg_index = 2
+            has_kwargs = len(self.layout) == kwarg_index + 1
+            if has_kwargs:
                 return LayoutConfig(
                     rows=self.layout[0], cols=self.layout[1], **self.layout[2]
                 )
+            return LayoutConfig(rows=self.layout[0], cols=self.layout[1])
         elif isinstance(self.layout, dict):
             return LayoutConfig(**self.layout)
 
@@ -74,7 +78,7 @@ class PlotConfig:
 
         return StyleConfig()
 
-    def _to_legacy_configs(self) -> Tuple[FigureConfig, LegendConfig, Optional[Theme]]:
+    def _to_legacy_configs(self) -> tuple[FigureConfig, LegendConfig, Theme | None]:
         layout_config = self._resolve_layout_config()
         style_config = self._resolve_style_config()
 
@@ -113,7 +117,7 @@ class PlotConfig:
         return self._convert_legend_dict_to_config(self.legend)
 
     def _convert_legend_dict_to_config(
-        self, legend_dict: Dict[str, Any]
+        self, legend_dict: dict[str, Any]
     ) -> LegendConfig:
         legend_kwargs = {}
         for key, value in legend_dict.items():
@@ -123,14 +127,14 @@ class PlotConfig:
                 legend_kwargs[key] = value
         return LegendConfig(**legend_kwargs)
 
-    def _resolve_theme_from_style(self, style_config: StyleConfig) -> Optional[Theme]:
+    def _resolve_theme_from_style(self, style_config: StyleConfig) -> Theme | None:
         if style_config.theme is None:
             return None
 
         if isinstance(style_config.theme, Theme):
             return style_config.theme
 
-        from dr_plotter.theme import BASE_THEME, LINE_THEME, SCATTER_THEME, BAR_THEME
+        from dr_plotter.theme import BAR_THEME, BASE_THEME, LINE_THEME, SCATTER_THEME
 
         theme_map = {
             "base": BASE_THEME,

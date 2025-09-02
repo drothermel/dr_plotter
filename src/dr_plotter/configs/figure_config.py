@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import matplotlib.pyplot as plt
 
@@ -8,22 +10,22 @@ import matplotlib.pyplot as plt
 class FigureConfig:
     rows: int = 1
     cols: int = 1
-    figsize: Tuple[int, int] = (12, 8)
+    figsize: tuple[int, int] = (12, 8)
     tight_layout_pad: float = 0.5
 
-    external_ax: Optional[plt.Axes] = None
-    shared_styling: Optional[bool] = None
+    external_ax: plt.Axes | None = None
+    shared_styling: bool | None = None
 
-    figure_kwargs: Dict[str, Any] = field(default_factory=dict)
-    subplot_kwargs: Dict[str, Any] = field(default_factory=dict)
+    figure_kwargs: dict[str, Any] = field(default_factory=dict)
+    subplot_kwargs: dict[str, Any] = field(default_factory=dict)
 
-    x_labels: Optional[List[List[Optional[str]]]] = None
-    y_labels: Optional[List[List[Optional[str]]]] = None
+    x_labels: list[list[str | None]] | None = None
+    y_labels: list[list[str | None]] | None = None
 
     def validate(self) -> None:
         assert self.rows > 0, f"Rows must be positive, got {self.rows}"
         assert self.cols > 0, f"Cols must be positive, got {self.cols}"
-        assert len(self.figsize) == 2, (
+        assert len(self.figsize) == len(["rows", "cols"]), (
             f"Figsize must have 2 values, got {len(self.figsize)}"
         )
         assert all(val > 0 for val in self.figsize), "Figsize values must be positive"
@@ -41,7 +43,8 @@ class FigureConfig:
             )
             for row_idx, row in enumerate(self.x_labels):
                 assert len(row) == self.cols, (
-                    f"x_labels row {row_idx} must have {self.cols} columns, got {len(row)}"
+                    f"x_labels row {row_idx} must have"
+                    f" {self.cols} columns, got {len(row)}"
                 )
 
         if self.y_labels is not None:
@@ -50,5 +53,6 @@ class FigureConfig:
             )
             for row_idx, row in enumerate(self.y_labels):
                 assert len(row) == self.cols, (
-                    f"y_labels row {row_idx} must have {self.cols} columns, got {len(row)}"
+                    f"y_labels row {row_idx} must have"
+                    f" {self.cols} columns, got {len(row)}"
                 )

@@ -1,7 +1,8 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+
+from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
 
 
 def create_ml_training_data() -> pd.DataFrame:
@@ -66,7 +67,7 @@ def example_2_grid_layouts() -> None:
     metrics = ["train_loss", "val_loss", "train_acc", "val_acc", "train_f1", "val_f1"]
     data = data[data["metric"].isin(metrics)]
 
-    # Create row/col grid coordinates for 6 metrics in 2×3 layout
+    # Create row/col grid coordinates for 6 metrics in 2x3 layout
     data = data.copy()
     metric_to_grid = {
         "train_loss": (0, 0),

@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional
 
 from dr_plotter.configs.positioning_config import PositioningConfig
 
@@ -15,7 +16,20 @@ class LegendStrategy(Enum):
 @dataclass
 class LegendConfig:
     strategy: str = "subplot"
-    layout_hint: Optional[str] = None
+    layout_hint: str | None = None
+    collect_strategy: str = "smart"
+    position: str = "lower center"
+    deduplication: bool = True
+    ncol: int | None = None
+    max_col: int = 4
+    spacing: float = 0.1
+    remove_axes_legends: bool = True
+    channel_titles: dict[str, str] | None = None
+    layout_left_margin: float = 0.0
+    layout_bottom_margin: float = 0.15
+    layout_right_margin: float = 1.0
+    layout_top_margin: float = 0.95
+    positioning_config: PositioningConfig | None = None
 
     def __post_init__(self) -> None:
         self.strategy = self._validate_and_convert_strategy(self.strategy)
@@ -30,22 +44,7 @@ class LegendConfig:
             "none": LegendStrategy.NONE,
         }
         assert strategy in string_to_enum, (
-            f"Invalid legend strategy '{strategy}'. Valid options: {list(string_to_enum.keys())}"
+            f"Invalid legend strategy '{strategy}'. Valid options: "
+            f"{list(string_to_enum.keys())}"
         )
         return string_to_enum[strategy]
-
-    collect_strategy: str = "smart"
-    position: str = "lower center"
-    deduplication: bool = True
-    ncol: Optional[int] = None
-    max_col: int = 4
-    spacing: float = 0.1
-    remove_axes_legends: bool = True
-    channel_titles: Optional[Dict[str, str]] = None
-
-    layout_left_margin: float = 0.0
-    layout_bottom_margin: float = 0.15
-    layout_right_margin: float = 1.0
-    layout_top_margin: float = 0.95
-
-    positioning_config: Optional[PositioningConfig] = None

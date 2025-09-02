@@ -1,4 +1,5 @@
-from typing import Dict, Any, Optional, List
+from __future__ import annotations
+from typing import Any
 import pandas as pd
 
 DEFAULT_COLOR_CYCLE = [
@@ -18,13 +19,13 @@ DEFAULT_MARKER_CYCLE = ["o", "s", "^", "D", "v", "<", ">", "p", "*", "h"]
 
 
 class FacetStyleCoordinator:
-    def __init__(self, theme: Optional[Dict[str, Any]] = None) -> None:
-        self._style_assignments: Dict[str, Dict[Any, Dict[str, Any]]] = {}
+    def __init__(self, theme: dict[str, Any] | None = None) -> None:
+        self._style_assignments: dict[str, dict[Any, dict[str, Any]]] = {}
         self._color_cycle = _get_theme_colors(theme)
         self._marker_cycle = _get_theme_markers(theme)
         self._next_color_index = 0
 
-    def register_dimension_values(self, dimension: str, values: List[Any]) -> None:
+    def register_dimension_values(self, dimension: str, values: list[Any]) -> None:
         assert dimension, "Dimension name cannot be empty"
         assert values, "Values list cannot be empty"
 
@@ -45,7 +46,7 @@ class FacetStyleCoordinator:
         }
         self._next_color_index += 1
 
-    def get_consistent_style(self, dimension: str, value: Any) -> Dict[str, Any]:
+    def get_consistent_style(self, dimension: str, value: Any) -> dict[str, Any]:
         assert dimension, "Dimension name cannot be empty"
 
         if dimension not in self._style_assignments:
@@ -60,10 +61,10 @@ class FacetStyleCoordinator:
         self,
         row: int,
         col: int,
-        dimension: Optional[str],
+        dimension: str | None,
         subplot_data: pd.DataFrame,
-        **plot_kwargs,
-    ) -> Dict[str, Any]:
+        **plot_kwargs: Any,
+    ) -> dict[str, Any]:
         if dimension is None or dimension not in subplot_data.columns:
             return plot_kwargs
 
@@ -79,13 +80,13 @@ class FacetStyleCoordinator:
         return plot_kwargs
 
 
-def _get_theme_colors(theme: Optional[Dict[str, Any]]) -> List[str]:
+def _get_theme_colors(theme: dict[str, Any] | None) -> list[str]:
     if theme and "color_cycle" in theme:
         return theme["color_cycle"]
     return DEFAULT_COLOR_CYCLE
 
 
-def _get_theme_markers(theme: Optional[Dict[str, Any]]) -> List[str]:
+def _get_theme_markers(theme: dict[str, Any] | None) -> list[str]:
     if theme and "marker_cycle" in theme:
         return theme["marker_cycle"]
     return DEFAULT_MARKER_CYCLE

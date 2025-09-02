@@ -1,33 +1,36 @@
-from typing import Any, Dict, List, Set, Optional
+from __future__ import annotations
+
+from typing import Any, ClassVar
 
 import numpy as np
 import pandas as pd
-from sklearn.mixture import GaussianMixture
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from sklearn.mixture import GaussianMixture
 
 from dr_plotter import consts
-from dr_plotter.theme import CONTOUR_THEME, BASE_COLORS, Theme
+from dr_plotter.configs import GroupingConfig
+from dr_plotter.theme import BASE_COLORS, CONTOUR_THEME, Theme
 from dr_plotter.types import (
     BasePlotterParamName,
+    ComponentSchema,
+    Phase,
     SubPlotterParamName,
     VisualChannel,
-    Phase,
-    ComponentSchema,
 )
+
 from .base import BasePlotter
-from dr_plotter.configs.grouping_config import GroupingConfig
 
 
 class ContourPlotter(BasePlotter):
     plotter_name: str = "contour"
-    plotter_params: List[str] = []
-    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = set()
-    default_theme: Theme = CONTOUR_THEME
+    plotter_params: ClassVar[list[str]] = []
+    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
+    enabled_channels: ClassVar[set[VisualChannel]] = set()
+    default_theme: ClassVar[Theme] = CONTOUR_THEME
     supports_legend: bool = False
     supports_grouped: bool = False
 
-    component_schema: Dict[Phase, ComponentSchema] = {
+    component_schema: ClassVar[dict[Phase, ComponentSchema]] = {
         "plot": {
             "contour": {
                 "levels",
@@ -54,8 +57,8 @@ class ContourPlotter(BasePlotter):
         self,
         data: pd.DataFrame,
         grouping_cfg: GroupingConfig,
-        theme: Optional[Theme] = None,
-        figure_manager: Optional[Any] = None,
+        theme: Theme | None = None,
+        figure_manager: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
@@ -122,7 +125,7 @@ class ContourPlotter(BasePlotter):
         self._apply_styling(ax)
 
     def _style_colorbar(
-        self, colorbar_info: Dict[str, Any], styles: Dict[str, Any]
+        self, colorbar_info: dict[str, Any], styles: dict[str, Any]
     ) -> None:
         plot_object = colorbar_info["plot_object"]
         ax = colorbar_info["ax"]

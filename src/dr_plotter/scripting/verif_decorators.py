@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import functools
 import sys
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -32,8 +34,10 @@ from .verification_formatter import (
     print_suggestions,
 )
 
+MAX_DISPLAY_ITEMS = 3
 
-def _print_comprehensive_plot_info(ax: Any, subplot_index: int) -> Dict[str, Any]:
+
+def _print_comprehensive_plot_info(ax: Any, subplot_index: int) -> dict[str, Any]:
     info = {
         "title": ax.get_title() or "(no title)",
         "xlabel": ax.get_xlabel() or "(no xlabel)",
@@ -81,7 +85,7 @@ def _print_comprehensive_plot_info(ax: Any, subplot_index: int) -> Dict[str, Any
                     "sizes": sample_sizes,
                 }
             )
-        except Exception as e:
+        except Exception as e:  # noqa: PERF203
             info["collections"].append(
                 {
                     "index": i,
@@ -97,8 +101,8 @@ def _print_comprehensive_plot_info(ax: Any, subplot_index: int) -> Dict[str, Any
 def _print_failure_message(
     name: str,
     expected: int,
-    result: Dict[str, Any],
-    descriptions: Optional[Dict[int, str]] = None,
+    result: dict[str, Any],
+    descriptions: dict[int, str] | None = None,
 ) -> None:
     print_critical(f"PLOT {name.upper()} FAILED: Legend visibility issues detected!")
 
@@ -131,25 +135,24 @@ def _print_failure_message(
     print_info("Plot has been saved for visual debugging.", 1)
 
 
-def verify_plot(
+def verify_plot(  # noqa: C901, PLR0915
     expected_legends: int = 0,
-    expected_channels: Optional[ExpectedChannels] = None,
-    expected_legend_entries: Optional[
-        Dict[SubplotCoord, Dict[str, Union[int, str]]]
-    ] = None,
+    expected_channels: ExpectedChannels | None = None,
+    expected_legend_entries: dict[SubplotCoord, dict[str, int | str]] | None = None,
     verify_legend_consistency: bool = False,
     min_unique_threshold: int = 2,
-    tolerance: Optional[float] = None,
+    tolerance: float | None = None,
     fail_on_missing: bool = True,
-    subplot_descriptions: Optional[Dict[int, str]] = None,
+    subplot_descriptions: dict[int, str] | None = None,
 ) -> Callable:
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable) -> Callable:  # noqa: C901, PLR0915
         @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:  # noqa: C901, PLR0915, PLR0912
             result = func(*args, **kwargs)
 
             assert isinstance(result, (plt.Figure, list, tuple)), (
-                f"Function must return Figure or list/tuple, got {type(result).__name__}"
+                f"Function must return Figure or list/tuple, "
+                f"got {type(result).__name__}"
             )
 
             if isinstance(result, plt.Figure):
@@ -161,11 +164,13 @@ def verify_plot(
                     figs = [result[0]]
                 else:
                     assert False, (
-                        f"Function must return Figure(s), got {type(result[0]).__name__} in {type(result).__name__}"
+                        f"Function must return Figure(s), got "
+                        f"{type(result[0]).__name__} in {type(result).__name__}"
                     )
             else:
                 assert False, (
-                    f"Function must return Figure or list of Figures, got {type(result).__name__}"
+                    f"Function must return Figure or list of Figures, "
+                    f"got {type(result).__name__}"
                 )
 
             name = func.__name__.replace("_", "-")
@@ -214,7 +219,8 @@ def verify_plot(
                 if failed_plots:
                     legend_failed = True
                     print_critical(
-                        f"PLOT {name.upper()} FAILED: {len(failed_plots)} plots had legend issues!"
+                        f"PLOT {name.upper()} FAILED: "
+                        f"{len(failed_plots)} plots had legend issues!"
                     )
                     print_info(f"- Failed plots: {', '.join(failed_plots)}", 1)
 
@@ -242,7 +248,7 @@ def verify_plot(
                         f"Collections found: {subplot_result['collections_found']}"
                     )
 
-                    for channel, channel_result in subplot_result["channels"].items():
+                    for channel_result in subplot_result["channels"].values():
                         success = channel_result["passed"]
                         print_item_result(
                             channel_result["channel"],
@@ -280,7 +286,7 @@ def verify_plot(
                 print_section_header("LEGEND-PLOT CONSISTENCY VERIFICATION")
 
                 if expected_legend_entries:
-                    for subplot_coord, _ in expected_legend_entries.items():
+                    for subplot_coord in expected_legend_entries:
                         row, col = subplot_coord
 
                         main_grid_axes = filter_main_grid_axes(fig.axes)
@@ -316,9 +322,9 @@ def verify_plot(
                         else:
                             print_failure(consistency_result["message"], 1)
 
-                        for check_name, check_result in consistency_result[
+                        for check_result in consistency_result[
                             "consistency_checks"
-                        ].items():
+                        ].values():
                             success = check_result["passed"]
                             if success:
                                 print_success(check_result["message"], 2)
@@ -361,18 +367,18 @@ def verify_plot(
             return result
 
         wrapper.__wrapped__ = func
-        wrapper._verify_expected = expected_legends
-        wrapper._verify_consistency = verify_legend_consistency
+        wrapper._verify_expected = expected_legends  # noqa: SLF001
+        wrapper._verify_consistency = verify_legend_consistency  # noqa: SLF001
 
         return wrapper
 
     return decorator
 
 
-def inspect_plot_properties() -> Callable:
-    def decorator(func: Callable) -> Callable:
+def inspect_plot_properties() -> Callable:  # noqa: C901
+    def decorator(func: Callable) -> Callable:  # noqa: C901
         @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:  # noqa: C901, PLR0912
             result = func(*args, **kwargs)
 
             fig = validate_figure_result(result)
@@ -394,7 +400,12 @@ def inspect_plot_properties() -> Callable:
                 if info["lines"]:
                     print_info("Lines:", 1)
                     for line_info in info["lines"]:
-                        details = f"color={line_info['color']}, marker={line_info['marker']}, width={line_info['linewidth']}, style={line_info['linestyle']}"
+                        details = (
+                            f"color={line_info['color']}, "
+                            f"marker={line_info['marker']}, "
+                            f"width={line_info['linewidth']}, "
+                            f"style={line_info['linestyle']}"
+                        )
                         print_info(f"Line {line_info['index']}: {details}", 2)
 
                 if info["collections"]:
@@ -402,18 +413,28 @@ def inspect_plot_properties() -> Callable:
                     for coll_info in info["collections"]:
                         if "error" in coll_info:
                             print_info(
-                                f"{coll_info['type']} {coll_info['index']}: Error - {coll_info['error']}",
+                                f"{coll_info['type']} {coll_info['index']}: "
+                                f"Error - {coll_info['error']}",
                                 2,
                             )
                         else:
-                            colors_str = ", ".join(coll_info["colors"][:3]) + (
-                                "..." if len(coll_info["colors"]) > 3 else ""
+                            colors_str = ", ".join(
+                                coll_info["colors"][:MAX_DISPLAY_ITEMS]
+                            ) + (
+                                "..."
+                                if len(coll_info["colors"]) > MAX_DISPLAY_ITEMS
+                                else ""
                             )
-                            sizes_str = ", ".join(map(str, coll_info["sizes"][:3])) + (
-                                "..." if len(coll_info["sizes"]) > 3 else ""
+                            sizes_str = ", ".join(
+                                map(str, coll_info["sizes"][:MAX_DISPLAY_ITEMS])
+                            ) + (
+                                "..."
+                                if len(coll_info["sizes"]) > MAX_DISPLAY_ITEMS
+                                else ""
                             )
                             print_info(
-                                f"{coll_info['type']} {coll_info['index']}: colors=[{colors_str}], sizes=[{sizes_str}]",
+                                f"{coll_info['type']} {coll_info['index']}: "
+                                f"colors=[{colors_str}], sizes=[{sizes_str}]",
                                 2,
                             )
 
@@ -439,7 +460,8 @@ def inspect_plot_properties() -> Callable:
                 line_counts = [len(info["lines"]) for info in subplot_infos]
                 if line_counts and len(set(line_counts)) == 1:
                     print_success(
-                        f"Line count consistency: All subplots have {line_counts[0]} lines",
+                        f"Line count consistency: "
+                        f"All subplots have {line_counts[0]} lines",
                         1,
                     )
 
@@ -453,14 +475,16 @@ def inspect_plot_properties() -> Callable:
                         unique_colors = set(colors_at_pos)
 
                         if len(unique_colors) == 1:
-                            color = list(unique_colors)[0]
+                            color = next(iter(unique_colors))
                             print_success(
-                                f"Line {pos} color: {color} (consistent across {len(colors_at_pos)} subplots)",
+                                f"Line {pos} color: {color} "
+                                f"(consistent across {len(colors_at_pos)} subplots)",
                                 2,
                             )
                         else:
                             print_info(
-                                f"Line {pos} colors: {len(unique_colors)} different colors found",
+                                f"Line {pos} colors: "
+                                f"{len(unique_colors)} different colors found",
                                 2,
                             )
                             for color in unique_colors:
@@ -468,7 +492,8 @@ def inspect_plot_properties() -> Callable:
                                 print_info(f"  {color}: {count} subplots", 3)
                 elif line_counts:
                     print_info(
-                        f"Line count variation: {dict(zip(range(len(line_counts)), line_counts))}",
+                        f"Line count variation: "
+                        f"{dict(zip(range(len(line_counts)), line_counts))}",
                         1,
                     )
 
@@ -476,12 +501,16 @@ def inspect_plot_properties() -> Callable:
                 if collection_counts and any(count > 0 for count in collection_counts):
                     if len(set(collection_counts)) == 1:
                         print_success(
-                            f"Collection count consistency: All subplots have {collection_counts[0]} collections",
+                            f"Collection count consistency: "
+                            f"All subplots have {collection_counts[0]} collections",
                             1,
                         )
                     else:
+                        variation_dict = dict(
+                            zip(range(len(collection_counts)), collection_counts)
+                        )
                         print_info(
-                            f"Collection count variation: {dict(zip(range(len(collection_counts)), collection_counts))}",
+                            f"Collection count variation: {variation_dict}",
                             1,
                         )
 
@@ -493,12 +522,14 @@ def inspect_plot_properties() -> Callable:
                     )
                 elif visible_count == len(subplot_infos):
                     print_success(
-                        f"Legend consistency: All {len(subplot_infos)} subplots have legends",
+                        f"Legend consistency: "
+                        f"All {len(subplot_infos)} subplots have legends",
                         1,
                     )
                 else:
                     print_info(
-                        f"Legend visibility: {visible_count}/{len(subplot_infos)} subplots have legends",
+                        f"Legend visibility: "
+                        f"{visible_count}/{len(subplot_infos)} subplots have legends",
                         1,
                     )
             else:
@@ -514,15 +545,15 @@ def inspect_plot_properties() -> Callable:
 def verify_figure_legends(
     expected_legend_count: int,
     legend_strategy: str,
-    expected_total_entries: Optional[int] = None,
-    expected_channel_entries: Optional[Dict[str, int]] = None,
-    expected_channels: Optional[List[str]] = None,
-    tolerance: Optional[float] = None,
+    expected_total_entries: int | None = None,
+    expected_channel_entries: dict[str, int] | None = None,
+    expected_channels: list[str] | None = None,
+    tolerance: float | None = None,
     fail_on_missing: bool = True,
 ) -> Callable:
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = func(*args, **kwargs)
 
             fig = validate_figure_result(result)
@@ -553,7 +584,7 @@ def verify_figure_legends(
             else:
                 print_failure(verification_result["message"], 1)
 
-            for check_name, check_result in verification_result["checks"].items():
+            for check_result in verification_result["checks"].values():
                 success = check_result["passed"]
                 if success:
                     print_success(check_result["message"], 1)

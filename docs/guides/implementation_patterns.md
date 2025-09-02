@@ -51,7 +51,7 @@ class BasePlotter:
     def render(self, ax):
         if self.__class__.use_style_applicator:
             # New system - validated approach
-            component_styles = self.style_applicator.get_component_styles(...)
+            component_styles = self.styler.get_component_styles(...)
         else:
             # Old system - backward compatible during transition
 ```

@@ -1,11 +1,14 @@
-from typing import List, Tuple
+from __future__ import annotations
+
 import argparse
 import sys
 import time
-import pandas as pd
+
 import matplotlib.pyplot as plt
+import pandas as pd
+
+from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.datadec_utils import get_datadec_functions
 
 DataDecide, select_params, select_data = get_datadec_functions()
@@ -21,7 +24,7 @@ def load_and_prepare_data() -> pd.DataFrame:
 
 
 def prepare_faceted_data(
-    df: pd.DataFrame, target_recipes: List[str], model_sizes: List[str]
+    df: pd.DataFrame, target_recipes: list[str], model_sizes: list[str]
 ) -> pd.DataFrame:
     target_metrics = ["pile-valppl", "mmlu_average_acc_raw"]
 
@@ -30,7 +33,7 @@ def prepare_faceted_data(
         df["data"].isin(target_recipes) & df["params"].isin(model_sizes)
     ].copy()
 
-    keep_columns = ["params", "data", "step"] + target_metrics
+    keep_columns = ["params", "data", "step", *target_metrics]
     filtered_df = filtered_df[keep_columns].copy()
 
     # Melt from wide to long format for faceting
@@ -66,13 +69,12 @@ def prepare_faceted_data(
 
 def plot_training_curves_faceted(
     df: pd.DataFrame,
-    target_recipes: List[str],
+    target_recipes: list[str],
     x_log: bool = False,
     y_log: bool = False,
-    xlim: Tuple[float, float] = None,
-    ylim: Tuple[float, float] = None,
+    xlim: tuple[float, float] | None = None,
+    ylim: tuple[float, float] | None = None,
 ) -> None:
-    num_model_sizes = len(df["params"].cat.categories)
     figwidth = max(12, len(target_recipes) * 3.5)
 
     with FigureManager(
@@ -95,7 +97,8 @@ def plot_training_curves_faceted(
             y=0.96,
         )
 
-        # Here's the magic: replace 95+ lines of manual loops with a single faceted call!
+        # Here's the magic: replace 95+ lines of manual
+        # loops with a single faceted call!
         fm.plot_faceted(
             data=df,
             plot_type="line",
@@ -151,7 +154,7 @@ def plot_training_curves_faceted(
                 if ylim:
                     ax.set_ylim(ylim)
 
-                ax.grid(True, alpha=0.3)
+                ax.grid(visible=True, alpha=0.3)
 
     plt.tight_layout()
     plt.savefig(
@@ -166,7 +169,8 @@ def plot_training_curves_faceted(
 
 def create_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Faceted Training Curves (Refactored) - Using dr_plotter faceting system"
+        description="Faceted Training Curves (Refactored) "
+        "- Using dr_plotter faceting system"
     )
     parser.add_argument(
         "--x-log", action="store_true", help="Use log scale for X-axis (training steps)"
@@ -189,7 +193,8 @@ def create_arg_parser() -> argparse.ArgumentParser:
         "--model-sizes",
         nargs="+",
         default=["all"],
-        help="Model sizes to include (in order for line styling). Use 'all' for all available.",
+        help="Model sizes to include (in order for line styling). "
+        "Use 'all' for all available.",
     )
 
     # Axis limits

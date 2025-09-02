@@ -3,12 +3,17 @@ Example 6: Multi-Metric Plotting - METRICS constant.
 Demonstrates plotting multiple y-columns with the METRICS constant.
 """
 
-from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
-from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
-from dr_plotter import consts
+from typing import Any
+
 from plot_data import ExampleData
+
+from dr_plotter import consts
+from dr_plotter.configs import PlotConfig
+from dr_plotter.figure_manager import FigureManager
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import inspect_plot_properties, verify_plot
+
+FILTER_LEARNING_RATE = 0.01
 
 EXPECTED_CHANNELS = {
     (0, 0): ["hue"],
@@ -30,7 +35,7 @@ EXPECTED_CHANNELS = {
         (1, 1): {"hue": 3},
     },
 )
-def main(args):
+def main(args: Any) -> Any:
     with FigureManager(
         PlotConfig(layout={"rows": 2, "cols": 2, "figsize": (15, 12)})
     ) as fm:
@@ -39,8 +44,11 @@ def main(args):
         # ML training data with multiple metrics
         ml_data = ExampleData.ml_training_curves()
 
-        # Basic multi-metrics: color by METRICS (filter to single learning rate for clarity)
-        single_lr_data = ml_data[ml_data["learning_rate"] == 0.01].copy()
+        # Basic multi-metrics: color by METRICS
+        # (filter to single learning rate for clarity)
+        single_lr_data = ml_data[
+            ml_data["learning_rate"] == FILTER_LEARNING_RATE
+        ].copy()
         fm.plot(
             "line",
             0,

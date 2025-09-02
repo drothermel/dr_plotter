@@ -1,19 +1,17 @@
-"""
-Example 19: ML Dashboard Dashboard - Real-world use case.
-Complete ML experiment visualization with multiple metrics and hyperparameters.
-"""
+from typing import Any
 
-from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
-from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
-from dr_plotter import consts
 from plot_data import ExampleData
+
+from dr_plotter import consts
+from dr_plotter.configs import PlotConfig
+from dr_plotter.figure_manager import FigureManager
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import inspect_plot_properties, verify_plot
 
 
 @inspect_plot_properties()
 @verify_plot(expected_legends=4)
-def main(args):
+def main(args: Any) -> Any:
     # Generate comprehensive ML experiment data
     ml_data = ExampleData.ml_training_curves(
         epochs=100, learning_rates=[0.001, 0.01, 0.1]

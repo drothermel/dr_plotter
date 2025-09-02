@@ -5,3 +5,16 @@ from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.configs.positioning_config import PositioningConfig
 from dr_plotter.configs.faceting_config import FacetingConfig
 from dr_plotter.configs.plot_config import LayoutConfig, StyleConfig, PlotConfig
+
+__all__ = [
+    "CycleConfig",
+    "FacetingConfig",
+    "FigureConfig",
+    "GroupingConfig",
+    "LayoutConfig",
+    "LegendConfig",
+    "LegendStrategy",
+    "PlotConfig",
+    "PositioningConfig",
+    "StyleConfig",
+]

@@ -1,20 +1,26 @@
-from typing import Any, Dict, List, Optional, Protocol, Set, Tuple, Union
-import matplotlib.colors as mcolors
-from abc import ABC, abstractmethod
+from __future__ import annotations
 
-from .plot_data_extractor import (
-    extract_subplot_properties,
-    convert_legend_size_to_scatter_size,
-    extract_channel_values_from_collections,
-    extract_all_plot_data_from_collections,
-    extract_legend_data_with_alphas,
-)
+from abc import ABC, abstractmethod
+from typing import Any, Protocol
+
+import matplotlib.colors as mcolors
+
+from dr_plotter.types import VerificationParams, VerificationResult
+
 from .comparison_utils import (
     count_unique_colors,
     count_unique_floats,
-    get_default_tolerance_for_channel,
 )
-from dr_plotter.types import VerificationParams, VerificationResult
+from .plot_data_extractor import (
+    convert_legend_size_to_scatter_size,
+    extract_all_plot_data_from_collections,
+    extract_channel_values_from_collections,
+    extract_legend_data_with_alphas,
+    extract_subplot_properties,
+)
+
+MIN_RGB_TUPLE_LENGTH = 3
+RANGE_OVERLAP_THRESHOLD = 0.5
 
 
 class VerificationRule(Protocol):
@@ -23,7 +29,7 @@ class VerificationRule(Protocol):
 
 class VerificationEngine:
     def __init__(self) -> None:
-        self._rules: Dict[str, VerificationRule] = {}
+        self._rules: dict[str, VerificationRule] = {}
         self._register_standard_rules()
 
     def register_rule(self, name: str, rule: VerificationRule) -> None:
@@ -48,12 +54,12 @@ class BaseVerificationRule(ABC):
     def execute(self, params: VerificationParams) -> VerificationResult:
         pass
 
-    def _format_sample_values(self, values: List[Any], max_count: int = 5) -> List[Any]:
+    def _format_sample_values(self, values: list[Any], max_count: int = 5) -> list[Any]:
         limited_values = values[:max_count] if len(values) > max_count else values
         formatted_values = []
 
         for value in limited_values:
-            if isinstance(value, (tuple, list)) and len(value) >= 3:
+            if isinstance(value, (tuple, list)) and len(value) >= MIN_RGB_TUPLE_LENGTH:
                 if all(isinstance(x, float) for x in value):
                     formatted_values.append(tuple(round(x, 3) for x in value))
                 else:
@@ -88,7 +94,8 @@ class ChannelVariationRule(BaseVerificationRule):
         all_values = extract_channel_values_from_collections(collections, channel)
 
         if channel == "unknown":
-            result["message"] = f"Unknown channel: {channel}"
+            result["message"] = "Unknown channel: "
+            f"{channel}"
             return result
 
         unique_values = self._count_unique_values(all_values, channel)
@@ -99,29 +106,33 @@ class ChannelVariationRule(BaseVerificationRule):
         raw_samples = (
             list(unique_values)[:5]
             if isinstance(unique_values, (set, list))
-            else sorted(list(unique_values))[:5]
+            else sorted(unique_values)[:5]
         )
         result["details"]["sample_values"] = self._format_sample_values(raw_samples)
         result["passed"] = len(unique_values) >= min_unique_threshold
 
         if result["passed"]:
             result["message"] = (
-                f"{channel.title()} variation: PASS ({len(unique_values)} unique values found)"
+                f"{channel.title()} variation: "
+                f"PASS ({len(unique_values)} unique values found)"
             )
         else:
             result["message"] = (
-                f"{channel.title()} variation: FAIL (only {len(unique_values)} unique values, expected ≥{min_unique_threshold})"
+                f"{channel.title()} variation: "
+                f"FAIL (only {len(unique_values)} unique values, "
+                f"expected ≥{min_unique_threshold})"
             )
 
             if len(unique_values) == 1:
                 sample_val = next(iter(unique_values)) if unique_values else "none"
-                result["message"] += f"\n   - All points have {channel}: {sample_val}"
+                result["message"] += f"\n   - All points have {channel}: "
+            f"{sample_val}"
 
         return result
 
     def _count_unique_values(
-        self, all_values: List[Any], channel: str
-    ) -> Union[Set[Any], List[Any]]:
+        self, all_values: list[Any], channel: str
+    ) -> set[Any] | list[Any]:
         if channel in ["size", "alpha"]:
             return count_unique_floats(all_values)
         elif channel in ["hue", "color"]:
@@ -134,7 +145,6 @@ class ChannelUniformityRule(BaseVerificationRule):
     def execute(self, params: VerificationParams) -> VerificationResult:
         values = params["values"]
         channel = params["channel"]
-        tolerance = params.get("tolerance")
 
         result = {
             "channel": channel,
@@ -145,13 +155,11 @@ class ChannelUniformityRule(BaseVerificationRule):
         }
 
         if not values:
-            result["message"] = f"{channel.title()} uniformity: No values to check"
+            result["message"] = f"{channel.title()} uniformity: "
+            "No values to check"
             return result
 
-        if tolerance is None:
-            tolerance = get_default_tolerance_for_channel(channel)
-
-        unique_values = self._count_unique_values(values, channel, tolerance)
+        unique_values = self._count_unique_values(values, channel)
 
         result["unique_values"] = len(unique_values)
         result["passed"] = len(unique_values) == 1
@@ -161,29 +169,32 @@ class ChannelUniformityRule(BaseVerificationRule):
                 next(iter(unique_values)) if unique_values else None
             )
             result["message"] = (
-                f"{channel.title()} uniformity: PASS (all plot values are {result['uniform_value']})"
+                f"{channel.title()} uniformity: "
+                f"PASS (all plot values are {result['uniform_value']})"
             )
         else:
             result["message"] = (
-                f"{channel.title()} uniformity: FAIL ({len(unique_values)} different plot values found)"
+                f"{channel.title()} uniformity: "
+                f"FAIL ({len(unique_values)} different plot values found)"
             )
             raw_samples = (
                 list(unique_values)[:3]
                 if isinstance(unique_values, (set, list))
-                else sorted(list(unique_values))[:3]
+                else sorted(unique_values)[:3]
             )
             formatted_samples = self._format_sample_values(raw_samples, max_count=3)
-            result["message"] += f"\n   - Plot sample values: {formatted_samples}"
+            result["message"] += "\n   - Plot sample values: "
+            f"{formatted_samples}"
 
         return result
 
     def _count_unique_values(
-        self, values: List[Any], channel: str, tolerance: float
-    ) -> Union[Set[Any], List[Any]]:
+        self, values: list[Any], channel: str
+    ) -> set[Any] | list[Any]:
         if channel in ["size", "alpha"]:
-            return count_unique_floats(values, tolerance)
+            return count_unique_floats(values)
         elif channel in ["hue", "color"]:
-            return count_unique_colors(values, tolerance)
+            return count_unique_colors(values)
         else:
             return set(values)
 
@@ -193,19 +204,18 @@ class ConsistencyCheckRule(BaseVerificationRule):
         channel = params["channel"]
         plot_data = params["plot_data"]
         legend_data = params["legend_data"]
-        tolerance = params.get("tolerance")
         expected_unique = params.get("expected_unique")
 
         if channel == "marker":
             return self._verify_marker_consistency(
                 plot_data, legend_data, expected_unique
             )
-        elif channel == "color" or channel == "hue":
-            return self._verify_color_consistency(plot_data, legend_data, tolerance)
+        elif channel in {"color", "hue"}:
+            return self._verify_color_consistency(plot_data, legend_data)
         elif channel == "alpha":
-            return self._verify_alpha_consistency(plot_data, legend_data, tolerance)
+            return self._verify_alpha_consistency(plot_data, legend_data)
         elif channel == "size":
-            return self._verify_size_consistency(plot_data, legend_data, tolerance)
+            return self._verify_size_consistency(plot_data, legend_data)
         elif channel == "style":
             return self._verify_style_consistency(
                 plot_data, legend_data, expected_unique
@@ -215,9 +225,9 @@ class ConsistencyCheckRule(BaseVerificationRule):
 
     def _verify_marker_consistency(
         self,
-        plot_markers: List[str],
-        legend_markers: List[str],
-        expected_unique_markers: Optional[int] = None,
+        plot_markers: list[str],
+        legend_markers: list[str],
+        expected_unique_markers: int | None = None,
     ) -> VerificationResult:
         plot_unique = set(plot_markers)
         legend_unique = set(legend_markers)
@@ -234,7 +244,8 @@ class ConsistencyCheckRule(BaseVerificationRule):
         if expected_unique_markers and len(plot_unique) != expected_unique_markers:
             result["passed"] = False
             result["message"] = (
-                f"Expected {expected_unique_markers} unique markers in plot, found {len(plot_unique)}"
+                f"Expected {expected_unique_markers} unique markers in plot, "
+                f"found {len(plot_unique)}"
             )
             return result
 
@@ -257,14 +268,11 @@ class ConsistencyCheckRule(BaseVerificationRule):
 
     def _verify_color_consistency(
         self,
-        plot_colors: List[Tuple[float, ...]],
-        legend_colors: List[Tuple[float, ...]],
-        tolerance: Optional[float] = None,
+        plot_colors: list[tuple[float, ...]],
+        legend_colors: list[tuple[float, ...]],
     ) -> VerificationResult:
-        if tolerance is None:
-            tolerance = get_default_tolerance_for_channel("color")
-        plot_unique = count_unique_colors(plot_colors, tolerance)
-        legend_unique = count_unique_colors(legend_colors, tolerance)
+        plot_unique = count_unique_colors(plot_colors)
+        legend_unique = count_unique_colors(legend_colors)
 
         plot_hex = [mcolors.to_hex(color) for color in plot_unique]
         legend_hex = [mcolors.to_hex(color) for color in legend_unique]
@@ -282,21 +290,20 @@ class ConsistencyCheckRule(BaseVerificationRule):
             )
         else:
             result["message"] = "Color consistency: FAIL"
-            result["message"] += f"\n   - Plot colors: {result['plot_colors']}"
-            result["message"] += f"\n   - Legend colors: {result['legend_colors']}"
+            result["message"] += "\n   - Plot colors: "
+            f"{result['plot_colors']}"
+            result["message"] += "\n   - Legend colors: "
+            f"{result['legend_colors']}"
 
         return result
 
     def _verify_alpha_consistency(
         self,
-        plot_alphas: List[float],
-        legend_alphas: List[float],
-        tolerance: Optional[float] = None,
+        plot_alphas: list[float],
+        legend_alphas: list[float],
     ) -> VerificationResult:
-        if tolerance is None:
-            tolerance = get_default_tolerance_for_channel("alpha")
-        plot_unique = count_unique_floats(plot_alphas, tolerance)
-        legend_unique = count_unique_floats(legend_alphas, tolerance)
+        plot_unique = count_unique_floats(plot_alphas)
+        legend_unique = count_unique_floats(legend_alphas)
 
         result = {
             "passed": len(plot_unique) == len(legend_unique),
@@ -319,7 +326,7 @@ class ConsistencyCheckRule(BaseVerificationRule):
                 min(plot_max, legend_max) - max(plot_min, legend_min)
             ) / max((plot_max - plot_min), 0.1)
 
-            if range_overlap > 0.5:
+            if range_overlap > RANGE_OVERLAP_THRESHOLD:
                 result["passed"] = True
                 result["message"] = (
                     "Alpha consistency: PASS (ranges overlap sufficiently)"
@@ -344,18 +351,15 @@ class ConsistencyCheckRule(BaseVerificationRule):
 
     def _verify_size_consistency(
         self,
-        plot_sizes: List[float],
-        legend_sizes: List[float],
-        tolerance: Optional[float] = None,
+        plot_sizes: list[float],
+        legend_sizes: list[float],
     ) -> VerificationResult:
         legend_as_scatter = [
             convert_legend_size_to_scatter_size(size) for size in legend_sizes
         ]
 
-        if tolerance is None:
-            tolerance = get_default_tolerance_for_channel("size")
-        plot_unique = count_unique_floats(plot_sizes, tolerance)
-        legend_unique = count_unique_floats(legend_as_scatter, tolerance)
+        plot_unique = count_unique_floats(plot_sizes)
+        legend_unique = count_unique_floats(legend_as_scatter)
 
         result = {
             "passed": len(plot_unique) == len(legend_unique),
@@ -369,10 +373,11 @@ class ConsistencyCheckRule(BaseVerificationRule):
         }
 
         if result["passed"]:
-            result["message"] = "Size consistency: PASS (ranges match within tolerance)"
+            result["message"] = "Size consistency: PASS"
         else:
             result["message"] = "Size consistency: FAIL"
-            result["message"] += f"\n   - Plot size range: {result['plot_size_range']}"
+            result["message"] += "\n   - Plot size range: "
+            f"{result['plot_size_range']}"
             result["message"] += (
                 f"\n   - Legend size range: {result['legend_size_range']}"
             )
@@ -381,9 +386,9 @@ class ConsistencyCheckRule(BaseVerificationRule):
 
     def _verify_style_consistency(
         self,
-        plot_styles: List[str],
-        legend_styles: List[str],
-        expected_unique_styles: Optional[int] = None,
+        plot_styles: list[str],
+        legend_styles: list[str],
+        expected_unique_styles: int | None = None,
     ) -> VerificationResult:
         plot_unique = set(plot_styles)
         legend_unique = set(legend_styles)
@@ -400,7 +405,8 @@ class ConsistencyCheckRule(BaseVerificationRule):
         if expected_unique_styles and len(plot_unique) != expected_unique_styles:
             result["passed"] = False
             result["message"] = (
-                f"Expected {expected_unique_styles} unique styles in plot, found {len(plot_unique)}"
+                f"Expected {expected_unique_styles} unique styles in plot, "
+                f"found {len(plot_unique)}"
             )
             return result
 
@@ -423,11 +429,10 @@ class ConsistencyCheckRule(BaseVerificationRule):
 
 
 class LegendPlotConsistencyRule(BaseVerificationRule):
-    def execute(self, params: VerificationParams) -> VerificationResult:
+    def execute(self, params: VerificationParams) -> VerificationResult:  # noqa: C901, PLR0912
         ax = params["ax"]
         expected_varying_channels = params.get("expected_varying_channels")
         expected_legend_entries = params.get("expected_legend_entries")
-        tolerance = params.get("tolerance")
 
         props = extract_subplot_properties(ax)
 
@@ -475,7 +480,8 @@ class LegendPlotConsistencyRule(BaseVerificationRule):
 
                 entry_check = {
                     "passed": actual_count == expected_count,
-                    "message": f"{entry_type}: expected {expected_count}, got {actual_count}",
+                    "message": f"{entry_type}: "
+                    f"expected {expected_count}, got {actual_count}",
                     "expected": expected_count,
                     "actual": actual_count,
                 }
@@ -509,7 +515,6 @@ class LegendPlotConsistencyRule(BaseVerificationRule):
                     "channel": channel,
                     "plot_data": plot_data,
                     "legend_data": legend_data_for_channel,
-                    "tolerance": tolerance,
                 }
                 consistency_check = consistency_rule.execute(consistency_params)
                 result["consistency_checks"][f"{channel}s"] = consistency_check
@@ -530,9 +535,11 @@ class LegendPlotConsistencyRule(BaseVerificationRule):
                 variation_check = variation_rule.execute(variation_params)
 
                 message = (
-                    f"{channel.title()} variation: VERIFIED (plot shows expected variation, legend data missing)"
+                    f"{channel.title()} variation: "
+                    f"VERIFIED (plot shows expected variation, legend data missing)"
                     if variation_check["passed"]
-                    else f"{channel.title()} variation: MISSING (expected variation not found in plot)"
+                    else f"{channel.title()} variation: "
+                    f"MISSING (expected variation not found in plot)"
                 )
 
                 special_check = {
@@ -547,7 +554,6 @@ class LegendPlotConsistencyRule(BaseVerificationRule):
                 uniformity_params = {
                     "values": plot_data,
                     "channel": channel,
-                    "tolerance": tolerance,
                 }
                 uniformity_check = uniformity_rule.execute(uniformity_params)
                 result["consistency_checks"][f"{channel}s"] = uniformity_check
@@ -588,7 +594,6 @@ class FigureLegendStrategyRule(BaseVerificationRule):
         expected_total_entries = params.get("expected_total_entries")
         expected_channel_entries = params.get("expected_channel_entries")
         expected_channels = params.get("expected_channels")
-        tolerance = params["tolerance"]
 
         result = {
             "passed": True,
@@ -610,7 +615,8 @@ class FigureLegendStrategyRule(BaseVerificationRule):
             )
         else:
             count_check["message"] = (
-                f"Legend count: FAIL (expected {expected_count}, got {figure_props['legend_count']})"
+                f"Legend count: "
+                f"FAIL (expected {expected_count}, got {figure_props['legend_count']})"
             )
             result["passed"] = False
 
@@ -618,7 +624,9 @@ class FigureLegendStrategyRule(BaseVerificationRule):
 
         if strategy == "figure_below":
             return self._verify_unified_figure_strategy(
-                figure_props, expected_total_entries, result, tolerance
+                figure_props,
+                expected_total_entries,
+                result,
             )
         elif strategy == "split":
             return self._verify_split_figure_strategy(
@@ -626,19 +634,18 @@ class FigureLegendStrategyRule(BaseVerificationRule):
                 expected_channel_entries,
                 expected_channels,
                 result,
-                tolerance,
             )
         else:
             result["passed"] = False
-            result["message"] = f"Unknown strategy: {strategy}"
+            result["message"] = "Unknown strategy: "
+            f"{strategy}"
             return result
 
     def _verify_unified_figure_strategy(
         self,
-        figure_props: Dict[str, Any],
-        expected_total_entries: Optional[int],
-        result: Dict[str, Any],
-        tolerance: float,
+        figure_props: dict[str, Any],
+        expected_total_entries: int | None,
+        result: dict[str, Any],
     ) -> VerificationResult:
         if not result["checks"]["legend_count"]["passed"]:
             result["message"] = "Cannot verify unified legend - wrong legend count"
@@ -660,7 +667,9 @@ class FigureLegendStrategyRule(BaseVerificationRule):
                 )
             else:
                 entries_check["message"] = (
-                    f"Entry count: FAIL (expected {expected_total_entries}, got {legend['entry_count']})"
+                    f"Entry count: "
+                    f"FAIL (expected {expected_total_entries}, "
+                    f"got {legend['entry_count']})"
                 )
                 result["passed"] = False
 
@@ -686,23 +695,23 @@ class FigureLegendStrategyRule(BaseVerificationRule):
 
     def _verify_split_figure_strategy(
         self,
-        figure_props: Dict[str, Any],
-        expected_channel_entries: Optional[Dict[str, int]],
-        expected_channels: Optional[List[str]],
-        result: Dict[str, Any],
-        tolerance: float,
+        figure_props: dict[str, Any],
+        expected_channel_entries: dict[str, int] | None,
+        expected_channels: list[str] | None,
+        result: dict[str, Any],
     ) -> VerificationResult:
         if not result["checks"]["legend_count"]["passed"]:
             result["message"] = "Cannot verify split legends - wrong legend count"
             return result
 
-        found_channels = []
-        for legend in figure_props["legends"]:
-            if legend["title"]:
-                found_channels.append(legend["title"].lower())
+        found_channels = [
+            legend["title"].lower()
+            for legend in figure_props["legends"]
+            if legend["title"]
+        ]
 
         if expected_channels:
-            expected_set = set(ch.lower() for ch in expected_channels)
+            expected_set = {ch.lower() for ch in expected_channels}
             found_set = set(found_channels)
 
             channels_check = {
@@ -737,9 +746,12 @@ class FigureLegendStrategyRule(BaseVerificationRule):
                         "passed": legend["entry_count"] == expected_entries,
                         "expected": expected_entries,
                         "actual": legend["entry_count"],
-                        "message": f"{channel.title()} entries: PASS ({expected_entries})"
+                        "message": f"{channel.title()} entries: "
+                        f"PASS ({expected_entries})"
                         if legend["entry_count"] == expected_entries
-                        else f"{channel.title()} entries: FAIL (expected {expected_entries}, got {legend['entry_count']})",
+                        else f"{channel.title()} entries: "
+                        f"FAIL (expected {expected_entries}, "
+                        f"got {legend['entry_count']})",
                     }
 
                     result["checks"][f"{channel}_entries"] = entries_check
@@ -769,10 +781,9 @@ def register_verification_rule(name: str, rule: VerificationRule) -> None:
 
 def verify_plot_properties_for_subplot(
     ax: Any,
-    expected_channels: List[str],
+    expected_channels: list[str],
     min_unique_threshold: int = 2,
-    tolerance: Optional[float] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     props = extract_subplot_properties(ax)
 
     result = {

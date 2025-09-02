@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Set, Tuple, Union
+from typing import Any, Union
 
 import pandas as pd
 
@@ -8,21 +8,21 @@ type VisualChannel = str
 type ColName = str
 type StyleAttrName = str
 type Phase = str
-type ComponentSchema = Dict[str, Set[str]]
-type ComponentStyles = Dict[str, Dict[str, Any]]
-type GroupInfo = Tuple[Any, pd.DataFrame]
-type GroupContext = Dict[str, Any]
-type ColorPalette = List[str]
-type SubplotCoord = Tuple[int, int]
+type ComponentSchema = dict[str, set[str]]
+type ComponentStyles = dict[str, dict[str, Any]]
+type GroupInfo = tuple[Any, pd.DataFrame]
+type GroupContext = dict[str, Any]
+type ColorPalette = list[str]
+type SubplotCoord = tuple[int, int]
 type ChannelName = str
-type ExpectedChannels = Dict[SubplotCoord, List[ChannelName]]
-type VerificationParams = Dict[str, Any]
-type VerificationResult = Dict[str, Any]
-type RGBA = Tuple[float, float, float, float]
-type RGB = Tuple[float, float, float]
+type ExpectedChannels = dict[SubplotCoord, list[ChannelName]]
+type VerificationParams = dict[str, Any]
+type VerificationResult = dict[str, Any]
+type RGBA = tuple[float, float, float, float]
+type RGB = tuple[float, float, float]
 type ColorTuple = Union[RGBA, RGB]
 type NumericValue = Union[float, int]
 type ComparisonValue = Union[NumericValue, ColorTuple, str]
-type Position = Tuple[float, float]
-type CollectionProperties = Dict[str, Any]
-type StyleCacheKey = Tuple[VisualChannel, Any]
+type Position = tuple[float, float]
+type CollectionProperties = dict[str, Any]
+type StyleCacheKey = tuple[VisualChannel, Any]

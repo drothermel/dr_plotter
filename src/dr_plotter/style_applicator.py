@@ -1,35 +1,38 @@
-from typing import Any, Callable, Dict, Optional, Set, TYPE_CHECKING
+from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any, Callable
+
+from dr_plotter.configs import GroupingConfig
 from dr_plotter.consts import VISUAL_CHANNELS
-from dr_plotter.configs.grouping_config import GroupingConfig
 from dr_plotter.legend_manager import LegendEntry, LegendStrategy
+from dr_plotter.plotters import BasePlotter
 from dr_plotter.theme import (
-    Theme,
-    LINE_THEME,
-    SCATTER_THEME,
     BAR_THEME,
-    HISTOGRAM_THEME,
-    VIOLIN_THEME,
-    HEATMAP_THEME,
     BUMP_PLOT_THEME,
     CONTOUR_THEME,
+    HEATMAP_THEME,
+    HISTOGRAM_THEME,
+    LINE_THEME,
+    SCATTER_THEME,
+    VIOLIN_THEME,
+    Theme,
 )
 from dr_plotter.types import ComponentSchema, ComponentStyles, Phase
 
 if TYPE_CHECKING:
-    from dr_plotter.plotters.style_engine import StyleEngine
+    from dr_plotter.style_engine import StyleEngine
 
 
 class StyleApplicator:
     def __init__(
         self,
         theme: Theme,
-        kwargs: Dict[str, Any],
-        grouping_cfg: Optional[GroupingConfig] = None,
-        group_values: Optional[Dict[str, Any]] = None,
-        figure_manager: Optional[Any] = None,
-        plot_type: Optional[str] = None,
-        style_engine: Optional["StyleEngine"] = None,
+        kwargs: dict[str, Any],
+        grouping_cfg: GroupingConfig | None = None,
+        group_values: dict[str, Any] | None = None,
+        figure_manager: Any | None = None,
+        plot_type: str | None = None,
+        style_engine: StyleEngine | None = None,
     ) -> None:
         self.theme = theme
         self.kwargs = kwargs
@@ -39,7 +42,7 @@ class StyleApplicator:
         self.plot_type = plot_type
         self.style_engine = style_engine
         self._component_schemas = self._load_component_schemas()
-        self._post_processors: Dict[str, Callable] = {}
+        self._post_processors: dict[str, Callable] = {}
 
     def get_component_styles(
         self, plot_type: str, phase: Phase = "plot"
@@ -57,7 +60,7 @@ class StyleApplicator:
 
     def get_single_component_styles(
         self, plot_type: str, component: str, phase: Phase = "plot"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         schema = self._get_component_schema(plot_type, phase)
         if component not in schema:
             return {}
@@ -72,13 +75,13 @@ class StyleApplicator:
         key = f"{plot_type}.{component}"
         self._post_processors[key] = processor
 
-    def set_group_context(self, group_values: Dict[str, Any]) -> None:
+    def set_group_context(self, group_values: dict[str, Any]) -> None:
         self.group_values = group_values if group_values is not None else {}
 
     def clear_group_context(self) -> None:
         self.group_values = {}
 
-    def apply_post_processing(self, plot_type: str, artists: Dict[str, Any]) -> None:
+    def apply_post_processing(self, plot_type: str, artists: dict[str, Any]) -> None:
         axes_styles = self.get_component_styles(plot_type, phase="axes")
 
         for component, styles in axes_styles.items():
@@ -94,8 +97,8 @@ class StyleApplicator:
         label: str,
         axis: Any = None,
         artist_type: str = "main",
-        explicit_channel: Optional[str] = None,
-    ) -> Optional[LegendEntry]:
+        explicit_channel: str | None = None,
+    ) -> LegendEntry | None:
         if not label:
             return None
 
@@ -155,11 +158,11 @@ class StyleApplicator:
             raise ValueError(f"Unsupported computation operation: {operation}")
 
     def _resolve_component_styles(
-        self, plot_type: str, component: str, attrs: Set[str], phase: Phase = "plot"
-    ) -> Dict[str, Any]:
+        self, plot_type: str, component: str, attrs: set[str], phase: Phase = "plot"
+    ) -> dict[str, Any]:
         base_styles = self._get_base_theme_styles(phase)
         plot_styles = self._get_plot_specific_theme_styles(plot_type, phase)
-        group_styles = self._get_group_styles_for_component(plot_type, component, phase)
+        group_styles = self._get_group_styles_for_component(plot_type, component)
         component_kwargs = self._extract_component_kwargs(component, attrs, phase)
 
         return self._merge_style_precedence(
@@ -172,7 +175,7 @@ class StyleApplicator:
             component,
         )
 
-    def _get_base_theme_styles(self, phase: Phase) -> Dict[str, Any]:
+    def _get_base_theme_styles(self, phase: Phase) -> dict[str, Any]:
         base_styles = {}
         base_styles.update(self.theme.general_styles)
 
@@ -189,7 +192,7 @@ class StyleApplicator:
 
     def _get_plot_specific_theme_styles(
         self, plot_type: str, phase: Phase
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         plot_styles = {}
         plot_specific_themes = self._get_plot_specific_themes()
 
@@ -215,8 +218,8 @@ class StyleApplicator:
         attr: str,
         plot_type: str,
         component: str,
-        base_styles: Dict[str, Any],
-        group_styles: Dict[str, Any],
+        base_styles: dict[str, Any],
+        group_styles: dict[str, Any],
     ) -> Any:
         if attr == "s" and "size_mult" in group_styles and plot_type == "scatter":
             base_size = base_styles.get("marker_size", 50)
@@ -239,14 +242,14 @@ class StyleApplicator:
 
     def _merge_style_precedence(
         self,
-        base_styles: Dict[str, Any],
-        plot_styles: Dict[str, Any],
-        group_styles: Dict[str, Any],
-        component_kwargs: Dict[str, Any],
-        attrs: Set[str],
+        base_styles: dict[str, Any],
+        plot_styles: dict[str, Any],
+        group_styles: dict[str, Any],
+        component_kwargs: dict[str, Any],
+        attrs: set[str],
         plot_type: str,
         component: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         resolved_styles = {}
 
         for attr in attrs:
@@ -265,10 +268,9 @@ class StyleApplicator:
                 if default_value is not None:
                     resolved_styles[attr] = default_value
 
-        for key, value in component_kwargs.items():
-            if key not in attrs:
-                resolved_styles[key] = value
-
+        resolved_styles.update(
+            {key: val for key, val in component_kwargs.items() if key not in attrs}
+        )
         if "cmap" in resolved_styles and "c" not in resolved_styles:
             del resolved_styles["cmap"]
 
@@ -283,38 +285,38 @@ class StyleApplicator:
         )
 
     def _extract_component_kwargs(
-        self, component: str, attrs: Set[str], phase: Phase = "plot"
-    ) -> Dict[str, Any]:
+        self, component: str, attrs: set[str], phase: Phase = "plot"
+    ) -> dict[str, Any]:
         if component == "main":
             return self._extract_main_component_kwargs(attrs)
         else:
             return self._extract_prefixed_component_kwargs(component, attrs)
 
-    def _extract_main_component_kwargs(self, attrs: Set[str]) -> Dict[str, Any]:
+    def _extract_main_component_kwargs(self, attrs: set[str]) -> dict[str, Any]:
         axes_specific = {"title", "xlabel", "ylabel", "grid"}
         axes_prefixed = {
             k
-            for k in self.kwargs.keys()
+            for k in self.kwargs
             if any(k.startswith(f"{axis}_") for axis in axes_specific)
         }
 
-        extracted = {}
-        for k, v in self.kwargs.items():
-            if k in attrs and not self._is_reserved_kwarg(k):
-                extracted[k] = v
-            elif (
-                not self._is_reserved_kwarg(k)
-                and not k.endswith("_by")
+        def extract_k_why_unknown(k: str) -> bool:
+            if self._is_reserved_kwarg(k):
+                return False
+            if k in attrs:
+                return True
+            return (
+                not k.endswith("_by")
                 and k not in axes_specific
                 and k not in axes_prefixed
-            ):
-                extracted[k] = v
+            )
 
+        extracted = {k: v for k, v in self.kwargs.items() if extract_k_why_unknown(k)}
         return extracted
 
     def _extract_prefixed_component_kwargs(
-        self, component: str, attrs: Set[str]
-    ) -> Dict[str, Any]:
+        self, component: str, attrs: set[str]
+    ) -> dict[str, Any]:
         component_prefix = f"{component}_"
         extracted = {}
 
@@ -352,15 +354,15 @@ class StyleApplicator:
 
         if key in visual_channel_names and key in self.kwargs:
             value = self.kwargs[key]
-            if isinstance(value, str):
-                return True
-            return False
+            return bool(isinstance(value, str))
 
         return key in reserved
 
     def _get_group_styles_for_component(
-        self, plot_type: str, component: str, phase: Phase = "plot"
-    ) -> Dict[str, Any]:
+        self,
+        plot_type: str,
+        component: str,
+    ) -> dict[str, Any]:
         if not self.grouping_cfg or not self.group_values:
             return {}
 
@@ -369,7 +371,7 @@ class StyleApplicator:
             return {}
 
         if not self.style_engine:
-            from dr_plotter.plotters.style_engine import StyleEngine
+            from dr_plotter.style_engine import StyleEngine
 
             self.style_engine = StyleEngine(self.theme, self.figure_manager)
 
@@ -380,8 +382,6 @@ class StyleApplicator:
     def _get_component_schema(
         self, plot_type: str, phase: Phase = "plot"
     ) -> ComponentSchema:
-        from dr_plotter.plotters import BasePlotter
-
         plotter_cls = BasePlotter.get_plotter(plot_type)
         if plotter_cls and hasattr(plotter_cls, "component_schema"):
             return plotter_cls.component_schema.get(phase, {})
@@ -389,12 +389,16 @@ class StyleApplicator:
         plot_schemas = self._component_schemas.get(plot_type, {})
         if isinstance(plot_schemas, dict) and phase in plot_schemas:
             return plot_schemas[phase]
-        elif phase == "plot" and isinstance(plot_schemas, dict):
-            if "plot" not in plot_schemas and "main" in plot_schemas:
-                return plot_schemas
+        elif (
+            phase == "plot"
+            and isinstance(plot_schemas, dict)
+            and "plot" not in plot_schemas
+            and "main" in plot_schemas
+        ):
+            return plot_schemas
         return {"main": set()}
 
-    def _get_group_styled_components(self, plot_type: str) -> Set[str]:
+    def _get_group_styled_components(self, plot_type: str) -> set[str]:
         group_styled_map = {
             "scatter": {"main"},
             "line": {"main"},
@@ -407,7 +411,7 @@ class StyleApplicator:
         }
         return group_styled_map.get(plot_type, {"main"})
 
-    def _get_plot_specific_themes(self) -> Dict[str, Theme]:
+    def _get_plot_specific_themes(self) -> dict[str, Theme]:
         return {
             "line": LINE_THEME,
             "scatter": SCATTER_THEME,
@@ -419,5 +423,5 @@ class StyleApplicator:
             "contour": CONTOUR_THEME,
         }
 
-    def _load_component_schemas(self) -> Dict[str, Dict[Phase, ComponentSchema]]:
+    def _load_component_schemas(self) -> dict[str, dict[Phase, ComponentSchema]]:
         return {}

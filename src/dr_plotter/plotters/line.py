@@ -1,24 +1,32 @@
-from typing import Any, Dict, List, Optional, Set
+from __future__ import annotations
+
+from typing import Any, ClassVar
 
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter import consts
-from dr_plotter.configs.grouping_config import GroupingConfig
+from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import LINE_THEME, Theme
-from dr_plotter.types import VisualChannel, Phase, ComponentSchema
+from dr_plotter.types import ComponentSchema, Phase, VisualChannel
 
 from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
 
 
 class LinePlotter(BasePlotter):
     plotter_name: str = "line"
-    plotter_params: List[str] = []
-    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = {"hue", "style", "size", "marker", "alpha"}
-    default_theme: Theme = LINE_THEME
+    plotter_params: ClassVar[list[str]] = []
+    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
+    enabled_channels: ClassVar[set[VisualChannel]] = {
+        "hue",
+        "style",
+        "size",
+        "marker",
+        "alpha",
+    }
+    default_theme: ClassVar[Theme] = LINE_THEME
 
-    component_schema: Dict[Phase, ComponentSchema] = {
+    component_schema: ClassVar[dict[Phase, ComponentSchema]] = {
         "plot": {
             "main": {
                 "color",
@@ -42,8 +50,8 @@ class LinePlotter(BasePlotter):
         self,
         data: pd.DataFrame,
         grouping_cfg: GroupingConfig,
-        theme: Optional[Theme] = None,
-        figure_manager: Optional[Any] = None,
+        theme: Theme | None = None,
+        figure_manager: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
@@ -57,7 +65,7 @@ class LinePlotter(BasePlotter):
 
         self._apply_post_processing(lines, label)
 
-    def _apply_post_processing(self, lines: Any, label: Optional[str] = None) -> None:
+    def _apply_post_processing(self, lines: Any, label: str | None = None) -> None:
         if not self._should_create_legend():
             self._apply_styling(self.current_axis)
             return

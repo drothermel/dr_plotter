@@ -3,11 +3,14 @@ Example 11: Bar Plot Showcase - All bar plot features.
 Demonstrates single and grouped bar plots.
 """
 
-from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
-from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
+from typing import Any
+
 from plot_data import ExampleData
+
+from dr_plotter.configs import PlotConfig
+from dr_plotter.figure_manager import FigureManager
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import inspect_plot_properties, verify_plot
 
 EXPECTED_CHANNELS = {
     (0, 0): [],
@@ -25,7 +28,7 @@ EXPECTED_CHANNELS = {
         (0, 1): {"hue": 2},
     },
 )
-def main(args):
+def main(args: Any) -> Any:
     with FigureManager(
         PlotConfig(
             layout={

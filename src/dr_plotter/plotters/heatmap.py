@@ -1,31 +1,33 @@
-from typing import Any, Dict, List, Set, Optional
+from __future__ import annotations
+
+from typing import Any, ClassVar
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from dr_plotter import consts
+from dr_plotter.configs import GroupingConfig
 from dr_plotter.plotters.base import (
     BasePlotter,
     BasePlotterParamName,
     SubPlotterParamName,
 )
 from dr_plotter.theme import HEATMAP_THEME, Theme
-from dr_plotter.types import VisualChannel, Phase, ComponentSchema
-from dr_plotter.configs.grouping_config import GroupingConfig
+from dr_plotter.types import ComponentSchema, Phase, VisualChannel
 
 
 class HeatmapPlotter(BasePlotter):
     plotter_name: str = "heatmap"
-    plotter_params: List[str] = ["values", "annot"]
-    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = set()
-    default_theme: Theme = HEATMAP_THEME
+    plotter_params: ClassVar[list[str]] = ["values", "annot"]
+    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
+    enabled_channels: ClassVar[set[VisualChannel]] = set()
+    default_theme: ClassVar[Theme] = HEATMAP_THEME
     supports_legend: bool = False
     supports_grouped: bool = False
 
-    component_schema: Dict[Phase, ComponentSchema] = {
+    component_schema: ClassVar[dict[Phase, ComponentSchema]] = {
         "plot": {
             "main": {
                 "cmap",
@@ -59,8 +61,8 @@ class HeatmapPlotter(BasePlotter):
         self,
         data: pd.DataFrame,
         grouping_cfg: GroupingConfig,
-        theme: Optional[Theme] = None,
-        figure_manager: Optional[Any] = None,
+        theme: Theme | None = None,
+        figure_manager: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
@@ -75,7 +77,7 @@ class HeatmapPlotter(BasePlotter):
         )
 
     def _plot_specific_data_prep(self) -> None:
-        plot_data = self.plot_data.pivot(
+        plot_data = self.plot_data.pivot_table(
             index=consts.Y_COL_NAME,
             columns=consts.X_COL_NAME,
             values=self.values,
@@ -103,7 +105,7 @@ class HeatmapPlotter(BasePlotter):
         self._apply_styling(ax)
 
     def _style_colorbar(
-        self, colorbar_info: Dict[str, Any], styles: Dict[str, Any]
+        self, colorbar_info: dict[str, Any], styles: dict[str, Any]
     ) -> None:
         plot_object = colorbar_info["plot_object"]
         ax = colorbar_info["ax"]
@@ -127,7 +129,7 @@ class HeatmapPlotter(BasePlotter):
                 color=styles.get("color", self.theme.get("label_color")),
             )
 
-    def _style_ticks(self, ax: Any, styles: Dict[str, Any]) -> None:
+    def _style_ticks(self, ax: Any, styles: dict[str, Any]) -> None:
         data = self.plot_data
 
         ax.set_xticks(np.arange(len(data.columns)))
@@ -147,7 +149,7 @@ class HeatmapPlotter(BasePlotter):
                 ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor"
             )
 
-    def _style_cell_text(self, ax: Any, styles: Dict[str, Any]) -> None:
+    def _style_cell_text(self, ax: Any, styles: dict[str, Any]) -> None:
         if not styles.get("visible", True):
             return
 

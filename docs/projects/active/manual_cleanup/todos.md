@@ -6,6 +6,29 @@
 - It might make more sense for targetting to be functional not facet-config bound
 - How many of the functions in BasePlotter are actually used?
 
+## Digging Into Plotters Specifically
+- Base
+  - A bunch of the grouping functions have unused params which makes me think that they probably either aren't cleaned up or they aren't working correctly
+  - _resolve_group_plot_kwargs calls self.style_engine._get_continuous_style directly which is a private member access that we almost certainly don't want.
+- Scatter
+  - Also calling _get_continuous_style which is private member function
+  - More concerning: _create_channel_specific_proxy recieves the channel but doesn't use it??
+- Bump Plot
+  - for some reason we're setting ax._bump_configured directly if the ax doesn't have this attr but this seems like the wrong choice?  it also makes a lint for pirvate member accessed.  Did we add this or is this actually a matplotlib thing??
+  - the _draw function takes data but then uses self.trajectory_data instead which creates a lint but is probably correct so whats the best way to handle this.
+  - the category styling calls self.theme.get('base_colors') directly which shouldn't happen.  and the linestyle is hardcoded with a manual style = {} definition which is then accessed instead of a call to self.styler.get_style()
+- Heatmap
+  - _style_ticks gets passed styles but then doesn't use them
+
+## Style Applicator & General Styling
+- PositioningCalculator has a _calculate_figure_legend_position() that takes manual_overrides BUT THEN DOESNT USE THEM!!!
+- Generally, PositioningCalculator isn't really fully implemented
+- so many hardcoded things and confusing ensted ifs
+- removed hint modifiers from positioning calculator because they weren't implemented and so lets just not do that.
+
+## Figure Manager
+- Still needs alot of manual stepthrough
+
 ## Theme-to-Matplotlib Parameter Flow Issue
 
 ### Problem Discovered

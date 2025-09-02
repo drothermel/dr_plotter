@@ -1,7 +1,9 @@
-from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from __future__ import annotations
 
-from dr_plotter.configs.positioning_config import PositioningConfig
+from dataclasses import dataclass
+from typing import Any
+
+from dr_plotter.configs import PositioningConfig
 
 
 @dataclass
@@ -24,48 +26,44 @@ class LegendMetadata:
 
 @dataclass
 class PositioningResult:
-    legend_positions: Dict[int, Tuple[float, float]]
-    layout_rect: Optional[Tuple[float, float, float, float]] = None
+    legend_positions: dict[int, tuple[float, float]]
+    layout_rect: tuple[float, float, float, float] | None = None
     tight_layout_pad: float = 0.5
-    margin_adjustments: Optional[Dict[str, float]] = None
+    margin_adjustments: dict[str, float] | None = None
 
 
 class PositioningCalculator:
-    def __init__(self, config: Optional[PositioningConfig] = None) -> None:
+    def __init__(self, config: PositioningConfig | None = None) -> None:
         self.config = config or PositioningConfig()
 
     def calculate_positions(
         self,
         figure_dimensions: FigureDimensions,
         legend_metadata: LegendMetadata,
-        manual_overrides: Optional[Dict[str, Any]] = None,
-        layout_hint: Optional[str] = None,
+        manual_overrides: dict[str, Any] | None = None,
     ) -> PositioningResult:
         return self._resolve_positioning_hierarchy(
-            figure_dimensions, legend_metadata, manual_overrides or {}, layout_hint
+            figure_dimensions, legend_metadata, manual_overrides or {}
         )
 
     def _resolve_positioning_hierarchy(
         self,
         figure_dimensions: FigureDimensions,
         legend_metadata: LegendMetadata,
-        manual_overrides: Dict[str, Any],
-        layout_hint: Optional[str] = None,
+        manual_overrides: dict[str, Any],
     ) -> PositioningResult:
         if "bbox_to_anchor" in manual_overrides:
             return self._handle_manual_positioning(manual_overrides, figure_dimensions)
 
         if legend_metadata.strategy in ["grouped_by_channel", "figure_below"]:
             return self._calculate_figure_legend_positions(
-                figure_dimensions, legend_metadata, manual_overrides, layout_hint
+                figure_dimensions, legend_metadata, manual_overrides
             )
 
-        return self._calculate_default_positioning(
-            figure_dimensions, legend_metadata, layout_hint
-        )
+        return self._calculate_default_positioning(figure_dimensions, legend_metadata)
 
     def _handle_manual_positioning(
-        self, manual_overrides: Dict[str, Any], figure_dimensions: FigureDimensions
+        self, manual_overrides: dict[str, Any], figure_dimensions: FigureDimensions
     ) -> PositioningResult:
         bbox = manual_overrides["bbox_to_anchor"]
         return PositioningResult(
@@ -78,8 +76,7 @@ class PositioningCalculator:
         self,
         figure_dimensions: FigureDimensions,
         legend_metadata: LegendMetadata,
-        manual_overrides: Dict[str, Any],
-        layout_hint: Optional[str] = None,
+        manual_overrides: dict[str, Any],
     ) -> PositioningResult:
         num_legends = legend_metadata.num_legends
 
@@ -89,12 +86,6 @@ class PositioningCalculator:
                 num_legends, legend_index, figure_dimensions.width
             )
             positions[legend_index] = (x, y)
-
-        if layout_hint:
-            hint_modifiers = self.process_layout_hint(
-                layout_hint, figure_dimensions, legend_metadata
-            )
-            positions = self._apply_hint_modifiers(positions, hint_modifiers)
 
         layout_rect = self._calculate_layout_rect_with_legends(figure_dimensions)
 
@@ -110,14 +101,14 @@ class PositioningCalculator:
 
     def _calculate_systematic_position(
         self, num_legends: int, legend_index: int, figure_width: float
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
+        pos_configs = {
+            1: self.config.legend_alignment_center,
+            2: self.config.two_legend_positions[legend_index],
+        }
         y_position = self.config.legend_y_offset_factor
-
-        if num_legends == 1:
-            return (self.config.legend_alignment_center, y_position)
-
-        if num_legends == 2:
-            return (self.config.two_legend_positions[legend_index], y_position)
+        if num_legends > 0 and num_legends <= max(pos_configs.keys()):
+            return (pos_configs[num_legends], y_position)
 
         spacing, start_x = self._calculate_multi_legend_layout(
             num_legends, figure_width
@@ -128,7 +119,7 @@ class PositioningCalculator:
 
     def _calculate_multi_legend_layout(
         self, num_legends: int, figure_width: float
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         if figure_width >= self.config.wide_figure_threshold:
             max_spacing = self.config.wide_spacing_max
             span_factor = self.config.wide_span_factor
@@ -151,19 +142,19 @@ class PositioningCalculator:
 
     def calculate_layout_rect(
         self, figure_dimensions: FigureDimensions
-    ) -> Optional[Tuple[float, float, float, float]]:
+    ) -> tuple[float, float, float, float] | None:
         return self._calculate_layout_rect(figure_dimensions)
 
     def _calculate_layout_rect(
         self, figure_dimensions: FigureDimensions
-    ) -> Optional[Tuple[float, float, float, float]]:
+    ) -> tuple[float, float, float, float] | None:
         if figure_dimensions.has_title or figure_dimensions.has_subplot_titles:
             return (0.0, 0.0, 1.0, self.config.title_space_factor)
         return None
 
     def _calculate_layout_rect_with_legends(
         self, figure_dimensions: FigureDimensions
-    ) -> Tuple[float, float, float, float]:
+    ) -> tuple[float, float, float, float]:
         return (
             self.config.default_margin_left,
             self.config.default_margin_bottom,
@@ -175,7 +166,6 @@ class PositioningCalculator:
         self,
         figure_dimensions: FigureDimensions,
         legend_metadata: LegendMetadata,
-        layout_hint: Optional[str] = None,
     ) -> PositioningResult:
         positions = {
             0: (
@@ -184,88 +174,8 @@ class PositioningCalculator:
             )
         }
 
-        if layout_hint:
-            hint_modifiers = self.process_layout_hint(
-                layout_hint, figure_dimensions, legend_metadata
-            )
-            positions = self._apply_hint_modifiers(positions, hint_modifiers)
-
         return PositioningResult(
             legend_positions=positions,
             layout_rect=self._calculate_layout_rect(figure_dimensions),
             tight_layout_pad=self.config.tight_layout_pad,
         )
-
-    def process_layout_hint(
-        self,
-        hint: str,
-        figure_dimensions: FigureDimensions,
-        legend_metadata: LegendMetadata,
-    ) -> Dict[str, Any]:
-        hint_modifiers = {
-            "below": self._calculate_below_hint_modifiers,
-            "side": self._calculate_side_hint_modifiers,
-            "compact": self._calculate_compact_hint_modifiers,
-            "spacious": self._calculate_spacious_hint_modifiers,
-        }
-
-        assert hint in hint_modifiers, (
-            f"Invalid layout_hint '{hint}'. Valid options: {list(hint_modifiers.keys())}"
-        )
-
-        modifier_func = hint_modifiers[hint]
-        return modifier_func(figure_dimensions, legend_metadata)
-
-    def _apply_hint_modifiers(
-        self, positions: Dict[int, Tuple[float, float]], modifiers: Dict[str, Any]
-    ) -> Dict[int, Tuple[float, float]]:
-        modified_positions = {}
-        for legend_index, (x, y) in positions.items():
-            new_x = x + modifiers.get("x_offset", 0)
-            new_y = y + modifiers.get("y_offset", 0)
-
-            if "x_position" in modifiers:
-                new_x = modifiers["x_position"]
-            if "y_position" in modifiers:
-                new_y = modifiers["y_position"]
-
-            modified_positions[legend_index] = (new_x, new_y)
-        return modified_positions
-
-    def _calculate_below_hint_modifiers(
-        self, figure_dimensions: FigureDimensions, legend_metadata: LegendMetadata
-    ) -> Dict[str, Any]:
-        return {
-            "y_position": 0.05,
-            "x_position": 0.5,
-        }
-
-    def _calculate_side_hint_modifiers(
-        self, figure_dimensions: FigureDimensions, legend_metadata: LegendMetadata
-    ) -> Dict[str, Any]:
-        side_x_position = 1.02
-        if figure_dimensions.width < 8:
-            side_x_position = 1.05
-        elif figure_dimensions.width > 16:
-            side_x_position = 1.01
-
-        return {
-            "x_position": side_x_position,
-            "y_position": 0.5,
-        }
-
-    def _calculate_compact_hint_modifiers(
-        self, figure_dimensions: FigureDimensions, legend_metadata: LegendMetadata
-    ) -> Dict[str, Any]:
-        return {
-            "y_offset": -0.02,
-            "x_offset": 0.0,
-        }
-
-    def _calculate_spacious_hint_modifiers(
-        self, figure_dimensions: FigureDimensions, legend_metadata: LegendMetadata
-    ) -> Dict[str, Any]:
-        return {
-            "y_offset": 0.03,
-            "x_offset": 0.0,
-        }

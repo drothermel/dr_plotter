@@ -112,7 +112,7 @@ max_col: int = 4                       # Auto-column calculation limit
 **Plotter Integration Pattern**:
 ```python
 # All plotters follow this pattern
-entry = self.style_applicator.create_legend_entry(
+entry = self.styler.create_legend_entry(
     artist=artist, 
     label=label,
     explicit_channel="hue"  # or "marker", "linestyle"

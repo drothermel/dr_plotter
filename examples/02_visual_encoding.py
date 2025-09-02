@@ -1,14 +1,15 @@
-"""
-Example 2: Visual Encoding - Color, marker, and style encoding systems.
-Demonstrates hue_by, marker_by, and other visual encoding parameters.
-"""
+from typing import Any
 
-from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
-from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.verif_decorators import verify_plot, inspect_plot_properties
 from plot_data import ExampleData
 
+from dr_plotter.configs import PlotConfig
+from dr_plotter.figure_manager import FigureManager
+from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
+from dr_plotter.scripting.verif_decorators import inspect_plot_properties, verify_plot
+
+EXPECTED_GROUP_COUNT_COLOR = 3
+EXPECTED_GROUP_COUNT_CATEGORICAL = 2
+EXPECTED_GROUP_COUNT_STYLE = 4
 
 EXPECTED_CHANNELS = {
     (0, 0): ["hue"],
@@ -29,7 +30,7 @@ EXPECTED_CHANNELS = {
         (1, 1): {"hue": 4, "style": 4},
     },
 )
-def main(args):
+def main(args: Any) -> Any:
     with FigureManager(
         PlotConfig(
             layout={
@@ -53,7 +54,7 @@ def main(args):
         assert "time" in color_data.columns
         assert "value" in color_data.columns
         assert "group" in color_data.columns
-        assert len(color_data.groupby("group")) == 3
+        assert len(color_data.groupby("group")) == EXPECTED_GROUP_COUNT_COLOR
 
         fm.plot(
             "scatter",
@@ -96,7 +97,9 @@ def main(args):
         assert "category" in categorical_data.columns
         assert "value" in categorical_data.columns
         assert "group" in categorical_data.columns
-        assert len(categorical_data.groupby("group")) == 2
+        assert (
+            len(categorical_data.groupby("group")) == EXPECTED_GROUP_COUNT_CATEGORICAL
+        )
 
         fm.plot(
             "violin",
@@ -115,7 +118,7 @@ def main(args):
         assert "time" in style_data.columns
         assert "value" in style_data.columns
         assert "group" in style_data.columns
-        assert len(style_data.groupby("group")) == 4
+        assert len(style_data.groupby("group")) == EXPECTED_GROUP_COUNT_STYLE
 
         fm.plot(
             "line",

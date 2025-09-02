@@ -1,13 +1,16 @@
-from typing import List, Dict, Optional, Tuple
+from __future__ import annotations
+
 import argparse
 import sys
 import time
-import os
-import pandas as pd
-import matplotlib.pyplot as plt
+
 import datadec.constants
+import matplotlib.pyplot as plt
+import pandas as pd
+from pandas.io.common import Path
+
+from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager
-from dr_plotter.plot_config import PlotConfig
 from dr_plotter.scripting.datadec_utils import get_datadec_functions
 
 DataDecide, select_params, select_data = get_datadec_functions()
@@ -121,7 +124,7 @@ OLMES_PERFORMANCE_RECIPE_CHUNKS = {
 }
 
 
-def get_available_data_info() -> Tuple[List[str], List[str], List[str], List[str]]:
+def get_available_data_info() -> tuple[list[str], list[str], list[str], list[str]]:
     dd = DataDecide()
     df = dd.full_eval
     available_recipes = sorted(df["data"].unique())
@@ -157,9 +160,9 @@ def load_and_prepare_data(include_seeds: bool = False) -> pd.DataFrame:
 
 def prepare_systematic_data(
     df: pd.DataFrame,
-    target_recipes: List[str],
-    model_sizes: List[str],
-    target_metrics: List[str],
+    target_recipes: list[str],
+    model_sizes: list[str],
+    target_metrics: list[str],
     include_seeds: bool = False,
 ) -> pd.DataFrame:
     filtered_df = df[
@@ -192,7 +195,7 @@ def prepare_systematic_data(
     return melted_df.sort_values(["metric", "data", "params", "step"])
 
 
-def create_metric_labels(metrics: List[str]) -> Dict[str, str]:
+def create_metric_labels(metrics: list[str]) -> dict[str, str]:
     labels = {}
     for metric in metrics:
         if "pile-valppl" in metric:
@@ -218,8 +221,8 @@ def create_metric_labels(metrics: List[str]) -> Dict[str, str]:
 
 def create_single_metric_plots(
     metric_name: str,
-    target_recipes: List[str],
-    model_sizes: List[str],
+    target_recipes: list[str],
+    model_sizes: list[str],
     output_dir: str = "plots/systematic",
     mean_and_seeds: bool = True,
     show_plots: bool = True,
@@ -266,7 +269,8 @@ def create_single_metric_plots(
         )
     ) as fm:
         fm.fig.suptitle(
-            f"{metric_labels[metric_name]}: {len(target_recipes)} Recipes × {len(model_sizes)} Model Sizes",
+            f"{metric_labels[metric_name]}: "
+            f"{len(target_recipes)} Recipes × {len(model_sizes)} Model Sizes",
             fontsize=16,
             y=0.95,
         )
@@ -333,7 +337,7 @@ def create_single_metric_plots(
             ax.set_title(f"{model_sizes[col_idx]} Parameters", pad=10)
 
             ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
-            ax.grid(True, alpha=0.3)
+            ax.grid(visible=True, alpha=0.3)
 
         # Explicitly finalize legends before context exit to ensure proper rendering
         fm.finalize_legends()
@@ -359,10 +363,10 @@ def create_single_metric_plots(
 
 
 def create_ppl_group_plots(
-    target_recipes: List[str],
-    model_sizes: List[str],
+    target_recipes: list[str],
+    model_sizes: list[str],
     output_dir: str = "plots/systematic",
-    ppl_metrics: Optional[List[str]] = None,
+    ppl_metrics: list[str] | None = None,
     show_plots: bool = True,
 ) -> None:
     print("Creating PPL group plots...")
@@ -413,7 +417,8 @@ def create_ppl_group_plots(
         )
     ) as fm:
         fm.fig.suptitle(
-            f"Perplexity Metrics: {len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
+            f"Perplexity Metrics: "
+            f"{len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
             fontsize=16,
             y=0.96,
         )
@@ -448,7 +453,7 @@ def create_ppl_group_plots(
                     ax.set_title(target_recipes[col_idx], pad=10)
 
                 ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
-                ax.grid(True, alpha=0.3)
+                ax.grid(visible=True, alpha=0.3)
 
     output_path = get_nested_output_path(
         "grouped_metrics", "ppl_groups", "ppl_group_metrics.png", output_dir
@@ -465,10 +470,10 @@ def create_ppl_group_plots(
 
 
 def create_olmes_group_plots(
-    target_recipes: List[str],
-    model_sizes: List[str],
+    target_recipes: list[str],
+    model_sizes: list[str],
     output_dir: str = "plots/systematic",
-    olmes_metrics: Optional[List[str]] = None,
+    olmes_metrics: list[str] | None = None,
     show_plots: bool = True,
 ) -> None:
     print("Creating OLMES group plots...")
@@ -523,7 +528,8 @@ def create_olmes_group_plots(
         )
     ) as fm:
         fm.fig.suptitle(
-            f"OLMES Task Metrics: {len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
+            f"OLMES Task Metrics: "
+            f"{len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
             fontsize=16,
             y=0.96,
         )
@@ -558,7 +564,7 @@ def create_olmes_group_plots(
                     ax.set_title(target_recipes[col_idx], pad=10)
 
                 ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
-                ax.grid(True, alpha=0.3)
+                ax.grid(visible=True, alpha=0.3)
 
     output_path = get_nested_output_path(
         "grouped_metrics", "olmes_groups", "olmes_group_metrics.png", output_dir
@@ -577,14 +583,14 @@ def create_olmes_group_plots(
 def get_nested_output_path(
     plot_type: str, subtype: str, filename: str, base_dir: str = "plots/systematic"
 ) -> str:
-    nested_dir = os.path.join(base_dir, plot_type, subtype)
-    os.makedirs(nested_dir, exist_ok=True)
-    return os.path.join(nested_dir, filename)
+    nested_dir = Path(base_dir) / plot_type / subtype
+    nested_dir.mkdir(parents=True, exist_ok=True)
+    return str(nested_dir / filename)
 
 
-def create_recipe_family_chunk_plots(
+def create_recipe_family_chunk_plots(  # noqa: C901, PLR0912
     family_name: str,
-    model_sizes: List[str],
+    model_sizes: list[str],
     output_dir: str = "plots/systematic",
     chunk_source: str = "custom",
     show_plots: bool = True,
@@ -607,7 +613,8 @@ def create_recipe_family_chunk_plots(
         if family_name not in OLMES_PERFORMANCE_RECIPE_CHUNKS:
             print(f"Error: OLMES performance chunk '{family_name}' not found")
             print(
-                f"Available OLMES chunks: {list(OLMES_PERFORMANCE_RECIPE_CHUNKS.keys())}"
+                f"Available OLMES chunks: "
+                f"{list(OLMES_PERFORMANCE_RECIPE_CHUNKS.keys())}"
             )
             return
         target_recipes = OLMES_PERFORMANCE_RECIPE_CHUNKS[family_name]
@@ -666,7 +673,8 @@ def create_recipe_family_chunk_plots(
         )
     ) as fm:
         fm.fig.suptitle(
-            f"Recipe Family '{family_name}': {len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
+            f"Recipe Family '{family_name}': "
+            f"{len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
             fontsize=16,
             y=0.96,
         )
@@ -705,7 +713,7 @@ def create_recipe_family_chunk_plots(
                     ax.set_title(short_name, pad=10, fontsize=10)
 
                 ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
-                ax.grid(True, alpha=0.3)
+                ax.grid(visible=True, alpha=0.3)
 
     if chunk_source == "custom":
         subtype = "custom_families"
@@ -729,7 +737,7 @@ def create_recipe_family_chunk_plots(
 
 def create_size_chunk_plots(
     chunk_idx: int,
-    target_recipes: List[str],
+    target_recipes: list[str],
     chunk_size: int = 4,
     output_dir: str = "plots/systematic",
     show_plots: bool = True,
@@ -787,7 +795,8 @@ def create_size_chunk_plots(
         )
     ) as fm:
         fm.fig.suptitle(
-            f"Model Size Chunk {chunk_idx}: {len(selected_metrics)} Metrics × {len(size_chunk)} Sizes",
+            f"Model Size Chunk {chunk_idx}: "
+            f"{len(selected_metrics)} Metrics × {len(size_chunk)} Sizes",
             fontsize=16,
             y=0.96,
         )
@@ -823,9 +832,10 @@ def create_size_chunk_plots(
                     ax.set_title(f"{size_chunk[col_idx]} Parameters", pad=10)
 
                 ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
-                ax.grid(True, alpha=0.3)
+                ax.grid(visible=True, alpha=0.3)
 
-    os.makedirs(output_dir, exist_ok=True)
+    nested_dir = Path(output_dir) / f"size_chunk_{chunk_idx}"
+    nested_dir.mkdir(parents=True, exist_ok=True)
     output_path = f"{output_dir}/size_chunk_{chunk_idx}.png"
 
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
@@ -859,7 +869,8 @@ def create_arg_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--metric",
-        help="Specific metric for single metric plots (e.g., pile-valppl, mmlu_average_acc_raw)",
+        help="Specific metric for single metric plots "
+        "(e.g., pile-valppl, mmlu_average_acc_raw)",
     )
 
     parser.add_argument(
@@ -913,7 +924,7 @@ def create_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
+def main() -> None:  # noqa: C901
     parser = create_arg_parser()
     args = parser.parse_args()
 
@@ -929,15 +940,11 @@ def main() -> None:
         for size in available_sizes:
             print(f"  - {size}")
         print(f"\nAvailable PPL metrics ({len(ppl_metrics)}):")
-        for metric in ppl_metrics[:10]:
+        for metric in ppl_metrics:
             print(f"  - {metric}")
-        if len(ppl_metrics) > 10:
-            print(f"  ... and {len(ppl_metrics) - 10} more")
         print(f"\nAvailable OLMES metrics ({len(olmes_metrics)}):")
-        for metric in olmes_metrics[:10]:
+        for metric in olmes_metrics:
             print(f"  - {metric}")
-        if len(olmes_metrics) > 10:
-            print(f"  ... and {len(olmes_metrics) - 10} more")
 
         print("\nCustom Recipe Families:")
         for family_name in CUSTOM_RECIPE_FAMILIES:
