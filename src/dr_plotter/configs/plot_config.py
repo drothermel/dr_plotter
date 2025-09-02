@@ -5,7 +5,9 @@ from typing import Any
 
 from dr_plotter.configs.figure_config import FigureConfig
 from dr_plotter.configs.legend_config import LegendConfig
-from dr_plotter.theme import Theme
+from dr_plotter.legend_manager import resolve_legend_config
+from dr_plotter.plot_presets import PLOT_CONFIGS
+from dr_plotter.theme import BAR_THEME, BASE_THEME, LINE_THEME, SCATTER_THEME, Theme
 from dr_plotter.types import ColorPalette
 
 
@@ -38,8 +40,6 @@ class PlotConfig:
 
     @classmethod
     def from_preset(cls, preset_name: str) -> PlotConfig:
-        from dr_plotter.plot_presets import PLOT_CONFIGS
-
         assert preset_name in PLOT_CONFIGS, (
             f"Unknown preset: {preset_name}. Available: {list(PLOT_CONFIGS.keys())}"
         )
@@ -110,8 +110,6 @@ class PlotConfig:
             return self.legend
 
         if isinstance(self.legend, str):
-            from dr_plotter.legend_manager import resolve_legend_config
-
             return resolve_legend_config(self.legend)
 
         assert isinstance(self.legend, dict), (
@@ -136,8 +134,6 @@ class PlotConfig:
 
         if isinstance(style_config.theme, Theme):
             return style_config.theme
-
-        from dr_plotter.theme import BAR_THEME, BASE_THEME, LINE_THEME, SCATTER_THEME
 
         theme_map = {
             "base": BASE_THEME,
