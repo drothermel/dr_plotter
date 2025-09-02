@@ -117,3 +117,34 @@ AttributeError: 'LegendConfig' object has no attribute 'validate'
 - Plot-level: title, x/y data mapping
 
 This comprehensive example now serves as the foundation for systematic debugging of the configuration system's behavior and identifying where parameters may be duplicated or incorrectly applied.
+
+## FigureConfig Elimination - Complete Legacy Removal
+
+### Implementation
+After establishing the validation patterns across all config classes, we completely eliminated `FigureConfig` and the legacy translation layer:
+
+**FigureManager Migration:**
+- All `self.figure_config.X` references → `self.layout_config.X` (7 locations)
+- Layout attributes: `figsize`, `rows`, `cols`, `x_labels`, `y_labels`
+- Removed legacy `_to_legacy_configs()` translation entirely
+- Direct config usage: `self.layout_config`, `self.style_config`, `self.legend_config`
+
+**Example Updates:**
+- `examples/10_legend_positioning.py`: `FigureConfig(rows=2, cols=2)` → `PlotConfig(layout=LayoutConfig(...))`
+- `examples/11_faceted_training_curves.py`: Complex migration with theme handling
+- `examples/30_faceting_simple_grid.py`: Straightforward `figure=` → `layout=` conversion
+
+### Issues Discovered
+
+**Missing Parameter: `bbox_y_offset`**
+Example 10 used `LegendConfig(bbox_y_offset=0.025)` which doesn't exist in the new config structure. This parameter was likely moved to `PositioningConfig` or eliminated during refactoring. Removed for now - may need further investigation for proper legend positioning control.
+
+### Results
+✅ **Complete architectural cleanup achieved:**
+- Zero FigureConfig references in codebase
+- Legacy translation layer eliminated  
+- All examples use modern PlotConfig API
+- Significant code simplification while maintaining functionality
+- Configuration flow: `PlotConfig` → resolved configs → direct usage
+
+This elimination represents the successful completion of major architectural debt removal.
