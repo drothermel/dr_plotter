@@ -81,10 +81,7 @@ class HeatmapPlotter(BasePlotter):
         self.plot_data = plot_data.fillna(0)
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
-        if "cmap" not in kwargs:
-            kwargs["cmap"] = self.styler.get_style("cmap")
-
-        im = ax.imshow(data, **self._filtered_plot_kwargs)
+        im = ax.imshow(data, **self._build_plot_args())
 
         artists = {
             "colorbar": {

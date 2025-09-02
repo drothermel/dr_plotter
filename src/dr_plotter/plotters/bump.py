@@ -74,7 +74,7 @@ class BumpPlotter(BasePlotter):
                 "linestyle": "-",
             }
 
-            style = self._get_category_style(category, i, len(categories))
+            # Use the hardcoded style for now (this will be replaced with proper styler calls later)
             cat_data["_bump_color"] = style["color"]
             cat_data["_bump_linestyle"] = style.get("linestyle", "-")
             cat_data["_bump_label"] = str(category)
@@ -84,12 +84,17 @@ class BumpPlotter(BasePlotter):
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         for traj_data in self.trajectory_data:
             if not traj_data.empty:
+                plot_args = self._build_plot_args()
+                plot_args.update(
+                    {
+                        "color": traj_data["_bump_color"].iloc[0],
+                        "linestyle": traj_data["_bump_linestyle"].iloc[0],
+                    }
+                )
                 lines = ax.plot(
                     traj_data[self.time_col],
                     traj_data[self.value_col],
-                    color=traj_data["_bump_color"].iloc[0],
-                    linestyle=traj_data["_bump_linestyle"].iloc[0],
-                    **self._filtered_plot_kwargs,
+                    **plot_args,
                 )
 
                 last_point = traj_data.iloc[-1]
