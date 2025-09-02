@@ -117,7 +117,8 @@ class ChannelVariationRule(BaseVerificationRule):
         else:
             result["message"] = (
                 f"{channel.title()} variation: "
-                f"FAIL (only {len(unique_values)} unique values, expected ≥{min_unique_threshold})"
+                f"FAIL (only {len(unique_values)} unique values, "
+                f"expected ≥{min_unique_threshold})"
             )
 
             if len(unique_values) == 1:
@@ -246,7 +247,8 @@ class ConsistencyCheckRule(BaseVerificationRule):
         if expected_unique_markers and len(plot_unique) != expected_unique_markers:
             result["passed"] = False
             result["message"] = (
-                f"Expected {expected_unique_markers} unique markers in plot, found {len(plot_unique)}"
+                f"Expected {expected_unique_markers} unique markers in plot, "
+                f"found {len(plot_unique)}"
             )
             return result
 
@@ -415,7 +417,8 @@ class ConsistencyCheckRule(BaseVerificationRule):
         if expected_unique_styles and len(plot_unique) != expected_unique_styles:
             result["passed"] = False
             result["message"] = (
-                f"Expected {expected_unique_styles} unique styles in plot, found {len(plot_unique)}"
+                f"Expected {expected_unique_styles} unique styles in plot, "
+                f"found {len(plot_unique)}"
             )
             return result
 
@@ -681,7 +684,8 @@ class FigureLegendStrategyRule(BaseVerificationRule):
             else:
                 entries_check["message"] = (
                     f"Entry count: "
-                    f"FAIL (expected {expected_total_entries}, got {legend['entry_count']})"
+                    f"FAIL (expected {expected_total_entries}, "
+                    f"got {legend['entry_count']})"
                 )
                 result["passed"] = False
 
@@ -717,10 +721,10 @@ class FigureLegendStrategyRule(BaseVerificationRule):
             result["message"] = "Cannot verify split legends - wrong legend count"
             return result
 
-        found_channels = []
-        for legend in figure_props["legends"]:
-            if legend["title"]:
-                found_channels.append(legend["title"].lower())
+        found_channels = [
+            legend["title"].lower() for legend in figure_props["legends"]
+            if legend["title"]
+        ]
 
         if expected_channels:
             expected_set = {ch.lower() for ch in expected_channels}
@@ -762,7 +766,8 @@ class FigureLegendStrategyRule(BaseVerificationRule):
                         f"PASS ({expected_entries})"
                         if legend["entry_count"] == expected_entries
                         else f"{channel.title()} entries: "
-                        f"FAIL (expected {expected_entries}, got {legend['entry_count']})",
+                        f"FAIL (expected {expected_entries}, "
+                        f"got {legend['entry_count']})",
                     }
 
                     result["checks"][f"{channel}_entries"] = entries_check

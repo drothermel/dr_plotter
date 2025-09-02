@@ -15,6 +15,9 @@ RGB_CHANNEL_COUNT = 3
 RGBA_CHANNEL_COUNT = 4
 DEFAULT_LINE_ALPHA = 1.0
 
+LEGEND_CHECK_FAILED = False
+LEGEND_CHECK_PASSED = True
+
 
 def extract_colors(obj: Any) -> list[RGBA]:
     if isinstance(obj, PathCollection):
@@ -51,7 +54,8 @@ def extract_colors(obj: Any) -> list[RGBA]:
         return [mcolors.to_rgba(obj.get_color())]
     else:
         assert False, (
-            f"Cannot extract colors from object type {type(obj)} - unsupported matplotlib object"
+            f"Cannot extract colors from object type {type(obj)} - "
+            f"unsupported matplotlib object"
         )
 
 
@@ -82,7 +86,8 @@ def extract_markers(obj: Any) -> list[str]:
         return [str(marker) if marker and marker != "None" else "None"]
     else:
         assert False, (
-            f"Cannot extract markers from object type {type(obj)} - unsupported matplotlib object"
+            f"Cannot extract markers from object type {type(obj)} - "
+            f"unsupported matplotlib object"
         )
 
 
@@ -102,7 +107,8 @@ def extract_sizes(obj: Any) -> list[float]:
         return [float(obj.get_markersize())]
     else:
         assert False, (
-            f"Cannot extract sizes from object type {type(obj)} - unsupported matplotlib object"
+            f"Cannot extract sizes from object type {type(obj)} - "
+            f"unsupported matplotlib object"
         )
 
 
@@ -169,7 +175,8 @@ def extract_styles(obj: Any) -> list[str]:
         return [str(style) if style is not None else "-"]
     else:
         assert False, (
-            f"Cannot extract styles from object type {type(obj)} - unsupported matplotlib object"
+            f"Cannot extract styles from object type {type(obj)} - "
+            f"unsupported matplotlib object"
         )
 
 
@@ -231,10 +238,10 @@ def extract_collection_properties(
 
 
 def extract_figure_legend_properties(fig: Any) -> dict[str, Any]:
-    legends = []
-    for child in fig.get_children():
-        if isinstance(child, matplotlib.legend.Legend):
-            legends.append(child)
+    legends = [
+        child for child in fig.get_children()
+        if isinstance(child, matplotlib.legend.Legend)
+    ]
 
     result = {
         "legend_count": len(legends),
@@ -345,7 +352,8 @@ def _extract_color_from_handle(handle: Any) -> RGBA:
         color = handle.get_color()
     else:
         assert False, (
-            f"Handle {type(handle)} does not support color extraction - check matplotlib configuration"
+            f"Handle {type(handle)} does not support color extraction - "
+            f"check matplotlib configuration"
         )
 
     assert color is not None, (
@@ -402,19 +410,17 @@ def _extract_image_properties(image: AxesImage) -> dict[str, Any]:
 
 
 def extract_pathcollections_from_axis(ax: Any) -> list[PathCollection]:
-    collections = []
-    for collection in ax.collections:
-        if isinstance(collection, PathCollection):
-            collections.append(collection)
-    return collections
+    return [
+        collection for collection in ax.collections
+        if isinstance(collection, PathCollection)
+    ]
 
 
 def extract_polycollections_from_axis(ax: Any) -> list[PolyCollection]:
-    collections = []
-    for collection in ax.collections:
-        if isinstance(collection, PolyCollection):
-            collections.append(collection)
-    return collections
+    return [
+        collection for collection in ax.collections
+        if isinstance(collection, PolyCollection)
+    ]
 
 
 def extract_barcontainers_from_axis(ax: Any) -> list[Any]:
@@ -777,9 +783,13 @@ def verify_legend_visibility(
     for i, result in results.items():
         if expected_visible_count is not None and expected_visible_count == 0:
             if result["visible"]:
-                print_item_result(f"Subplot {i}", False, "Unexpected legend found", 1)
+                print_item_result(
+                    f"Subplot {i}", LEGEND_CHECK_FAILED, "Unexpected legend found", 1
+                )
             else:
-                print_item_result(f"Subplot {i}", True, "No legend (expected)", 1)
+                print_item_result(
+                    f"Subplot {i}", LEGEND_CHECK_PASSED, "No legend (expected)", 1
+                )
         else:
             print_item_result(f"Subplot {i}", result["visible"], result["reason"], 1)
 
@@ -809,17 +819,20 @@ def verify_legend_visibility(
             summary["success"] = False
             if expected_visible_count == 0:
                 print_failure(
-                    f"EXPECTED no legends, but found {visible_count} unexpected legend(s)"
+                    f"EXPECTED no legends, but found {visible_count} "
+                    f"unexpected legend(s)"
                 )
             else:
                 print_failure(
-                    f"EXPECTED {expected_visible_count} visible legends, but found {visible_count}"
+                    f"EXPECTED {expected_visible_count} visible legends, "
+                    f"but found {visible_count}"
                 )
         elif expected_visible_count == 0:
             print_success("EXPECTED no legends and found none - perfect!")
         else:
             print_success(
-                f"EXPECTED {expected_visible_count} legends and found {visible_count} - perfect!"
+                f"EXPECTED {expected_visible_count} legends and found "
+                f"{visible_count} - perfect!"
             )
     elif visible_count == 0:
         if not fail_on_missing:
@@ -904,11 +917,10 @@ def filter_main_grid_axes(fig_axes: list[Any]) -> list[Any]:
 
 
 def get_main_grid_axes_from_figure(fig: plt.Figure) -> list[Any]:
-    main_grid_axes = []
-    for ax in fig.axes:
-        if hasattr(ax, "get_gridspec") and ax.get_gridspec() is not None:
-            main_grid_axes.append(ax)
-    return main_grid_axes
+    return [
+        ax for ax in fig.axes
+        if hasattr(ax, "get_gridspec") and ax.get_gridspec() is not None
+    ]
 
 
 def validate_subplot_coord_access(
@@ -954,11 +966,13 @@ def validate_figure_list_result(result: Any) -> list[plt.Figure]:
             return [result[0]]
         else:
             assert False, (
-                f"Function must return Figure(s), got {type(result[0]).__name__} in {type(result).__name__}"
+                f"Function must return Figure(s), got "
+                f"{type(result[0]).__name__} in {type(result).__name__}"
             )
     else:
         assert False, (
-            f"Function must return Figure or list of Figures, got {type(result).__name__}"
+            f"Function must return Figure or list of Figures, "
+            f"got {type(result).__name__}"
         )
 
 

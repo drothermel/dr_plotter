@@ -146,11 +146,12 @@ def verify_plot(
 ) -> Callable:
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = func(*args, **kwargs)
 
             assert isinstance(result, (plt.Figure, list, tuple)), (
-                f"Function must return Figure or list/tuple, got {type(result).__name__}"
+                f"Function must return Figure or list/tuple, "
+                f"got {type(result).__name__}"
             )
 
             if isinstance(result, plt.Figure):
@@ -162,11 +163,13 @@ def verify_plot(
                     figs = [result[0]]
                 else:
                     assert False, (
-                        f"Function must return Figure(s), got {type(result[0]).__name__} in {type(result).__name__}"
+                        f"Function must return Figure(s), got "
+                        f"{type(result[0]).__name__} in {type(result).__name__}"
                     )
             else:
                 assert False, (
-                    f"Function must return Figure or list of Figures, got {type(result).__name__}"
+                    f"Function must return Figure or list of Figures, "
+                    f"got {type(result).__name__}"
                 )
 
             name = func.__name__.replace("_", "-")
@@ -374,7 +377,7 @@ def verify_plot(
 def inspect_plot_properties() -> Callable:
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = func(*args, **kwargs)
 
             fig = validate_figure_result(result)
@@ -396,7 +399,12 @@ def inspect_plot_properties() -> Callable:
                 if info["lines"]:
                     print_info("Lines:", 1)
                     for line_info in info["lines"]:
-                        details = f"color={line_info['color']}, marker={line_info['marker']}, width={line_info['linewidth']}, style={line_info['linestyle']}"
+                        details = (
+                            f"color={line_info['color']}, "
+                            f"marker={line_info['marker']}, "
+                            f"width={line_info['linewidth']}, "
+                            f"style={line_info['linestyle']}"
+                        )
                         print_info(f"Line {line_info['index']}: {details}", 2)
 
                 if info["collections"]:
@@ -468,8 +476,8 @@ def inspect_plot_properties() -> Callable:
                         if len(unique_colors) == 1:
                             color = next(iter(unique_colors))
                             print_success(
-                                f"Line {pos} color: "
-                                f"{color} (consistent across {len(colors_at_pos)} subplots)",
+                                f"Line {pos} color: {color} "
+                                f"(consistent across {len(colors_at_pos)} subplots)",
                                 2,
                             )
                         else:
@@ -497,9 +505,11 @@ def inspect_plot_properties() -> Callable:
                             1,
                         )
                     else:
+                        variation_dict = dict(
+                            zip(range(len(collection_counts)), collection_counts)
+                        )
                         print_info(
-                            f"Collection count variation: "
-                            f"{dict(zip(range(len(collection_counts)), collection_counts))}",
+                            f"Collection count variation: {variation_dict}",
                             1,
                         )
 
@@ -542,7 +552,7 @@ def verify_figure_legends(
 ) -> Callable:
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = func(*args, **kwargs)
 
             fig = validate_figure_result(result)

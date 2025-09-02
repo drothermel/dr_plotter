@@ -3,6 +3,9 @@ from typing import Any
 import sys
 import matplotlib.pyplot as plt
 
+LEGEND_CHECK_FAILED = False
+LEGEND_CHECK_PASSED = True
+
 
 class VerificationFormatter:
     SUCCESS_SYMBOL = "✅"
@@ -17,11 +20,14 @@ class VerificationFormatter:
     SECTION_SEPARATOR = "=" * 60
     SUBSECTION_SEPARATOR = "-" * 50
 
-    def __init__(self, output_stream=None) -> None:
+    def __init__(self, output_stream: Any = None) -> None:
         self.output_stream = output_stream or sys.stdout
 
     def format_section_header(self, title: str, symbol: str = INFO_SYMBOL) -> str:
-        return f"\n{self.SECTION_SEPARATOR}\n{symbol} {title.upper()}\n{self.SECTION_SEPARATOR}"
+        return (
+            f"\n{self.SECTION_SEPARATOR}\n"
+            f"{symbol} {title.upper()}\n{self.SECTION_SEPARATOR}"
+        )
 
     def format_subsection_header(self, title: str) -> str:
         return f"\n{self.DEBUG_SYMBOL} {title}\n{self.SUBSECTION_SEPARATOR}"
@@ -71,8 +77,7 @@ class VerificationFormatter:
 
         indent = self.INDENT_UNIT * indent_level
         lines = [f"{indent}Suggestions:"]
-        for suggestion in suggestions:
-            lines.append(f"{indent}• {suggestion}")
+        lines.extend([f"{indent}• {suggestion}" for suggestion in suggestions])
         return "\n".join(lines)
 
     def format_detailed_issues_list(
@@ -235,9 +240,13 @@ def verify_legend_visibility_with_formatting(
     for i, result in results.items():
         if expected_visible_count is not None and expected_visible_count == 0:
             if result["visible"]:
-                print_item_result(f"Subplot {i}", False, "Unexpected legend found", 1)
+                print_item_result(
+                    f"Subplot {i}", LEGEND_CHECK_FAILED, "Unexpected legend found", 1
+                )
             else:
-                print_item_result(f"Subplot {i}", True, "No legend (expected)", 1)
+                print_item_result(
+                    f"Subplot {i}", LEGEND_CHECK_PASSED, "No legend (expected)", 1
+                )
         else:
             print_item_result(f"Subplot {i}", result["visible"], result["reason"], 1)
 
@@ -245,17 +254,20 @@ def verify_legend_visibility_with_formatting(
         if visible_count != expected_visible_count:
             if expected_visible_count == 0:
                 print_failure(
-                    f"EXPECTED no legends, but found {visible_count} unexpected legend(s)"
+                    f"EXPECTED no legends, but found {visible_count} "
+                    f"unexpected legend(s)"
                 )
             else:
                 print_failure(
-                    f"EXPECTED {expected_visible_count} visible legends, but found {visible_count}"
+                    f"EXPECTED {expected_visible_count} visible legends, "
+                    f"but found {visible_count}"
                 )
         elif expected_visible_count == 0:
             print_success("EXPECTED no legends and found none - perfect!")
         else:
             print_success(
-                f"EXPECTED {expected_visible_count} legends and found {visible_count} - perfect!"
+                f"EXPECTED {expected_visible_count} legends and found "
+                f"{visible_count} - perfect!"
             )
     elif visible_count == 0:
         if not fail_on_missing:

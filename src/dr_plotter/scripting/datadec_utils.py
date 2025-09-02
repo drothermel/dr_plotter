@@ -8,7 +8,8 @@ def check_datadec_available() -> bool:
     else:
         raise ImportError(
             "DataDecide integration requires the 'datadec' optional dependency.\n"
-            "Install with: uv add 'dr_plotter[datadec]' or pip install 'dr_plotter[datadec]'"
+            "Install with: uv add 'dr_plotter[datadec]' or "
+            "pip install 'dr_plotter[datadec]'"
         ) from None
 
 
