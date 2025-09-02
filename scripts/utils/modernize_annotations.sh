@@ -24,8 +24,9 @@ fi
 echo "Adding __future__ import annotations..."
 echo "$files_to_update" | while read -r file; do
     echo "  Processing: $file"
-    sed -i '' '1i\
-from __future__ import annotations' "$file"
+    # Create temp file with __future__ import + original content
+    { echo "from __future__ import annotations"; cat "$file"; } > "$file.tmp"
+    mv "$file.tmp" "$file"
 done
 
 echo "✅ __future__ import annotations added!"
