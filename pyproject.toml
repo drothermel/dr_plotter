@@ -85,6 +85,7 @@ extend-select = [
     "FLY",                  # fstrings instead of string joins
     "ICN",                  # specific import names
     "W",                    # space normalization
+    "E402",                 # imports at top of file
 ]
 ignore = [
     "D",                    # docstring styling
