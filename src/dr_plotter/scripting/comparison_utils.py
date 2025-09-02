@@ -31,17 +31,17 @@ def values_are_equal(
     if tolerance is None:
         tolerance = _get_default_tolerance(a, b)
 
-    if type(a) != type(b):
-        return False
-
     if isinstance(a, str):
-        return a == b
+        return isinstance(b, str) and a == b
 
     if isinstance(a, (tuple, list)) and isinstance(b, (tuple, list)):
         return _tuples_are_equal(a, b, tolerance)
 
     if isinstance(a, (int, float)) and isinstance(b, (int, float)):
         return _floats_are_equal(float(a), float(b), tolerance)
+
+    if type(a) is not type(b):
+        return False
 
     return a == b
 
