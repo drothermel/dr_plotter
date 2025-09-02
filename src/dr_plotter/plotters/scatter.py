@@ -137,25 +137,14 @@ class ScatterPlotter(BasePlotter):
         facecolors = collection.get_facecolors()
         edgecolors = collection.get_edgecolors()
         sizes = collection.get_sizes()
+        assert len(facecolors) > 0
+        assert len(edgecolors) > 0
 
-        if len(facecolors) > 0:
-            face_color = facecolors[0]
-        else:
-            face_color = self.figure_manager.legend_manager.get_error_color(
-                "face", self.theme
-            )
-
-        if len(edgecolors) > 0:
-            edge_color = edgecolors[0]
-        else:
-            edge_color = self.figure_manager.legend_manager.get_error_color(
-                "edge", self.theme
-            )
-
+        face_color = facecolors[0]
+        edge_color = edgecolors[0]
         marker_size = self.styler.get_style("marker_size", 8)
         if len(sizes) > 0:
             marker_size = np.sqrt(sizes[0] / np.pi) * 2
-
         marker_style = "o"
         if self.styler.group_values:
             styles = self.style_engine.get_styles_for_group(
@@ -173,5 +162,4 @@ class ScatterPlotter(BasePlotter):
             markersize=marker_size,
             linestyle="",
         )
-
         return proxy

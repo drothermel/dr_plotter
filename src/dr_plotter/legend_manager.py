@@ -199,14 +199,6 @@ class LegendManager:
         )
         return result.legend_positions.get(legend_index, default_pos)
 
-    def get_error_color(
-        self, color_type: str = "face", theme: Any | None = None
-    ) -> str:
-        assert False, (
-            f"Legend proxy creation failed for {color_type}. "
-            f"This indicates a problem with legend configuration that should be fixed."
-        )
-
     def finalize(self) -> None:
         if self.config.strategy == LegendStrategy.NONE:
             return
