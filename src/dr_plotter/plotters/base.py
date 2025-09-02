@@ -11,14 +11,12 @@ from dr_plotter.style_engine import StyleEngine
 from dr_plotter.style_applicator import StyleApplicator
 from dr_plotter.theme import BASE_COLORS, BASE_THEME, DR_PLOTTER_STYLE_KEYS, Theme
 from dr_plotter.types import (
-    BasePlotterParamName,
     ColName,
     ComponentSchema,
     GroupContext,
     GroupInfo,
     Phase,
     StyleAttrName,
-    SubPlotterParamName,
     VisualChannel,
 )
 
@@ -63,7 +61,6 @@ class BasePlotter:
 
     plotter_name: str = "base"
     plotter_params: ClassVar[list[str]] = []
-    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
     enabled_channels: ClassVar[set[VisualChannel]] = set()
     default_theme: ClassVar[Theme] = BASE_THEME
     supports_legend: bool = True
@@ -396,18 +393,13 @@ class BasePlotter:
 
         return plot_kwargs
 
-    def _mapped_param(self, param: BasePlotterParamName) -> SubPlotterParamName:
-        return self.__class__.param_mapping.get(param, param)
-
-    def _unmapped_param(self, param: SubPlotterParamName) -> BasePlotterParamName:
-        return {v: k for k, v in self.__class__.param_mapping.items()}.get(param, param)
 
     def _get_x_metric_column_name(self) -> ColName | None:
-        subplotter_x_metric = self._mapped_param("x")
+        subplotter_x_metric = "x"
         return self.kwargs.get(subplotter_x_metric)
 
     def _get_y_metric_column_names(self) -> list[ColName]:
-        subplotter_y_metric = self._mapped_param("y")
+        subplotter_y_metric = "y"
         metric_col_name = self.kwargs.get(subplotter_y_metric)
         return as_list(metric_col_name if metric_col_name is not None else [])
 
