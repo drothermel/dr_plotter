@@ -1,9 +1,8 @@
-import pandas as pd
 import matplotlib.pyplot as plt
-from dr_plotter.figure_manager import FigureManager
-from dr_plotter.figure_config import FigureConfig
-from dr_plotter.faceting_config import FacetingConfig
-from dr_plotter.legend_manager import LegendConfig
+import pandas as pd
+
+from dr_plotter import FigureManager
+from dr_plotter.configs import FacetingConfig, FigureConfig, LegendConfig, PlotConfig
 from dr_plotter.scripting.datadec_utils import get_datadec_functions
 
 
@@ -40,17 +39,19 @@ def load_and_prepare_data() -> pd.DataFrame:
 
 def plot_simple_grid(df: pd.DataFrame) -> None:
     with FigureManager(
-        figure=FigureConfig(
-            rows=2,  # 2 data recipes: C4, DCLM-Baseline
-            cols=2,  # 2 model sizes: 150M, 1B
-            figsize=(12, 8),
-            tight_layout_pad=0.4,
-            subplot_kwargs={"sharex": True, "sharey": True},
-        ),
-        legend=LegendConfig(
-            strategy="figure",
-            ncol=5,
-            layout_bottom_margin=0.15,
+        config=PlotConfig(
+            figure=FigureConfig(
+                rows=2,  # 2 data recipes: C4, DCLM-Baseline
+                cols=2,  # 2 model sizes: 150M, 1B
+                figsize=(12, 8),
+                tight_layout_pad=0.4,
+                subplot_kwargs={"sharex": True, "sharey": True},
+            ),
+            legend=LegendConfig(
+                strategy="figure",
+                ncol=5,
+                layout_bottom_margin=0.15,
+            ),
         ),
     ) as fm:
         fm.fig.suptitle(
@@ -89,7 +90,7 @@ def plot_simple_grid(df: pd.DataFrame) -> None:
                 else:
                     ax.set_ylabel("")
 
-                ax.grid(True, alpha=0.3)
+                ax.grid(visible=True, alpha=0.3)
                 ax.set_yscale("log")
 
     plt.show()
