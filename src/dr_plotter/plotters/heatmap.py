@@ -9,11 +9,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from dr_plotter import consts
 from dr_plotter.configs import GroupingConfig
-from dr_plotter.plotters.base import (
-    BasePlotter,
-    BasePlotterParamName,
-    SubPlotterParamName,
-)
+from dr_plotter.plotters.base import BasePlotter
 from dr_plotter.theme import HEATMAP_THEME, Theme
 from dr_plotter.types import ComponentSchema, Phase, VisualChannel
 
@@ -21,7 +17,6 @@ from dr_plotter.types import ComponentSchema, Phase, VisualChannel
 class HeatmapPlotter(BasePlotter):
     plotter_name: str = "heatmap"
     plotter_params: ClassVar[list[str]] = ["values", "annot"]
-    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
     enabled_channels: ClassVar[set[VisualChannel]] = set()
     default_theme: ClassVar[Theme] = HEATMAP_THEME
     supports_legend: bool = False

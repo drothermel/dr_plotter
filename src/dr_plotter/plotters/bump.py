@@ -9,13 +9,12 @@ from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import BUMP_PLOT_THEME, Theme
 from dr_plotter.types import ComponentSchema, Phase, VisualChannel
 
-from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
+from .base import BasePlotter
 
 
 class BumpPlotter(BasePlotter):
     plotter_name: str = "bump"
     plotter_params: ClassVar[list[str]] = ["time_col", "category_col", "value_col"]
-    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
     enabled_channels: ClassVar[set[VisualChannel]] = {"hue", "style"}
     default_theme: ClassVar[Theme] = BUMP_PLOT_THEME
     supports_grouped: bool = False

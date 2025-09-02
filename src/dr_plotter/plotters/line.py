@@ -10,13 +10,12 @@ from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import LINE_THEME, Theme
 from dr_plotter.types import ComponentSchema, Phase, VisualChannel
 
-from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
+from .base import BasePlotter
 
 
 class LinePlotter(BasePlotter):
     plotter_name: str = "line"
     plotter_params: ClassVar[list[str]] = []
-    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
     enabled_channels: ClassVar[set[VisualChannel]] = {
         "hue",
         "style",

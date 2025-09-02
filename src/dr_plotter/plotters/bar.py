@@ -10,10 +10,8 @@ from dr_plotter import consts
 from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import BAR_THEME, Theme
 from dr_plotter.types import (
-    BasePlotterParamName,
     ComponentSchema,
     Phase,
-    SubPlotterParamName,
     VisualChannel,
 )
 
@@ -23,7 +21,6 @@ from .base import BasePlotter
 class BarPlotter(BasePlotter):
     plotter_name: str = "bar"
     plotter_params: ClassVar[list[str]] = []
-    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
     enabled_channels: ClassVar[set[VisualChannel]] = {"hue"}
     default_theme: ClassVar[Theme] = BAR_THEME
 

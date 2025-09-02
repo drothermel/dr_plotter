@@ -15,10 +15,8 @@ from dr_plotter.artist_utils import (
 from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import VIOLIN_THEME, Theme
 from dr_plotter.types import (
-    BasePlotterParamName,
     ComponentSchema,
     Phase,
-    SubPlotterParamName,
     VisualChannel,
 )
 
@@ -36,7 +34,6 @@ class ViolinPlotter(BasePlotter):
         "style_by",
         "size_by",
     ]
-    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
     enabled_channels: ClassVar[set[VisualChannel]] = {"hue"}
     default_theme: ClassVar[Theme] = VIOLIN_THEME
 

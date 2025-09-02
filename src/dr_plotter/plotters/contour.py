@@ -11,10 +11,8 @@ from dr_plotter import consts
 from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import BASE_COLORS, CONTOUR_THEME, Theme
 from dr_plotter.types import (
-    BasePlotterParamName,
     ComponentSchema,
     Phase,
-    SubPlotterParamName,
     VisualChannel,
 )
 
@@ -24,7 +22,6 @@ from .base import BasePlotter
 class ContourPlotter(BasePlotter):
     plotter_name: str = "contour"
     plotter_params: ClassVar[list[str]] = []
-    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
     enabled_channels: ClassVar[set[VisualChannel]] = set()
     default_theme: ClassVar[Theme] = CONTOUR_THEME
     supports_legend: bool = False
