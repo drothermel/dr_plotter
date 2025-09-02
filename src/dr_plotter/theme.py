@@ -54,17 +54,61 @@ class Style:
 class PlotStyles(Style):
     style_type = "plot"
 
+    @classmethod
+    def from_input(cls, value: dict | PlotStyles | None) -> PlotStyles:
+        if value is None:
+            return cls()
+        elif isinstance(value, cls):
+            return value
+        elif isinstance(value, dict):
+            return cls(**value)
+        else:
+            raise TypeError(f"Cannot create {cls.__name__} from {type(value).__name__}")
+
 
 class PostStyles(Style):
     style_type = "post"
+
+    @classmethod
+    def from_input(cls, value: dict | PostStyles | None) -> PostStyles:
+        if value is None:
+            return cls()
+        elif isinstance(value, cls):
+            return value
+        elif isinstance(value, dict):
+            return cls(**value)
+        else:
+            raise TypeError(f"Cannot create {cls.__name__} from {type(value).__name__}")
 
 
 class AxesStyles(Style):
     style_type = "axes"
 
+    @classmethod
+    def from_input(cls, value: dict | AxesStyles | None) -> AxesStyles:
+        if value is None:
+            return cls()
+        elif isinstance(value, cls):
+            return value
+        elif isinstance(value, dict):
+            return cls(**value)
+        else:
+            raise TypeError(f"Cannot create {cls.__name__} from {type(value).__name__}")
+
 
 class FigureStyles(Style):
     style_type = "figure"
+
+    @classmethod
+    def from_input(cls, value: dict | FigureStyles | None) -> FigureStyles:
+        if value is None:
+            return cls()
+        elif isinstance(value, cls):
+            return value
+        elif isinstance(value, dict):
+            return cls(**value)
+        else:
+            raise TypeError(f"Cannot create {cls.__name__} from {type(value).__name__}")
 
 
 class Theme:
@@ -90,19 +134,15 @@ class Theme:
 
             self.legend_config = LegendConfig()
         self.all_styles: dict[str, Style] = {}
-        for cls, cls_dict in [
-            (PlotStyles, plot_styles),
-            (PostStyles, post_styles),
-            (AxesStyles, axes_styles),
-            (FigureStyles, figure_styles),
-            (Style, styles),
-        ]:
-            if cls_dict is not None:
-                self.all_styles[cls.style_type] = (
-                    cls_dict if isinstance(cls_dict, cls) else cls(**cls_dict)
-                )
-            else:
-                self.all_styles[cls.style_type] = cls()
+        self.all_styles["plot"] = PlotStyles.from_input(plot_styles)
+        self.all_styles["post"] = PostStyles.from_input(post_styles)
+        self.all_styles["axes"] = AxesStyles.from_input(axes_styles)
+        self.all_styles["figure"] = FigureStyles.from_input(figure_styles)
+        
+        if styles is not None:
+            self.all_styles["general"] = Style(**styles) if isinstance(styles, dict) else styles
+        else:
+            self.all_styles["general"] = Style()
 
     @property
     def general_styles(self) -> dict[str, Any]:
