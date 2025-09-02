@@ -165,7 +165,8 @@ def plot_training_curves_faceted(
 
 def create_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Faceted Training Curves (Refactored) - Using dr_plotter faceting system"
+        description="Faceted Training Curves (Refactored) "
+        "- Using dr_plotter faceting system"
     )
     parser.add_argument(
         "--x-log", action="store_true", help="Use log scale for X-axis (training steps)"
@@ -188,7 +189,8 @@ def create_arg_parser() -> argparse.ArgumentParser:
         "--model-sizes",
         nargs="+",
         default=["all"],
-        help="Model sizes to include (in order for line styling). Use 'all' for all available.",
+        help="Model sizes to include (in order for line styling). "
+        "Use 'all' for all available.",
     )
 
     # Axis limits

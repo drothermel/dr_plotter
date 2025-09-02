@@ -44,8 +44,10 @@ class FigureManager:
             assert False, (
                 f"FigureManager no longer accepts {sorted(used_old_params)} parameters. "
                 f"Use PlotConfig instead:\n\n"
-                f"OLD: FigureManager({', '.join(f'{k}=...' for k in sorted(used_old_params))})\n"
-                f"NEW: {example_conversion}\n\n"
+                f"OLD: "
+                f"FigureManager({', '.join(f'{k}=...' for k in sorted(used_old_params))})\n"
+                f"NEW: "
+                f"{example_conversion}\n\n"
                 f"See PlotConfig documentation for complete conversion patterns."
             )
 
@@ -409,9 +411,11 @@ class FigureManager:
 
         if (computed_rows, computed_cols) != (figure_rows, figure_cols):
             assert False, (
-                f"Grid dimension mismatch: FigureConfig({figure_rows}×{figure_cols}) "
+                f"Grid dimension mismatch: "
+                f"FigureConfig({figure_rows}×{figure_cols}) "
                 f"vs required({computed_rows}×{computed_cols}). "
-                f"Fix: FigureConfig(rows={computed_rows}, cols={computed_cols})"
+                f"Fix: "
+                f"FigureConfig(rows={computed_rows}, cols={computed_cols})"
             )
 
     def _get_or_create_style_coordinator(self) -> FacetStyleCoordinator:

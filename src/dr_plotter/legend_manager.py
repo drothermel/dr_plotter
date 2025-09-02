@@ -81,7 +81,8 @@ def resolve_legend_config(legend_input: str | LegendConfig) -> LegendConfig:
             ),
         }
         assert legend_input in string_mappings, (
-            f"Invalid legend string '{legend_input}'. Valid options: {list(string_mappings.keys())}"
+            f"Invalid legend string '{legend_input}'. Valid options: "
+            f"{list(string_mappings.keys())}"
         )
         return string_mappings[legend_input]
 

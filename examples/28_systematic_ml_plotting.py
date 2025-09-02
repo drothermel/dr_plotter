@@ -266,7 +266,8 @@ def create_single_metric_plots(
         )
     ) as fm:
         fm.fig.suptitle(
-            f"{metric_labels[metric_name]}: {len(target_recipes)} Recipes × {len(model_sizes)} Model Sizes",
+            f"{metric_labels[metric_name]}: "
+            f"{len(target_recipes)} Recipes × {len(model_sizes)} Model Sizes",
             fontsize=16,
             y=0.95,
         )
@@ -413,7 +414,8 @@ def create_ppl_group_plots(
         )
     ) as fm:
         fm.fig.suptitle(
-            f"Perplexity Metrics: {len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
+            f"Perplexity Metrics: "
+            f"{len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
             fontsize=16,
             y=0.96,
         )
@@ -523,7 +525,8 @@ def create_olmes_group_plots(
         )
     ) as fm:
         fm.fig.suptitle(
-            f"OLMES Task Metrics: {len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
+            f"OLMES Task Metrics: "
+            f"{len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
             fontsize=16,
             y=0.96,
         )
@@ -607,7 +610,8 @@ def create_recipe_family_chunk_plots(
         if family_name not in OLMES_PERFORMANCE_RECIPE_CHUNKS:
             print(f"Error: OLMES performance chunk '{family_name}' not found")
             print(
-                f"Available OLMES chunks: {list(OLMES_PERFORMANCE_RECIPE_CHUNKS.keys())}"
+                f"Available OLMES chunks: "
+                f"{list(OLMES_PERFORMANCE_RECIPE_CHUNKS.keys())}"
             )
             return
         target_recipes = OLMES_PERFORMANCE_RECIPE_CHUNKS[family_name]
@@ -666,7 +670,8 @@ def create_recipe_family_chunk_plots(
         )
     ) as fm:
         fm.fig.suptitle(
-            f"Recipe Family '{family_name}': {len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
+            f"Recipe Family '{family_name}': "
+            f"{len(model_sizes)} Model Sizes × {len(target_recipes)} Recipes",
             fontsize=16,
             y=0.96,
         )
@@ -787,7 +792,8 @@ def create_size_chunk_plots(
         )
     ) as fm:
         fm.fig.suptitle(
-            f"Model Size Chunk {chunk_idx}: {len(selected_metrics)} Metrics × {len(size_chunk)} Sizes",
+            f"Model Size Chunk {chunk_idx}: "
+            f"{len(selected_metrics)} Metrics × {len(size_chunk)} Sizes",
             fontsize=16,
             y=0.96,
         )
@@ -859,7 +865,8 @@ def create_arg_parser() -> argparse.ArgumentParser:
 
     parser.add_argument(
         "--metric",
-        help="Specific metric for single metric plots (e.g., pile-valppl, mmlu_average_acc_raw)",
+        help="Specific metric for single metric plots "
+        "(e.g., pile-valppl, mmlu_average_acc_raw)",
     )
 
     parser.add_argument(

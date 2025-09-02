@@ -215,7 +215,8 @@ def verify_plot(
                 if failed_plots:
                     legend_failed = True
                     print_critical(
-                        f"PLOT {name.upper()} FAILED: {len(failed_plots)} plots had legend issues!"
+                        f"PLOT {name.upper()} FAILED: "
+                        f"{len(failed_plots)} plots had legend issues!"
                     )
                     print_info(f"- Failed plots: {', '.join(failed_plots)}", 1)
 
@@ -403,7 +404,8 @@ def inspect_plot_properties() -> Callable:
                     for coll_info in info["collections"]:
                         if "error" in coll_info:
                             print_info(
-                                f"{coll_info['type']} {coll_info['index']}: Error - {coll_info['error']}",
+                                f"{coll_info['type']} {coll_info['index']}: "
+                                f"Error - {coll_info['error']}",
                                 2,
                             )
                         else:
@@ -422,7 +424,8 @@ def inspect_plot_properties() -> Callable:
                                 else ""
                             )
                             print_info(
-                                f"{coll_info['type']} {coll_info['index']}: colors=[{colors_str}], sizes=[{sizes_str}]",
+                                f"{coll_info['type']} {coll_info['index']}: "
+                                f"colors=[{colors_str}], sizes=[{sizes_str}]",
                                 2,
                             )
 
@@ -448,7 +451,8 @@ def inspect_plot_properties() -> Callable:
                 line_counts = [len(info["lines"]) for info in subplot_infos]
                 if line_counts and len(set(line_counts)) == 1:
                     print_success(
-                        f"Line count consistency: All subplots have {line_counts[0]} lines",
+                        f"Line count consistency: "
+                        f"All subplots have {line_counts[0]} lines",
                         1,
                     )
 
@@ -464,12 +468,14 @@ def inspect_plot_properties() -> Callable:
                         if len(unique_colors) == 1:
                             color = next(iter(unique_colors))
                             print_success(
-                                f"Line {pos} color: {color} (consistent across {len(colors_at_pos)} subplots)",
+                                f"Line {pos} color: "
+                                f"{color} (consistent across {len(colors_at_pos)} subplots)",
                                 2,
                             )
                         else:
                             print_info(
-                                f"Line {pos} colors: {len(unique_colors)} different colors found",
+                                f"Line {pos} colors: "
+                                f"{len(unique_colors)} different colors found",
                                 2,
                             )
                             for color in unique_colors:
@@ -477,7 +483,8 @@ def inspect_plot_properties() -> Callable:
                                 print_info(f"  {color}: {count} subplots", 3)
                 elif line_counts:
                     print_info(
-                        f"Line count variation: {dict(zip(range(len(line_counts)), line_counts))}",
+                        f"Line count variation: "
+                        f"{dict(zip(range(len(line_counts)), line_counts))}",
                         1,
                     )
 
@@ -485,12 +492,14 @@ def inspect_plot_properties() -> Callable:
                 if collection_counts and any(count > 0 for count in collection_counts):
                     if len(set(collection_counts)) == 1:
                         print_success(
-                            f"Collection count consistency: All subplots have {collection_counts[0]} collections",
+                            f"Collection count consistency: "
+                            f"All subplots have {collection_counts[0]} collections",
                             1,
                         )
                     else:
                         print_info(
-                            f"Collection count variation: {dict(zip(range(len(collection_counts)), collection_counts))}",
+                            f"Collection count variation: "
+                            f"{dict(zip(range(len(collection_counts)), collection_counts))}",
                             1,
                         )
 
@@ -502,12 +511,14 @@ def inspect_plot_properties() -> Callable:
                     )
                 elif visible_count == len(subplot_infos):
                     print_success(
-                        f"Legend consistency: All {len(subplot_infos)} subplots have legends",
+                        f"Legend consistency: "
+                        f"All {len(subplot_infos)} subplots have legends",
                         1,
                     )
                 else:
                     print_info(
-                        f"Legend visibility: {visible_count}/{len(subplot_infos)} subplots have legends",
+                        f"Legend visibility: "
+                        f"{visible_count}/{len(subplot_infos)} subplots have legends",
                         1,
                     )
             else:

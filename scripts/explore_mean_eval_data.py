@@ -157,7 +157,8 @@ def main() -> None:
     # Note: DataDecide provides pre-filtered, clean data with guaranteed completeness
 
     print(
-        f"Total expected combinations (model_size × data_recipe): {completeness['total_expected_combinations']:,}"
+        f"Total expected combinations (model_size × data_recipe): "
+        f"{completeness['total_expected_combinations']:,}"
     )
     print(f"Existing combinations: {completeness['existing_combinations']:,}")
     print(f"Missing combinations: {completeness['missing_combinations_count']:,}")
@@ -182,7 +183,8 @@ def main() -> None:
     print("\nSample metric completeness (first 10 metrics):")
     for metric, stats in list(completeness["sample_metric_completeness"].items())[:10]:
         print(
-            f"  {metric}: {stats['null_count']:,} nulls ({stats['null_percentage']:.1f}%)"
+            f"  {metric}: "
+            f"{stats['null_count']:,} nulls ({stats['null_percentage']:.1f}%)"
         )
 
     print("\n" + "=" * 50)

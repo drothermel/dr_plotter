@@ -45,13 +45,15 @@ class FacetingConfig:
         if self.target_row is not None and self.target_rows is not None:
             assert False, (
                 f"Cannot specify both target_row and target_rows.\n"
-                f"Current: target_row={self.target_row}, target_rows={self.target_rows}\n"
+                f"Current: "
+                f"target_row={self.target_row}, target_rows={self.target_rows}\n"
                 f"Use target_row for single row or target_rows for multiple rows."
             )
         if self.target_col is not None and self.target_cols is not None:
             assert False, (
                 f"Cannot specify both target_col and target_cols.\n"
-                f"Current: target_col={self.target_col}, target_cols={self.target_cols}\n"
+                f"Current: "
+                f"target_col={self.target_col}, target_cols={self.target_cols}\n"
                 f"Use target_col for single column or target_cols for multiple columns."
             )
 

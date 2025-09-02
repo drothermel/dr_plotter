@@ -44,6 +44,7 @@ class LegendConfig:
             "none": LegendStrategy.NONE,
         }
         assert strategy in string_to_enum, (
-            f"Invalid legend strategy '{strategy}'. Valid options: {list(string_to_enum.keys())}"
+            f"Invalid legend strategy '{strategy}'. Valid options: "
+            f"{list(string_to_enum.keys())}"
         )
         return string_to_enum[strategy]

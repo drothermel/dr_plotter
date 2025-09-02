@@ -211,7 +211,8 @@ class PositioningCalculator:
         }
 
         assert hint in hint_modifiers, (
-            f"Invalid layout_hint '{hint}'. Valid options: {list(hint_modifiers.keys())}"
+            f"Invalid layout_hint '{hint}'. Valid options: "
+            f"{list(hint_modifiers.keys())}"
         )
 
         modifier_func = hint_modifiers[hint]

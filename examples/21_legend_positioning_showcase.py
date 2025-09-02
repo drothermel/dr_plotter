@@ -597,7 +597,8 @@ def main(args: Any) -> Any:
 
 if __name__ == "__main__":
     parser = setup_arg_parser(
-        description="Legend Positioning Showcase - Comprehensive Validation of Phase 2 Improvements"
+        description="Legend Positioning Showcase "
+        "- Comprehensive Validation of Phase 2 Improvements"
     )
     args = parser.parse_args()
     main(args)

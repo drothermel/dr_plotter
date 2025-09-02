@@ -180,10 +180,12 @@ def main() -> bool:
     feature_coverage = len(covered_features) / len(expected_features) * 100
 
     print(
-        f"📊 Plotter coverage: {plotter_coverage:.1f}% ({len(covered_plotters)}/{len(all_plotters)})"
+        f"📊 Plotter coverage: "
+        f"{plotter_coverage:.1f}% ({len(covered_plotters)}/{len(all_plotters)})"
     )
     print(
-        f"🔧 Feature coverage: {feature_coverage:.1f}% ({len(covered_features)}/{len(expected_features)})"
+        f"🔧 Feature coverage: "
+        f"{feature_coverage:.1f}% ({len(covered_features)}/{len(expected_features)})"
     )
 
     if plotter_coverage == 100 and feature_coverage == 100:

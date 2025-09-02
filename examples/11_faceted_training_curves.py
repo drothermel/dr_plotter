@@ -234,7 +234,8 @@ def create_arg_parser() -> argparse.ArgumentParser:
         "--model-sizes",
         nargs="+",
         default=["10M", "14M", "16M"],
-        help="Model sizes to include (in order for line styling). Use 'all' for all available.",
+        help="Model sizes to include (in order for line styling). "
+        "Use 'all' for all available.",
     )
 
     # Axis limits
