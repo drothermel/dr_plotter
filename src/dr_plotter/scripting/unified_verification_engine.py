@@ -722,7 +722,8 @@ class FigureLegendStrategyRule(BaseVerificationRule):
             return result
 
         found_channels = [
-            legend["title"].lower() for legend in figure_props["legends"]
+            legend["title"].lower()
+            for legend in figure_props["legends"]
             if legend["title"]
         ]
 

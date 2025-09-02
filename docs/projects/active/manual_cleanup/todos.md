@@ -26,6 +26,9 @@
 - so many hardcoded things and confusing ensted ifs
 - removed hint modifiers from positioning calculator because they weren't implemented and so lets just not do that.
 
+## Figure Manager
+- Still needs alot of manual stepthrough
+
 ## Theme-to-Matplotlib Parameter Flow Issue
 
 ### Problem Discovered

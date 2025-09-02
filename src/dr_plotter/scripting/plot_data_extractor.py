@@ -239,7 +239,8 @@ def extract_collection_properties(
 
 def extract_figure_legend_properties(fig: Any) -> dict[str, Any]:
     legends = [
-        child for child in fig.get_children()
+        child
+        for child in fig.get_children()
         if isinstance(child, matplotlib.legend.Legend)
     ]
 
@@ -411,14 +412,16 @@ def _extract_image_properties(image: AxesImage) -> dict[str, Any]:
 
 def extract_pathcollections_from_axis(ax: Any) -> list[PathCollection]:
     return [
-        collection for collection in ax.collections
+        collection
+        for collection in ax.collections
         if isinstance(collection, PathCollection)
     ]
 
 
 def extract_polycollections_from_axis(ax: Any) -> list[PolyCollection]:
     return [
-        collection for collection in ax.collections
+        collection
+        for collection in ax.collections
         if isinstance(collection, PolyCollection)
     ]
 
@@ -918,7 +921,8 @@ def filter_main_grid_axes(fig_axes: list[Any]) -> list[Any]:
 
 def get_main_grid_axes_from_figure(fig: plt.Figure) -> list[Any]:
     return [
-        ax for ax in fig.axes
+        ax
+        for ax in fig.axes
         if hasattr(ax, "get_gridspec") and ax.get_gridspec() is not None
     ]
 
