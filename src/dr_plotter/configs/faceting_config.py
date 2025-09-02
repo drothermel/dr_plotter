@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 
 
@@ -58,5 +59,6 @@ class FacetingConfig:
             )
 
         assert self.empty_subplot_strategy in {"warn", "error", "silent"}, (
-            f"empty_subplot_strategy must be one of 'warn', 'error', 'silent'. Got '{self.empty_subplot_strategy}'"
+            f"empty_subplot_strategy must be one of 'warn', "
+            f"'error', 'silent'. Got '{self.empty_subplot_strategy}'"
         )

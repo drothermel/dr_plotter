@@ -53,12 +53,14 @@ class PlotConfig:
         elif isinstance(self.layout, LayoutConfig):
             return self.layout
         elif isinstance(self.layout, tuple):
-            if len(self.layout) == 2:
-                return LayoutConfig(rows=self.layout[0], cols=self.layout[1])
-            elif len(self.layout) == 3:
+            assert len(self.layout) in {2, 3}
+            kwarg_index = 2
+            has_kwargs = len(self.layout) == kwarg_index + 1
+            if has_kwargs:
                 return LayoutConfig(
                     rows=self.layout[0], cols=self.layout[1], **self.layout[2]
                 )
+            return LayoutConfig(rows=self.layout[0], cols=self.layout[1])
         elif isinstance(self.layout, dict):
             return LayoutConfig(**self.layout)
 
@@ -132,7 +134,7 @@ class PlotConfig:
         if isinstance(style_config.theme, Theme):
             return style_config.theme
 
-        from dr_plotter.theme import BASE_THEME, LINE_THEME, SCATTER_THEME, BAR_THEME
+        from dr_plotter.theme import BAR_THEME, BASE_THEME, LINE_THEME, SCATTER_THEME
 
         theme_map = {
             "base": BASE_THEME,

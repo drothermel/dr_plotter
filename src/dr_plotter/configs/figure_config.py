@@ -25,7 +25,7 @@ class FigureConfig:
     def validate(self) -> None:
         assert self.rows > 0, f"Rows must be positive, got {self.rows}"
         assert self.cols > 0, f"Cols must be positive, got {self.cols}"
-        assert len(self.figsize) == 2, (
+        assert len(self.figsize) == len(["rows", "cols"]), (
             f"Figsize must have 2 values, got {len(self.figsize)}"
         )
         assert all(val > 0 for val in self.figsize), "Figsize values must be positive"
@@ -43,7 +43,8 @@ class FigureConfig:
             )
             for row_idx, row in enumerate(self.x_labels):
                 assert len(row) == self.cols, (
-                    f"x_labels row {row_idx} must have {self.cols} columns, got {len(row)}"
+                    f"x_labels row {row_idx} must have"
+                    f" {self.cols} columns, got {len(row)}"
                 )
 
         if self.y_labels is not None:
@@ -52,5 +53,6 @@ class FigureConfig:
             )
             for row_idx, row in enumerate(self.y_labels):
                 assert len(row) == self.cols, (
-                    f"y_labels row {row_idx} must have {self.cols} columns, got {len(row)}"
+                    f"y_labels row {row_idx} must have"
+                    f" {self.cols} columns, got {len(row)}"
                 )
