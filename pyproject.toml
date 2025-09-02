@@ -89,6 +89,7 @@ extend-select = [
 ignore = [
     "D",                    # docstring styling
     "PT018",                # enable long asserts
+    "ANN401",               # allow Any
     "ARG001",               # callbacks
     "COM812", "ISC001",     # Overlap with each other in formatting
     "EXE",                  # Files generally don't need to be executable
