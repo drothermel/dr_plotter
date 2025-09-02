@@ -1,5 +1,6 @@
 import matplotlib.colors as mcolors
 from matplotlib.collections import PolyCollection
+
 from dr_plotter.types import RGBA
 
 DEFAULT_ALPHA_VALUE = 1.0
@@ -17,7 +18,7 @@ def extract_edgecolor_from_polycollection(obj: PolyCollection) -> RGBA:
     return mcolors.to_rgba(edgecolors[0])
 
 
-def extract_alpha_from_artist(obj) -> float:
+def extract_alpha_from_artist(obj: PolyCollection) -> float:
     alpha = obj.get_alpha()
     return float(alpha) if alpha is not None else DEFAULT_ALPHA_VALUE
 

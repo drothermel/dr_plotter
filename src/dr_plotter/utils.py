@@ -23,7 +23,8 @@ def get_axes_from_grid(
         )
         linear_index = row * ncols + col
         assert linear_index < len(axes), (
-            f"Index {linear_index} (row={row}, col={col}) out of bounds for {len(axes)} axes"
+            f"Index {linear_index} (row={row}, col={col}) "
+            f"out of bounds for {len(axes)} axes"
         )
         return axes[linear_index]
 

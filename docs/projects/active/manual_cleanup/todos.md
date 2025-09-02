@@ -20,6 +20,9 @@
 - Heatmap
   - _style_ticks gets passed styles but then doesn't use them
 
+## Style Applicator
+- so many hardcoded things and confusing ensted ifs
+
 ## Theme-to-Matplotlib Parameter Flow Issue
 
 ### Problem Discovered
