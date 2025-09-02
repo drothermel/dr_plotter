@@ -88,6 +88,8 @@ class ScatterPlotter(BasePlotter):
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         label = kwargs.pop("label", None)
 
+        plot_args = self._build_plot_args()
+
         if "size" in self.grouping_params.active_channels:
             size_col = self.grouping_params.size
             if size_col and size_col in data.columns:
@@ -97,16 +99,15 @@ class ScatterPlotter(BasePlotter):
                         "size", size_col, value
                     )
                     size_mult = style.get("size_mult", 1.0)
-                    base_size = kwargs.get("s", 50)
-                    sizes.append(
-                        base_size * size_mult
-                        if isinstance(base_size, (int, float))
-                        else 50 * size_mult
+                    base_size = plot_args.get("s", 50)
+                    assert isinstance(base_size, (int, float)), (
+                        f"Base size must be numeric, got {type(base_size)}: {base_size}"
                     )
-                kwargs["s"] = sizes
+                    sizes.append(base_size * size_mult)
+                plot_args["s"] = sizes
 
         collection = ax.scatter(
-            data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **kwargs
+            data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **plot_args
         )
 
         artists = {"collection": collection}
