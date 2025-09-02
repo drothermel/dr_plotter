@@ -6,6 +6,7 @@ Follows the design philosophy of pragmatic, example-driven testing.
 import re
 from pathlib import Path
 from dr_plotter.plotters import BasePlotter
+import sys
 
 
 def get_all_example_files():
@@ -90,7 +91,7 @@ def extract_feature_usage(file_path):
     return features
 
 
-def main():
+def main() -> bool:
     """Main validation logic."""
     print("🔍 Validating example coverage...\n")
 
@@ -201,4 +202,4 @@ def main():
 
 if __name__ == "__main__":
     success = main()
-    exit(0 if success else 1)
+    sys.exit(0 if success else 1)

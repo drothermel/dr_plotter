@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 
 import matplotlib.axes
 import pandas as pd
@@ -13,8 +13,8 @@ SUPPORTED_PLOT_TYPES = ["line", "scatter", "bar", "fill_between", "heatmap"]
 
 
 def prepare_faceted_subplots(
-    data: pd.DataFrame, config: FacetingConfig, grid_shape: Tuple[int, int]
-) -> Dict[Tuple[int, int], pd.DataFrame]:
+    data: pd.DataFrame, config: FacetingConfig, grid_shape: tuple[int, int]
+) -> dict[tuple[int, int], pd.DataFrame]:
     assert not data.empty, "Cannot facet empty DataFrame"
     assert config.rows or config.cols, "Must specify rows or cols for faceting"
     assert isinstance(grid_shape, tuple) and len(grid_shape) == 2, (
@@ -39,8 +39,8 @@ def prepare_faceted_subplots(
 
 
 def _extract_dimension_values(
-    data: pd.DataFrame, column: Optional[str], order: Optional[List[str]]
-) -> List[Any]:
+    data: pd.DataFrame, column: Optional[str], order: Optional[list[str]]
+) -> list[Any]:
     if not column:
         return [None]
 
@@ -58,9 +58,7 @@ def _should_include_position(row: int, col: int, config: FacetingConfig) -> bool
         return False
     if config.target_rows is not None and row not in config.target_rows:
         return False
-    if config.target_cols is not None and col not in config.target_cols:
-        return False
-    return True
+    return not (config.target_cols is not None and col not in config.target_cols)
 
 
 def _create_data_subset(
@@ -78,7 +76,7 @@ def _create_data_subset(
 
 def plot_faceted_data(
     fm: "FigureManager",
-    data_subsets: Dict[Tuple[int, int], pd.DataFrame],
+    data_subsets: dict[tuple[int, int], pd.DataFrame],
     plot_type: str,
     config: FacetingConfig,
     style_coordinator: "FacetStyleCoordinator",
@@ -250,11 +248,11 @@ def _apply_axis_limits(
             ax.set_ylim(ylim)
 
 
-def _has_custom_label(labels: Optional[List[List[Any]]], row: int, col: int) -> bool:
+def _has_custom_label(labels: Optional[list[list[Any]]], row: int, col: int) -> bool:
     return labels is not None and row < len(labels) and col < len(labels[row])
 
 
-def get_grid_dimensions(data: pd.DataFrame, config: FacetingConfig) -> Tuple[int, int]:
+def get_grid_dimensions(data: pd.DataFrame, config: FacetingConfig) -> tuple[int, int]:
     assert not data.empty, "Cannot compute dimensions from empty DataFrame"
 
     n_rows = len(data[config.rows].unique()) if config.rows else 1
@@ -263,8 +261,8 @@ def get_grid_dimensions(data: pd.DataFrame, config: FacetingConfig) -> Tuple[int
 
 
 def handle_empty_subplots(
-    data_subsets: Dict[Tuple[int, int], pd.DataFrame], strategy: str
-) -> Dict[Tuple[int, int], pd.DataFrame]:
+    data_subsets: dict[tuple[int, int], pd.DataFrame], strategy: str
+) -> dict[tuple[int, int], pd.DataFrame]:
     assert strategy in ["error", "warn", "silent"], f"Invalid strategy: {strategy}"
 
     if strategy == "error":

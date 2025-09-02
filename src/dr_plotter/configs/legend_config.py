@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional
+from typing import Optional
 
 from dr_plotter.configs.positioning_config import PositioningConfig
 
@@ -23,7 +23,7 @@ class LegendConfig:
     max_col: int = 4
     spacing: float = 0.1
     remove_axes_legends: bool = True
-    channel_titles: Optional[Dict[str, str]] = None
+    channel_titles: Optional[dict[str, str]] = None
     layout_left_margin: float = 0.0
     layout_bottom_margin: float = 0.15
     layout_right_margin: float = 1.0

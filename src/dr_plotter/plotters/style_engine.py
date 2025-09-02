@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from dr_plotter.channel_metadata import ChannelRegistry
 from dr_plotter.configs import CycleConfig, GroupingConfig
@@ -10,7 +10,7 @@ class StyleEngine:
         self.theme = theme
         self.figure_manager = figure_manager
         self._local_cycle_config = CycleConfig(theme)
-        self._continuous_ranges: Dict[str, Dict[str, float]] = {}
+        self._continuous_ranges: dict[str, dict[str, float]] = {}
 
     @property
     def cycle_cfg(self) -> CycleConfig:
@@ -19,7 +19,7 @@ class StyleEngine:
         return self._local_cycle_config
 
     def set_continuous_range(
-        self, channel: str, column: str, values: List[float]
+        self, channel: str, column: str, values: list[float]
     ) -> None:
         if not values:
             return
@@ -34,8 +34,8 @@ class StyleEngine:
         }
 
     def get_styles_for_group(
-        self, group_values: Dict[str, Any], grouping_cfg: GroupingConfig
-    ) -> Dict[str, Any]:
+        self, group_values: dict[str, Any], grouping_cfg: GroupingConfig
+    ) -> dict[str, Any]:
         styles = {}
         for channel, column in grouping_cfg.active.items():
             value = group_values.get(column)
@@ -59,7 +59,7 @@ class StyleEngine:
 
     def _get_continuous_style(
         self, channel: str, column: str, value: float
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         key = f"{channel}:{column}"
         if key not in self._continuous_ranges:
             return {"size_mult": 1.0} if channel == "size" else {}

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 
 import matplotlib.patheffects as path_effects
 import pandas as pd
@@ -12,13 +12,13 @@ from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
 
 class BumpPlotter(BasePlotter):
     plotter_name: str = "bump"
-    plotter_params: List[str] = ["time_col", "category_col", "value_col"]
-    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = {"hue", "style"}
+    plotter_params: list[str] = ["time_col", "category_col", "value_col"]
+    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: set[VisualChannel] = {"hue", "style"}
     default_theme: Theme = BUMP_PLOT_THEME
     supports_grouped: bool = False
 
-    component_schema: Dict[Phase, ComponentSchema] = {
+    component_schema: dict[Phase, ComponentSchema] = {
         "plot": {
             "main": {
                 "color",
@@ -75,7 +75,7 @@ class BumpPlotter(BasePlotter):
 
     def _get_category_style(
         self, category: Any, index: int, total_categories: int
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         base_colors = self.theme.get(
             "base_colors", ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
         )

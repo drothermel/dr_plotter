@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -13,12 +13,12 @@ from .base import BasePlotter, BasePlotterParamName, SubPlotterParamName
 
 class LinePlotter(BasePlotter):
     plotter_name: str = "line"
-    plotter_params: List[str] = []
-    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = {"hue", "style", "size", "marker", "alpha"}
+    plotter_params: list[str] = []
+    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: set[VisualChannel] = {"hue", "style", "size", "marker", "alpha"}
     default_theme: Theme = LINE_THEME
 
-    component_schema: Dict[Phase, ComponentSchema] = {
+    component_schema: dict[Phase, ComponentSchema] = {
         "plot": {
             "main": {
                 "color",

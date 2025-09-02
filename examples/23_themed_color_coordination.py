@@ -1,4 +1,3 @@
-from typing import Dict
 import itertools
 import pandas as pd
 from dr_plotter.figure_manager import FigureManager
@@ -26,7 +25,7 @@ def create_coordinated_theme() -> Theme:
 
 def create_color_coordination_example() -> None:
     coordinated_theme: Theme = create_coordinated_theme()
-    data_dict: Dict[str, pd.DataFrame] = ExampleData.get_color_coordination_data()
+    data_dict: dict[str, pd.DataFrame] = ExampleData.get_color_coordination_data()
 
     with FigureManager(
         PlotConfig(

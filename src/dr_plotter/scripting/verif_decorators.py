@@ -1,6 +1,6 @@
 import functools
 import sys
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -33,7 +33,7 @@ from .verification_formatter import (
 )
 
 
-def _print_comprehensive_plot_info(ax: Any, subplot_index: int) -> Dict[str, Any]:
+def _print_comprehensive_plot_info(ax: Any, subplot_index: int) -> dict[str, Any]:
     info = {
         "title": ax.get_title() or "(no title)",
         "xlabel": ax.get_xlabel() or "(no xlabel)",
@@ -97,8 +97,8 @@ def _print_comprehensive_plot_info(ax: Any, subplot_index: int) -> Dict[str, Any
 def _print_failure_message(
     name: str,
     expected: int,
-    result: Dict[str, Any],
-    descriptions: Optional[Dict[int, str]] = None,
+    result: dict[str, Any],
+    descriptions: Optional[dict[int, str]] = None,
 ) -> None:
     print_critical(f"PLOT {name.upper()} FAILED: Legend visibility issues detected!")
 
@@ -135,13 +135,13 @@ def verify_plot(
     expected_legends: int = 0,
     expected_channels: Optional[ExpectedChannels] = None,
     expected_legend_entries: Optional[
-        Dict[SubplotCoord, Dict[str, Union[int, str]]]
+        dict[SubplotCoord, dict[str, Union[int, str]]]
     ] = None,
     verify_legend_consistency: bool = False,
     min_unique_threshold: int = 2,
     tolerance: Optional[float] = None,
     fail_on_missing: bool = True,
-    subplot_descriptions: Optional[Dict[int, str]] = None,
+    subplot_descriptions: Optional[dict[int, str]] = None,
 ) -> Callable:
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
@@ -242,7 +242,7 @@ def verify_plot(
                         f"Collections found: {subplot_result['collections_found']}"
                     )
 
-                    for channel, channel_result in subplot_result["channels"].items():
+                    for channel_result in subplot_result["channels"].values():
                         success = channel_result["passed"]
                         print_item_result(
                             channel_result["channel"],
@@ -280,7 +280,7 @@ def verify_plot(
                 print_section_header("LEGEND-PLOT CONSISTENCY VERIFICATION")
 
                 if expected_legend_entries:
-                    for subplot_coord, _ in expected_legend_entries.items():
+                    for subplot_coord in expected_legend_entries:
                         row, col = subplot_coord
 
                         main_grid_axes = filter_main_grid_axes(fig.axes)
@@ -316,9 +316,9 @@ def verify_plot(
                         else:
                             print_failure(consistency_result["message"], 1)
 
-                        for check_name, check_result in consistency_result[
+                        for check_result in consistency_result[
                             "consistency_checks"
-                        ].items():
+                        ].values():
                             success = check_result["passed"]
                             if success:
                                 print_success(check_result["message"], 2)
@@ -453,7 +453,7 @@ def inspect_plot_properties() -> Callable:
                         unique_colors = set(colors_at_pos)
 
                         if len(unique_colors) == 1:
-                            color = list(unique_colors)[0]
+                            color = next(iter(unique_colors))
                             print_success(
                                 f"Line {pos} color: {color} (consistent across {len(colors_at_pos)} subplots)",
                                 2,
@@ -515,8 +515,8 @@ def verify_figure_legends(
     expected_legend_count: int,
     legend_strategy: str,
     expected_total_entries: Optional[int] = None,
-    expected_channel_entries: Optional[Dict[str, int]] = None,
-    expected_channels: Optional[List[str]] = None,
+    expected_channel_entries: Optional[dict[str, int]] = None,
+    expected_channels: Optional[list[str]] = None,
     tolerance: Optional[float] = None,
     fail_on_missing: bool = True,
 ) -> Callable:
@@ -553,7 +553,7 @@ def verify_figure_legends(
             else:
                 print_failure(verification_result["message"], 1)
 
-            for check_name, check_result in verification_result["checks"].items():
+            for check_result in verification_result["checks"].values():
                 success = check_result["passed"]
                 if success:
                     print_success(check_result["message"], 1)

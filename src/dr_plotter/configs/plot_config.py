@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 from dr_plotter.configs.figure_config import FigureConfig
 from dr_plotter.configs.legend_config import LegendConfig
@@ -11,28 +11,28 @@ from dr_plotter.types import ColorPalette
 class LayoutConfig:
     rows: int = 1
     cols: int = 1
-    figsize: Tuple[float, float] = (12.0, 8.0)
+    figsize: tuple[float, float] = (12.0, 8.0)
     tight_layout_pad: float = 0.5
-    figure_kwargs: Dict[str, Any] = field(default_factory=dict)
-    subplot_kwargs: Dict[str, Any] = field(default_factory=dict)
-    x_labels: Optional[List[List[Optional[str]]]] = None
-    y_labels: Optional[List[List[Optional[str]]]] = None
+    figure_kwargs: dict[str, Any] = field(default_factory=dict)
+    subplot_kwargs: dict[str, Any] = field(default_factory=dict)
+    x_labels: Optional[list[list[Optional[str]]]] = None
+    y_labels: Optional[list[list[Optional[str]]]] = None
 
 
 @dataclass
 class StyleConfig:
     colors: Optional[ColorPalette] = None
-    plot_styles: Optional[Dict[str, Any]] = field(default_factory=dict)
-    fonts: Optional[Dict[str, Any]] = field(default_factory=dict)
-    figure_styles: Optional[Dict[str, Any]] = field(default_factory=dict)
+    plot_styles: Optional[dict[str, Any]] = field(default_factory=dict)
+    fonts: Optional[dict[str, Any]] = field(default_factory=dict)
+    figure_styles: Optional[dict[str, Any]] = field(default_factory=dict)
     theme: Optional[Union[str, Theme]] = None
 
 
 @dataclass
 class PlotConfig:
-    layout: Optional[Union[Tuple[int, int], Dict[str, Any], LayoutConfig]] = None
-    style: Optional[Union[str, Dict[str, Any], StyleConfig]] = None
-    legend: Optional[Union[str, Dict[str, Any]]] = None
+    layout: Optional[Union[tuple[int, int], dict[str, Any], LayoutConfig]] = None
+    style: Optional[Union[str, dict[str, Any], StyleConfig]] = None
+    legend: Optional[Union[str, dict[str, Any]]] = None
 
     @classmethod
     def from_preset(cls, preset_name: str) -> "PlotConfig":
@@ -74,7 +74,7 @@ class PlotConfig:
 
         return StyleConfig()
 
-    def _to_legacy_configs(self) -> Tuple[FigureConfig, LegendConfig, Optional[Theme]]:
+    def _to_legacy_configs(self) -> tuple[FigureConfig, LegendConfig, Optional[Theme]]:
         layout_config = self._resolve_layout_config()
         style_config = self._resolve_style_config()
 
@@ -113,7 +113,7 @@ class PlotConfig:
         return self._convert_legend_dict_to_config(self.legend)
 
     def _convert_legend_dict_to_config(
-        self, legend_dict: Dict[str, Any]
+        self, legend_dict: dict[str, Any]
     ) -> LegendConfig:
         legend_kwargs = {}
         for key, value in legend_dict.items():

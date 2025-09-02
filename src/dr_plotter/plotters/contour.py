@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Set, Optional
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -20,14 +20,14 @@ from dr_plotter.configs import GroupingConfig
 
 class ContourPlotter(BasePlotter):
     plotter_name: str = "contour"
-    plotter_params: List[str] = []
-    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = set()
+    plotter_params: list[str] = []
+    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: set[VisualChannel] = set()
     default_theme: Theme = CONTOUR_THEME
     supports_legend: bool = False
     supports_grouped: bool = False
 
-    component_schema: Dict[Phase, ComponentSchema] = {
+    component_schema: dict[Phase, ComponentSchema] = {
         "plot": {
             "contour": {
                 "levels",
@@ -122,7 +122,7 @@ class ContourPlotter(BasePlotter):
         self._apply_styling(ax)
 
     def _style_colorbar(
-        self, colorbar_info: Dict[str, Any], styles: Dict[str, Any]
+        self, colorbar_info: dict[str, Any], styles: dict[str, Any]
     ) -> None:
         plot_object = colorbar_info["plot_object"]
         ax = colorbar_info["ax"]

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Optional
 import numpy as np
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ from dr_plotter.types import RGBA, Position, CollectionProperties
 from dr_plotter.artist_utils import extract_colors_from_polycollection
 
 
-def extract_colors(obj: Any) -> List[RGBA]:
+def extract_colors(obj: Any) -> list[RGBA]:
     if isinstance(obj, PathCollection):
         return [mcolors.to_rgba(color) for color in obj.get_facecolors()]
     elif isinstance(obj, PolyCollection):
@@ -48,7 +48,7 @@ def extract_colors(obj: Any) -> List[RGBA]:
         )
 
 
-def extract_markers(obj: Any) -> List[str]:
+def extract_markers(obj: Any) -> list[str]:
     if isinstance(obj, PathCollection):
         paths = obj.get_paths()
         markers = []
@@ -79,7 +79,7 @@ def extract_markers(obj: Any) -> List[str]:
         )
 
 
-def extract_sizes(obj: Any) -> List[float]:
+def extract_sizes(obj: Any) -> list[float]:
     if isinstance(obj, PathCollection):
         sizes = obj.get_sizes()
         return [float(size) for size in sizes]
@@ -99,7 +99,7 @@ def extract_sizes(obj: Any) -> List[float]:
         )
 
 
-def extract_positions(obj: Any) -> List[Position]:
+def extract_positions(obj: Any) -> list[Position]:
     if isinstance(obj, PathCollection):
         offsets = obj.get_offsets()
         return [(float(x), float(y)) for x, y in offsets]
@@ -107,7 +107,7 @@ def extract_positions(obj: Any) -> List[Position]:
         return []
 
 
-def extract_alphas(obj: Any) -> List[float]:
+def extract_alphas(obj: Any) -> list[float]:
     if isinstance(obj, PathCollection):
         facecolors = obj.get_facecolors()
         return [float(color[3]) if len(color) >= 4 else 1.0 for color in facecolors]
@@ -136,7 +136,7 @@ def extract_alphas(obj: Any) -> List[float]:
         return [float(color[3]) if len(color) >= 4 else 1.0 for color in colors]
 
 
-def extract_styles(obj: Any) -> List[str]:
+def extract_styles(obj: Any) -> list[str]:
     if isinstance(obj, PolyCollection):
         edgecolors = obj.get_edgecolors()
         linewidths = obj.get_linewidths()
@@ -160,7 +160,7 @@ def extract_styles(obj: Any) -> List[str]:
         )
 
 
-def extract_legend_properties(ax: Any) -> Dict[str, Any]:
+def extract_legend_properties(ax: Any) -> dict[str, Any]:
     legend = ax.get_legend()
     if legend is None:
         return {
@@ -217,7 +217,7 @@ def extract_collection_properties(
     return base_props
 
 
-def extract_figure_legend_properties(fig: Any) -> Dict[str, Any]:
+def extract_figure_legend_properties(fig: Any) -> dict[str, Any]:
     legends = []
     for child in fig.get_children():
         if isinstance(child, matplotlib.legend.Legend):
@@ -374,7 +374,7 @@ def _extract_style_from_handle(handle: Any) -> str:
         return "-"
 
 
-def _extract_image_properties(image: AxesImage) -> Dict[str, Any]:
+def _extract_image_properties(image: AxesImage) -> dict[str, Any]:
     array = image.get_array()
     extent = image.get_extent()
     return {
@@ -388,7 +388,7 @@ def _extract_image_properties(image: AxesImage) -> Dict[str, Any]:
     }
 
 
-def extract_pathcollections_from_axis(ax: Any) -> List[PathCollection]:
+def extract_pathcollections_from_axis(ax: Any) -> list[PathCollection]:
     collections = []
     for collection in ax.collections:
         if isinstance(collection, PathCollection):
@@ -396,7 +396,7 @@ def extract_pathcollections_from_axis(ax: Any) -> List[PathCollection]:
     return collections
 
 
-def extract_polycollections_from_axis(ax: Any) -> List[PolyCollection]:
+def extract_polycollections_from_axis(ax: Any) -> list[PolyCollection]:
     collections = []
     for collection in ax.collections:
         if isinstance(collection, PolyCollection):
@@ -404,19 +404,19 @@ def extract_polycollections_from_axis(ax: Any) -> List[PolyCollection]:
     return collections
 
 
-def extract_barcontainers_from_axis(ax: Any) -> List[Any]:
+def extract_barcontainers_from_axis(ax: Any) -> list[Any]:
     return [c for c in getattr(ax, "containers", []) if isinstance(c, BarContainer)]
 
 
-def extract_lines_from_axis(ax: Any) -> List[Any]:
+def extract_lines_from_axis(ax: Any) -> list[Any]:
     return [line for line in getattr(ax, "lines", []) if hasattr(line, "get_color")]
 
 
-def extract_images_from_axis(ax: Any) -> List[AxesImage]:
+def extract_images_from_axis(ax: Any) -> list[AxesImage]:
     return [img for img in getattr(ax, "images", []) if isinstance(img, AxesImage)]
 
 
-def debug_legend_detection(ax: Any) -> Dict[str, Any]:
+def debug_legend_detection(ax: Any) -> dict[str, Any]:
     legend = ax.get_legend()
     legend_props = extract_legend_properties(ax)
 
@@ -437,7 +437,7 @@ def debug_legend_detection(ax: Any) -> Dict[str, Any]:
     return debug_info
 
 
-def extract_subplot_properties(ax: Any) -> Dict[str, Any]:
+def extract_subplot_properties(ax: Any) -> dict[str, Any]:
     path_collections = extract_pathcollections_from_axis(ax)
     poly_collections = extract_polycollections_from_axis(ax)
     bar_containers = extract_barcontainers_from_axis(ax)
@@ -500,14 +500,14 @@ def identify_marker_from_path(path: Any) -> str:
 
 
 def extract_channel_values_from_collections(
-    collections: List[Dict[str, Any]], channel: str
-) -> List[Any]:
+    collections: list[dict[str, Any]], channel: str
+) -> list[Any]:
     all_values = []
 
     if channel == "size":
         for collection in collections:
             all_values.extend(collection["sizes"])
-    elif channel == "hue" or channel == "color":
+    elif channel in {"hue", "color"}:
         for collection in collections:
             all_values.extend(collection["colors"])
     elif channel == "marker":
@@ -532,8 +532,8 @@ def extract_channel_values_from_collections(
 
 
 def extract_all_plot_data_from_collections(
-    collections: List[Dict[str, Any]],
-) -> Dict[str, List[Any]]:
+    collections: list[dict[str, Any]],
+) -> dict[str, list[Any]]:
     all_plot_markers = []
     all_plot_colors = []
     all_plot_sizes = []
@@ -567,8 +567,8 @@ def extract_all_plot_data_from_collections(
 
 
 def extract_legend_data_with_alphas(
-    legend_props: Dict[str, Any],
-) -> Dict[str, List[Any]]:
+    legend_props: dict[str, Any],
+) -> dict[str, list[Any]]:
     legend_alphas = []
     for rgba_color in legend_props["colors"]:
         if len(rgba_color) >= 4:
@@ -585,7 +585,7 @@ def extract_legend_data_with_alphas(
     }
 
 
-def validate_legend_properties(ax: plt.Axes) -> Dict[str, Any]:
+def validate_legend_properties(ax: plt.Axes) -> dict[str, Any]:
     legend_props = extract_legend_properties(ax)
 
     if not legend_props["visible"]:
@@ -614,7 +614,7 @@ def validate_legend_properties(ax: plt.Axes) -> Dict[str, Any]:
 
 def is_legend_actually_visible(
     ax: plt.Axes, figure: Optional[plt.Figure] = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     result = {
         "visible": False,
         "exists": False,
@@ -715,7 +715,7 @@ def is_legend_actually_visible(
     return result
 
 
-def check_all_subplot_legends(figure: plt.Figure) -> Dict[int, Dict[str, Any]]:
+def check_all_subplot_legends(figure: plt.Figure) -> dict[int, dict[str, Any]]:
     results = {}
 
     if hasattr(figure, "axes"):
@@ -729,7 +729,7 @@ def verify_legend_visibility(
     figure: plt.Figure,
     expected_visible_count: Optional[int] = None,
     fail_on_missing: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     from .verification_formatter import (
         print_section_header,
         print_success,
@@ -831,7 +831,7 @@ def verify_legend_visibility(
 
 def verify_legend_visibility_core(
     figure: plt.Figure, expected_visible_count: Optional[int] = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     results = check_all_subplot_legends(figure)
 
     visible_count = sum(1 for result in results.values() if result["visible"])
@@ -875,7 +875,7 @@ def verify_legend_visibility_core(
     return summary
 
 
-def filter_main_grid_axes(fig_axes: List[Any]) -> List[Any]:
+def filter_main_grid_axes(fig_axes: list[Any]) -> list[Any]:
     grid_axes = []
     main_gridspec = None
 
@@ -890,7 +890,7 @@ def filter_main_grid_axes(fig_axes: List[Any]) -> List[Any]:
     return grid_axes
 
 
-def get_main_grid_axes_from_figure(fig: plt.Figure) -> List[Any]:
+def get_main_grid_axes_from_figure(fig: plt.Figure) -> list[Any]:
     main_grid_axes = []
     for ax in fig.axes:
         if hasattr(ax, "get_gridspec") and ax.get_gridspec() is not None:
@@ -899,7 +899,7 @@ def get_main_grid_axes_from_figure(fig: plt.Figure) -> List[Any]:
 
 
 def validate_subplot_coord_access(
-    fig: plt.Figure, subplot_coord: Tuple[int, int]
+    fig: plt.Figure, subplot_coord: tuple[int, int]
 ) -> plt.Axes:
     from dr_plotter.utils import get_axes_from_grid
 
@@ -927,7 +927,7 @@ def validate_figure_result(result: Any) -> plt.Figure:
         assert False, f"Invalid return type: {type(result).__name__}"
 
 
-def validate_figure_list_result(result: Any) -> List[plt.Figure]:
+def validate_figure_list_result(result: Any) -> list[plt.Figure]:
     assert isinstance(result, (plt.Figure, list, tuple)), (
         f"Function must return Figure or list/tuple, got {type(result).__name__}"
     )
@@ -949,7 +949,7 @@ def validate_figure_list_result(result: Any) -> List[plt.Figure]:
         )
 
 
-def validate_axes_access(fig_axes: List[Any], row: int, col: int) -> plt.Axes:
+def validate_axes_access(fig_axes: list[Any], row: int, col: int) -> plt.Axes:
     from dr_plotter.utils import get_axes_from_grid
 
     assert len(fig_axes) > 0, "No axes found in figure"

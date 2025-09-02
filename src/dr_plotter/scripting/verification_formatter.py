@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 import sys
 import matplotlib.pyplot as plt
 
@@ -16,7 +16,7 @@ class VerificationFormatter:
     SECTION_SEPARATOR = "=" * 60
     SUBSECTION_SEPARATOR = "-" * 50
 
-    def __init__(self, output_stream=None):
+    def __init__(self, output_stream=None) -> None:
         self.output_stream = output_stream or sys.stdout
 
     def format_section_header(self, title: str, symbol: str = INFO_SYMBOL) -> str:
@@ -48,7 +48,7 @@ class VerificationFormatter:
         indent = self.INDENT_UNIT * indent_level
         return f"\n{indent}{message}"
 
-    def format_summary_stats(self, stats: Dict[str, Any], indent_level: int = 0) -> str:
+    def format_summary_stats(self, stats: dict[str, Any], indent_level: int = 0) -> str:
         indent = self.INDENT_UNIT * indent_level
         lines = []
         for key, value in stats.items():
@@ -63,7 +63,7 @@ class VerificationFormatter:
         return f"\n{indent}{item_name}: {symbol} {message}"
 
     def format_suggestions_list(
-        self, suggestions: List[str], indent_level: int = 1
+        self, suggestions: list[str], indent_level: int = 1
     ) -> str:
         if not suggestions:
             return ""
@@ -75,7 +75,7 @@ class VerificationFormatter:
         return "\n".join(lines)
 
     def format_detailed_issues_list(
-        self, issues: List[Dict[str, Any]], indent_level: int = 1
+        self, issues: list[dict[str, Any]], indent_level: int = 1
     ) -> str:
         if not issues:
             return ""
@@ -120,7 +120,7 @@ class VerificationFormatter:
         self.output_stream.write(self.format_info_line(message, indent_level))
         self.output_stream.flush()
 
-    def print_summary_stats(self, stats: Dict[str, Any], indent_level: int = 0) -> None:
+    def print_summary_stats(self, stats: dict[str, Any], indent_level: int = 0) -> None:
         self.output_stream.write(self.format_summary_stats(stats, indent_level))
         self.output_stream.flush()
 
@@ -132,14 +132,14 @@ class VerificationFormatter:
         )
         self.output_stream.flush()
 
-    def print_suggestions(self, suggestions: List[str], indent_level: int = 1) -> None:
+    def print_suggestions(self, suggestions: list[str], indent_level: int = 1) -> None:
         formatted = self.format_suggestions_list(suggestions, indent_level)
         if formatted:
             self.output_stream.write(f"\n{formatted}")
             self.output_stream.flush()
 
     def print_detailed_issues(
-        self, issues: List[Dict[str, Any]], indent_level: int = 1
+        self, issues: list[dict[str, Any]], indent_level: int = 1
     ) -> None:
         formatted = self.format_detailed_issues_list(issues, indent_level)
         if formatted:
@@ -193,7 +193,7 @@ def print_info(message: str, indent_level: int = 0) -> None:
     _default_formatter.print_info(message, indent_level)
 
 
-def print_summary_stats(stats: Dict[str, Any], indent_level: int = 0) -> None:
+def print_summary_stats(stats: dict[str, Any], indent_level: int = 0) -> None:
     _default_formatter.print_summary_stats(stats, indent_level)
 
 
@@ -203,11 +203,11 @@ def print_item_result(
     _default_formatter.print_item_result(item_name, success, message, indent_level)
 
 
-def print_suggestions(suggestions: List[str], indent_level: int = 1) -> None:
+def print_suggestions(suggestions: list[str], indent_level: int = 1) -> None:
     _default_formatter.print_suggestions(suggestions, indent_level)
 
 
-def print_detailed_issues(issues: List[Dict[str, Any]], indent_level: int = 1) -> None:
+def print_detailed_issues(issues: list[dict[str, Any]], indent_level: int = 1) -> None:
     _default_formatter.print_detailed_issues(issues, indent_level)
 
 
@@ -215,7 +215,7 @@ def verify_legend_visibility_with_formatting(
     figure: plt.Figure,
     expected_visible_count: Optional[int] = None,
     fail_on_missing: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     from .plot_data_extractor import verify_legend_visibility_core
 
     summary = verify_legend_visibility_core(figure, expected_visible_count)

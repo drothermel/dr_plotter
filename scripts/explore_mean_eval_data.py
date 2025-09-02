@@ -7,7 +7,7 @@ Requires DataDecide integration:
 Explores available metrics, data recipes, and model sizes in the dataset.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 import sys
 import pandas as pd
 from dr_plotter.scripting.datadec_utils import get_clean_datadec_df
@@ -22,7 +22,7 @@ def load_parquet_data() -> pd.DataFrame:
         sys.exit(1)
 
 
-def get_data_summary(df: pd.DataFrame) -> Dict[str, Any]:
+def get_data_summary(df: pd.DataFrame) -> dict[str, Any]:
     """Get basic data summary - DataDecide guarantees structure."""
     return {
         "total_columns": len(df.columns),
@@ -33,7 +33,7 @@ def get_data_summary(df: pd.DataFrame) -> Dict[str, Any]:
     }
 
 
-def extract_available_metrics(df: pd.DataFrame) -> List[str]:
+def extract_available_metrics(df: pd.DataFrame) -> list[str]:
     non_metric_columns = [
         "params",
         "data",
@@ -52,15 +52,15 @@ def extract_available_metrics(df: pd.DataFrame) -> List[str]:
     return sorted(metric_columns)
 
 
-def extract_data_recipes(df: pd.DataFrame) -> List[str]:
+def extract_data_recipes(df: pd.DataFrame) -> list[str]:
     return sorted(df["data"].unique().tolist())
 
 
-def extract_model_sizes(df: pd.DataFrame) -> List[str]:
+def extract_model_sizes(df: pd.DataFrame) -> list[str]:
     return sorted(df["params"].unique().tolist())
 
 
-def analyze_data_completeness(df: pd.DataFrame) -> Dict[str, Any]:
+def analyze_data_completeness(df: pd.DataFrame) -> dict[str, Any]:
     model_sizes = extract_model_sizes(df)
     data_recipes = extract_data_recipes(df)
     metrics = extract_available_metrics(df)

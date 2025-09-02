@@ -1,5 +1,6 @@
+from __future__ import annotations
 import itertools
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from dr_plotter import consts
 from dr_plotter.configs import LegendConfig
@@ -20,13 +21,15 @@ class Style:
 
     def __init__(
         self,
-        name: Optional[str] = None,
-        styles_to_merge: List["Style"] = [],
+        name: str | None = None,
+        styles_to_merge: list[Style] | None = None,
         **styles: Any,
     ) -> None:
+        if styles_to_merge is None:
+            styles_to_merge = []
         self.name = name
-        self.styles: Dict[str, Any] = {**styles}
-        self.merged_names: List[str] = []
+        self.styles: dict[str, Any] = {**styles}
+        self.merged_names: list[str] = []
         for style in styles_to_merge:
             self.merge_style(style)
             if style.name is not None:
@@ -38,7 +41,7 @@ class Style:
     def get(self, key: str, default: Any = None) -> Any:
         return self.styles.get(key, default)
 
-    def merge_style(self, other: "Style") -> None:
+    def merge_style(self, other: Style) -> None:
         self.styles.update(other.styles)
 
 
@@ -62,12 +65,12 @@ class Theme:
     def __init__(
         self,
         name: str,
-        parent: Optional["Theme"] = None,
-        plot_styles: Optional[PlotStyles | Dict] = None,
-        post_styles: Optional[PostStyles | Dict] = None,
-        axes_styles: Optional[AxesStyles | Dict] = None,
-        figure_styles: Optional[FigureStyles | Dict] = None,
-        legend_config: Optional[LegendConfig] = None,
+        parent: Theme | None = None,
+        plot_styles: PlotStyles | dict | None = None,
+        post_styles: PostStyles | dict | None = None,
+        axes_styles: AxesStyles | dict | None = None,
+        figure_styles: FigureStyles | dict | None = None,
+        legend_config: LegendConfig | None = None,
         **styles: Any,
     ) -> None:
         self.name = name
@@ -77,7 +80,7 @@ class Theme:
             or (parent.legend_config if parent else None)
             or LegendConfig()
         )
-        self.all_styles: Dict[str, Style] = {}
+        self.all_styles: dict[str, Style] = {}
         for cls, cls_dict in [
             (PlotStyles, plot_styles),
             (PostStyles, post_styles),
@@ -93,33 +96,33 @@ class Theme:
                 self.all_styles[cls.style_type] = cls()
 
     @property
-    def general_styles(self) -> Dict[str, Any]:
+    def general_styles(self) -> dict[str, Any]:
         return self.get_all_styles(Style)
 
     @property
-    def plot_styles(self) -> Dict[str, Any]:
+    def plot_styles(self) -> dict[str, Any]:
         return self.get_all_styles(PlotStyles)
 
     @property
-    def post_styles(self) -> Dict[str, Any]:
+    def post_styles(self) -> dict[str, Any]:
         return self.get_all_styles(PostStyles)
 
     @property
-    def axes_styles(self) -> Dict[str, Any]:
+    def axes_styles(self) -> dict[str, Any]:
         return self.get_all_styles(AxesStyles)
 
     @property
-    def figure_styles(self) -> Dict[str, Any]:
+    def figure_styles(self) -> dict[str, Any]:
         return self.get_all_styles(FigureStyles)
 
-    def get_all_styles(self, cls: type) -> Dict[str, Any]:
-        styles: Dict[str, Any] = {}
+    def get_all_styles(self, cls: type) -> dict[str, Any]:
+        styles: dict[str, Any] = {}
         if self.parent is not None:
             styles.update(self.parent.get_all_styles(cls))
         styles.update(self.all_styles[cls.style_type].styles)
         return styles
 
-    def get(self, key: str, default: Any = None, source: Optional[str] = None) -> Any:
+    def get(self, key: str, default: Any = None, source: str | None = None) -> Any:
         for source_type, source_styles in self.all_styles.items():
             if (source is None or source_type == source) and (
                 key in source_styles.styles
@@ -129,7 +132,7 @@ class Theme:
             return self.parent.get(key, default=default, source=source)
         return default
 
-    def add(self, key: str, value: Any, source: Optional[str] = None) -> None:
+    def add(self, key: str, value: Any, source: str | None = None) -> None:
         source = source if source is not None else Style.style_type
         self.all_styles[source].add(key, value)
 

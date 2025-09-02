@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -20,12 +20,12 @@ from .base import BasePlotter
 
 class ScatterPlotter(BasePlotter):
     plotter_name: str = "scatter"
-    plotter_params: List[str] = []
-    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = {"hue", "size", "marker", "alpha"}
+    plotter_params: list[str] = []
+    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: set[VisualChannel] = {"hue", "size", "marker", "alpha"}
     default_theme: Theme = SCATTER_THEME
 
-    component_schema: Dict[Phase, ComponentSchema] = {
+    component_schema: dict[Phase, ComponentSchema] = {
         "plot": {
             "main": {
                 "s",
@@ -69,7 +69,7 @@ class ScatterPlotter(BasePlotter):
         )
 
     def _style_scatter_collection(
-        self, collection: Any, styles: Dict[str, Any]
+        self, collection: Any, styles: dict[str, Any]
     ) -> None:
         for attr, value in styles.items():
             if attr == "sizes" and hasattr(collection, "set_sizes"):

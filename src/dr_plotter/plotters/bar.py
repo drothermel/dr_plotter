@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -20,12 +20,12 @@ from .base import BasePlotter
 
 class BarPlotter(BasePlotter):
     plotter_name: str = "bar"
-    plotter_params: List[str] = []
-    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = {"hue"}
+    plotter_params: list[str] = []
+    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: set[VisualChannel] = {"hue"}
     default_theme: Theme = BAR_THEME
 
-    component_schema: Dict[Phase, ComponentSchema] = {
+    component_schema: dict[Phase, ComponentSchema] = {
         "plot": {
             "main": {
                 "color",
@@ -58,7 +58,7 @@ class BarPlotter(BasePlotter):
         super().__init__(data, grouping_cfg, theme, figure_manager, **kwargs)
         self.styler.register_post_processor("bar", "patches", self._style_bar_patches)
 
-    def _style_bar_patches(self, patches: Any, styles: Dict[str, Any]) -> None:
+    def _style_bar_patches(self, patches: Any, styles: dict[str, Any]) -> None:
         for patch in patches:
             for attr, value in styles.items():
                 if hasattr(patch, f"set_{attr}"):
@@ -92,7 +92,7 @@ class BarPlotter(BasePlotter):
         self,
         ax: Any,
         data: pd.DataFrame,
-        group_position: Dict[str, Any],
+        group_position: dict[str, Any],
         **kwargs: Any,
     ) -> None:
         label = kwargs.pop("label", None)

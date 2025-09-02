@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import matplotlib.pyplot as plt
 
@@ -8,17 +8,17 @@ import matplotlib.pyplot as plt
 class FigureConfig:
     rows: int = 1
     cols: int = 1
-    figsize: Tuple[int, int] = (12, 8)
+    figsize: tuple[int, int] = (12, 8)
     tight_layout_pad: float = 0.5
 
     external_ax: Optional[plt.Axes] = None
     shared_styling: Optional[bool] = None
 
-    figure_kwargs: Dict[str, Any] = field(default_factory=dict)
-    subplot_kwargs: Dict[str, Any] = field(default_factory=dict)
+    figure_kwargs: dict[str, Any] = field(default_factory=dict)
+    subplot_kwargs: dict[str, Any] = field(default_factory=dict)
 
-    x_labels: Optional[List[List[Optional[str]]]] = None
-    y_labels: Optional[List[List[Optional[str]]]] = None
+    x_labels: Optional[list[list[Optional[str]]]] = None
+    y_labels: Optional[list[list[Optional[str]]]] = None
 
     def validate(self) -> None:
         assert self.rows > 0, f"Rows must be positive, got {self.rows}"

@@ -1,5 +1,5 @@
 import importlib.util
-from typing import Any, Tuple
+from typing import Any
 
 
 def check_datadec_available() -> bool:
@@ -12,7 +12,7 @@ def check_datadec_available() -> bool:
         ) from None
 
 
-def get_datadec_functions() -> Tuple[Any, Any, Any]:
+def get_datadec_functions() -> tuple[Any, Any, Any]:
     check_datadec_available()
     from datadec import DataDecide
     from datadec.script_utils import select_params, select_data

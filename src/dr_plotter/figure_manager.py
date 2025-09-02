@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -59,7 +59,7 @@ class FigureManager:
 
         self._init_from_configs(figure_config, legend_config, theme)
 
-    def _generate_conversion_example(self, kwargs: Dict[str, Any]) -> str:
+    def _generate_conversion_example(self, kwargs: dict[str, Any]) -> str:
         conversions = []
 
         if "figure" in kwargs:
@@ -116,7 +116,7 @@ class FigureManager:
 
         self._coordinate_styling(theme, figure.shared_styling)
 
-        self._facet_grid_info: Optional[Dict[str, Any]] = None
+        self._facet_grid_info: Optional[dict[str, Any]] = None
         self._facet_style_coordinator: Optional[FacetStyleCoordinator] = None
 
     @classmethod
@@ -133,12 +133,12 @@ class FigureManager:
     def _create_figure_axes(
         self,
         external_ax: Optional[plt.Axes],
-        figure_kwargs: Dict[str, Any],
-        subplot_kwargs: Dict[str, Any],
-        figsize: Tuple[int, int],
+        figure_kwargs: dict[str, Any],
+        subplot_kwargs: dict[str, Any],
+        figsize: tuple[int, int],
         rows: int,
         cols: int,
-    ) -> Tuple[plt.Figure, plt.Axes, bool]:
+    ) -> tuple[plt.Figure, plt.Axes, bool]:
         if external_ax is not None:
             return external_ax.get_figure(), external_ax, True
 
@@ -208,8 +208,7 @@ class FigureManager:
         self._apply_axis_labels()
 
         needs_legend_space = (
-            self.legend_config.strategy == LegendStrategy.GROUPED_BY_CHANNEL
-            or self.legend_config.strategy == LegendStrategy.FIGURE_BELOW
+            self.legend_config.strategy in (LegendStrategy.GROUPED_BY_CHANNEL, LegendStrategy.FIGURE_BELOW)
         )
 
         if self._layout_rect is not None:
@@ -285,10 +284,7 @@ class FigureManager:
         else:
             axes_to_check = [self.axes]
 
-        for ax in axes_to_check:
-            if ax.get_title():
-                return True
-        return False
+        return any(ax.get_title() for ax in axes_to_check)
 
     def get_axes(
         self, row: Optional[int] = None, col: Optional[int] = None
@@ -306,10 +302,7 @@ class FigureManager:
         col: int,
         **kwargs: Any,
     ) -> None:
-        if self.external_mode:
-            ax = self.axes
-        else:
-            ax = self.get_axes(row, col)
+        ax = self.axes if self.external_mode else self.get_axes(row, col)
 
         kwargs["grouping_cfg"] = GroupingConfig()
         kwargs["grouping_cfg"].set_kwargs(kwargs)
@@ -352,7 +345,7 @@ class FigureManager:
         if faceting is None:
             return FacetingConfig(**faceting_params)
 
-        config_dict = {k: v for k, v in faceting.__dict__.items()}
+        config_dict = dict(faceting.__dict__.items())
         for key, value in faceting_params.items():
             if value is not None:
                 config_dict[key] = value
@@ -452,7 +445,7 @@ class FigureManager:
 
     def _apply_faceting_plot_enhancements(
         self, row: int, col: int, **kwargs: Any
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if "_coordinated_colors" in kwargs:
             coordinated_colors = kwargs.pop("_coordinated_colors")
             kwargs.pop("_coordinated_markers", None)

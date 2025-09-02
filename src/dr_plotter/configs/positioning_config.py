@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Tuple
 
 
 @dataclass
@@ -13,7 +12,7 @@ class PositioningConfig:
     legend_spacing_base: float = 0.35
     legend_alignment_center: float = 0.5
 
-    two_legend_positions: Tuple[float, float] = (0.25, 0.75)
+    two_legend_positions: tuple[float, float] = (0.25, 0.75)
     multi_legend_start_factor: float = 0.15
 
     title_space_factor: float = 0.95

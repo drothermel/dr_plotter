@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Set, TYPE_CHECKING
+from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from dr_plotter.consts import VISUAL_CHANNELS
 from dr_plotter.configs import GroupingConfig
@@ -24,9 +24,9 @@ class StyleApplicator:
     def __init__(
         self,
         theme: Theme,
-        kwargs: Dict[str, Any],
+        kwargs: dict[str, Any],
         grouping_cfg: Optional[GroupingConfig] = None,
-        group_values: Optional[Dict[str, Any]] = None,
+        group_values: Optional[dict[str, Any]] = None,
         figure_manager: Optional[Any] = None,
         plot_type: Optional[str] = None,
         style_engine: Optional["StyleEngine"] = None,
@@ -39,7 +39,7 @@ class StyleApplicator:
         self.plot_type = plot_type
         self.style_engine = style_engine
         self._component_schemas = self._load_component_schemas()
-        self._post_processors: Dict[str, Callable] = {}
+        self._post_processors: dict[str, Callable] = {}
 
     def get_component_styles(
         self, plot_type: str, phase: Phase = "plot"
@@ -57,7 +57,7 @@ class StyleApplicator:
 
     def get_single_component_styles(
         self, plot_type: str, component: str, phase: Phase = "plot"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         schema = self._get_component_schema(plot_type, phase)
         if component not in schema:
             return {}
@@ -72,13 +72,13 @@ class StyleApplicator:
         key = f"{plot_type}.{component}"
         self._post_processors[key] = processor
 
-    def set_group_context(self, group_values: Dict[str, Any]) -> None:
+    def set_group_context(self, group_values: dict[str, Any]) -> None:
         self.group_values = group_values if group_values is not None else {}
 
     def clear_group_context(self) -> None:
         self.group_values = {}
 
-    def apply_post_processing(self, plot_type: str, artists: Dict[str, Any]) -> None:
+    def apply_post_processing(self, plot_type: str, artists: dict[str, Any]) -> None:
         axes_styles = self.get_component_styles(plot_type, phase="axes")
 
         for component, styles in axes_styles.items():
@@ -155,8 +155,8 @@ class StyleApplicator:
             raise ValueError(f"Unsupported computation operation: {operation}")
 
     def _resolve_component_styles(
-        self, plot_type: str, component: str, attrs: Set[str], phase: Phase = "plot"
-    ) -> Dict[str, Any]:
+        self, plot_type: str, component: str, attrs: set[str], phase: Phase = "plot"
+    ) -> dict[str, Any]:
         base_styles = self._get_base_theme_styles(phase)
         plot_styles = self._get_plot_specific_theme_styles(plot_type, phase)
         group_styles = self._get_group_styles_for_component(plot_type, component, phase)
@@ -172,7 +172,7 @@ class StyleApplicator:
             component,
         )
 
-    def _get_base_theme_styles(self, phase: Phase) -> Dict[str, Any]:
+    def _get_base_theme_styles(self, phase: Phase) -> dict[str, Any]:
         base_styles = {}
         base_styles.update(self.theme.general_styles)
 
@@ -189,7 +189,7 @@ class StyleApplicator:
 
     def _get_plot_specific_theme_styles(
         self, plot_type: str, phase: Phase
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         plot_styles = {}
         plot_specific_themes = self._get_plot_specific_themes()
 
@@ -215,8 +215,8 @@ class StyleApplicator:
         attr: str,
         plot_type: str,
         component: str,
-        base_styles: Dict[str, Any],
-        group_styles: Dict[str, Any],
+        base_styles: dict[str, Any],
+        group_styles: dict[str, Any],
     ) -> Any:
         if attr == "s" and "size_mult" in group_styles and plot_type == "scatter":
             base_size = base_styles.get("marker_size", 50)
@@ -239,14 +239,14 @@ class StyleApplicator:
 
     def _merge_style_precedence(
         self,
-        base_styles: Dict[str, Any],
-        plot_styles: Dict[str, Any],
-        group_styles: Dict[str, Any],
-        component_kwargs: Dict[str, Any],
-        attrs: Set[str],
+        base_styles: dict[str, Any],
+        plot_styles: dict[str, Any],
+        group_styles: dict[str, Any],
+        component_kwargs: dict[str, Any],
+        attrs: set[str],
         plot_type: str,
         component: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         resolved_styles = {}
 
         for attr in attrs:
@@ -283,18 +283,18 @@ class StyleApplicator:
         )
 
     def _extract_component_kwargs(
-        self, component: str, attrs: Set[str], phase: Phase = "plot"
-    ) -> Dict[str, Any]:
+        self, component: str, attrs: set[str], phase: Phase = "plot"
+    ) -> dict[str, Any]:
         if component == "main":
             return self._extract_main_component_kwargs(attrs)
         else:
             return self._extract_prefixed_component_kwargs(component, attrs)
 
-    def _extract_main_component_kwargs(self, attrs: Set[str]) -> Dict[str, Any]:
+    def _extract_main_component_kwargs(self, attrs: set[str]) -> dict[str, Any]:
         axes_specific = {"title", "xlabel", "ylabel", "grid"}
         axes_prefixed = {
             k
-            for k in self.kwargs.keys()
+            for k in self.kwargs
             if any(k.startswith(f"{axis}_") for axis in axes_specific)
         }
 
@@ -311,8 +311,8 @@ class StyleApplicator:
         return extracted
 
     def _extract_prefixed_component_kwargs(
-        self, component: str, attrs: Set[str]
-    ) -> Dict[str, Any]:
+        self, component: str, attrs: set[str]
+    ) -> dict[str, Any]:
         component_prefix = f"{component}_"
         extracted = {}
 
@@ -350,15 +350,13 @@ class StyleApplicator:
 
         if key in visual_channel_names and key in self.kwargs:
             value = self.kwargs[key]
-            if isinstance(value, str):
-                return True
-            return False
+            return bool(isinstance(value, str))
 
         return key in reserved
 
     def _get_group_styles_for_component(
         self, plot_type: str, component: str, phase: Phase = "plot"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if not self.grouping_cfg or not self.group_values:
             return {}
 
@@ -392,7 +390,7 @@ class StyleApplicator:
                 return plot_schemas
         return {"main": set()}
 
-    def _get_group_styled_components(self, plot_type: str) -> Set[str]:
+    def _get_group_styled_components(self, plot_type: str) -> set[str]:
         group_styled_map = {
             "scatter": {"main"},
             "line": {"main"},
@@ -405,7 +403,7 @@ class StyleApplicator:
         }
         return group_styled_map.get(plot_type, {"main"})
 
-    def _get_plot_specific_themes(self) -> Dict[str, Theme]:
+    def _get_plot_specific_themes(self) -> dict[str, Theme]:
         return {
             "line": LINE_THEME,
             "scatter": SCATTER_THEME,
@@ -417,5 +415,5 @@ class StyleApplicator:
             "contour": CONTOUR_THEME,
         }
 
-    def _load_component_schemas(self) -> Dict[str, Dict[Phase, ComponentSchema]]:
+    def _load_component_schemas(self) -> dict[str, dict[Phase, ComponentSchema]]:
         return {}

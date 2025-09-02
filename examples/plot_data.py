@@ -1,4 +1,3 @@
-from typing import Dict
 import pandas as pd
 import numpy as np
 
@@ -311,10 +310,7 @@ class ExampleData:
                     else:
                         x_offset, y_offset = 2, 1
 
-                    if algo == "Algo_1":
-                        spread = 1
-                    else:
-                        spread = 1.5
+                    spread = 1 if algo == "Algo_1" else 1.5
 
                     x = np.random.randn(n) * spread + x_offset
                     y = np.random.randn(n) * spread + y_offset
@@ -360,7 +356,7 @@ class ExampleData:
         )
 
     @staticmethod
-    def get_all_plot_types_data() -> Dict[str, pd.DataFrame]:
+    def get_all_plot_types_data() -> dict[str, pd.DataFrame]:
         np.random.seed(100)
 
         scatter_data = ExampleData.simple_scatter(n=80, seed=100)
@@ -408,7 +404,7 @@ class ExampleData:
         }
 
     @staticmethod
-    def get_color_coordination_data() -> Dict[str, pd.DataFrame]:
+    def get_color_coordination_data() -> dict[str, pd.DataFrame]:
         np.random.seed(200)
         shared_categories = ["Alpha", "Beta", "Gamma", "Delta"]
 
@@ -497,7 +493,7 @@ class ExampleData:
         return pd.DataFrame(records)
 
     @staticmethod
-    def get_individual_styling_data() -> Dict[str, pd.DataFrame]:
+    def get_individual_styling_data() -> dict[str, pd.DataFrame]:
         np.random.seed(300)
 
         scatter_data = ExampleData.simple_scatter(n=80, seed=300)

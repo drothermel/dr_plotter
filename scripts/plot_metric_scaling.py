@@ -105,7 +105,7 @@ def create_scaling_plot(scaling_data, metric_name):
     return fig, ax
 
 
-def main():
+def main() -> None:
     """Main function."""
     parser = argparse.ArgumentParser(
         description="Plot model scaling for DataDecide metrics"

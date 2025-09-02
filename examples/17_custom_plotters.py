@@ -3,7 +3,7 @@ Example 17: Custom Plotters - Creating new plotters using the registry.
 Demonstrates how to create and register a custom plotter class.
 """
 
-from typing import Any, Dict, List, Set
+from typing import Any
 import pandas as pd
 from dr_plotter.plotters.base import BasePlotter
 from dr_plotter.figure_manager import FigureManager
@@ -37,15 +37,15 @@ class ErrorBarPlotter(BasePlotter):
     """
 
     plotter_name: str = "errorbar"
-    plotter_params: List[str] = ["error"]  # Only custom params, x/y are handled by base
-    param_mapping: Dict[str, str] = {"error": "error"}
-    enabled_channels: Set[VisualChannel] = set()  # No visual channels for simplicity
+    plotter_params: list[str] = ["error"]  # Only custom params, x/y are handled by base
+    param_mapping: dict[str, str] = {"error": "error"}
+    enabled_channels: set[VisualChannel] = set()  # No visual channels for simplicity
     default_theme: Theme = ERRORBAR_THEME
     use_style_applicator: bool = True
     use_legend_manager: bool = True
 
     # Define what styling attributes are available
-    component_schema: Dict[str, Dict[str, Set[str]]] = {
+    component_schema: dict[str, dict[str, set[str]]] = {
         "plot": {
             "main": {
                 "capsize",

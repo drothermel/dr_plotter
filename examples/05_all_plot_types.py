@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 import pandas as pd
 from dr_plotter.figure_manager import FigureManager
 from dr_plotter.plot_config import PlotConfig
@@ -31,7 +31,7 @@ EXPECTED_CHANNELS = {
     },
 )
 def main(args: Any) -> Any:
-    data_dict: Dict[str, pd.DataFrame] = ExampleData.get_all_plot_types_data()
+    data_dict: dict[str, pd.DataFrame] = ExampleData.get_all_plot_types_data()
 
     with FigureManager(
         PlotConfig(

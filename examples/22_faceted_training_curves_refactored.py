@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Optional
 import argparse
 import sys
 import time
@@ -21,7 +21,7 @@ def load_and_prepare_data() -> pd.DataFrame:
 
 
 def prepare_faceted_data(
-    df: pd.DataFrame, target_recipes: List[str], model_sizes: List[str]
+    df: pd.DataFrame, target_recipes: list[str], model_sizes: list[str]
 ) -> pd.DataFrame:
     target_metrics = ["pile-valppl", "mmlu_average_acc_raw"]
 
@@ -30,7 +30,7 @@ def prepare_faceted_data(
         df["data"].isin(target_recipes) & df["params"].isin(model_sizes)
     ].copy()
 
-    keep_columns = ["params", "data", "step"] + target_metrics
+    keep_columns = ["params", "data", "step", *target_metrics]
     filtered_df = filtered_df[keep_columns].copy()
 
     # Melt from wide to long format for faceting
@@ -66,11 +66,11 @@ def prepare_faceted_data(
 
 def plot_training_curves_faceted(
     df: pd.DataFrame,
-    target_recipes: List[str],
+    target_recipes: list[str],
     x_log: bool = False,
     y_log: bool = False,
-    xlim: Tuple[float, float] = None,
-    ylim: Tuple[float, float] = None,
+    xlim: Optional[tuple[float, float]] = None,
+    ylim: Optional[tuple[float, float]] = None,
 ) -> None:
     figwidth = max(12, len(target_recipes) * 3.5)
 

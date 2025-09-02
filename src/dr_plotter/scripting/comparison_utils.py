@@ -1,4 +1,4 @@
-from typing import List, Set, Tuple
+from typing import Optional
 import math
 
 from dr_plotter.types import ColorTuple, ComparisonValue
@@ -26,7 +26,7 @@ def get_default_tolerance_for_channel(channel: str) -> float:
 
 
 def values_are_equal(
-    a: ComparisonValue, b: ComparisonValue, tolerance: float = None
+    a: ComparisonValue, b: ComparisonValue, tolerance: Optional[float] = None
 ) -> bool:
     if tolerance is None:
         tolerance = _get_default_tolerance(a, b)
@@ -47,8 +47,8 @@ def values_are_equal(
 
 
 def count_unique_values(
-    values: List[ComparisonValue], tolerance: float = None
-) -> Set[ComparisonValue]:
+    values: list[ComparisonValue], tolerance: Optional[float] = None
+) -> set[ComparisonValue]:
     if not values:
         return set()
 
@@ -69,29 +69,29 @@ def count_unique_values(
     return unique
 
 
-def floats_are_equal(val1: float, val2: float, tolerance: float = None) -> bool:
+def floats_are_equal(val1: float, val2: float, tolerance: Optional[float] = None) -> bool:
     if tolerance is None:
         tolerance = DEFAULT_TOLERANCES["float"]
     return _floats_are_equal(val1, val2, tolerance)
 
 
 def colors_are_equal(
-    color1: ColorTuple, color2: ColorTuple, tolerance: float = None
+    color1: ColorTuple, color2: ColorTuple, tolerance: Optional[float] = None
 ) -> bool:
     if tolerance is None:
         tolerance = DEFAULT_TOLERANCES["color"]
     return _tuples_are_equal(color1, color2, tolerance)
 
 
-def count_unique_floats(values: List[float], tolerance: float = None) -> Set[float]:
+def count_unique_floats(values: list[float], tolerance: Optional[float] = None) -> set[float]:
     if tolerance is None:
         tolerance = DEFAULT_TOLERANCES["float"]
     return count_unique_values(values, tolerance)
 
 
 def count_unique_colors(
-    values: List[ColorTuple], tolerance: float = None
-) -> Set[ColorTuple]:
+    values: list[ColorTuple], tolerance: Optional[float] = None
+) -> set[ColorTuple]:
     if tolerance is None:
         tolerance = DEFAULT_TOLERANCES["color"]
     return count_unique_values(values, tolerance)
@@ -110,7 +110,7 @@ def _floats_are_equal(val1: float, val2: float, tolerance: float) -> bool:
 
 
 def _tuples_are_equal(
-    tuple1: Tuple[float, ...], tuple2: Tuple[float, ...], tolerance: float
+    tuple1: tuple[float, ...], tuple2: tuple[float, ...], tolerance: float
 ) -> bool:
     if len(tuple1) != len(tuple2):
         return False

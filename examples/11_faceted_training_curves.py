@@ -7,7 +7,7 @@ Requires DataDecide integration:
 This example demonstrates advanced faceted plotting with real ML training data.
 """
 
-from typing import List, Tuple
+from typing import Optional
 import argparse
 import itertools
 import pandas as pd
@@ -33,7 +33,7 @@ def load_and_prepare_data() -> pd.DataFrame:
 
 
 def create_faceted_training_curves_theme(
-    x_log: bool = False, y_log: bool = False, model_sizes: List[str] = None
+    x_log: bool = False, y_log: bool = False, model_sizes: Optional[list[str]] = None
 ) -> Theme:
     model_sizes = select_params(model_sizes or "all")
 
@@ -80,7 +80,7 @@ def create_faceted_training_curves_theme(
 
 
 def subset_data_for_plotting(
-    df: pd.DataFrame, target_recipes: List[str], model_sizes: List[str]
+    df: pd.DataFrame, target_recipes: list[str], model_sizes: list[str]
 ) -> pd.DataFrame:
     """Filter DataFrame for target metrics, recipes, and model sizes."""
     target_metrics = ["pile-valppl", "mmlu_average_correct_prob"]
@@ -90,7 +90,7 @@ def subset_data_for_plotting(
         df["data"].isin(target_recipes) & df["params"].isin(model_sizes)
     ].copy()
 
-    keep_columns = ["params", "data", "step"] + target_metrics
+    keep_columns = ["params", "data", "step", *target_metrics]
     filtered_df = filtered_df[keep_columns].copy()
 
     # Set up categorical ordering for consistent plotting
@@ -108,12 +108,12 @@ def subset_data_for_plotting(
 @inspect_plot_properties()
 def plot_training_curves(
     df: pd.DataFrame,
-    target_recipes: List[str],
+    target_recipes: list[str],
     args: argparse.Namespace,
     x_log: bool = False,
     y_log: bool = False,
-    xlim: Tuple[float, float] = None,
-    ylim: Tuple[float, float] = None,
+    xlim: Optional[tuple[float, float]] = None,
+    ylim: Optional[tuple[float, float]] = None,
 ) -> plt.Figure:
     num_model_sizes = len(df["params"].cat.categories)
     custom_theme = create_faceted_training_curves_theme(x_log=x_log, y_log=y_log)

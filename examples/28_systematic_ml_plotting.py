@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional, Tuple
+from typing import Optional
 import argparse
 import sys
 import time
@@ -121,7 +121,7 @@ OLMES_PERFORMANCE_RECIPE_CHUNKS = {
 }
 
 
-def get_available_data_info() -> Tuple[List[str], List[str], List[str], List[str]]:
+def get_available_data_info() -> tuple[list[str], list[str], list[str], list[str]]:
     dd = DataDecide()
     df = dd.full_eval
     available_recipes = sorted(df["data"].unique())
@@ -157,9 +157,9 @@ def load_and_prepare_data(include_seeds: bool = False) -> pd.DataFrame:
 
 def prepare_systematic_data(
     df: pd.DataFrame,
-    target_recipes: List[str],
-    model_sizes: List[str],
-    target_metrics: List[str],
+    target_recipes: list[str],
+    model_sizes: list[str],
+    target_metrics: list[str],
     include_seeds: bool = False,
 ) -> pd.DataFrame:
     filtered_df = df[
@@ -192,7 +192,7 @@ def prepare_systematic_data(
     return melted_df.sort_values(["metric", "data", "params", "step"])
 
 
-def create_metric_labels(metrics: List[str]) -> Dict[str, str]:
+def create_metric_labels(metrics: list[str]) -> dict[str, str]:
     labels = {}
     for metric in metrics:
         if "pile-valppl" in metric:
@@ -218,8 +218,8 @@ def create_metric_labels(metrics: List[str]) -> Dict[str, str]:
 
 def create_single_metric_plots(
     metric_name: str,
-    target_recipes: List[str],
-    model_sizes: List[str],
+    target_recipes: list[str],
+    model_sizes: list[str],
     output_dir: str = "plots/systematic",
     mean_and_seeds: bool = True,
     show_plots: bool = True,
@@ -359,10 +359,10 @@ def create_single_metric_plots(
 
 
 def create_ppl_group_plots(
-    target_recipes: List[str],
-    model_sizes: List[str],
+    target_recipes: list[str],
+    model_sizes: list[str],
     output_dir: str = "plots/systematic",
-    ppl_metrics: Optional[List[str]] = None,
+    ppl_metrics: Optional[list[str]] = None,
     show_plots: bool = True,
 ) -> None:
     print("Creating PPL group plots...")
@@ -465,10 +465,10 @@ def create_ppl_group_plots(
 
 
 def create_olmes_group_plots(
-    target_recipes: List[str],
-    model_sizes: List[str],
+    target_recipes: list[str],
+    model_sizes: list[str],
     output_dir: str = "plots/systematic",
-    olmes_metrics: Optional[List[str]] = None,
+    olmes_metrics: Optional[list[str]] = None,
     show_plots: bool = True,
 ) -> None:
     print("Creating OLMES group plots...")
@@ -584,7 +584,7 @@ def get_nested_output_path(
 
 def create_recipe_family_chunk_plots(
     family_name: str,
-    model_sizes: List[str],
+    model_sizes: list[str],
     output_dir: str = "plots/systematic",
     chunk_source: str = "custom",
     show_plots: bool = True,
@@ -729,7 +729,7 @@ def create_recipe_family_chunk_plots(
 
 def create_size_chunk_plots(
     chunk_idx: int,
-    target_recipes: List[str],
+    target_recipes: list[str],
     chunk_size: int = 4,
     output_dir: str = "plots/systematic",
     show_plots: bool = True,

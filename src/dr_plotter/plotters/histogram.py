@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 
 import pandas as pd
 from matplotlib.patches import Patch
@@ -19,13 +19,13 @@ from .base import BasePlotter
 
 class HistogramPlotter(BasePlotter):
     plotter_name: str = "histogram"
-    plotter_params: List[str] = []
-    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = set()
+    plotter_params: list[str] = []
+    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: set[VisualChannel] = set()
     default_theme: Theme = HISTOGRAM_THEME
     supports_grouped: bool = False
 
-    component_schema: Dict[Phase, ComponentSchema] = {
+    component_schema: dict[Phase, ComponentSchema] = {
         "plot": {
             "main": {
                 "color",
@@ -64,7 +64,7 @@ class HistogramPlotter(BasePlotter):
             "histogram", "patches", self._style_histogram_patches
         )
 
-    def _style_histogram_patches(self, patches: Any, styles: Dict[str, Any]) -> None:
+    def _style_histogram_patches(self, patches: Any, styles: dict[str, Any]) -> None:
         for patch in patches:
             for attr, value in styles.items():
                 if hasattr(patch, f"set_{attr}"):
@@ -81,7 +81,7 @@ class HistogramPlotter(BasePlotter):
         self._apply_post_processing({"patches": patches}, label)
 
     def _apply_post_processing(
-        self, parts: Dict[str, Any], label: Optional[str] = None
+        self, parts: dict[str, Any], label: Optional[str] = None
     ) -> None:
         if parts.get("patches"):
             first_patch = parts["patches"][0]

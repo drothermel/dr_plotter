@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Optional, Union
 
 from dr_plotter.configs import LegendConfig, LegendStrategy, PositioningConfig
 from dr_plotter.positioning_calculator import (
@@ -17,15 +17,15 @@ class LegendEntry:
     visual_channel: Optional[str] = None
     channel_value: Any = None
     source_column: Optional[str] = None
-    group_key: Dict[str, Any] = field(default_factory=dict)
+    group_key: dict[str, Any] = field(default_factory=dict)
     plotter_type: str = "unknown"
     artist_type: str = "main"
 
 
 class LegendRegistry:
     def __init__(self, strategy: Optional[LegendStrategy] = None) -> None:
-        self._entries: List[LegendEntry] = []
-        self._seen_keys: Set[tuple] = set()
+        self._entries: list[LegendEntry] = []
+        self._seen_keys: set[tuple] = set()
         self.strategy = strategy
 
     def add_entry(self, entry: LegendEntry) -> None:
@@ -47,10 +47,10 @@ class LegendRegistry:
         }
         return self.strategy in shared_strategies
 
-    def get_unique_entries(self) -> List[LegendEntry]:
+    def get_unique_entries(self) -> list[LegendEntry]:
         return self._entries.copy()
 
-    def get_by_channel(self, channel: str) -> List[LegendEntry]:
+    def get_by_channel(self, channel: str) -> list[LegendEntry]:
         return [e for e in self._entries if e.visual_channel == channel]
 
     def clear(self) -> None:
@@ -118,7 +118,7 @@ class LegendManager:
 
         return column_name.capitalize()
 
-    def generate_channel_title(self, channel: str, entries: List[LegendEntry]) -> str:
+    def generate_channel_title(self, channel: str, entries: list[LegendEntry]) -> str:
         if self.config.channel_titles and channel in self.config.channel_titles:
             return self.config.channel_titles[channel]
 
@@ -133,7 +133,7 @@ class LegendManager:
         return channel.title()
 
     def calculate_optimal_ncol(
-        self, legend_entries: List[LegendEntry], figure_width: Optional[float] = None
+        self, legend_entries: list[LegendEntry], figure_width: Optional[float] = None
     ) -> int:
         if self.config.ncol is not None:
             return self.config.ncol
@@ -176,7 +176,7 @@ class LegendManager:
 
     def calculate_optimal_positioning(
         self, num_legends: int, legend_index: int, figure_width: Optional[float] = None
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         figure_dimensions = self._get_figure_dimensions()
         if figure_width:
             figure_dimensions.width = figure_width
@@ -219,8 +219,8 @@ class LegendManager:
             self._create_per_axes_legends()
 
     def _process_entries_by_channel_type(
-        self, entries: List[LegendEntry]
-    ) -> List[LegendEntry]:
+        self, entries: list[LegendEntry]
+    ) -> list[LegendEntry]:
         return entries
 
     def _create_figure_legend(self) -> None:
@@ -314,7 +314,7 @@ class LegendManager:
             if entry.visual_channel:
                 channels.add(entry.visual_channel)
 
-        channel_list = sorted(list(channels))
+        channel_list = sorted(channels)
 
         if self.config.strategy == LegendStrategy.GROUPED_BY_CHANNEL:
             num_legends = len(channel_list)

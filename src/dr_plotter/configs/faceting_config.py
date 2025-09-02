@@ -1,32 +1,32 @@
+from __future__ import annotations
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 
 @dataclass
 class FacetingConfig:
-    rows: Optional[str] = None
-    cols: Optional[str] = None
-    lines: Optional[str] = None
+    rows: str | None = None
+    cols: str | None = None
+    lines: str | None = None
 
-    row_order: Optional[List[str]] = None
-    col_order: Optional[List[str]] = None
-    lines_order: Optional[List[str]] = None
+    row_order: list[str] | None = None
+    col_order: list[str] | None = None
+    lines_order: list[str] | None = None
 
-    target_row: Optional[int] = None
-    target_col: Optional[int] = None
-    target_rows: Optional[List[int]] = None
-    target_cols: Optional[List[int]] = None
+    target_row: int | None = None
+    target_col: int | None = None
+    target_rows: list[int] | None = None
+    target_cols: list[int] | None = None
 
-    x: Optional[str] = None
-    y: Optional[str] = None
+    x: str | None = None
+    y: str | None = None
 
-    x_labels: Optional[List[List[Optional[str]]]] = None
-    y_labels: Optional[List[List[Optional[str]]]] = None
-    xlim: Optional[List[List[Optional[Tuple[float, float]]]]] = None
-    ylim: Optional[List[List[Optional[Tuple[float, float]]]]] = None
+    x_labels: list[list[str | None]] | None = None
+    y_labels: list[list[str | None]] | None = None
+    xlim: list[list[tuple[float, float] | None]] | None = None
+    ylim: list[list[tuple[float, float] | None]] | None = None
 
-    subplot_titles: Optional[str | List[List[Optional[str]]]] = None
-    title_template: Optional[str] = None
+    subplot_titles: str | list[list[str | None]] | None = None
+    title_template: str | None = None
 
     empty_subplot_strategy: str = "warn"
 

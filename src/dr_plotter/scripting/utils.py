@@ -18,7 +18,7 @@ def setup_arg_parser(description: str = "dr_plotter example script"):
     return parser
 
 
-def show_or_save_plot(fig, args, filename: str):
+def show_or_save_plot(fig, args, filename: str) -> None:
     if args.save_dir:
         os.makedirs(args.save_dir, exist_ok=True)
         savename = os.path.join(args.save_dir, f"{filename}.png")
@@ -31,6 +31,6 @@ def show_or_save_plot(fig, args, filename: str):
     plt.close(fig)
 
 
-def create_and_render_plot(ax, plotter_class, plotter_args, **kwargs):
+def create_and_render_plot(ax, plotter_class, plotter_args, **kwargs) -> None:
     plotter = plotter_class(*plotter_args, **kwargs)
     plotter.render(ax)

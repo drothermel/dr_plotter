@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Set, Optional
+from typing import Any, Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -18,14 +18,14 @@ from dr_plotter.configs import GroupingConfig
 
 class HeatmapPlotter(BasePlotter):
     plotter_name: str = "heatmap"
-    plotter_params: List[str] = ["values", "annot"]
-    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = set()
+    plotter_params: list[str] = ["values", "annot"]
+    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: set[VisualChannel] = set()
     default_theme: Theme = HEATMAP_THEME
     supports_legend: bool = False
     supports_grouped: bool = False
 
-    component_schema: Dict[Phase, ComponentSchema] = {
+    component_schema: dict[Phase, ComponentSchema] = {
         "plot": {
             "main": {
                 "cmap",
@@ -103,7 +103,7 @@ class HeatmapPlotter(BasePlotter):
         self._apply_styling(ax)
 
     def _style_colorbar(
-        self, colorbar_info: Dict[str, Any], styles: Dict[str, Any]
+        self, colorbar_info: dict[str, Any], styles: dict[str, Any]
     ) -> None:
         plot_object = colorbar_info["plot_object"]
         ax = colorbar_info["ax"]
@@ -127,7 +127,7 @@ class HeatmapPlotter(BasePlotter):
                 color=styles.get("color", self.theme.get("label_color")),
             )
 
-    def _style_ticks(self, ax: Any, styles: Dict[str, Any]) -> None:
+    def _style_ticks(self, ax: Any, styles: dict[str, Any]) -> None:
         data = self.plot_data
 
         ax.set_xticks(np.arange(len(data.columns)))
@@ -147,7 +147,7 @@ class HeatmapPlotter(BasePlotter):
                 ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor"
             )
 
-    def _style_cell_text(self, ax: Any, styles: Dict[str, Any]) -> None:
+    def _style_cell_text(self, ax: Any, styles: dict[str, Any]) -> None:
         if not styles.get("visible", True):
             return
 

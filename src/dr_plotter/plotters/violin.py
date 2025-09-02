@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -25,7 +25,7 @@ from .base import BasePlotter
 
 class ViolinPlotter(BasePlotter):
     plotter_name: str = "violin"
-    plotter_params: List[str] = [
+    plotter_params: list[str] = [
         "alpha",
         "color",
         "label",
@@ -34,11 +34,11 @@ class ViolinPlotter(BasePlotter):
         "style_by",
         "size_by",
     ]
-    param_mapping: Dict[BasePlotterParamName, SubPlotterParamName] = {}
-    enabled_channels: Set[VisualChannel] = {"hue"}
+    param_mapping: dict[BasePlotterParamName, SubPlotterParamName] = {}
+    enabled_channels: set[VisualChannel] = {"hue"}
     default_theme: Theme = VIOLIN_THEME
 
-    component_schema: Dict[Phase, ComponentSchema] = {
+    component_schema: dict[Phase, ComponentSchema] = {
         "plot": {
             "main": {
                 "showmeans",
@@ -72,7 +72,7 @@ class ViolinPlotter(BasePlotter):
         )
         self.styler.register_post_processor("violin", "stats", self._style_violin_stats)
 
-    def _style_violin_bodies(self, bodies: Any, styles: Dict[str, Any]) -> None:
+    def _style_violin_bodies(self, bodies: Any, styles: dict[str, Any]) -> None:
         for pc in bodies:
             for attr, value in styles.items():
                 if attr == "facecolor" and hasattr(pc, "set_facecolor"):
@@ -84,7 +84,7 @@ class ViolinPlotter(BasePlotter):
                 elif attr == "linewidth" and hasattr(pc, "set_linewidth"):
                     pc.set_linewidth(value)
 
-    def _style_violin_stats(self, stats: Any, styles: Dict[str, Any]) -> None:
+    def _style_violin_stats(self, stats: Any, styles: dict[str, Any]) -> None:
         for attr, value in styles.items():
             if attr == "color" and hasattr(stats, "set_edgecolor"):
                 stats.set_edgecolor(value)
@@ -101,7 +101,7 @@ class ViolinPlotter(BasePlotter):
             self._draw_simple(ax, data, **kwargs)
 
     def _apply_post_processing(
-        self, parts: Dict[str, Any], label: Optional[str] = None
+        self, parts: dict[str, Any], label: Optional[str] = None
     ) -> None:
         artists = self._collect_artists_to_style(parts)
         self.styler.apply_post_processing("violin", artists)
@@ -114,7 +114,7 @@ class ViolinPlotter(BasePlotter):
             proxy = self._create_proxy_artist_from_bodies(parts["bodies"])
             self._register_legend_entry_if_valid(proxy, label)
 
-    def _collect_artists_to_style(self, parts: Dict[str, Any]) -> Dict[str, Any]:
+    def _collect_artists_to_style(self, parts: dict[str, Any]) -> dict[str, Any]:
         assert "bodies" in parts, "Bodies must be present"
         stats_parts = [parts["cbars"]]
         for sub_part, gate_key in [
@@ -130,7 +130,7 @@ class ViolinPlotter(BasePlotter):
             "bodies": parts["bodies"],
         }
 
-    def _create_proxy_artist_from_bodies(self, bodies: List[Any]) -> Optional[Patch]:
+    def _create_proxy_artist_from_bodies(self, bodies: list[Any]) -> Optional[Patch]:
         if not bodies:
             return None
 
@@ -161,7 +161,7 @@ class ViolinPlotter(BasePlotter):
         self,
         ax: Any,
         data: pd.DataFrame,
-        group_position: Dict[str, Any],
+        group_position: dict[str, Any],
         **kwargs: Any,
     ) -> None:
         label = kwargs.pop("label", None)
