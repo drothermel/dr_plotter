@@ -111,7 +111,9 @@ class BarPlotter(BasePlotter):
 
         patches = None
         if x_positions:
-            config = self._resolve_phase_config("main", width=group_position["width"], **kwargs)
+            config = self._resolve_phase_config(
+                "main", width=group_position["width"], **kwargs
+            )
             patches = ax.bar(x_positions, y_values, **config)
 
         if group_position["index"] == 0:

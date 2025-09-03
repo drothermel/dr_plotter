@@ -347,26 +347,6 @@ class BasePlotter:
             group_context["name"], group_context["categorical_cols"]
         )
 
-        if (
-            self.__class__.plotter_name == "scatter"
-            and "size" in self.grouping_params.active_channels
-        ):
-            size_col = self.grouping_params.size
-            if size_col and size_col in group_context["data"].columns:
-                sizes = []
-                for value in group_context["data"][size_col]:
-                    style = self.style_engine._get_continuous_style(
-                        "size", size_col, value
-                    )
-                    size_mult = style.get("size_mult", 1.0)
-                    base_size = plot_kwargs.get("s", 50)
-                    sizes.append(
-                        base_size * size_mult
-                        if isinstance(base_size, (int, float))
-                        else 50 * size_mult
-                    )
-                plot_kwargs["s"] = sizes
-
         return plot_kwargs
 
     def _calculate_group_position(

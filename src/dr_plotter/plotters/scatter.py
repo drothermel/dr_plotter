@@ -85,18 +85,21 @@ class ScatterPlotter(BasePlotter):
                 setter = getattr(collection, f"set_{attr}")
                 setter(value)
 
-    def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
-        label = kwargs.pop("label", None)
+    def _resolve_computed_parameters(
+        self, phase: str, context: dict[str, Any]
+    ) -> dict[str, Any]:
+        if phase != "main":
+            return {}
 
-        plot_args = self._build_plot_args()
-
-
+        computed = {}
         if "size" in self.grouping_params.active_channels:
             size_col = self.grouping_params.size
-            assert size_col is not None and size_col in data.columns, (
-                "Size column is required when grouped by"
-            )
-            base_size = plot_args.get("s", 50)
+            assert (
+                size_col is not None
+                and size_col in context.get("data", pd.DataFrame()).columns
+            ), "Size column is required when grouped by size"
+            data = context["data"]
+            base_size = context.get("s", 50)
             sizes = []
             for value in data[size_col]:
                 style = self.style_engine._get_continuous_style("size", size_col, value)
@@ -105,10 +108,16 @@ class ScatterPlotter(BasePlotter):
                     f"Base size must be numeric, got {type(base_size)}: {base_size}"
                 )
                 sizes.append(base_size * size_mult)
-            plot_args["s"] = sizes
+            computed["s"] = sizes
+
+        return computed
+
+    def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
+        label = kwargs.pop("label", None)
+        config = self._resolve_phase_config("main", data=data, **kwargs)
 
         collection = ax.scatter(
-            data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **plot_args
+            data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **config
         )
 
         artists = {"collection": collection}
