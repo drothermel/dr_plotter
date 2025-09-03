@@ -26,6 +26,11 @@ class FacetingConfig:
 
     color_wrap: bool = False
 
+    target_row: int | None = None
+    target_col: int | None = None
+
+    target_positions: dict[tuple[int, int], tuple[int, int]] | None = None
+
     def __post_init__(self) -> None:
         self.validate()
 
