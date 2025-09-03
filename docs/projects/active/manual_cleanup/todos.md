@@ -456,9 +456,9 @@ def _draw(self, ax: Any, data: pd.DataFrame, **context: Any) -> None:
 - [x] ScatterPlotter (COMPLETED) - Using computed parameters for sizes
 - [x] LinePlotter (COMPLETED) - Simple implementation
 - [x] HistogramPlotter (COMPLETED) - Single phase, simple implementation
+- [x] HeatmapPlotter (COMPLETED) - Single phase implementation with post-processing
 
 **❌ Remaining Plotters to Convert:**
-- [ ] HeatmapPlotter (single phase, simple conversion)
 - [ ] BumpPlotter (multi-trajectory, needs computed parameter handling)
 - [ ] ContourPlotter (multi-phase: "contour" and "scatter")
 
@@ -503,7 +503,7 @@ def _draw(self, ax: Any, data: pd.DataFrame, **context: Any) -> None:
 - [x] **Falsy value handling fixed** - `showmeans=False` properly overrides theme ✅
 - [x] **Single source of truth** - all parameters flow through one method ✅
 - [x] **Defensive programming eliminated** - cbars handling based on config not existence ✅
-- [x] **Additional plotters converted** - BarPlotter, ScatterPlotter, LinePlotter, HistogramPlotter now using new system ✅
-- [ ] Remaining plotters converted to new system (HeatmapPlotter, BumpPlotter, ContourPlotter)
+- [x] **Additional plotters converted** - BarPlotter, ScatterPlotter, LinePlotter, HistogramPlotter, HeatmapPlotter now using new system ✅
+- [ ] Remaining plotters converted to new system (BumpPlotter, ContourPlotter)
 - [ ] Multi-phase plotters (ContourPlotter) working cleanly
 - [ ] Remove deprecated `_build_plot_args()` method once all plotters converted

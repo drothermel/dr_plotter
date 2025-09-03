@@ -81,7 +81,8 @@ class HeatmapPlotter(BasePlotter):
         self.plot_data = plot_data.fillna(0)
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
-        im = ax.imshow(data, **self._build_plot_args())
+        config = self._resolve_phase_config("main", **kwargs)
+        im = ax.imshow(data, **config)
 
         artists = {
             "colorbar": {
