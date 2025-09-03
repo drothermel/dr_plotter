@@ -102,7 +102,7 @@ class ScatterPlotter(BasePlotter):
             base_size = context.get("s", 50)
             sizes = []
             for value in data[size_col]:
-                style = self.style_engine._get_continuous_style("size", size_col, value)
+                style = self.style_engine.get_continuous_style("size", size_col, value)
                 size_mult = style.get("size_mult", 1.0)
                 assert isinstance(base_size, (int, float)), (
                     f"Base size must be numeric, got {type(base_size)}: {base_size}"
