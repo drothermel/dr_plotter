@@ -63,12 +63,9 @@ class GroupingConfig:
         elif isinstance(value, dict):
             resolved_kwargs = {}
             for field in fields(cls):
-                direct_key = field.name
                 by_key = f"{field.name}_by"
-                if direct_key in value:
-                    resolved_kwargs[direct_key] = value[direct_key]
-                elif by_key in value:
-                    resolved_kwargs[direct_key] = value[by_key]
+                if by_key in value:
+                    resolved_kwargs[field.name] = value[by_key]
             return cls(**resolved_kwargs)
         else:
             raise TypeError(f"Cannot create GroupingConfig from {type(value).__name__}")
