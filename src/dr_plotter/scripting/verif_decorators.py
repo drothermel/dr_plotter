@@ -241,7 +241,7 @@ def verify_plot(  # noqa: C901, PLR0915
                     )
 
                     subplot_result = verify_plot_properties_for_subplot(
-                        ax, channels, min_unique_threshold, tolerance
+                        ax, channels, min_unique_threshold
                     )
 
                     print_info(
