@@ -70,7 +70,8 @@ class BarPlotter(BasePlotter):
 
     def _draw_simple(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         label = kwargs.pop("label", None)
-        patches = ax.bar(data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **kwargs)
+        config = self._resolve_phase_config("main", **kwargs)
+        patches = ax.bar(data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **config)
 
         artists = {"patches": patches}
         self.styler.apply_post_processing("bar", artists)
@@ -110,9 +111,8 @@ class BarPlotter(BasePlotter):
 
         patches = None
         if x_positions:
-            patches = ax.bar(
-                x_positions, y_values, width=group_position["width"], **kwargs
-            )
+            config = self._resolve_phase_config("main", width=group_position["width"], **kwargs)
+            patches = ax.bar(x_positions, y_values, **config)
 
         if group_position["index"] == 0:
             ax.set_xticks(np.arange(len(x_categories)))
