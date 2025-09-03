@@ -90,6 +90,14 @@ class ScatterPlotter(BasePlotter):
 
         plot_args = self._build_plot_args()
 
+        # DEBUG: Show the different configuration pathways
+        print(f"DEBUG _draw: kwargs received = {kwargs}")
+        print(f"DEBUG _draw: plot_args from _build_plot_args = {plot_args}")
+        print(f"DEBUG _draw: _filtered_plot_kwargs = {self._filtered_plot_kwargs}")
+        print(
+            f"DEBUG _draw: component_schema main = {self.component_schema['plot']['main']}"
+        )
+
         if "size" in self.grouping_params.active_channels:
             size_col = self.grouping_params.size
             assert size_col is not None and size_col in data.columns, (

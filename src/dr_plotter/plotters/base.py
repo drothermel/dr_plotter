@@ -221,6 +221,31 @@ class BasePlotter:
 
         self._plot_specific_data_prep()
 
+    def _resolve_phase_config(self, phase: str, **context: Any) -> dict[str, Any]:
+        phase_params = self.component_schema.get("plot", {}).get(phase, set())
+        config = {}
+
+        for param in phase_params:
+            sources = [
+                lambda k: context.get(k),
+                lambda k: self.kwargs.get(f"{phase}_{k}"),
+                lambda k: self.kwargs.get(k),
+                lambda k: self.styler.get_style(f"{phase}_{k}"),
+                lambda k: self.styler.get_style(k),
+            ]
+
+            for source in sources:
+                value = source(param)
+                if value is not None:
+                    config[param] = value
+                    break
+
+        config.update(self._resolve_computed_parameters(phase, context))
+        return config
+
+    def _resolve_computed_parameters(self, phase: str, context: dict) -> dict[str, Any]:
+        return {}
+
     def _build_plot_args(self) -> dict[str, Any]:
         main_plot_params = self.component_schema.get("plot", {}).get("main", set())
         plot_args = {}

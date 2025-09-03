@@ -333,52 +333,169 @@ filter_keys = set(
 - Test boundary cases where filtering might be too aggressive or too permissive
 - Consider if filtering should happen at `_build_plot_args()` level instead
 
-## Upfront Parameter Validation
+## Upfront Parameter Validation - REJECTED
 
-### Architectural Improvement Opportunity
-**Schema-driven validation at construction time**: Instead of scattered validation throughout the styling process, validate user parameters against `component_schema` upfront in `BasePlotter.__init__()`.
+### Decision: Let Matplotlib Handle Parameter Validation
 
-**Current Problem**:
-- Validation happens during rendering (like `assert isinstance(base_size, (int, float))` in ScatterPlotter)
-- Error messages unclear about which parameter caused the issue
-- Scattered validation logic across different methods and plotters
-- Users don't discover parameter issues until plot rendering
+**Why Manual Validation Was Rejected**:
+1. **Matplotlib already validates**: `ax.scatter(s="invalid")` fails immediately with clear errors
+2. **Redundant maintenance**: `NUMERIC_PARAMS`/`STRING_PARAMS` lists would grow huge and get out of sync with matplotlib
+3. **Not adding value**: Matplotlib's error messages are already good: "could not convert string to float"
+4. **Defensive programming**: Manual validation is just defensive programming at a different level
 
-**Proposed Solution**:
+**The Real Solution**:
+The original problem wasn't **lack of validation** - it was **buried fallback logic** that hid configuration issues:
+
 ```python
-def __init__(...):
-    # ... existing init code ...
-    self._validate_plot_parameters()  # Fail fast at construction
+# BAD: Hidden fallback that masks real problems
+base_size * size_mult if isinstance(base_size, (int, float)) else 50 * size_mult
 
-def _validate_plot_parameters(self) -> None:
-    # Validate known problematic parameters against component schema
-    # Focus on type mismatches that commonly cause issues
-    # Provide clear error messages with supported parameter lists
+# GOOD: Let matplotlib validate naturally  
+base_size * size_mult  # Fails fast and clear if base_size is invalid
 ```
 
-**Benefits**:
-1. **Fail fast**: Parameter issues caught at construction time, not during rendering
-2. **Schema-driven**: Uses existing `component_schema["plot"]["main"]` as source of truth
-3. **Clear error messages**: "Parameter 's' must be numeric, got str: 'invalid'. Supported: ['alpha', 's', 'vmin']"
-4. **Consistent**: Same validation logic across all plotters
-5. **Not over-engineered**: Only validates known problematic cases, lets matplotlib handle the rest
-6. **Removes scattered assertions**: Can eliminate validation throughout _draw methods
+**Architectural Principle**: 
+- **Eliminate defensive programming** patterns that hide issues
+- **Let specialized libraries do what they do best** (matplotlib validates parameters)
+- **Focus on real architectural improvements** like parameter flow via `_build_plot_args()`
 
-**Implementation Strategy**:
-- Add single validation call to `BasePlotter.__init__()`
-- Focus on numeric parameters (`s`, `linewidth`, `alpha`, etc.) and string parameters (`color`, `marker`)
-- Provide helpful warnings for parameters not in component schema
-- Remove scattered validation from individual plotter methods
+**Result**: Cleaner code with natural fail-fast behavior and no maintenance overhead.
+
+## Final Configuration System Design (APPROVED)
+
+### Core Problem
+Current plotters have **four different configuration pathways** for the same initial kwargs:
+1. `theme → _build_plot_args()` (inconsistently used)
+2. `kwargs → _filtered_plot_kwargs` (over/under filtering issues)  
+3. `kwargs → get_component_styles()` (grouped rendering)
+4. `kwargs → direct processing` (bypasses theme integration)
+
+**Result**: Theme values don't reach matplotlib, inconsistent precedence, parameter flow bugs.
+
+### Minimal Solution Architecture
+
+**Single Configuration Resolution Method:**
+```python
+def _resolve_phase_config(self, phase: str, **context: Any) -> dict[str, Any]:
+    """Resolve configuration for a specific phase using component schema"""
+    phase_params = self.component_schema.get("plot", {}).get(phase, set())
+    config = {}
+    
+    for param in phase_params:
+        # Clear precedence: Context → User → Theme
+        value = (
+            context.get(param) or
+            self.kwargs.get(f"{phase}_{param}") or    # "scatter_alpha" 
+            self.kwargs.get(param) or                 # "alpha"
+            self.styler.get_style(f"{phase}_{param}") or  # theme: "scatter_alpha"
+            self.styler.get_style(param)                   # theme: "alpha"
+        )
+        
+        if value is not None:
+            config[param] = value
+    
+    # Add computed parameters (size arrays, positioning, etc.)
+    config.update(self._resolve_computed_parameters(phase, context))
+    return config
+
+def _resolve_computed_parameters(self, phase: str, context: dict) -> dict[str, Any]:
+    """Handle data-dependent computation (plotter-specific override)"""
+    return {}  # Base implementation - plotters override as needed
+```
+
+**Usage Pattern Examples:**
+```python
+# Simple single-phase (BarPlotter, ViolinPlotter)
+def _draw(self, ax: Any, data: pd.DataFrame, **context: Any) -> None:
+    config = self._resolve_phase_config("main", **context)
+    patches = ax.bar(data[X], data[Y], **config)
+
+# Multi-phase (ContourPlotter)  
+def _draw(self, ax: Any, data: pd.DataFrame, **context: Any) -> None:
+    contour_config = self._resolve_phase_config("contour", **context)
+    scatter_config = self._resolve_phase_config("scatter", **context)
+    
+    contour = ax.contour(xx, yy, Z, **contour_config)
+    ax.scatter(data[X], data[Y], **scatter_config)
+
+# Multi-trajectory (BumpPlotter)
+def _draw(self, ax: Any, data: pd.DataFrame, **context: Any) -> None:
+    for trajectory in self.trajectory_data:
+        traj_context = {**context, "trajectory_data": trajectory}
+        config = self._resolve_phase_config("main", **traj_context)
+        ax.plot(trajectory[time], trajectory[value], **config)
+```
+
+### Implementation Requirements
+
+**Essential Changes:**
+1. **Add `_resolve_phase_config()` to BasePlotter** 
+2. **Add `_resolve_computed_parameters()` stub to BasePlotter**
+3. **Replace all matplotlib calls** from `**kwargs` or `**self._build_plot_args()` to `**config`
+4. **Override `_resolve_computed_parameters()`** in plotters that need it (ScatterPlotter size arrays, etc.)
+
+**Methods to Remove:**
+- `_build_plot_args()` (replaced by `_resolve_phase_config()`)
+- `_filtered_plot_kwargs` usage in matplotlib calls
+- Inconsistent parameter handling patterns
+
+### Implementation Status
+
+**✅ ViolinPlotter (COMPLETED)**
+- Uses `_resolve_phase_config("main", **kwargs)` for all matplotlib parameters
+- Theme values reach matplotlib correctly (e.g. `showmeans=True` from VIOLIN_THEME)
+- User overrides work for all value types including `False` (critical falsy value fix)
+- Conditional component collection based on configuration (cbars, cmeans, etc.)
+- Violin showcase runs without errors, all tests pass
+
+**🔄 Remaining Plotters to Convert:**
+- [ ] BarPlotter (single phase, should be easy using ViolinPlotter template)
+- [ ] ScatterPlotter (needs `_resolve_computed_parameters` override for size arrays)  
+- [ ] HeatmapPlotter (single phase, simple conversion)
+- [ ] BumpPlotter (multi-trajectory, needs computed parameter handling)
+- [ ] ContourPlotter (multi-phase: "contour" and "scatter")
+
+### Final Implementation Pattern (PROVEN)
+
+```python
+# In BasePlotter - IMPLEMENTED ✅
+def _resolve_phase_config(self, phase: str, **context: Any) -> dict[str, Any]:
+    phase_params = self.component_schema.get("plot", {}).get(phase, set())
+    config = {}
+    
+    for param in phase_params:
+        sources = [
+            lambda k: context.get(k),                           # Highest precedence
+            lambda k: self.kwargs.get(f"{phase}_{k}"),         # Phase-specific user
+            lambda k: self.kwargs.get(k),                      # General user
+            lambda k: self.styler.get_style(f"{phase}_{k}"),   # Phase-specific theme  
+            lambda k: self.styler.get_style(k),                # General theme (lowest)
+        ]
+        
+        for source in sources:
+            value = source(param)
+            if value is not None:
+                config[param] = value
+                break
+    
+    config.update(self._resolve_computed_parameters(phase, context))
+    return config
+
+def _resolve_computed_parameters(self, phase: str, context: dict) -> dict[str, Any]:
+    return {}  # Override in plotters that need computed parameters
+
+# Usage in plotters - PROVEN ✅
+def _draw(self, ax: Any, data: pd.DataFrame, **context: Any) -> None:
+    config = self._resolve_phase_config("main", **context)
+    parts = ax.violinplot(datasets, **config)  # Theme + user values reach matplotlib
+```
 
 ### Success Criteria
-- [ ] All plotters use `_build_plot_args()` instead of `_filtered_plot_kwargs`
-- [ ] Theme values for matplotlib parameters reach matplotlib correctly
-- [ ] User kwargs still take precedence over theme values
-- [ ] Manual positioning/grouping logic handles conflicts gracefully
-- [ ] No defensive checks hiding real parameter flow bugs
-- [ ] Artist property extraction uses shared utilities from `artist_utils.py`
-- [ ] Legend creation code is simplified and consistent across plotters
-- [ ] All matplotlib color extraction uses `mcolors.to_rgba()` for consistency
-- [ ] Component existence checks are explicit about expectations vs. defensive
-- [ ] Failed assertions lead to investigation of root configuration issues
-- [ ] Parameter filtering logic is well-understood and properly scoped
+- [x] **ViolinPlotter converted** - using `_resolve_phase_config()` ✅
+- [x] **Theme values reach matplotlib** - `showmeans=True` creates `cmeans` ✅  
+- [x] **Falsy value handling fixed** - `showmeans=False` properly overrides theme ✅
+- [x] **Single source of truth** - all parameters flow through one method ✅
+- [x] **Defensive programming eliminated** - cbars handling based on config not existence ✅
+- [ ] Remaining plotters converted to new system
+- [ ] Multi-phase plotters (ContourPlotter) working cleanly
+- [ ] Remove deprecated `_build_plot_args()` method once all plotters converted

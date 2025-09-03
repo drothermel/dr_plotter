@@ -115,8 +115,12 @@ class ViolinPlotter(BasePlotter):
 
     def _collect_artists_to_style(self, parts: dict[str, Any]) -> dict[str, Any]:
         assert "bodies" in parts, "Bodies must be present"
-        stats_parts = [parts["cbars"]]
+
+        stats_parts = []
+
+        # Handle all conditional parts based on configuration
         for sub_part, gate_key in [
+            ("cbars", "showextrema"),
             ("cmeans", "showmeans"),
             ("cmedians", "showmedians"),
             ("cmins", "showextrema"),
@@ -148,7 +152,8 @@ class ViolinPlotter(BasePlotter):
         datasets = [gd[consts.Y_COL_NAME].dropna() for gd in group_data]
 
         label = kwargs.pop("label", None)
-        parts = ax.violinplot(datasets, **self._build_plot_args())
+        config = self._resolve_phase_config("main", **kwargs)
+        parts = ax.violinplot(datasets, **config)
 
         if len(groups) > 0:
             ax.set_xticks(np.arange(1, len(groups) + 1))
@@ -165,11 +170,11 @@ class ViolinPlotter(BasePlotter):
     ) -> None:
         label = kwargs.pop("label", None)
         has_x_labels = consts.X_COL_NAME in data.columns
-        base_plot_args = self._build_plot_args()
-        if "widths" not in base_plot_args and "width" in group_position:
-            base_plot_args["widths"] = group_position["width"]
-        elif "widths" in base_plot_args and "width" in group_position:
-            print("WARNING: Caculated width overritten by kwargs or theme")
+        config = self._resolve_phase_config("main", **kwargs)
+        if "widths" not in config and "width" in group_position:
+            config["widths"] = group_position["width"]
+        elif "widths" in config and "width" in group_position:
+            print("WARNING: Calculated width overridden by kwargs or theme")
 
         if has_x_labels:
             x_categories = group_position.get("x_categories")
@@ -190,7 +195,7 @@ class ViolinPlotter(BasePlotter):
                 parts = ax.violinplot(
                     dataset,
                     positions=positions,
-                    **base_plot_args,
+                    **config,
                 )
             else:
                 parts = {}
@@ -202,7 +207,7 @@ class ViolinPlotter(BasePlotter):
             parts = ax.violinplot(
                 [data[consts.Y_COL_NAME].dropna()],
                 positions=[group_position["offset"]],
-                **base_plot_args,
+                **config,
             )
 
         self._apply_post_processing(parts, label)
