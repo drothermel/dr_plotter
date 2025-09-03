@@ -162,7 +162,7 @@ class StyleApplicator:
         base_styles = self._get_base_theme_styles(phase)
         plot_styles = self._get_plot_specific_theme_styles(plot_type, phase)
         group_styles = self._get_group_styles_for_component(plot_type, component)
-        component_kwargs = self._extract_component_kwargs(component, attrs, phase)
+        component_kwargs = self._extract_component_kwargs(component, attrs)
 
         return self._merge_style_precedence(
             base_styles,
@@ -284,7 +284,7 @@ class StyleApplicator:
         )
 
     def _extract_component_kwargs(
-        self, component: str, attrs: set[str], phase: Phase = "plot"
+        self, component: str, attrs: set[str]
     ) -> dict[str, Any]:
         if component == "main":
             return self._extract_main_component_kwargs(attrs)

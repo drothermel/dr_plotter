@@ -25,9 +25,9 @@ See detailed results in [Legacy Configuration Audit Results](#legacy-configurati
 ## Digging Into Plotters Specifically
 - Base
   - A bunch of the grouping functions have unused params which makes me think that they probably either aren't cleaned up or they aren't working correctly
-  - _resolve_group_plot_kwargs calls self.style_engine._get_continuous_style directly which is a private member access that we almost certainly don't want.
+  - ~~_resolve_group_plot_kwargs calls self.style_engine._get_continuous_style directly which is a private member access that we almost certainly don't want.~~ **FIXED ✅** - Private member access eliminated
 - Scatter
-  - Also calling _get_continuous_style which is private member function
+  - ~~Also calling _get_continuous_style which is private member function~~ **FIXED ✅** - Private member access eliminated
   - More concerning: _create_channel_specific_proxy recieves the channel but doesn't use it??
 - Bump Plot
   - for some reason we're setting ax._bump_configured directly if the ax doesn't have this attr but this seems like the wrong choice?  it also makes a lint for pirvate member accessed.  Did we add this or is this actually a matplotlib thing??

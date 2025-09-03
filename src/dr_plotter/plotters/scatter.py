@@ -131,7 +131,7 @@ class ScatterPlotter(BasePlotter):
 
         if self.figure_manager and label and collection:
             for channel in self.grouping_params.active_channels_ordered:
-                proxy = self._create_channel_specific_proxy(collection, channel)
+                proxy = self._create_channel_specific_proxy(collection)
                 if proxy:
                     entry = self.styler.create_legend_entry(
                         proxy, label, self.current_axis, explicit_channel=channel
@@ -139,9 +139,7 @@ class ScatterPlotter(BasePlotter):
                     if entry:
                         self.figure_manager.register_legend_entry(entry)
 
-    def _create_channel_specific_proxy(
-        self, collection: Any, channel: str
-    ) -> Any | None:
+    def _create_channel_specific_proxy(self, collection: Any) -> Any | None:
         facecolors = collection.get_facecolors()
         edgecolors = collection.get_edgecolors()
         sizes = collection.get_sizes()

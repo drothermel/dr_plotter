@@ -122,7 +122,7 @@ class HeatmapPlotter(BasePlotter):
                 color=styles.get("color", self.styler.get_style("label_color")),
             )
 
-    def _style_ticks(self, ax: Any, styles: dict[str, Any]) -> None:
+    def _style_ticks(self, ax: Any, _styles: dict[str, Any]) -> None:
         data = self.plot_data
 
         ax.set_xticks(np.arange(len(data.columns)))

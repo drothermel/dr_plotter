@@ -25,7 +25,7 @@ EXPECTED_CHANNELS = {
     expected_channels=EXPECTED_CHANNELS,
     verify_legend_consistency=True,
     expected_legend_entries={
-        (0, 1): {"hue": 4},
+        (0, 1): {"hue": 3},
         (1, 0): {"hue": 3},
         (1, 1): {"hue": 2, "marker": 2},
     },

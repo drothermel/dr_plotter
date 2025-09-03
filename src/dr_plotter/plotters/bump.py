@@ -81,8 +81,9 @@ class BumpPlotter(BasePlotter):
 
             self.trajectory_data.append(cat_data)
 
-    def _resolve_computed_parameters(self, phase: str, context: dict) -> dict[str, Any]:
-        # The BumpPlotter doesn't need computed parameters for phase config
+    def _resolve_computed_parameters(
+        self, _phase: str, _context: dict
+    ) -> dict[str, Any]:
         return {}
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:

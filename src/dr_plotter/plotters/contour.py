@@ -84,8 +84,9 @@ class ContourPlotter(BasePlotter):
         self.xx, self.yy, self.Z = xx, yy, Z
         return self.plot_data
 
-    def _resolve_computed_parameters(self, phase: str, context: dict) -> dict[str, Any]:
-        # The ContourPlotter doesn't need computed parameters for either phase
+    def _resolve_computed_parameters(
+        self, _phase: str, _context: dict
+    ) -> dict[str, Any]:
         return {}
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
