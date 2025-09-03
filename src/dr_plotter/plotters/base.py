@@ -252,7 +252,7 @@ class BasePlotter:
     def _should_create_legend(self) -> bool:
         if not self.supports_legend:
             return False
-        legend_param = self.kwargs.get("legend", self.theme.get("legend"))
+        legend_param = self.kwargs.get("legend", self.styler.get_style("legend"))
         return legend_param is not False
 
     def _register_legend_entry_if_valid(self, artist: Any, label: str | None) -> None:
@@ -420,8 +420,10 @@ class BasePlotter:
         if title_text:
             ax.set_title(
                 title_text,
-                fontsize=styles.get("fontsize", self.theme.get("title_fontsize")),
-                color=styles.get("color", self.theme.get("title_color")),
+                fontsize=styles.get(
+                    "fontsize", self.styler.get_style("title_fontsize")
+                ),
+                color=styles.get("color", self.styler.get_style("title_color")),
             )
 
     def _style_xlabel(self, ax: Any, styles: dict[str, Any]) -> None:
@@ -436,7 +438,7 @@ class BasePlotter:
                     "fontsize",
                     self.styler.get_style("label_fontsize"),
                 ),
-                color=styles.get("color", self.theme.get("label_color")),
+                color=styles.get("color", self.styler.get_style("label_color")),
             )
 
     def _style_ylabel(self, ax: Any, styles: dict[str, Any]) -> None:
@@ -451,7 +453,7 @@ class BasePlotter:
                     "fontsize",
                     self.styler.get_style("label_fontsize"),
                 ),
-                color=styles.get("color", self.theme.get("label_color")),
+                color=styles.get("color", self.styler.get_style("label_color")),
             )
 
     def _style_grid(self, ax: Any, styles: dict[str, Any]) -> None:
@@ -461,10 +463,10 @@ class BasePlotter:
         if grid_visible:
             ax.grid(
                 visible=True,
-                alpha=styles.get("alpha", self.theme.get("grid_alpha")),
-                color=styles.get("color", self.theme.get("grid_color")),
+                alpha=styles.get("alpha", self.styler.get_style("grid_alpha")),
+                color=styles.get("color", self.styler.get_style("grid_color")),
                 linestyle=styles.get(
-                    "linestyle", self.theme.get("grid_linestyle", "-")
+                    "linestyle", self.styler.get_style("grid_linestyle", "-")
                 ),
             )
         else:

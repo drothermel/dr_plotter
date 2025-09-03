@@ -119,7 +119,7 @@ class HeatmapPlotter(BasePlotter):
                     "fontsize",
                     self.styler.get_style("label_fontsize"),
                 ),
-                color=styles.get("color", self.theme.get("label_color")),
+                color=styles.get("color", self.styler.get_style("label_color")),
             )
 
     def _style_ticks(self, ax: Any, styles: dict[str, Any]) -> None:

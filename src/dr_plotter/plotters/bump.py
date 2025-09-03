@@ -66,7 +66,7 @@ class BumpPlotter(BasePlotter):
         for i, category in enumerate(categories):
             cat_data = self.plot_data[self.plot_data[self.category_col] == category]
             cat_data = cat_data.sort_values(by=self.time_col).copy()
-            base_colors = self.theme.get(
+            base_colors = self.styler.get_style(
                 "base_colors", ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
             )
             style = {
