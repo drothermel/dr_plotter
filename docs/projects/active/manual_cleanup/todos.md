@@ -448,9 +448,16 @@ def _draw(self, ax: Any, data: pd.DataFrame, **context: Any) -> None:
 - Conditional component collection based on configuration (cbars, cmeans, etc.)
 - Violin showcase runs without errors, all tests pass
 
-**🔄 Remaining Plotters to Convert:**
-- [ ] BarPlotter (single phase, should be easy using ViolinPlotter template)
-- [ ] ScatterPlotter (needs `_resolve_computed_parameters` override for size arrays)  
+**🔄 Current Plotter Conversion Status (Updated):**
+
+**✅ Converted to New System:**
+- [x] ViolinPlotter (COMPLETED) - First plotter to use the new system
+- [x] BarPlotter (COMPLETED) - Single phase implementation
+- [x] ScatterPlotter (COMPLETED) - Using computed parameters for sizes
+- [x] LinePlotter (COMPLETED) - Simple implementation
+- [x] HistogramPlotter (COMPLETED) - Single phase, simple implementation
+
+**❌ Remaining Plotters to Convert:**
 - [ ] HeatmapPlotter (single phase, simple conversion)
 - [ ] BumpPlotter (multi-trajectory, needs computed parameter handling)
 - [ ] ContourPlotter (multi-phase: "contour" and "scatter")
@@ -496,6 +503,7 @@ def _draw(self, ax: Any, data: pd.DataFrame, **context: Any) -> None:
 - [x] **Falsy value handling fixed** - `showmeans=False` properly overrides theme ✅
 - [x] **Single source of truth** - all parameters flow through one method ✅
 - [x] **Defensive programming eliminated** - cbars handling based on config not existence ✅
-- [ ] Remaining plotters converted to new system
+- [x] **Additional plotters converted** - BarPlotter, ScatterPlotter, LinePlotter, HistogramPlotter now using new system ✅
+- [ ] Remaining plotters converted to new system (HeatmapPlotter, BumpPlotter, ContourPlotter)
 - [ ] Multi-phase plotters (ContourPlotter) working cleanly
 - [ ] Remove deprecated `_build_plot_args()` method once all plotters converted

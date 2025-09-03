@@ -72,7 +72,8 @@ class HistogramPlotter(BasePlotter):
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         label = kwargs.pop("label", None)
-        n, bins, patches = ax.hist(data[consts.X_COL_NAME], **kwargs)
+        config = self._resolve_phase_config("main", **kwargs)
+        n, bins, patches = ax.hist(data[consts.X_COL_NAME], **config)
 
         artists = {"patches": patches, "n": n, "bins": bins}
         self.styler.apply_post_processing("histogram", artists)
