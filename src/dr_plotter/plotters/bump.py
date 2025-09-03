@@ -86,6 +86,9 @@ class BumpPlotter(BasePlotter):
         return {}
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
+        # Configure axis once before drawing trajectories
+        self._configure_bump_axes(ax)
+
         for traj_data in self.trajectory_data:
             if not traj_data.empty:
                 # First get the base configuration from the new system
@@ -124,10 +127,9 @@ class BumpPlotter(BasePlotter):
 
                 self._register_legend_entry_if_valid(lines[0], category_name)
 
-        if not hasattr(ax, "_bump_configured"):
-            ax.invert_yaxis()
-            max_rank = int(self.plot_data["rank"].max())
-            ax.set_yticks(range(1, max_rank + 1))
-            ax.margins(x=0.15)
-            ax.set_ylabel(self.styler.get_style("ylabel", "Rank"))
-            ax._bump_configured = True
+    def _configure_bump_axes(self, ax: Any) -> None:
+        ax.invert_yaxis()
+        max_rank = int(self.plot_data["rank"].max())
+        ax.set_yticks(range(1, max_rank + 1))
+        ax.margins(x=0.15)
+        ax.set_ylabel(self.styler.get_style("ylabel", "Rank"))
