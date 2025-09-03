@@ -9,24 +9,15 @@ from dr_plotter.channel_metadata import ChannelRegistry
 from dr_plotter.configs import GroupingConfig
 from dr_plotter.style_engine import StyleEngine
 from dr_plotter.style_applicator import StyleApplicator
-from dr_plotter.theme import BASE_COLORS, BASE_THEME, DR_PLOTTER_STYLE_KEYS, Theme
+from dr_plotter.theme import BASE_THEME, Theme
 from dr_plotter.types import (
     ColName,
     ComponentSchema,
     GroupContext,
     GroupInfo,
     Phase,
-    StyleAttrName,
     VisualChannel,
 )
-
-BASE_PLOTTER_PARAMS = [
-    "x",
-    "y",
-    "colorbar_label",
-    "_figure_manager",
-    "_shared_hue_styles",
-]
 
 
 def as_list(x: Any | list[Any] | None) -> list[Any]:
@@ -125,16 +116,6 @@ class BasePlotter:
     @property
     def _multi_metric(self) -> bool:
         return len(self._get_y_metric_column_names()) > 1
-
-    @property
-    def _filtered_plot_kwargs(self) -> dict[str, Any]:
-        filter_keys = set(
-            DR_PLOTTER_STYLE_KEYS
-            + self.grouping_params.channel_strs
-            + BASE_PLOTTER_PARAMS
-            + self.__class__.plotter_params
-        )
-        return {k: v for k, v in self.kwargs.items() if k not in filter_keys}
 
     def _plot_specific_data_prep(self) -> None:
         pass
@@ -353,41 +334,6 @@ class BasePlotter:
             "offset": offset,
             "x_categories": x_categories,
         }
-
-    def _build_group_plot_kwargs(
-        self, styles: dict[StyleAttrName, Any], name: Any, group_cols: list[str]
-    ) -> dict[str, Any]:
-        default_color = styles.get("color") or self.theme.general_styles.get(
-            "default_color", BASE_COLORS[0]
-        )
-
-        plot_kwargs = {
-            "color": default_color,
-            "alpha": styles.get("alpha", self.styler.get_style("alpha", 1.0)),
-        }
-
-        if "linestyle" in styles:
-            plot_kwargs["linestyle"] = styles["linestyle"]
-        if "marker" in styles:
-            plot_kwargs["marker"] = styles["marker"]
-        if "size_mult" in styles:
-            if hasattr(self, "line_width"):
-                plot_kwargs["linewidth"] = self.styler.get_computed_style(
-                    "line_width", "multiply", styles["size_mult"]
-                )
-            elif hasattr(self, "marker_size"):
-                plot_kwargs["s"] = self.styler.get_computed_style(
-                    "marker_size", "multiply", styles["size_mult"]
-                )
-
-        user_kwargs = self._filtered_plot_kwargs
-        for k, v in user_kwargs.items():
-            if k not in plot_kwargs:
-                plot_kwargs[k] = v
-
-        plot_kwargs["label"] = self._build_group_label(name, group_cols)
-
-        return plot_kwargs
 
     def _get_x_metric_column_name(self) -> ColName | None:
         subplotter_x_metric = "x"

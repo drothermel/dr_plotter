@@ -21,10 +21,6 @@ class GroupingConfig:
         pass
 
     @property
-    def channel_strs(self) -> list[str]:
-        return [f"{field.name}_by" for field in fields(self)]
-
-    @property
     def active_channels(self) -> set[VisualChannel]:
         return {
             field.name

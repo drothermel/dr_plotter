@@ -11,16 +11,6 @@ ALPHA_MIN_DEFAULT = 0.3
 ALPHA_MAX_DEFAULT = 1.0
 DEFAULT_TEXT_FONTSIZE = 10
 
-DR_PLOTTER_STYLE_KEYS = [
-    "title",
-    "xlabel",
-    "ylabel",
-    "legend",
-    "grid",
-    "display_values",
-    "xlabel_pos",
-]
-
 
 class Style:
     style_type = "general"
