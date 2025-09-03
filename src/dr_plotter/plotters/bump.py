@@ -81,20 +81,28 @@ class BumpPlotter(BasePlotter):
 
             self.trajectory_data.append(cat_data)
 
+    def _resolve_computed_parameters(self, phase: str, context: dict) -> dict[str, Any]:
+        # The BumpPlotter doesn't need computed parameters for phase config
+        return {}
+
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         for traj_data in self.trajectory_data:
             if not traj_data.empty:
-                plot_args = self._build_plot_args()
-                plot_args.update(
+                # First get the base configuration from the new system
+                config = self._resolve_phase_config("main", **kwargs)
+
+                # Then override with trajectory-specific color and style
+                config.update(
                     {
                         "color": traj_data["_bump_color"].iloc[0],
                         "linestyle": traj_data["_bump_linestyle"].iloc[0],
                     }
                 )
+
                 lines = ax.plot(
                     traj_data[self.time_col],
                     traj_data[self.value_col],
-                    **plot_args,
+                    **config,
                 )
 
                 last_point = traj_data.iloc[-1]
