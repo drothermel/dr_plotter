@@ -9,10 +9,8 @@ from dr_plotter import consts
 from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import HISTOGRAM_THEME, Theme
 from dr_plotter.types import (
-    BasePlotterParamName,
     ComponentSchema,
     Phase,
-    SubPlotterParamName,
     VisualChannel,
 )
 
@@ -22,7 +20,6 @@ from .base import BasePlotter
 class HistogramPlotter(BasePlotter):
     plotter_name: str = "histogram"
     plotter_params: ClassVar[list[str]] = []
-    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
     enabled_channels: ClassVar[set[VisualChannel]] = set()
     default_theme: ClassVar[Theme] = HISTOGRAM_THEME
     supports_grouped: bool = False
@@ -75,7 +72,8 @@ class HistogramPlotter(BasePlotter):
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         label = kwargs.pop("label", None)
-        n, bins, patches = ax.hist(data[consts.X_COL_NAME], **kwargs)
+        config = self._resolve_phase_config("main", **kwargs)
+        n, bins, patches = ax.hist(data[consts.X_COL_NAME], **config)
 
         artists = {"patches": patches, "n": n, "bins": bins}
         self.styler.apply_post_processing("histogram", artists)

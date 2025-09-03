@@ -13,7 +13,6 @@ from dr_plotter.configs import (
 )
 from dr_plotter.faceting.faceting_core import (
     get_grid_dimensions,
-    handle_empty_subplots,
     plot_faceted_data,
     prepare_faceted_subplots,
 )
@@ -150,10 +149,6 @@ class FigureManager:
             "rows",
             "cols",
             "lines",
-            "target_row",
-            "target_col",
-            "target_rows",
-            "target_cols",
             "row_order",
             "col_order",
             "lines_order",
@@ -165,8 +160,9 @@ class FigureManager:
             "ylim",
             "subplot_titles",
             "title_template",
-            "empty_subplot_strategy",
             "color_wrap",
+            "target_row",
+            "target_col",
         }
 
         for param_name in faceting_param_names:
@@ -212,9 +208,6 @@ class FigureManager:
         grid_shape = get_grid_dimensions(data, config)
         self._validate_grid_dimensions(grid_shape)
         data_subsets = prepare_faceted_subplots(data, config, grid_shape)
-        data_subsets = handle_empty_subplots(
-            data_subsets, config.empty_subplot_strategy
-        )
 
         style_coordinator = self._get_or_create_style_coordinator()
         if config.lines:
@@ -233,13 +226,12 @@ class FigureManager:
         computed_rows, computed_cols = grid_shape
         figure_rows, figure_cols = self.layout_config.rows, self.layout_config.cols
 
-        if (computed_rows, computed_cols) != (figure_rows, figure_cols):
+        # Allow partial plotting - just make sure the data fits within the figure grid
+        if computed_rows > figure_rows or computed_cols > figure_cols:
             assert False, (
-                f"Grid dimension mismatch: "
-                f"LayoutConfig({figure_rows}×{figure_cols}) "
-                f"vs required({computed_rows}×{computed_cols}). "
-                f"Fix: "
-                f"LayoutConfig(rows={computed_rows}, cols={computed_cols})"
+                f"Data grid dimensions ({computed_rows}×{computed_cols}) "
+                f"exceed figure layout ({figure_rows}×{figure_cols}). "
+                f"Increase layout size to fit all data."
             )
 
     def _get_or_create_style_coordinator(self) -> FacetStyleCoordinator:

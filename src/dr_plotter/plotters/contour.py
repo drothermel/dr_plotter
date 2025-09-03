@@ -9,12 +9,10 @@ from sklearn.mixture import GaussianMixture
 
 from dr_plotter import consts
 from dr_plotter.configs import GroupingConfig
-from dr_plotter.theme import BASE_COLORS, CONTOUR_THEME, Theme
+from dr_plotter.theme import CONTOUR_THEME, Theme
 from dr_plotter.types import (
-    BasePlotterParamName,
     ComponentSchema,
     Phase,
-    SubPlotterParamName,
     VisualChannel,
 )
 
@@ -24,7 +22,6 @@ from .base import BasePlotter
 class ContourPlotter(BasePlotter):
     plotter_name: str = "contour"
     plotter_params: ClassVar[list[str]] = []
-    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
     enabled_channels: ClassVar[set[VisualChannel]] = set()
     default_theme: ClassVar[Theme] = CONTOUR_THEME
     supports_legend: bool = False
@@ -87,31 +84,21 @@ class ContourPlotter(BasePlotter):
         self.xx, self.yy, self.Z = xx, yy, Z
         return self.plot_data
 
+    def _resolve_computed_parameters(
+        self, _phase: str, _context: dict
+    ) -> dict[str, Any]:
+        return {}
+
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
-        contour_kwargs = {
-            "levels": self.styler.get_style("levels"),
-            "cmap": self.styler.get_style("cmap"),
-        }
-        user_kwargs = kwargs.copy()
-        for key in ["s", "scatter_size", "scatter_alpha"]:
-            user_kwargs.pop(key, None)
-        contour_kwargs.update(user_kwargs)
+        # Get configurations for both phases using the new system
+        contour_config = self._resolve_phase_config("contour", **kwargs)
+        scatter_config = self._resolve_phase_config("scatter", **kwargs)
 
-        scatter_kwargs = {
-            "s": self.styler.get_style("scatter_size"),
-            "alpha": self.styler.get_style("scatter_alpha"),
-            "color": self.styler.get_style("scatter_color", BASE_COLORS[0]),
-        }
-        if "s" in kwargs:
-            scatter_kwargs["s"] = kwargs["s"]
-        if "scatter_size" in kwargs:
-            scatter_kwargs["s"] = kwargs["scatter_size"]
-        if "scatter_alpha" in kwargs:
-            scatter_kwargs["alpha"] = kwargs["scatter_alpha"]
+        # Apply contour plot with its configuration
+        contour = ax.contour(self.xx, self.yy, self.Z, **contour_config)
 
-        contour = ax.contour(self.xx, self.yy, self.Z, **contour_kwargs)
-
-        ax.scatter(data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **scatter_kwargs)
+        # Apply scatter plot with its configuration
+        ax.scatter(data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **scatter_config)
 
         artists = {
             "colorbar": {
@@ -146,5 +133,5 @@ class ContourPlotter(BasePlotter):
                     "fontsize",
                     self.styler.get_style("label_fontsize"),
                 ),
-                color=styles.get("color", self.theme.get("label_color")),
+                color=styles.get("color", self.styler.get_style("label_color")),
             )

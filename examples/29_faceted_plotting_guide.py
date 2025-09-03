@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import time
 
 from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager
@@ -160,25 +162,53 @@ def example_4_targeted_plotting() -> None:
             linewidth=1,
         )
 
-        highlight_data = data[data["model_size"] == "65B"]
+        # Filter data for specific cell we want to highlight at position (row 0, col 1)
+        highlight_data = data[
+            (data["model_size"] == "65B")
+            & (data["metric"] == data["metric"].unique()[0])  # First metric (row 0)
+            & (data["dataset"] == data["dataset"].unique()[1])  # Col 1 (second dataset)
+        ]
 
+        # Use target_row and target_col to place the highlighted data at specific positions
         fm.plot_faceted(
             data=highlight_data,
             plot_type="line",
             rows="metric",
             cols="dataset",
             lines="model_size",
-            target_row=0,
-            target_cols=[1, 2],
             x="step",
             y="value",
             linewidth=4,
             color="red",
+            target_row=0,  # First row (corresponds to the first metric)
+            target_col=1,  # Second column (corresponds to the second dataset)
+        )
+
+        # Plot the second highlight at position (0, 2)
+        highlight_data_col2 = data[
+            (data["model_size"] == "65B")
+            & (data["metric"] == data["metric"].unique()[0])  # First metric (row 0)
+            & (data["dataset"] == data["dataset"].unique()[2])  # Third dataset (col 2)
+        ]
+
+        fm.plot_faceted(
+            data=highlight_data_col2,
+            plot_type="line",
+            rows="metric",
+            cols="dataset",
+            lines="model_size",
+            x="step",
+            y="value",
+            linewidth=4,
+            color="red",
+            target_row=0,  # First row
+            target_col=2,  # Third column
         )
 
         print("Created targeted overlay:")
         print("- Base lines for all models in all subplots")
         print("- Thick red highlight for best model in specific subplots only")
+        print("- Using target_row and target_col to position overlays precisely")
 
 
 def example_5_custom_subplot_configuration() -> None:
@@ -290,3 +320,8 @@ if __name__ == "__main__":
     print("\n" + "=" * 50)
     print("All examples completed!")
     print("Try modifying the examples to explore different faceting patterns.")
+
+    # Show the plots for 5 seconds, then close
+    plt.show(block=True)
+    time.sleep(5)
+    plt.close()

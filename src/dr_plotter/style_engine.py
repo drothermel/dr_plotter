@@ -43,7 +43,7 @@ class StyleEngine:
             if value is not None:
                 spec = ChannelRegistry.get_spec(channel)
                 if spec.channel_type == "continuous":
-                    continuous_styles = self._get_continuous_style(
+                    continuous_styles = self.get_continuous_style(
                         channel, column, value
                     )
                     if continuous_styles:
@@ -58,7 +58,7 @@ class StyleEngine:
                     )
         return styles
 
-    def _get_continuous_style(
+    def get_continuous_style(
         self, channel: str, column: str, value: float
     ) -> dict[str, Any]:
         key = f"{channel}:{column}"

@@ -10,10 +10,8 @@ from dr_plotter import consts
 from dr_plotter.configs import GroupingConfig
 from dr_plotter.theme import SCATTER_THEME, Theme
 from dr_plotter.types import (
-    BasePlotterParamName,
     ComponentSchema,
     Phase,
-    SubPlotterParamName,
     VisualChannel,
 )
 
@@ -23,7 +21,6 @@ from .base import BasePlotter
 class ScatterPlotter(BasePlotter):
     plotter_name: str = "scatter"
     plotter_params: ClassVar[list[str]] = []
-    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
     enabled_channels: ClassVar[set[VisualChannel]] = {"hue", "size", "marker", "alpha"}
     default_theme: ClassVar[Theme] = SCATTER_THEME
 
@@ -88,28 +85,39 @@ class ScatterPlotter(BasePlotter):
                 setter = getattr(collection, f"set_{attr}")
                 setter(value)
 
-    def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
-        label = kwargs.pop("label", None)
+    def _resolve_computed_parameters(
+        self, phase: str, context: dict[str, Any]
+    ) -> dict[str, Any]:
+        if phase != "main":
+            return {}
 
+        computed = {}
         if "size" in self.grouping_params.active_channels:
             size_col = self.grouping_params.size
-            if size_col and size_col in data.columns:
-                sizes = []
-                for value in data[size_col]:
-                    style = self.style_engine._get_continuous_style(
-                        "size", size_col, value
-                    )
-                    size_mult = style.get("size_mult", 1.0)
-                    base_size = kwargs.get("s", 50)
-                    sizes.append(
-                        base_size * size_mult
-                        if isinstance(base_size, (int, float))
-                        else 50 * size_mult
-                    )
-                kwargs["s"] = sizes
+            assert (
+                size_col is not None
+                and size_col in context.get("data", pd.DataFrame()).columns
+            ), "Size column is required when grouped by size"
+            data = context["data"]
+            base_size = context.get("s", 50)
+            sizes = []
+            for value in data[size_col]:
+                style = self.style_engine.get_continuous_style("size", size_col, value)
+                size_mult = style.get("size_mult", 1.0)
+                assert isinstance(base_size, (int, float)), (
+                    f"Base size must be numeric, got {type(base_size)}: {base_size}"
+                )
+                sizes.append(base_size * size_mult)
+            computed["s"] = sizes
+
+        return computed
+
+    def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
+        label = kwargs.pop("label", None)
+        config = self._resolve_phase_config("main", data=data, **kwargs)
 
         collection = ax.scatter(
-            data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **kwargs
+            data[consts.X_COL_NAME], data[consts.Y_COL_NAME], **config
         )
 
         artists = {"collection": collection}
@@ -123,7 +131,7 @@ class ScatterPlotter(BasePlotter):
 
         if self.figure_manager and label and collection:
             for channel in self.grouping_params.active_channels_ordered:
-                proxy = self._create_channel_specific_proxy(collection, channel)
+                proxy = self._create_channel_specific_proxy(collection)
                 if proxy:
                     entry = self.styler.create_legend_entry(
                         proxy, label, self.current_axis, explicit_channel=channel
@@ -131,9 +139,7 @@ class ScatterPlotter(BasePlotter):
                     if entry:
                         self.figure_manager.register_legend_entry(entry)
 
-    def _create_channel_specific_proxy(
-        self, collection: Any, channel: str
-    ) -> Any | None:
+    def _create_channel_specific_proxy(self, collection: Any) -> Any | None:
         facecolors = collection.get_facecolors()
         edgecolors = collection.get_edgecolors()
         sizes = collection.get_sizes()

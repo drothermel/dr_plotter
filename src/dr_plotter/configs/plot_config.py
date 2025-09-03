@@ -32,4 +32,3 @@ class PlotConfig:
 
         preset_config = PLOT_CONFIGS[preset_name]
         return cls(**preset_config)
-

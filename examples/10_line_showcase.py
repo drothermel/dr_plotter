@@ -21,9 +21,9 @@ EXPECTED_CHANNELS = {
     expected_channels=EXPECTED_CHANNELS,
     verify_legend_consistency=True,
     expected_legend_entries={
-        (0, 1): {"hue": 4},
-        (1, 0): {"hue": 4},
-        (1, 1): {"hue": 2},
+        (0, 1): {"legend_count": 3},
+        (1, 0): {"legend_count": 3},
+        (1, 1): {"legend_count": 6},
     },
 )
 def main(args: Any) -> Any:

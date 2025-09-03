@@ -3,11 +3,8 @@ from typing import Any
 from plot_data import ExampleData
 
 from dr_plotter.configs import (
-    LayoutConfig,
-    LegendConfig,
     PlotConfig,
     PositioningConfig,
-    StyleConfig,
 )
 from dr_plotter.figure_manager import FigureManager
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
@@ -45,8 +42,8 @@ def main(args: Any) -> Any:
         style={"plot_styles": {"linewidth": 2.0, "alpha": 0.9}, "theme": "line"},
         legend={
             "strategy": "subplot",
-            "position": "lower center", 
-            "positioning_config": positioning_config
+            "position": "lower center",
+            "positioning_config": positioning_config,
         },
     )
 

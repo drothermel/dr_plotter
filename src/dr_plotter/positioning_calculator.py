@@ -60,7 +60,7 @@ class PositioningCalculator:
                 figure_dimensions, legend_metadata, manual_overrides
             )
 
-        return self._calculate_default_positioning(figure_dimensions, legend_metadata)
+        return self._calculate_default_positioning(figure_dimensions)
 
     def _handle_manual_positioning(
         self, manual_overrides: dict[str, Any], figure_dimensions: FigureDimensions
@@ -87,7 +87,7 @@ class PositioningCalculator:
             )
             positions[legend_index] = (x, y)
 
-        layout_rect = self._calculate_layout_rect_with_legends(figure_dimensions)
+        layout_rect = self._calculate_layout_rect_with_legends()
 
         return PositioningResult(
             legend_positions=positions,
@@ -152,9 +152,7 @@ class PositioningCalculator:
             return (0.0, 0.0, 1.0, self.config.title_space_factor)
         return None
 
-    def _calculate_layout_rect_with_legends(
-        self, figure_dimensions: FigureDimensions
-    ) -> tuple[float, float, float, float]:
+    def _calculate_layout_rect_with_legends(self) -> tuple[float, float, float, float]:
         return (
             self.config.default_margin_left,
             self.config.default_margin_bottom,
@@ -163,9 +161,7 @@ class PositioningCalculator:
         )
 
     def _calculate_default_positioning(
-        self,
-        figure_dimensions: FigureDimensions,
-        legend_metadata: LegendMetadata,
+        self, figure_dimensions: FigureDimensions
     ) -> PositioningResult:
         positions = {
             0: (

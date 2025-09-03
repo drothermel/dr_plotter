@@ -9,26 +9,15 @@ from dr_plotter.channel_metadata import ChannelRegistry
 from dr_plotter.configs import GroupingConfig
 from dr_plotter.style_engine import StyleEngine
 from dr_plotter.style_applicator import StyleApplicator
-from dr_plotter.theme import BASE_COLORS, BASE_THEME, DR_PLOTTER_STYLE_KEYS, Theme
+from dr_plotter.theme import BASE_THEME, Theme
 from dr_plotter.types import (
-    BasePlotterParamName,
     ColName,
     ComponentSchema,
     GroupContext,
     GroupInfo,
     Phase,
-    StyleAttrName,
-    SubPlotterParamName,
     VisualChannel,
 )
-
-BASE_PLOTTER_PARAMS = [
-    "x",
-    "y",
-    "colorbar_label",
-    "_figure_manager",
-    "_shared_hue_styles",
-]
 
 
 def as_list(x: Any | list[Any] | None) -> list[Any]:
@@ -63,7 +52,6 @@ class BasePlotter:
 
     plotter_name: str = "base"
     plotter_params: ClassVar[list[str]] = []
-    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
     enabled_channels: ClassVar[set[VisualChannel]] = set()
     default_theme: ClassVar[Theme] = BASE_THEME
     supports_legend: bool = True
@@ -128,16 +116,6 @@ class BasePlotter:
     @property
     def _multi_metric(self) -> bool:
         return len(self._get_y_metric_column_names()) > 1
-
-    @property
-    def _filtered_plot_kwargs(self) -> dict[str, Any]:
-        filter_keys = set(
-            DR_PLOTTER_STYLE_KEYS
-            + self.grouping_params.channel_strs
-            + BASE_PLOTTER_PARAMS
-            + self.__class__.plotter_params
-        )
-        return {k: v for k, v in self.kwargs.items() if k not in filter_keys}
 
     def _plot_specific_data_prep(self) -> None:
         pass
@@ -224,22 +202,38 @@ class BasePlotter:
 
         self._plot_specific_data_prep()
 
-    def _build_plot_args(self) -> dict[str, Any]:
-        main_plot_params = self.component_schema.get("plot", {}).get("main", set())
-        plot_args = {}
-        for key in main_plot_params:
-            if key in self._filtered_plot_kwargs:
-                plot_args[key] = self._filtered_plot_kwargs[key]
-            else:
-                style = self.styler.get_style(key)
-                if style is not None:
-                    plot_args[key] = style
-        return plot_args
+    def _resolve_phase_config(self, phase: str, **context: Any) -> dict[str, Any]:
+        phase_params = self.component_schema.get("plot", {}).get(phase, set())
+        config = {}
+
+        for param in phase_params:
+            sources = [
+                lambda k: context.get(k),
+                lambda k: self.kwargs.get(f"{phase}_{k}"),
+                lambda k: self.kwargs.get(k),
+                lambda k: self.styler.get_style(f"{phase}_{k}"),
+                lambda k: self.styler.get_style(k),
+            ]
+
+            for source in sources:
+                value = source(param)
+                if value is not None:
+                    config[param] = value
+                    break
+
+        config.update(self._resolve_computed_parameters(phase, context))
+        return config
+
+    def _resolve_computed_parameters(self, phase: str, context: dict) -> dict[str, Any]:
+        return {}
+
+    # The _build_plot_args method has been removed as part of the configuration system refactoring.
+    # All plotters now use _resolve_phase_config instead.
 
     def _should_create_legend(self) -> bool:
         if not self.supports_legend:
             return False
-        legend_param = self.kwargs.get("legend", self.theme.get("legend"))
+        legend_param = self.kwargs.get("legend", self.styler.get_style("legend"))
         return legend_param is not False
 
     def _register_legend_entry_if_valid(self, artist: Any, label: str | None) -> None:
@@ -325,26 +319,6 @@ class BasePlotter:
             group_context["name"], group_context["categorical_cols"]
         )
 
-        if (
-            self.__class__.plotter_name == "scatter"
-            and "size" in self.grouping_params.active_channels
-        ):
-            size_col = self.grouping_params.size
-            if size_col and size_col in group_context["data"].columns:
-                sizes = []
-                for value in group_context["data"][size_col]:
-                    style = self.style_engine._get_continuous_style(
-                        "size", size_col, value
-                    )
-                    size_mult = style.get("size_mult", 1.0)
-                    base_size = plot_kwargs.get("s", 50)
-                    sizes.append(
-                        base_size * size_mult
-                        if isinstance(base_size, (int, float))
-                        else 50 * size_mult
-                    )
-                plot_kwargs["s"] = sizes
-
         return plot_kwargs
 
     def _calculate_group_position(
@@ -361,53 +335,12 @@ class BasePlotter:
             "x_categories": x_categories,
         }
 
-    def _build_group_plot_kwargs(
-        self, styles: dict[StyleAttrName, Any], name: Any, group_cols: list[str]
-    ) -> dict[str, Any]:
-        default_color = styles.get("color") or self.theme.general_styles.get(
-            "default_color", BASE_COLORS[0]
-        )
-
-        plot_kwargs = {
-            "color": default_color,
-            "alpha": styles.get("alpha", self.styler.get_style("alpha", 1.0)),
-        }
-
-        if "linestyle" in styles:
-            plot_kwargs["linestyle"] = styles["linestyle"]
-        if "marker" in styles:
-            plot_kwargs["marker"] = styles["marker"]
-        if "size_mult" in styles:
-            if hasattr(self, "line_width"):
-                plot_kwargs["linewidth"] = self.styler.get_computed_style(
-                    "line_width", "multiply", styles["size_mult"]
-                )
-            elif hasattr(self, "marker_size"):
-                plot_kwargs["s"] = self.styler.get_computed_style(
-                    "marker_size", "multiply", styles["size_mult"]
-                )
-
-        user_kwargs = self._filtered_plot_kwargs
-        for k, v in user_kwargs.items():
-            if k not in plot_kwargs:
-                plot_kwargs[k] = v
-
-        plot_kwargs["label"] = self._build_group_label(name, group_cols)
-
-        return plot_kwargs
-
-    def _mapped_param(self, param: BasePlotterParamName) -> SubPlotterParamName:
-        return self.__class__.param_mapping.get(param, param)
-
-    def _unmapped_param(self, param: SubPlotterParamName) -> BasePlotterParamName:
-        return {v: k for k, v in self.__class__.param_mapping.items()}.get(param, param)
-
     def _get_x_metric_column_name(self) -> ColName | None:
-        subplotter_x_metric = self._mapped_param("x")
+        subplotter_x_metric = "x"
         return self.kwargs.get(subplotter_x_metric)
 
     def _get_y_metric_column_names(self) -> list[ColName]:
-        subplotter_y_metric = self._mapped_param("y")
+        subplotter_y_metric = "y"
         metric_col_name = self.kwargs.get(subplotter_y_metric)
         return as_list(metric_col_name if metric_col_name is not None else [])
 
@@ -433,8 +366,10 @@ class BasePlotter:
         if title_text:
             ax.set_title(
                 title_text,
-                fontsize=styles.get("fontsize", self.theme.get("title_fontsize")),
-                color=styles.get("color", self.theme.get("title_color")),
+                fontsize=styles.get(
+                    "fontsize", self.styler.get_style("title_fontsize")
+                ),
+                color=styles.get("color", self.styler.get_style("title_color")),
             )
 
     def _style_xlabel(self, ax: Any, styles: dict[str, Any]) -> None:
@@ -449,7 +384,7 @@ class BasePlotter:
                     "fontsize",
                     self.styler.get_style("label_fontsize"),
                 ),
-                color=styles.get("color", self.theme.get("label_color")),
+                color=styles.get("color", self.styler.get_style("label_color")),
             )
 
     def _style_ylabel(self, ax: Any, styles: dict[str, Any]) -> None:
@@ -464,7 +399,7 @@ class BasePlotter:
                     "fontsize",
                     self.styler.get_style("label_fontsize"),
                 ),
-                color=styles.get("color", self.theme.get("label_color")),
+                color=styles.get("color", self.styler.get_style("label_color")),
             )
 
     def _style_grid(self, ax: Any, styles: dict[str, Any]) -> None:
@@ -474,10 +409,10 @@ class BasePlotter:
         if grid_visible:
             ax.grid(
                 visible=True,
-                alpha=styles.get("alpha", self.theme.get("grid_alpha")),
-                color=styles.get("color", self.theme.get("grid_color")),
+                alpha=styles.get("alpha", self.styler.get_style("grid_alpha")),
+                color=styles.get("color", self.styler.get_style("grid_color")),
                 linestyle=styles.get(
-                    "linestyle", self.theme.get("grid_linestyle", "-")
+                    "linestyle", self.styler.get_style("grid_linestyle", "-")
                 ),
             )
         else:

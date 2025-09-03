@@ -264,7 +264,8 @@ def create_single_metric_plots(
                 "ncol": min(len(target_recipes), 4),  # Reduce columns
                 "layout_top_margin": 0.15,  # More space for suptitle
                 "layout_bottom_margin": 0.25,  # Adjust legend space
-                "bbox_y_offset": 0.08,  # Reduce offset
+                # "bbox_y_offset" is no longer supported, use positioning_config instead
+                # Configure layout margins to properly position the legend
             },
         )
     ) as fm:
@@ -339,8 +340,8 @@ def create_single_metric_plots(
             ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
             ax.grid(visible=True, alpha=0.3)
 
-        # Explicitly finalize legends before context exit to ensure proper rendering
-        fm.finalize_legends()
+        # FigureManager now handles legend finalization in finalize_layout(), called on context exit
+        # Nothing needed here anymore
 
         safe_metric_name = metric_name.replace("-", "_").replace(" ", "_")
         metric_type = (
@@ -412,7 +413,7 @@ def create_ppl_group_plots(
                 "ncol": min(len(ppl_metrics), 4),
                 "layout_top_margin": 0.05,
                 "layout_bottom_margin": 0.4,
-                "bbox_y_offset": 0.02,
+                # "bbox_y_offset" is no longer supported, use positioning_config instead
             },
         )
     ) as fm:
@@ -523,7 +524,7 @@ def create_olmes_group_plots(
                 "ncol": min(len(olmes_metrics), 4),
                 "layout_top_margin": 0.05,
                 "layout_bottom_margin": 0.4,
-                "bbox_y_offset": 0.02,
+                # "bbox_y_offset" is no longer supported, use positioning_config instead
             },
         )
     ) as fm:
@@ -668,7 +669,7 @@ def create_recipe_family_chunk_plots(  # noqa: C901, PLR0912
                 "ncol": min(len(selected_metrics), 4),
                 "layout_top_margin": 0.05,
                 "layout_bottom_margin": 0.4,
-                "bbox_y_offset": 0.02,
+                # "bbox_y_offset" is no longer supported, use positioning_config instead
             },
         )
     ) as fm:

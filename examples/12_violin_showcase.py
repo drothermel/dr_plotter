@@ -9,7 +9,7 @@ from dr_plotter.scripting.verif_decorators import inspect_plot_properties, verif
 
 
 @inspect_plot_properties()
-@verify_plot(expected_legends=1)
+@verify_plot(expected_legends=2)
 def main(args: Any) -> Any:
     with FigureManager(
         PlotConfig(

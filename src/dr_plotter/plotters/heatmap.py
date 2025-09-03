@@ -9,11 +9,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from dr_plotter import consts
 from dr_plotter.configs import GroupingConfig
-from dr_plotter.plotters.base import (
-    BasePlotter,
-    BasePlotterParamName,
-    SubPlotterParamName,
-)
+from dr_plotter.plotters.base import BasePlotter
 from dr_plotter.theme import HEATMAP_THEME, Theme
 from dr_plotter.types import ComponentSchema, Phase, VisualChannel
 
@@ -21,7 +17,6 @@ from dr_plotter.types import ComponentSchema, Phase, VisualChannel
 class HeatmapPlotter(BasePlotter):
     plotter_name: str = "heatmap"
     plotter_params: ClassVar[list[str]] = ["values", "annot"]
-    param_mapping: ClassVar[dict[BasePlotterParamName, SubPlotterParamName]] = {}
     enabled_channels: ClassVar[set[VisualChannel]] = set()
     default_theme: ClassVar[Theme] = HEATMAP_THEME
     supports_legend: bool = False
@@ -86,10 +81,8 @@ class HeatmapPlotter(BasePlotter):
         self.plot_data = plot_data.fillna(0)
 
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
-        if "cmap" not in kwargs:
-            kwargs["cmap"] = self.styler.get_style("cmap")
-
-        im = ax.imshow(data, **self._filtered_plot_kwargs)
+        config = self._resolve_phase_config("main", **kwargs)
+        im = ax.imshow(data, **config)
 
         artists = {
             "colorbar": {
@@ -126,10 +119,10 @@ class HeatmapPlotter(BasePlotter):
                     "fontsize",
                     self.styler.get_style("label_fontsize"),
                 ),
-                color=styles.get("color", self.theme.get("label_color")),
+                color=styles.get("color", self.styler.get_style("label_color")),
             )
 
-    def _style_ticks(self, ax: Any, styles: dict[str, Any]) -> None:
+    def _style_ticks(self, ax: Any, _styles: dict[str, Any]) -> None:
         data = self.plot_data
 
         ax.set_xticks(np.arange(len(data.columns)))

@@ -53,13 +53,16 @@ class LegendConfig:
         )
 
     @classmethod
-    def from_input(cls, value: str | dict[str, Any] | LegendConfig | None) -> LegendConfig:
+    def from_input(
+        cls, value: str | dict[str, Any] | LegendConfig | None
+    ) -> LegendConfig:
         if value is None:
             return cls()
         elif isinstance(value, cls):
             return value
         elif isinstance(value, str):
             from dr_plotter.legend_manager import resolve_legend_config
+
             return resolve_legend_config(value)
         elif isinstance(value, dict):
             legend_kwargs = {}

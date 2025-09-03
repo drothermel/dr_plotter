@@ -11,16 +11,6 @@ ALPHA_MIN_DEFAULT = 0.3
 ALPHA_MAX_DEFAULT = 1.0
 DEFAULT_TEXT_FONTSIZE = 10
 
-DR_PLOTTER_STYLE_KEYS = [
-    "title",
-    "xlabel",
-    "ylabel",
-    "legend",
-    "grid",
-    "display_values",
-    "xlabel_pos",
-]
-
 
 class Style:
     style_type = "general"
@@ -138,9 +128,11 @@ class Theme:
         self.all_styles["post"] = PostStyles.from_input(post_styles)
         self.all_styles["axes"] = AxesStyles.from_input(axes_styles)
         self.all_styles["figure"] = FigureStyles.from_input(figure_styles)
-        
+
         if styles is not None:
-            self.all_styles["general"] = Style(**styles) if isinstance(styles, dict) else styles
+            self.all_styles["general"] = (
+                Style(**styles) if isinstance(styles, dict) else styles
+            )
         else:
             self.all_styles["general"] = Style()
 

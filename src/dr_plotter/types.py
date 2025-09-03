@@ -2,8 +2,6 @@ from typing import Any, Union
 
 import pandas as pd
 
-type BasePlotterParamName = str
-type SubPlotterParamName = str
 type VisualChannel = str
 type ColName = str
 type StyleAttrName = str

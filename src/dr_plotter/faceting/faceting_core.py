@@ -25,6 +25,19 @@ def prepare_faceted_subplots(
 
     rows, cols = grid_shape
 
+    # Check if we're doing targeted plotting at a specific position
+    if config.target_row is not None and config.target_col is not None:
+        # Validate the target position is within the grid
+        assert config.target_row < rows and config.target_col < cols, (
+            f"Target position ({config.target_row}, {config.target_col}) exceeds grid dimensions {grid_shape}"
+        )
+
+        # When targeting a specific position, use all the data for that position
+        # This is typically used for highlighting specific cells with filtered data
+        subsets = {(config.target_row, config.target_col): data.copy()}
+        return subsets
+
+    # Normal faceting behavior
     row_values = _extract_dimension_values(data, config.rows, config.row_order)
     col_values = _extract_dimension_values(data, config.cols, config.col_order)
 
@@ -32,10 +45,9 @@ def prepare_faceted_subplots(
 
     for r, row_val in enumerate(row_values):
         for c, col_val in enumerate(col_values):
-            if _should_include_position(r, c, config):
-                subset = _create_data_subset(data, config, row_val, col_val)
-                if not subset.empty:
-                    subsets[(r, c)] = subset
+            subset = _create_data_subset(data, config, row_val, col_val)
+            if not subset.empty:
+                subsets[(r, c)] = subset
 
     return subsets
 
@@ -51,16 +63,6 @@ def _extract_dimension_values(
         values = [v for v in order if v in values]
 
     return values
-
-
-def _should_include_position(row: int, col: int, config: FacetingConfig) -> bool:
-    if config.target_row is not None and row != config.target_row:
-        return False
-    if config.target_col is not None and col != config.target_col:
-        return False
-    if config.target_rows is not None and row not in config.target_rows:
-        return False
-    return not (config.target_cols is not None and col not in config.target_cols)
 
 
 def _create_data_subset(
@@ -257,25 +259,12 @@ def _has_custom_label(labels: list[list[Any]] | None, row: int, col: int) -> boo
 def get_grid_dimensions(data: pd.DataFrame, config: FacetingConfig) -> tuple[int, int]:
     assert not data.empty, "Cannot compute dimensions from empty DataFrame"
 
+    # For targeted plotting, we don't need to compute dimensions from data
+    # since we'll be placing data at a specific position
+    if config.target_row is not None and config.target_col is not None:
+        # Return dimensions that will accommodate the target position
+        return max(config.target_row + 1, 1), max(config.target_col + 1, 1)
+
     n_rows = len(data[config.rows].unique()) if config.rows else 1
     n_cols = len(data[config.cols].unique()) if config.cols else 1
     return n_rows, n_cols
-
-
-def handle_empty_subplots(
-    data_subsets: dict[tuple[int, int], pd.DataFrame], strategy: str
-) -> dict[tuple[int, int], pd.DataFrame]:
-    assert strategy in ["error", "warn", "silent"], f"Invalid strategy: {strategy}"
-
-    if strategy == "error":
-        empty_positions = [(r, c) for (r, c), df in data_subsets.items() if df.empty]
-        assert not empty_positions, (
-            f"Empty subplots found at positions {empty_positions}"
-        )
-    elif strategy == "warn":
-        empty_count = sum(1 for df in data_subsets.values() if df.empty)
-        if empty_count > 0:
-            total = len(data_subsets)
-            print(f"Warning: {empty_count}/{total} subplots are empty")
-
-    return data_subsets
