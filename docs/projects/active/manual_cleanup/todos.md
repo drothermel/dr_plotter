@@ -504,6 +504,5 @@ def _draw(self, ax: Any, data: pd.DataFrame, **context: Any) -> None:
 - [x] **Single source of truth** - all parameters flow through one method ✅
 - [x] **Defensive programming eliminated** - cbars handling based on config not existence ✅
 - [x] **All plotters converted** - BarPlotter, ScatterPlotter, LinePlotter, HistogramPlotter, HeatmapPlotter, BumpPlotter, ContourPlotter now using new system ✅
-- [x] Multi-phase plotters (ContourPlotter) working cleanly ✅
-- [ ] Multi-phase plotters (ContourPlotter) working cleanly
-- [ ] Remove deprecated `_build_plot_args()` method once all plotters converted
+- [x] **Multi-phase plotters** - ContourPlotter working cleanly with separate phases ✅
+- [x] Remove deprecated `_build_plot_args()` method now that all plotters are converted ✅

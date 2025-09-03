@@ -246,17 +246,8 @@ class BasePlotter:
     def _resolve_computed_parameters(self, phase: str, context: dict) -> dict[str, Any]:
         return {}
 
-    def _build_plot_args(self) -> dict[str, Any]:
-        main_plot_params = self.component_schema.get("plot", {}).get("main", set())
-        plot_args = {}
-        for key in main_plot_params:
-            if key in self._filtered_plot_kwargs:
-                plot_args[key] = self._filtered_plot_kwargs[key]
-            else:
-                style = self.styler.get_style(key)
-                if style is not None:
-                    plot_args[key] = style
-        return plot_args
+    # The _build_plot_args method has been removed as part of the configuration system refactoring.
+    # All plotters now use _resolve_phase_config instead.
 
     def _should_create_legend(self) -> bool:
         if not self.supports_legend:
