@@ -134,8 +134,7 @@ class FigureManager:
     ) -> None:
         ax = self.axes if self._external_mode else self.get_axes(row, col)
 
-        kwargs["grouping_cfg"] = GroupingConfig()
-        kwargs["grouping_cfg"].set_kwargs(kwargs)
+        kwargs["grouping_cfg"] = GroupingConfig.from_input(kwargs)
 
         plotter = plotter_class(*plotter_args, figure_manager=self, **kwargs)
         plotter.render(ax)

@@ -58,3 +58,16 @@ class StyleConfig:
         if isinstance(self.theme, Theme):
             return
         self.theme = THEME_MAP[DEFAULT_THEME_STR if self.theme is None else self.theme]
+
+    @classmethod
+    def from_input(cls, value: str | dict[str, Any] | StyleConfig | None) -> StyleConfig:
+        if value is None:
+            return cls()
+        elif isinstance(value, cls):
+            return value
+        elif isinstance(value, str):
+            return cls(theme=value)
+        elif isinstance(value, dict):
+            return cls(**value)
+        else:
+            raise TypeError(f"Cannot create StyleConfig from {type(value).__name__}")
