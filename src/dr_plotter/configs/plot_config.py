@@ -1,35 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-from dr_plotter.configs.figure_config import FigureConfig
+from dr_plotter.configs.layout_config import LayoutConfig
 from dr_plotter.configs.legend_config import LegendConfig
+from dr_plotter.configs.style_config import StyleConfig
 from dr_plotter.legend_manager import resolve_legend_config
 from dr_plotter.plot_presets import PLOT_CONFIGS
-from dr_plotter.theme import BAR_THEME, BASE_THEME, LINE_THEME, SCATTER_THEME, Theme
-from dr_plotter.types import ColorPalette
-
-
-@dataclass
-class LayoutConfig:
-    rows: int = 1
-    cols: int = 1
-    figsize: tuple[float, float] = (12.0, 8.0)
-    tight_layout_pad: float = 0.5
-    figure_kwargs: dict[str, Any] = field(default_factory=dict)
-    subplot_kwargs: dict[str, Any] = field(default_factory=dict)
-    x_labels: list[list[str | None]] | None = None
-    y_labels: list[list[str | None]] | None = None
-
-
-@dataclass
-class StyleConfig:
-    colors: ColorPalette | None = None
-    plot_styles: dict[str, Any] | None = field(default_factory=dict)
-    fonts: dict[str, Any] | None = field(default_factory=dict)
-    figure_styles: dict[str, Any] | None = field(default_factory=dict)
-    theme: str | Theme | None = None
 
 
 @dataclass
@@ -37,6 +15,15 @@ class PlotConfig:
     layout: tuple[int, int] | dict[str, Any] | LayoutConfig | None = None
     style: str | dict[str, Any] | StyleConfig | None = None
     legend: str | dict[str, Any] | LegendConfig | None = None
+
+    def __post_init__(self) -> None:
+        self.validate()
+        self.layout = self._resolve_layout_config()
+        self.style = self._resolve_style_config()
+        self.legend = self._resolve_legend_config()
+
+    def validate(self) -> None:
+        pass
 
     @classmethod
     def from_preset(cls, preset_name: str) -> PlotConfig:
@@ -78,31 +65,7 @@ class PlotConfig:
 
         return StyleConfig()
 
-    def _to_legacy_configs(self) -> tuple[FigureConfig, LegendConfig, Theme | None]:
-        layout_config = self._resolve_layout_config()
-        style_config = self._resolve_style_config()
-
-        figure_config = self._create_figure_config_from_layout(layout_config)
-        legend_config = self._create_legend_config_from_params()
-        theme = self._resolve_theme_from_style(style_config)
-
-        return figure_config, legend_config, theme
-
-    def _create_figure_config_from_layout(
-        self, layout_config: LayoutConfig
-    ) -> FigureConfig:
-        return FigureConfig(
-            rows=layout_config.rows,
-            cols=layout_config.cols,
-            figsize=layout_config.figsize,
-            tight_layout_pad=layout_config.tight_layout_pad,
-            figure_kwargs=layout_config.figure_kwargs,
-            subplot_kwargs=layout_config.subplot_kwargs,
-            x_labels=layout_config.x_labels,
-            y_labels=layout_config.y_labels,
-        )
-
-    def _create_legend_config_from_params(self) -> LegendConfig:
+    def _resolve_legend_config(self) -> LegendConfig:
         if self.legend is None:
             return LegendConfig()
 
@@ -127,21 +90,3 @@ class PlotConfig:
             else:
                 legend_kwargs[key] = value
         return LegendConfig(**legend_kwargs)
-
-    def _resolve_theme_from_style(self, style_config: StyleConfig) -> Theme | None:
-        if style_config.theme is None:
-            return None
-
-        if isinstance(style_config.theme, Theme):
-            return style_config.theme
-
-        theme_map = {
-            "base": BASE_THEME,
-            "line": LINE_THEME,
-            "scatter": SCATTER_THEME,
-            "bar": BAR_THEME,
-        }
-        assert style_config.theme in theme_map, (
-            f"Unknown theme: {style_config.theme}. Available: {list(theme_map.keys())}"
-        )
-        return theme_map[style_config.theme]

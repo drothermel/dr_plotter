@@ -16,6 +16,16 @@ class CycleConfig:
             ch: self.theme.get(get_cycle_key(ch)) for ch in VISUAL_CHANNELS
         }
         self._value_assignments: dict[StyleCacheKey, Any] = {}
+        self.__post_init__()
+
+    def __post_init__(self) -> None:
+        self.validate()
+
+    def validate(self) -> None:
+        assert self.theme is not None, "Theme is required"
+        assert len(self._cycles) > 0, "No visual channels configured"
+        for channel, cycle in self._cycles.items():
+            assert cycle is not None, f"Missing cycle for channel '{channel}'"
 
     def get_styled_value_for_channel(
         self, channel: VisualChannel, value: Any

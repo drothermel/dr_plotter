@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from dr_plotter.configs import LegendConfig, LegendStrategy, PositioningConfig
+from dr_plotter.configs.legend_config import LegendConfig, LegendStrategy
+from dr_plotter.configs.positioning_config import PositioningConfig
 from dr_plotter.positioning_calculator import (
     FigureDimensions,
     LegendMetadata,

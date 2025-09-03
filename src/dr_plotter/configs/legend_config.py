@@ -13,6 +13,14 @@ class LegendStrategy(Enum):
     NONE = "none"
 
 
+SHORT_NAME_STRATEGY_MAP = {
+    "grouped": LegendStrategy.GROUPED_BY_CHANNEL,
+    "subplot": LegendStrategy.PER_AXES,
+    "figure": LegendStrategy.FIGURE_BELOW,
+    "none": LegendStrategy.NONE,
+}
+
+
 @dataclass
 class LegendConfig:
     strategy: str = "subplot"
@@ -32,19 +40,13 @@ class LegendConfig:
     positioning_config: PositioningConfig | None = None
 
     def __post_init__(self) -> None:
-        self.strategy = self._validate_and_convert_strategy(self.strategy)
+        self.validate()
+        self.strategy = SHORT_NAME_STRATEGY_MAP[self.strategy]
         if self.positioning_config is None:
             self.positioning_config = PositioningConfig()
 
-    def _validate_and_convert_strategy(self, strategy: str) -> LegendStrategy:
-        string_to_enum = {
-            "grouped": LegendStrategy.GROUPED_BY_CHANNEL,
-            "subplot": LegendStrategy.PER_AXES,
-            "figure": LegendStrategy.FIGURE_BELOW,
-            "none": LegendStrategy.NONE,
-        }
-        assert strategy in string_to_enum, (
-            f"Invalid legend strategy '{strategy}'. Valid options: "
-            f"{list(string_to_enum.keys())}"
+    def validate(self) -> None:
+        assert self.strategy in SHORT_NAME_STRATEGY_MAP, (
+            f"Invalid legend strategy '{self.strategy}'. Valid options: "
+            f"{list(SHORT_NAME_STRATEGY_MAP.keys())}"
         )
-        return string_to_enum[strategy]
