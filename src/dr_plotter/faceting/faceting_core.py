@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter.configs import FacetingConfig
+from dr_plotter.legend_manager import LegendEntry
 from dr_plotter.styling_utils import apply_grid_styling
 
 if TYPE_CHECKING:
@@ -150,7 +151,8 @@ def _plot_with_style_coordination(
         plot_kwargs = style_coordinator.get_consistent_style(config.lines, line_value)
         plot_kwargs.update(kwargs)
 
-        _execute_plot_call(ax, plot_type, line_data, config, **plot_kwargs)
+        artist = _execute_plot_call(ax, plot_type, line_data, config, **plot_kwargs)
+        _register_legend_entry_if_needed(fm, artist, str(line_value), ax, config.lines, line_value)
 
 
 def _plot_single_series_at_position(
@@ -172,7 +174,7 @@ def _execute_plot_call(
     data: pd.DataFrame,
     config: FacetingConfig,
     **kwargs: Any,
-) -> None:
+) -> Any:
     plot_handlers = {
         "line": _plot_line_data,
         "scatter": _plot_scatter_data,
@@ -180,13 +182,34 @@ def _execute_plot_call(
         "fill_between": _plot_fill_between_data,
         "heatmap": _plot_heatmap_data,
     }
-    plot_handlers[plot_type](ax, data, config, **kwargs)
+    return plot_handlers[plot_type](ax, data, config, **kwargs)
 
 
 def _plot_line_data(
     ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
+) -> Any:
+    lines = ax.plot(data[config.x], data[config.y], **kwargs)
+    return lines[0] if lines else None
+
+
+def _register_legend_entry_if_needed(
+    fm: FigureManager,
+    artist: Any,
+    label: str,
+    ax: matplotlib.axes.Axes,
+    visual_channel: str,
+    channel_value: Any,
 ) -> None:
-    ax.plot(data[config.x], data[config.y], **kwargs)
+    if fm and artist and label:
+        entry = LegendEntry(
+            artist=artist,
+            label=label,
+            axis=ax,
+            visual_channel=visual_channel,
+            channel_value=channel_value,
+            source_column=visual_channel,
+        )
+        fm.register_legend_entry(entry)
 
 
 def _plot_scatter_data(

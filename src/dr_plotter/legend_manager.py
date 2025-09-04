@@ -175,7 +175,7 @@ class LegendManager:
         )
 
         result = self.positioning_calculator.calculate_positions(
-            figure_dimensions, legend_metadata, layout_hint=self.config.layout_hint
+            figure_dimensions, legend_metadata
         )
 
         default_pos = (
@@ -215,7 +215,7 @@ class LegendManager:
             handles.append(entry.artist)
             labels.append(entry.label)
 
-        if hasattr(self.fm, "figure") and self.fm.figure:
+        if hasattr(self.fm, "fig") and self.fm.fig:
             ncol = self._calculate_ncol(len(handles))
 
             figure_dimensions = self._get_figure_dimensions()
@@ -228,7 +228,7 @@ class LegendManager:
             )
 
             result = self.positioning_calculator.calculate_positions(
-                figure_dimensions, legend_metadata, layout_hint=self.config.layout_hint
+                figure_dimensions, legend_metadata
             )
 
             default_pos = (
@@ -236,9 +236,15 @@ class LegendManager:
                 self.config.positioning_config.legend_y_offset_factor,
             )
             bbox_to_anchor = result.legend_positions.get(0, default_pos)
-            self.fm.figure.legend(
+            
+            title = None
+            if entries and entries[0].visual_channel:
+                title = self.generate_channel_title(entries[0].visual_channel, entries)
+            
+            self.fm.fig.legend(
                 handles,
                 labels,
+                title=title,
                 loc=self.config.position,
                 bbox_to_anchor=bbox_to_anchor,
                 ncol=ncol,
@@ -246,7 +252,7 @@ class LegendManager:
             )
 
             if self.config.remove_axes_legends:
-                for ax in self.fm.figure.axes:
+                for ax in self.fm.fig.axes:
                     legend = ax.get_legend()
                     if legend:
                         legend.remove()
@@ -283,7 +289,12 @@ class LegendManager:
                     if self.config.position == "lower center"
                     else self.config.position
                 )
-                axis.legend(handles, labels, loc=legend_position)
+                
+                title = None
+                if axis_entries and axis_entries[0].visual_channel:
+                    title = self.generate_channel_title(axis_entries[0].visual_channel, axis_entries)
+                
+                axis.legend(handles, labels, loc=legend_position, title=title)
 
     def _create_grouped_legends(self) -> None:
         channels = set()
@@ -320,7 +331,7 @@ class LegendManager:
                 handles.append(entry.artist)
                 labels.append(entry.label)
 
-            if hasattr(self.fm, "figure") and self.fm.figure and self.fm.figure.axes:
+            if hasattr(self.fm, "fig") and self.fm.fig and self.fm.fig.axes:
                 bbox_to_anchor = self.calculate_optimal_positioning(
                     num_legends, legend_index
                 )
@@ -329,7 +340,7 @@ class LegendManager:
                 if channel:
                     title = self.generate_channel_title(channel, entries)
 
-                self.fm.figure.legend(
+                self.fm.fig.legend(
                     handles,
                     labels,
                     title=title,

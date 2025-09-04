@@ -108,8 +108,10 @@ def plot_seeds(dd: DataDecide, params: list[str], data: list[str], metric: str) 
                 "figure_title": f"{metric_label}: All Seeds, Model Size x Data Recipe",
             },
             legend={
-                "strategy": "subplot",
-                "position": "best",
+                "strategy": "figure",
+                "position": "lower center",
+                "channel_titles": {"seed": "Seed"},
+                "ncol": 5,
             },
             kwargs={"suptitle_y": 0.98},  # Custom position - overrides theme default
         )
