@@ -340,9 +340,6 @@ def create_single_metric_plots(
             ax.ticklabel_format(style="scientific", axis="x", scilimits=(0, 0))
             ax.grid(visible=True, alpha=0.3)
 
-        # FigureManager now handles legend finalization in finalize_layout(), called on context exit
-        # Nothing needed here anymore
-
         safe_metric_name = metric_name.replace("-", "_").replace(" ", "_")
         metric_type = (
             "ppl"
