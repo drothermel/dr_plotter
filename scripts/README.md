@@ -4,6 +4,20 @@
 
 A comprehensive CLI script for plotting training curves with multiple seeds from DataDecide evaluation data.
 
+```bash
+# Examples
+uv run python scripts/plot_seeds.py pile-valppl \
+      --params 1B 90M 10M \
+      --data C4 Dolma1.7 \
+      --legend subplot
+
+uv run python scripts/plot_seeds.py pile-valppl \
+      --params all \
+      --data all \
+      --legend subplot \
+      --no-sharey --no-sharex
+```
+
 ### Basic Usage
 
 ```bash
@@ -93,6 +107,36 @@ Creates faceted plots with:
 ## plot_means.py
 
 A flexible CLI script for plotting mean training curves with customizable faceting layouts from DataDecide evaluation data. This script aggregates across seeds to show averaged performance with configurable dimensional organization.
+
+```bash
+# Examples
+
+# row based faceting
+uv run python scripts/plot_means.py \
+      --row="params" --row_values 10M 60M 90M \
+      --lines="metrics"  --line_values pile-valppl wikitext_103-valppl \
+      --fixed="data" --fixed-values C4
+
+# rows -> cols
+uv run python scripts/plot_means.py \
+      --col="params" --col_values 10M 60M 90M \
+      --lines="metrics"  --line_values pile-valppl wikitext_103-valppl \
+      --fixed="data" --fixed-values C4
+
+# col=params lines=metrics -> col=params lines=data
+uv run python scripts/plot_means.py \
+      --col="params" --col_values 10M 60M 90M \
+      --lines="data"  --line_values C4 Dolma1.7 \
+      --fixed="metrics" --fixed-values pile-valppl
+
+# Sweep the model size, looking at metric vs proxy
+PARAMS=1B; uv run python scripts/plot_means.py \
+      --col="metrics" --col_values pile-valppl mmlu_average_correct_prob mmlu_average_acc_raw \
+      --lines="data"  --line_values C4 Dolma1.7 \
+      --fixed="params" --fixed-values ${PARAMS} \
+      --no-sharex --no-sharey --save ./${PARAMS}_C4_Dolma_metrics_sweep.png
+
+```
 
 ### Basic Usage
 

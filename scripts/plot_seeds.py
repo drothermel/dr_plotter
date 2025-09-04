@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+
 import matplotlib.pyplot as plt
 
 from dr_plotter.configs import PlotConfig, PositioningConfig
@@ -12,90 +13,79 @@ def create_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Plot training curves with multiple seeds for DataDecide evaluation data"
     )
-    
+
     parser.add_argument(
-        "metric",
-        help="Metric to plot (e.g., pile-valppl, mmlu_average_acc_raw)"
+        "metric", help="Metric to plot (e.g., pile-valppl, mmlu_average_acc_raw)"
     )
-    
+
     parser.add_argument(
-        "--params", 
+        "--params",
         nargs="+",
         default=["all"],
-        help="Model parameter sizes to include (e.g., 10M 60M 90M) or 'all' for all available"
+        help="Model parameter sizes to include (e.g., 10M 60M 90M) or 'all' for all available",
     )
-    
+
     parser.add_argument(
         "--data",
-        nargs="+", 
+        nargs="+",
         default=["all"],
-        help="Data recipes to include (e.g., C4 Dolma1.7) or 'all' for all available"
+        help="Data recipes to include (e.g., C4 Dolma1.7) or 'all' for all available",
     )
-    
+
     parser.add_argument(
         "--exclude-params",
         nargs="+",
         default=[],
-        help="Model parameter sizes to exclude when using 'all'"
+        help="Model parameter sizes to exclude when using 'all'",
     )
-    
+
     parser.add_argument(
-        "--exclude-data", 
+        "--exclude-data",
         nargs="+",
         default=[],
-        help="Data recipes to exclude when using 'all'"
+        help="Data recipes to exclude when using 'all'",
     )
-    
+
     parser.add_argument(
         "--legend",
         choices=["subplot", "grouped", "figure"],
         default="subplot",
-        help="Legend strategy: subplot (per-axes), grouped (by-channel), figure (single)"
+        help="Legend strategy: subplot (per-axes), grouped (by-channel), figure (single)",
     )
-    
+
+    parser.add_argument("--save", type=str, help="Save plot to file (specify path)")
+
     parser.add_argument(
-        "--save",
-        type=str,
-        help="Save plot to file (specify path)"
+        "--no-show", action="store_true", help="Don't display plot interactively"
     )
-    
-    parser.add_argument(
-        "--no-show",
-        action="store_true", 
-        help="Don't display plot interactively"
-    )
-    
+
     parser.add_argument(
         "--figsize-per-subplot",
         type=float,
         default=4.0,
-        help="Figure size per subplot (default: 4.0)"
+        help="Figure size per subplot (default: 4.0)",
     )
-    
+
     parser.add_argument(
         "--no-sharex",
         action="store_true",
-        help="Disable x-axis sharing across subplots"
+        help="Disable x-axis sharing across subplots",
     )
-    
+
     parser.add_argument(
         "--no-sharey",
-        action="store_true", 
-        help="Disable y-axis sharing across subplots"
-    )
-    
-    parser.add_argument(
-        "--xlog",
         action="store_true",
-        help="Use logarithmic scale for x-axis"
+        help="Disable y-axis sharing across subplots",
     )
-    
+
     parser.add_argument(
-        "--ylog",
-        action="store_true",
-        help="Use logarithmic scale for y-axis"
+        "--xlog", action="store_true", help="Use logarithmic scale for x-axis"
     )
-    
+
+    parser.add_argument(
+        "--ylog", action="store_true", help="Use logarithmic scale for y-axis"
+    )
+
     return parser
 
 
@@ -115,23 +105,23 @@ def plot_seeds(
     ylog: bool = False,
 ) -> None:
     DataDecide, select_params, select_data = get_datadec_functions()
-    
+
     exclude_params = exclude_params or []
     exclude_data = exclude_data or []
-    
+
     # Handle "all" values and exclusions
     if params is None or (len(params) == 1 and params[0] == "all"):
         params = select_params("all", exclude=exclude_params)
     if data is None or (len(data) == 1 and data[0] == "all"):
         data = select_data("all", exclude=exclude_data)
-        
+
     dd = DataDecide()
     df = prepare_plot_data(dd, params, data, [metric])
 
     metric_label = metric.replace("_", " ").title()
     nparams = len(params)
     ndata = len(data)
-    
+
     # Adjust layout based on legend strategy
     if legend_strategy == "figure":
         tight_layout_rect = (0.01, 0.1, 0.99, 0.97)  # Leave less space at bottom
@@ -150,7 +140,7 @@ def plot_seeds(
             "position": "best",
             "channel_titles": {"seed": "Seed"},
         }
-    
+
     layout_config = {
         "rows": nparams,
         "cols": ndata,
@@ -160,12 +150,12 @@ def plot_seeds(
         "subplot_kwargs": {"sharex": sharex, "sharey": sharey},
         "figure_title": f"{metric_label}: All Seeds, Model Size x Data Recipe",
     }
-    
+
     if xlog:
         layout_config["xscale"] = "log"
     if ylog:
         layout_config["yscale"] = "log"
-    
+
     with FigureManager(
         PlotConfig(
             layout=layout_config,
@@ -194,10 +184,10 @@ def plot_seeds(
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"Plot saved to: {save_path}")
-        
+
     if show_plot:
         plt.show()
-    
+
     if not show_plot and not save_path:
         print("Warning: Plot not saved or displayed. Use --save or remove --no-show")
 
@@ -205,11 +195,11 @@ def plot_seeds(
 def main() -> None:
     parser = create_arg_parser()
     args = parser.parse_args()
-    
+
     show_plot = not args.no_show
     sharex = not args.no_sharex
     sharey = not args.no_sharey
-    
+
     plot_seeds(
         metric=args.metric,
         params=args.params,
