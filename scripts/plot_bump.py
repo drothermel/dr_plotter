@@ -9,16 +9,135 @@ import pandas as pd
 
 from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager
-from dr_plotter.scripting.datadec_utils import get_datadec_functions, prepare_plot_data
+from dr_plotter.theme import Theme, BUMP_PLOT_THEME
+from dr_plotter.scripting.datadec_utils import (
+    BASE_RECIPES,
+    BASE_AND_QC,
+    RECIPES_WITHOUT_ABLATIONS,
+    CUSTOM_RECIPE_FAMILIES,
+    PPL_PERFORMANCE_RECIPE_CHUNKS,
+    OLMES_PERFORMANCE_RECIPE_CHUNKS,
+    get_datadec_functions,
+    prepare_plot_data,
+)
 
 
 def format_perplexity(ppl_value: float) -> str:
     return f"{ppl_value:.2f}"
 
 
+def create_extended_color_palette() -> list[str]:
+    """Create a larger, more distinct color palette for many data recipes."""
+    # Extended palette with 20+ distinct colors
+    return [
+        "#1f77b4",
+        "#ff7f0e",
+        "#2ca02c",
+        "#d62728",
+        "#9467bd",  # Original matplotlib
+        "#8c564b",
+        "#e377c2",
+        "#7f7f7f",
+        "#bcbd22",
+        "#17becf",
+        "#aec7e8",
+        "#ffbb78",
+        "#98df8a",
+        "#ff9896",
+        "#c5b0d5",  # Lighter variants
+        "#c49c94",
+        "#f7b6d3",
+        "#c7c7c7",
+        "#dbdb8d",
+        "#9edae5",
+        "#393b79",
+        "#637939",
+        "#8c6d31",
+        "#843c39",
+        "#7b4173",  # Darker variants
+        "#5254a3",
+        "#8ca252",
+        "#bd9e39",
+        "#ad494a",
+        "#a55194",
+        "#6b6ecf",
+        "#b5cf6b",
+        "#e7ba52",
+        "#d6616b",
+        "#ce6dbd",  # Medium variants
+        "#de9ed6",
+        "#31a354",
+        "#756bb1",
+        "#636363",
+        "#969696",  # Additional
+    ]
+
+
+def create_bump_theme_with_colors(num_categories: int) -> Theme:
+    """Create a custom theme with extended color palette for bump plots."""
+    import itertools
+    from dr_plotter import consts
+
+    extended_colors = create_extended_color_palette()
+
+    # Use enough colors for the categories we have
+    colors_to_use = extended_colors[: max(num_categories, len(extended_colors))]
+
+    return Theme(
+        name="bump_extended",
+        parent=BUMP_PLOT_THEME,
+        **{
+            consts.get_cycle_key("hue"): itertools.cycle(colors_to_use),
+        },
+    )
+
+
+def numerical_sort_key(param_size: str) -> float:
+    """Convert parameter size string to numerical value for proper sorting."""
+    if param_size.endswith("M"):
+        return float(param_size[:-1])
+    elif param_size.endswith("B"):
+        return float(param_size[:-1]) * 1000
+    else:
+        return float(param_size)
+
+
+def add_left_ranking_labels(ax: plt.Axes, bump_data: pd.DataFrame) -> None:
+    """Add recipe name labels on the left side showing initial rankings."""
+
+    # Get first time point data for initial rankings (sort numerically, not alphabetically)
+    time_points = sorted(bump_data["time"].unique(), key=numerical_sort_key)
+    first_time = time_points[0]
+    first_time_data = bump_data[bump_data["time"] == first_time].copy()
+    first_time_data = first_time_data.sort_values("score", ascending=False)
+    first_time_data["rank"] = range(1, len(first_time_data) + 1)
+
+    # Add labels on the left side
+    for _, row in first_time_data.iterrows():
+        category_name = row["category"]
+        rank = row["rank"]
+
+        ax.text(
+            -0.15,
+            rank,  # Position to the left of the y-axis
+            category_name,
+            transform=ax.transData,
+            fontsize=9,
+            ha="right",
+            va="center",
+            fontweight="bold",
+            bbox={
+                "boxstyle": "round,pad=0.3",
+                "facecolor": "lightblue",
+                "alpha": 0.7,
+                "edgecolor": "navy",
+            },
+        )
+
+
 def add_value_annotations(ax: plt.Axes, bump_data: pd.DataFrame) -> None:
-    # Create mapping from model size names to numeric positions for x-axis
-    time_points = sorted(bump_data["time"].unique())
+    # Create mapping from model size names to numeric positions for x-axis (sorted numerically)
+    time_points = sorted(bump_data["time"].unique(), key=numerical_sort_key)
     time_to_x = {time_point: idx for idx, time_point in enumerate(time_points)}
 
     # Get the ranking data that BumpPlotter created (inverted y-axis, rank 1 at top)
@@ -79,7 +198,7 @@ def create_arg_parser() -> argparse.ArgumentParser:
         "--data",
         nargs="+",
         default=["all"],
-        help="Data recipes to include or 'all' for all available",
+        help="Data recipes: 'all', 'base', 'base_qc', 'no_ablations', or specific names. Named groups: 'core_datasets', 'dolma17_variants', 'dclm_variants', 'falcon_cc_variants', 'fineweb_variants', 'mix_with_baselines', 'best_ppl', 'good_ppl', 'medium_ppl', 'poor_ppl', 'best_olmes', 'good_olmes', 'medium_olmes', 'poor_olmes'",
     )
 
     parser.add_argument(
@@ -112,6 +231,40 @@ def create_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def resolve_data_groups(data_args: list[str]) -> list[str]:
+    """Resolve named data groups to actual recipe lists."""
+
+    # Define all named groups
+    named_groups = {
+        "base": BASE_RECIPES,
+        "base_qc": BASE_AND_QC,
+        "no_ablations": RECIPES_WITHOUT_ABLATIONS,
+        **CUSTOM_RECIPE_FAMILIES,
+        **{
+            f"{k.replace('_performance', '')}": v
+            for k, v in PPL_PERFORMANCE_RECIPE_CHUNKS.items()
+        },
+        **{
+            f"{k.replace('_performance', '')}": v
+            for k, v in OLMES_PERFORMANCE_RECIPE_CHUNKS.items()
+        },
+    }
+
+    resolved_recipes = []
+    for arg in data_args:
+        if arg in named_groups:
+            resolved_recipes.extend(named_groups[arg])
+        elif arg == "all":
+            # Let the main function handle "all"
+            return data_args
+        else:
+            # Assume it's a specific recipe name
+            resolved_recipes.append(arg)
+
+    # Remove duplicates while preserving order
+    return list(dict.fromkeys(resolved_recipes))
+
+
 def plot_bump(
     metric: str = "pile-valppl",
     params: list[str] | None = None,
@@ -127,11 +280,20 @@ def plot_bump(
     exclude_params = exclude_params or []
     exclude_data = exclude_data or []
 
-    # Handle "all" values and exclusions
+    # Handle "all" values and exclusions for params
     if params is None or (len(params) == 1 and params[0] == "all"):
         params = select_params("all", exclude=exclude_params)
-    if data is None or (len(data) == 1 and data[0] == "all"):
+
+    # Resolve named data groups first, then handle "all" and exclusions
+    if data is None:
+        data = ["all"]
+
+    resolved_data = resolve_data_groups(data)
+    if len(resolved_data) == 1 and resolved_data[0] == "all":
         data = select_data("all", exclude=exclude_data)
+    else:
+        # Filter out excluded data from resolved groups
+        data = [d for d in resolved_data if d not in (exclude_data or [])]
 
     dd = DataDecide()
     metrics = [metric]
@@ -194,13 +356,50 @@ def plot_bump(
     print(f"Categories (recipes): {sorted(bump_data['category'].unique())}")
     print(f"Time points (model sizes): {sorted(bump_data['time'].unique())}")
 
+    # DEBUG: Check rankings at first and last time points (sorted numerically)
+    time_points = sorted(bump_data["time"].unique(), key=numerical_sort_key)
+    first_time = time_points[0]
+    last_time = time_points[-1]
+
+    print("\n=== DEBUG: Label Alignment Issue ===")
+    print(f"First time point: {first_time}")
+    print(f"Last time point: {last_time}")
+
+    # First time rankings (what left labels show)
+    first_data = bump_data[bump_data["time"] == first_time].copy()
+    first_data = first_data.sort_values("score", ascending=False)
+    first_data["rank"] = range(1, len(first_data) + 1)
+    print("\nFirst time rankings (LEFT labels):")
+    for _, row in first_data.iterrows():
+        print(
+            f"  Rank {row['rank']}: {row['category']} (ppl={row['original_ppl']:.2f}, score={row['score']:.2f})"
+        )
+
+    # Last time rankings (what right labels should show)
+    last_data = bump_data[bump_data["time"] == last_time].copy()
+    last_data = last_data.sort_values("score", ascending=False)
+    last_data["rank"] = range(1, len(last_data) + 1)
+    print("\nLast time rankings (RIGHT labels):")
+    for _, row in last_data.iterrows():
+        print(
+            f"  Rank {row['rank']}: {row['category']} (ppl={row['original_ppl']:.2f}, score={row['score']:.2f})"
+        )
+
+    print("\n=== End Debug ===\n")
+
+    # Create custom theme with extended colors for better distinction
+    num_categories = len(bump_data["category"].unique())
+    custom_theme = create_bump_theme_with_colors(num_categories)
+    print(f"Using extended color palette for {num_categories} categories")
+
     with FigureManager(
         PlotConfig(
             layout={
                 "rows": 1,
                 "cols": 1,
                 "figsize": figsize,
-            }
+            },
+            style={"theme": custom_theme},
         )
     ) as fm:
         fm.plot(
@@ -216,8 +415,9 @@ def plot_bump(
             title=f"Data Recipe Rankings Across Model Sizes ({metric_str})",
         )
 
-        # Add perplexity value annotations over each point
+        # Add annotations and labels
         ax = fm.get_axes(0, 0)
+        add_left_ranking_labels(ax, bump_data)
         add_value_annotations(ax, bump_data)
 
         # Add annotation style label positioned below the highest ranking line (rank 1)
@@ -259,7 +459,7 @@ def main() -> None:
     plot_bump(
         metric=args.metric,
         params=args.params,
-        data=args.data,
+        data=args.data,  # Will be resolved inside plot_bump function
         exclude_params=args.exclude_params,
         exclude_data=args.exclude_data,
         save_path=args.save,

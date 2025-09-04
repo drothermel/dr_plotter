@@ -66,15 +66,15 @@ class BumpPlotter(BasePlotter):
         for i, category in enumerate(categories):
             cat_data = self.plot_data[self.plot_data[self.category_col] == category]
             cat_data = cat_data.sort_values(by=self.time_col).copy()
-            base_colors = self.styler.get_style(
-                "base_colors", ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
+
+            color_styles = self.style_engine.cycle_cfg.get_styled_value_for_channel(
+                "hue", category
             )
             style = {
-                "color": base_colors[i % len(base_colors)],
+                "color": color_styles.get("color", "#1f77b4"),
                 "linestyle": "-",
             }
 
-            # Use the hardcoded style for now (this will be replaced with proper styler calls later)
             cat_data["_bump_color"] = style["color"]
             cat_data["_bump_linestyle"] = style.get("linestyle", "-")
             cat_data["_bump_label"] = str(category)
