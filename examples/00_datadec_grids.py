@@ -54,18 +54,37 @@ def primary_metrics() -> list[str]:
     return PPL_METRICS + primary_olmes_metrics()
 
 
-def easy_index_df(
-    df: pd.DataFrame, params: list[str], data: list[str], metric: str
+def prepare_plot_data(
+    dd: DataDecide, params: list[str], data: list[str], metrics: list[str]
 ) -> pd.DataFrame:
+    filter_types = ["max_steps"]
+
+    # Smart filtering: only add ppl/olmes filter if ALL metrics fall into one category
+    ppl_metrics = [m for m in metrics if m in PPL_METRICS]
+    olmes_metrics = [m for m in metrics if m not in PPL_METRICS]
+
+    if ppl_metrics and not olmes_metrics:
+        filter_types.append("ppl")
+    elif olmes_metrics and not ppl_metrics:
+        filter_types.append("olmes")
+    # If mixed, use no additional filtering
+
+    df = dd.get_filtered_df(
+        filter_types=filter_types,
+        return_means=False,
+        min_params=None,
+        verbose=True,
+    )
+
+    # Filter by params/data and keep only needed columns
     df = df[df["params"].isin(params) & df["data"].isin(data)]
-    target_metrics = [metric]
-    keep_columns = ID_COLS + target_metrics
+    keep_columns = ID_COLS + metrics
     df = df[keep_columns].copy()
 
     # Have to melt to drop the NaN values mid-run before plotting
     melted_df = df.melt(
         id_vars=ID_COLS,
-        value_vars=target_metrics,
+        value_vars=metrics,
         var_name="metric",
         value_name="value",
     )
@@ -80,18 +99,7 @@ def easy_index_df(
 
 
 def plot_seeds(dd: DataDecide, params: list[str], data: list[str], metric: str) -> None:
-    filter_types = ["max_steps"]
-    if metric in PPL_METRICS:
-        filter_types.append("ppl")
-    else:
-        filter_types.append("olmes")
-    df = dd.get_filtered_df(
-        filter_types=filter_types,
-        return_means=False,
-        min_params=None,
-        verbose=True,
-    )
-    df = easy_index_df(df, params, data, metric)
+    df = prepare_plot_data(dd, params, data, [metric])
 
     metric_label = metric.replace("_", " ").title()
     nparams = len(params)
