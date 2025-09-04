@@ -82,6 +82,7 @@ class FigureManager:
     def finalize_layout(self) -> None:
         self.legend_manager.finalize()
         self._apply_axis_labels()
+        self._apply_axis_scaling()
         self._apply_figure_title()
         if self.layout_config.tight_layout:
             self.fig.tight_layout(
@@ -110,6 +111,22 @@ class FigureManager:
                         ax.set_ylabel(label)
                     else:
                         ax.set_ylabel("")
+
+    def _apply_axis_scaling(self) -> None:
+        if self._external_mode:
+            return
+
+        if self.layout_config.xscale is not None:
+            for row_idx in range(self.layout_config.rows):
+                for col_idx in range(self.layout_config.cols):
+                    ax = self.get_axes(row_idx, col_idx)
+                    ax.set_xscale(self.layout_config.xscale)
+
+        if self.layout_config.yscale is not None:
+            for row_idx in range(self.layout_config.rows):
+                for col_idx in range(self.layout_config.cols):
+                    ax = self.get_axes(row_idx, col_idx)
+                    ax.set_yscale(self.layout_config.yscale)
 
     def _apply_figure_title(self) -> None:
         if self._external_mode:

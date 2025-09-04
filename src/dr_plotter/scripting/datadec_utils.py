@@ -170,7 +170,7 @@ def primary_metrics() -> list[str]:
 
 
 def prepare_plot_data(
-    dd: Any, params: list[str], data: list[str], metrics: list[str]
+    dd: Any, params: list[str], data: list[str], metrics: list[str], aggregate_seeds: bool = False
 ) -> pd.DataFrame:
     ppl_metrics, _, _, _, _, id_cols = get_datadec_constants()
     
@@ -198,15 +198,27 @@ def prepare_plot_data(
     keep_columns = id_cols + metrics
     df = df[keep_columns].copy()
 
-    # Have to melt to drop the NaN values mid-run before plotting
+    # Optionally aggregate across seeds first (prevents NaN gaps in mean plotting)
+    if aggregate_seeds:
+        # Remove 'seed' from id_cols for grouping
+        group_cols = [col for col in id_cols if col != "seed"]
+        df = df.groupby(group_cols, observed=False)[metrics].mean().reset_index()
+        # Use group_cols as new id_cols for melting
+        melt_id_cols = group_cols
+    else:
+        # Use original id_cols for individual seed plotting
+        melt_id_cols = id_cols
+
+    # Melt and drop NaN values (same logic for both cases)
     melted_df = df.melt(
-        id_vars=id_cols,
+        id_vars=melt_id_cols,
         value_vars=metrics,
         var_name="metric",
         value_name="value",
     )
     melted_df = melted_df.dropna(subset=["value"])
 
+    # Set categorical ordering and sort
     melted_df["params"] = pd.Categorical(
         melted_df["params"], categories=params, ordered=True
     )

@@ -151,17 +151,24 @@ def plot_seeds(
             "channel_titles": {"seed": "Seed"},
         }
     
+    layout_config = {
+        "rows": nparams,
+        "cols": ndata,
+        "figsize": (figsize_per_subplot * ndata, figsize_per_subplot * nparams),
+        "tight_layout_pad": 0.5,
+        "tight_layout_rect": tight_layout_rect,
+        "subplot_kwargs": {"sharex": sharex, "sharey": sharey},
+        "figure_title": f"{metric_label}: All Seeds, Model Size x Data Recipe",
+    }
+    
+    if xlog:
+        layout_config["xscale"] = "log"
+    if ylog:
+        layout_config["yscale"] = "log"
+    
     with FigureManager(
         PlotConfig(
-            layout={
-                "rows": nparams,
-                "cols": ndata,
-                "figsize": (figsize_per_subplot * ndata, figsize_per_subplot * nparams),
-                "tight_layout_pad": 0.5,
-                "tight_layout_rect": tight_layout_rect,
-                "subplot_kwargs": {"sharex": sharex, "sharey": sharey},
-                "figure_title": f"{metric_label}: All Seeds, Model Size x Data Recipe",
-            },
+            layout=layout_config,
             legend=legend_config,
             kwargs={"suptitle_y": 0.98},
         )
@@ -183,16 +190,6 @@ def plot_seeds(
             col_titles=True,
             exterior_x_label="Training Steps",
         )
-        
-        # Apply log scaling if requested
-        if xlog or ylog:
-            for row_idx in range(nparams):
-                for col_idx in range(ndata):
-                    ax = fm.get_axes(row_idx, col_idx)
-                    if xlog:
-                        ax.set_xscale('log')
-                    if ylog:
-                        ax.set_yscale('log')
 
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
