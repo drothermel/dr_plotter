@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Any, TYPE_CHECKING
 
 import matplotlib.axes
-import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter.configs import FacetingConfig
@@ -98,7 +97,15 @@ def plot_faceted_data(
 
     for (row, col), subplot_data in data_subsets.items():
         _plot_subplot_at_position(
-            fm, row, col, subplot_data, plot_type, config, style_coordinator, full_data, **kwargs
+            fm,
+            row,
+            col,
+            subplot_data,
+            plot_type,
+            config,
+            style_coordinator,
+            full_data,
+            **kwargs,
         )
 
 
@@ -152,7 +159,9 @@ def _plot_with_style_coordination(
         plot_kwargs.update(kwargs)
 
         artist = _execute_plot_call(ax, plot_type, line_data, config, **plot_kwargs)
-        _register_legend_entry_if_needed(fm, artist, str(line_value), ax, config.lines, line_value)
+        _register_legend_entry_if_needed(
+            fm, artist, str(line_value), ax, config.lines, line_value
+        )
 
 
 def _plot_single_series_at_position(
@@ -295,17 +304,17 @@ def _apply_exterior_labels(
         return
 
     ax = fm.get_axes(row, col)
-    
+
     # Get grid dimensions to determine exterior positions
     row_values = _extract_dimension_values(data, config.rows, config.row_order)
     col_values = _extract_dimension_values(data, config.cols, config.col_order)
     n_rows = len(row_values) if config.rows else 1
     n_cols = len(col_values) if config.cols else 1
-    
+
     # Apply exterior x label (bottom row only)
     if config.exterior_x_label and row == n_rows - 1:
         ax.set_xlabel(config.exterior_x_label)
-    
+
     # Apply exterior y label (leftmost column only)
     if config.exterior_y_label and col == 0:
         ax.set_ylabel(config.exterior_y_label)
@@ -332,18 +341,18 @@ def _apply_dimension_titles(
         return
 
     ax = fm.get_axes(row, col)
-    
+
     # Get dimension values using same logic as faceting system
     row_values = _extract_dimension_values(data, config.rows, config.row_order)
     col_values = _extract_dimension_values(data, config.cols, config.col_order)
-    
+
     # Row titles (left side, first column only)
     if config.row_titles and col == 0 and row < len(row_values):
         title = _resolve_dimension_title(config.row_titles, row, row_values)
         if title:
             _add_row_title(ax, title)
-    
-    # Column titles (top, first row only) 
+
+    # Column titles (top, first row only)
     if config.col_titles and row == 0 and col < len(col_values):
         title = _resolve_dimension_title(config.col_titles, col, col_values)
         if title:
