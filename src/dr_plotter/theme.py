@@ -192,6 +192,7 @@ BASE_COLORS = [
 BASE_THEME = Theme(
     name="base",
     axes_styles=AxesStyles(
+        grid=True,
         grid_alpha=0.3,
         label_fontsize=12,
         legend_fontsize=10,
@@ -201,6 +202,8 @@ BASE_THEME = Theme(
     ),
     figure_styles=FigureStyles(
         title_fontsize=14,
+        suptitle_fontsize=16,
+        suptitle_y=0.99,
     ),
     error_color="#FF0000",
     error_edge_color="#FF0000",

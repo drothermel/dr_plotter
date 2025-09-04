@@ -22,12 +22,12 @@ from dr_plotter.legend_manager import (
     LegendManager,
 )
 from dr_plotter.plotters.base import BasePlotter
+from dr_plotter.style_applicator import StyleApplicator
 from dr_plotter.utils import get_axes_from_grid
 
 
 class FigureManager:
-    def __init__(self, config: PlotConfig | None = None, **kwargs: Any) -> None:
-        assert not any(k in kwargs for k in {"figure", "legend", "theme"})
+    def __init__(self, config: PlotConfig | None = None) -> None:
         config = PlotConfig() if config is None else config
 
         self.layout_config = config.layout
@@ -38,6 +38,13 @@ class FigureManager:
         self.shared_styling = self.style_config.shared_styling
         self.shared_cycle_config = (
             CycleConfig(self.theme) if self.shared_styling else None
+        )
+
+        self.styler = StyleApplicator(
+            self.theme,
+            config.kwargs,
+            grouping_cfg=None,
+            figure_manager=self,
         )
 
         self._facet_grid_info: dict[str, Any] | None = None
@@ -75,6 +82,8 @@ class FigureManager:
     def finalize_layout(self) -> None:
         self.legend_manager.finalize()
         self._apply_axis_labels()
+        self._apply_axis_scaling()
+        self._apply_figure_title()
         if self.layout_config.tight_layout:
             self.fig.tight_layout(
                 rect=self.layout_config.tight_layout_rect,
@@ -102,6 +111,33 @@ class FigureManager:
                         ax.set_ylabel(label)
                     else:
                         ax.set_ylabel("")
+
+    def _apply_axis_scaling(self) -> None:
+        if self._external_mode:
+            return
+
+        if self.layout_config.xscale is not None:
+            for row_idx in range(self.layout_config.rows):
+                for col_idx in range(self.layout_config.cols):
+                    ax = self.get_axes(row_idx, col_idx)
+                    ax.set_xscale(self.layout_config.xscale)
+
+        if self.layout_config.yscale is not None:
+            for row_idx in range(self.layout_config.rows):
+                for col_idx in range(self.layout_config.cols):
+                    ax = self.get_axes(row_idx, col_idx)
+                    ax.set_yscale(self.layout_config.yscale)
+
+    def _apply_figure_title(self) -> None:
+        if self._external_mode:
+            return
+
+        if self.layout_config.figure_title:
+            self.fig.suptitle(
+                self.layout_config.figure_title,
+                fontsize=self.styler.get_style("suptitle_fontsize"),
+                y=self.styler.get_style("suptitle_y"),
+            )
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
         self.finalize_layout()
@@ -163,6 +199,10 @@ class FigureManager:
             "color_wrap",
             "target_row",
             "target_col",
+            "row_titles",
+            "col_titles",
+            "exterior_x_label",
+            "exterior_y_label",
         }
 
         for param_name in faceting_param_names:

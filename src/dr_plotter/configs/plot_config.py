@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from dr_plotter.configs.layout_config import LayoutConfig
@@ -14,6 +14,7 @@ class PlotConfig:
     layout: tuple[int, int] | dict[str, Any] | LayoutConfig | None = None
     style: str | dict[str, Any] | StyleConfig | None = None
     legend: str | dict[str, Any] | LegendConfig | None = None
+    kwargs: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.validate()

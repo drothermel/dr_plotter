@@ -18,6 +18,9 @@ class LayoutConfig:
     subplot_kwargs: dict[str, Any] = field(default_factory=dict)
     x_labels: list[list[str | None]] | None = None
     y_labels: list[list[str | None]] | None = None
+    figure_title: str | None = None
+    xscale: str | None = None
+    yscale: str | None = None
 
     def __post_init__(self) -> None:
         self.validate()
@@ -25,6 +28,14 @@ class LayoutConfig:
     def validate(self) -> None:
         assert not (self.constrained_layout and self.tight_layout), (
             "Only one of constrained_layout or tight_layout can be True"
+        )
+
+        valid_scales = {"linear", "log", "symlog", "logit", None}
+        assert self.xscale in valid_scales, (
+            f"xscale must be one of {valid_scales}, got {self.xscale}"
+        )
+        assert self.yscale in valid_scales, (
+            f"yscale must be one of {valid_scales}, got {self.yscale}"
         )
 
         self._validate_no_config_overlap()

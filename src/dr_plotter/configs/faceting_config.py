@@ -26,6 +26,12 @@ class FacetingConfig:
 
     color_wrap: bool = False
 
+    row_titles: bool | list[str] | None = None
+    col_titles: bool | list[str] | None = None
+
+    exterior_x_label: str | None = None
+    exterior_y_label: str | None = None
+
     target_row: int | None = None
     target_col: int | None = None
 

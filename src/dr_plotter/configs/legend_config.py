@@ -25,7 +25,6 @@ SHORT_NAME_STRATEGY_MAP = {
 @dataclass
 class LegendConfig:
     strategy: str = "subplot"
-    layout_hint: str | None = None
     collect_strategy: str = "smart"
     position: str = "lower center"
     deduplication: bool = True
