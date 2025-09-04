@@ -9,6 +9,21 @@ from dr_plotter.scripting.datadec_utils import get_datadec_functions
 DataDecide, select_params, select_data = get_datadec_functions()
 
 
+def add_row_title(ax: plt.Axes, title: str, offset: float = -0.15) -> None:
+    ax_left = ax.twinx()
+    ax_left.yaxis.set_label_position("left")
+    ax_left.spines["left"].set_position(("axes", offset))
+    ax_left.spines["left"].set_visible(False)
+    ax_left.set_yticks([])
+    ax_left.set_ylabel(
+        title,
+        rotation=0,
+        size="large",
+        ha="right",
+        va="center",
+    )
+
+
 ALL_PARAMS = select_params("all", exclude=["750M"])
 ALL_DATA = select_data("all")
 PPL_METRICS = datadec.constants.PPL_TYPES
@@ -74,12 +89,7 @@ def plot_seeds(dd: DataDecide, params: list[str], data: list[str], metric: str) 
         min_params=None,
         verbose=True,
     )
-    print("Before indexing:", df.shape)
     df = easy_index_df(df, params, data, metric)
-    print("After indexing:", df.shape)
-    print("Unique params in data:", df["params"].cat.categories.tolist())
-    print("Unique data in data:", df["data"].cat.categories.tolist())
-    print(df.head())
 
     metric_label = metric.replace("_", " ").title()
     nparams = len(params)
@@ -91,17 +101,13 @@ def plot_seeds(dd: DataDecide, params: list[str], data: list[str], metric: str) 
                 "cols": ndata,
                 "figsize": (4 * ndata, 4 * nparams),
                 "tight_layout_pad": 0.5,
-                "tight_layout_rect": (0.01, 0.01, 0.99, 0.95),
+                "tight_layout_rect": (0.01, 0.01, 0.99, 0.97),
                 "subplot_kwargs": {"sharex": True, "sharey": True},
+                "figure_title": f"{metric_label}: All Seeds, Model Size x Data Recipe",
             },
+            kwargs={"suptitle_y": 0.98},  # Custom position - overrides theme default
         )
     ) as fm:
-        fm.fig.suptitle(
-            f"{metric_label}: All Seeds, Model Size x Data Recipe",
-            fontsize=16,
-            y=0.95,
-        )
-
         fm.plot_faceted(
             data=df,
             plot_type="line",
@@ -113,46 +119,19 @@ def plot_seeds(dd: DataDecide, params: list[str], data: list[str], metric: str) 
             linewidth=1.2,
             alpha=0.7,
             marker=None,
+            row_order=params,
+            col_order=data,
+            row_titles=True,
+            col_titles=True,
+            exterior_x_label="Training Steps",
         )
 
-        for row_idx in range(nparams):
-            for col_idx in range(ndata):
-                ax = fm.get_axes(row_idx, col_idx)
-
-                if row_idx == nparams - 1:
-                    ax.set_xlabel("Training Steps")
-                else:
-                    ax.set_xlabel("")
-
-                if row_idx == 0:
-                    ax.set_title(data[col_idx], pad=10)
-
-                if col_idx == 0:
-                    print(f"Row {row_idx}: Setting label '{params[row_idx]}'")
-                    ax_left = ax.twinx()
-                    ax_left.yaxis.set_label_position("left")
-                    ax_left.spines["left"].set_position(("axes", -0.15))
-                    ax_left.spines["left"].set_visible(False)
-                    ax_left.set_yticks([])
-                    ax_left.set_ylabel(
-                        params[row_idx],
-                        rotation=0,
-                        size="large",
-                        ha="right",
-                        va="center",
-                    )
-
-                ax.grid(visible=True, alpha=0.3)
     plt.show()
 
 
 def main() -> None:
     dd = DataDecide()
-    params = ALL_PARAMS[-2:]
-    data = ALL_DATA[-2:]
-    print("Params (order):", params)
-    print("Data (order):", data)
-    plot_seeds(dd, params, data, "pile-valppl")
+    plot_seeds(dd, ALL_PARAMS[-2:], ALL_DATA[-2:], "pile-valppl")
 
 
 if __name__ == "__main__":

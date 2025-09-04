@@ -18,6 +18,7 @@ class LayoutConfig:
     subplot_kwargs: dict[str, Any] = field(default_factory=dict)
     x_labels: list[list[str | None]] | None = None
     y_labels: list[list[str | None]] | None = None
+    figure_title: str | None = None
 
     def __post_init__(self) -> None:
         self.validate()

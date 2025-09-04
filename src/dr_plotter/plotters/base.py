@@ -9,6 +9,12 @@ from dr_plotter.channel_metadata import ChannelRegistry
 from dr_plotter.configs import GroupingConfig
 from dr_plotter.style_engine import StyleEngine
 from dr_plotter.style_applicator import StyleApplicator
+from dr_plotter.styling_utils import (
+    apply_grid_styling,
+    apply_title_styling,
+    apply_xlabel_styling,
+    apply_ylabel_styling,
+)
 from dr_plotter.theme import BASE_THEME, Theme
 from dr_plotter.types import (
     ColName,
@@ -363,57 +369,15 @@ class BasePlotter:
 
     def _style_title(self, ax: Any, styles: dict[str, Any]) -> None:
         title_text = styles.get("text", self.styler.get_style("title"))
-        if title_text:
-            ax.set_title(
-                title_text,
-                fontsize=styles.get(
-                    "fontsize", self.styler.get_style("title_fontsize")
-                ),
-                color=styles.get("color", self.styler.get_style("title_color")),
-            )
+        apply_title_styling(ax, self.styler, title_text)
 
     def _style_xlabel(self, ax: Any, styles: dict[str, Any]) -> None:
-        xlabel_text = styles.get(
-            "text",
-            self.styler.get_style("xlabel", None),
-        )
-        if xlabel_text:
-            ax.set_xlabel(
-                xlabel_text,
-                fontsize=styles.get(
-                    "fontsize",
-                    self.styler.get_style("label_fontsize"),
-                ),
-                color=styles.get("color", self.styler.get_style("label_color")),
-            )
+        xlabel_text = styles.get("text", self.styler.get_style("xlabel", None))
+        apply_xlabel_styling(ax, self.styler, xlabel_text)
 
     def _style_ylabel(self, ax: Any, styles: dict[str, Any]) -> None:
-        ylabel_text = styles.get(
-            "text",
-            self.styler.get_style("ylabel", None),
-        )
-        if ylabel_text:
-            ax.set_ylabel(
-                ylabel_text,
-                fontsize=styles.get(
-                    "fontsize",
-                    self.styler.get_style("label_fontsize"),
-                ),
-                color=styles.get("color", self.styler.get_style("label_color")),
-            )
+        ylabel_text = styles.get("text", self.styler.get_style("ylabel", None))
+        apply_ylabel_styling(ax, self.styler, ylabel_text)
 
     def _style_grid(self, ax: Any, styles: dict[str, Any]) -> None:
-        grid_visible = styles.get(
-            "visible", self.styler.get_style("grid", default=True)
-        )
-        if grid_visible:
-            ax.grid(
-                visible=True,
-                alpha=styles.get("alpha", self.styler.get_style("grid_alpha")),
-                color=styles.get("color", self.styler.get_style("grid_color")),
-                linestyle=styles.get(
-                    "linestyle", self.styler.get_style("grid_linestyle", "-")
-                ),
-            )
-        else:
-            ax.grid(visible=False)
+        apply_grid_styling(ax, self.styler)

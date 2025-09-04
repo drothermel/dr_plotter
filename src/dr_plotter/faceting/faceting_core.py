@@ -2,9 +2,11 @@ from __future__ import annotations
 from typing import Any, TYPE_CHECKING
 
 import matplotlib.axes
+import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter.configs import FacetingConfig
+from dr_plotter.styling_utils import apply_grid_styling
 
 if TYPE_CHECKING:
     from dr_plotter.figure_manager import FigureManager
@@ -90,9 +92,12 @@ def plot_faceted_data(
     assert plot_type in SUPPORTED_PLOT_TYPES, f"Unsupported plot type: {plot_type}"
     assert config.x and config.y, "Must specify x and y columns for plotting"
 
+    # Reconstruct full dataset from subsets for dimension title extraction
+    full_data = pd.concat(data_subsets.values(), ignore_index=True)
+
     for (row, col), subplot_data in data_subsets.items():
         _plot_subplot_at_position(
-            fm, row, col, subplot_data, plot_type, config, style_coordinator, **kwargs
+            fm, row, col, subplot_data, plot_type, config, style_coordinator, full_data, **kwargs
         )
 
 
@@ -104,6 +109,7 @@ def _plot_subplot_at_position(
     plot_type: str,
     config: FacetingConfig,
     style_coordinator: FacetStyleCoordinator,
+    full_data: pd.DataFrame,
     **kwargs: Any,
 ) -> None:
     if config.lines and config.lines in subplot_data.columns:
@@ -115,7 +121,7 @@ def _plot_subplot_at_position(
             fm, row, col, subplot_data, plot_type, config, **kwargs
         )
 
-    _apply_subplot_customization(fm, row, col, config)
+    _apply_subplot_customization(fm, row, col, config, full_data)
 
 
 def _plot_with_style_coordination(
@@ -214,10 +220,13 @@ def _plot_heatmap_data(
 
 
 def _apply_subplot_customization(
-    fm: FigureManager, row: int, col: int, config: FacetingConfig
+    fm: FigureManager, row: int, col: int, config: FacetingConfig, data: pd.DataFrame
 ) -> None:
     _apply_axis_labels(fm, row, col, config)
+    _apply_exterior_labels(fm, row, col, config, data)
     _apply_axis_limits(fm, row, col, config)
+    _apply_dimension_titles(fm, row, col, config, data)
+    _apply_grid_styling(fm, row, col)
 
 
 def _apply_axis_labels(
@@ -256,6 +265,29 @@ def _has_custom_label(labels: list[list[Any]] | None, row: int, col: int) -> boo
     return labels is not None and row < len(labels) and col < len(labels[row])
 
 
+def _apply_exterior_labels(
+    fm: FigureManager, row: int, col: int, config: FacetingConfig, data: pd.DataFrame
+) -> None:
+    if not (config.exterior_x_label or config.exterior_y_label):
+        return
+
+    ax = fm.get_axes(row, col)
+    
+    # Get grid dimensions to determine exterior positions
+    row_values = _extract_dimension_values(data, config.rows, config.row_order)
+    col_values = _extract_dimension_values(data, config.cols, config.col_order)
+    n_rows = len(row_values) if config.rows else 1
+    n_cols = len(col_values) if config.cols else 1
+    
+    # Apply exterior x label (bottom row only)
+    if config.exterior_x_label and row == n_rows - 1:
+        ax.set_xlabel(config.exterior_x_label)
+    
+    # Apply exterior y label (leftmost column only)
+    if config.exterior_y_label and col == 0:
+        ax.set_ylabel(config.exterior_y_label)
+
+
 def get_grid_dimensions(data: pd.DataFrame, config: FacetingConfig) -> tuple[int, int]:
     assert not data.empty, "Cannot compute dimensions from empty DataFrame"
 
@@ -268,3 +300,58 @@ def get_grid_dimensions(data: pd.DataFrame, config: FacetingConfig) -> tuple[int
     n_rows = len(data[config.rows].unique()) if config.rows else 1
     n_cols = len(data[config.cols].unique()) if config.cols else 1
     return n_rows, n_cols
+
+
+def _apply_dimension_titles(
+    fm: FigureManager, row: int, col: int, config: FacetingConfig, data: pd.DataFrame
+) -> None:
+    if not (config.row_titles or config.col_titles):
+        return
+
+    ax = fm.get_axes(row, col)
+    
+    # Get dimension values using same logic as faceting system
+    row_values = _extract_dimension_values(data, config.rows, config.row_order)
+    col_values = _extract_dimension_values(data, config.cols, config.col_order)
+    
+    # Row titles (left side, first column only)
+    if config.row_titles and col == 0 and row < len(row_values):
+        title = _resolve_dimension_title(config.row_titles, row, row_values)
+        if title:
+            _add_row_title(ax, title)
+    
+    # Column titles (top, first row only) 
+    if config.col_titles and row == 0 and col < len(col_values):
+        title = _resolve_dimension_title(config.col_titles, col, col_values)
+        if title:
+            ax.set_title(title, pad=10)
+
+
+def _resolve_dimension_title(
+    title_config: bool | list[str], index: int, dimension_values: list[Any]
+) -> str | None:
+    if title_config is True:
+        return str(dimension_values[index]) if index < len(dimension_values) else None
+    elif isinstance(title_config, list):
+        return title_config[index] if index < len(title_config) else None
+    return None
+
+
+def _add_row_title(ax: matplotlib.axes.Axes, title: str, offset: float = -0.15) -> None:
+    ax_left = ax.twinx()
+    ax_left.yaxis.set_label_position("left")
+    ax_left.spines["left"].set_position(("axes", offset))
+    ax_left.spines["left"].set_visible(False)
+    ax_left.set_yticks([])
+    ax_left.set_ylabel(
+        title,
+        rotation=0,
+        size="large",
+        ha="right",
+        va="center",
+    )
+
+
+def _apply_grid_styling(fm: FigureManager, row: int, col: int) -> None:
+    ax = fm.get_axes(row, col)
+    apply_grid_styling(ax, fm.styler)
