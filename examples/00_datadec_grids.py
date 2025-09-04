@@ -61,6 +61,8 @@ def easy_index_df(
     target_metrics = [metric]
     keep_columns = ID_COLS + target_metrics
     df = df[keep_columns].copy()
+
+    # Have to melt to drop the NaN values mid-run before plotting
     melted_df = df.melt(
         id_vars=ID_COLS,
         value_vars=target_metrics,
@@ -104,6 +106,10 @@ def plot_seeds(dd: DataDecide, params: list[str], data: list[str], metric: str) 
                 "tight_layout_rect": (0.01, 0.01, 0.99, 0.97),
                 "subplot_kwargs": {"sharex": True, "sharey": True},
                 "figure_title": f"{metric_label}: All Seeds, Model Size x Data Recipe",
+            },
+            legend={
+                "strategy": "subplot",
+                "position": "best",
             },
             kwargs={"suptitle_y": 0.98},  # Custom position - overrides theme default
         )
