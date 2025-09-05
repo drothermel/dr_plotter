@@ -14,7 +14,12 @@ from .base import BasePlotter
 
 class BumpPlotter(BasePlotter):
     plotter_name: str = "bump"
-    plotter_params: ClassVar[list[str]] = ["time_col", "category_col", "value_col"]
+    plotter_params: ClassVar[list[str]] = [
+        "time_col",
+        "category_col",
+        "value_col",
+        "rank_spacing",
+    ]
     enabled_channels: ClassVar[set[VisualChannel]] = {"hue", "style"}
     default_theme: ClassVar[Theme] = BUMP_PLOT_THEME
     supports_grouped: bool = False
@@ -53,6 +58,7 @@ class BumpPlotter(BasePlotter):
         self.time_col = self.kwargs.get("time_col")
         self.value_col = self.kwargs.get("value_col")
         self.category_col = self.kwargs.get("category_col")
+        self.rank_spacing = self.kwargs.get("rank_spacing", 1)
 
     def _plot_specific_data_prep(self) -> None:
         self.plot_data["rank"] = self.plot_data.groupby(self.time_col)[

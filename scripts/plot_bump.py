@@ -9,17 +9,18 @@ import pandas as pd
 
 from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager
-from dr_plotter.theme import Theme, BUMP_PLOT_THEME
+from dr_plotter.scripting.bump_utils import apply_first_last_filter
 from dr_plotter.scripting.datadec_utils import (
-    BASE_RECIPES,
     BASE_AND_QC,
-    RECIPES_WITHOUT_ABLATIONS,
+    BASE_RECIPES,
     CUSTOM_RECIPE_FAMILIES,
-    PPL_PERFORMANCE_RECIPE_CHUNKS,
     OLMES_PERFORMANCE_RECIPE_CHUNKS,
+    PPL_PERFORMANCE_RECIPE_CHUNKS,
+    RECIPES_WITHOUT_ABLATIONS,
     get_datadec_functions,
     prepare_plot_data,
 )
+from dr_plotter.theme import BUMP_PLOT_THEME, Theme
 
 
 def format_perplexity(ppl_value: float) -> str:
@@ -76,6 +77,7 @@ def create_extended_color_palette() -> list[str]:
 def create_bump_theme_with_colors(num_categories: int) -> Theme:
     """Create a custom theme with extended color palette for bump plots."""
     import itertools
+
     from dr_plotter import consts
 
     extended_colors = create_extended_color_palette()
@@ -120,7 +122,7 @@ def add_left_ranking_labels(ax: plt.Axes, bump_data: pd.DataFrame) -> None:
         ax.text(
             -0.15,
             rank,  # Position to the left of the y-axis
-            category_name,
+            f"{rank}. {category_name}",
             transform=ax.transData,
             fontsize=9,
             ha="right",
@@ -131,6 +133,35 @@ def add_left_ranking_labels(ax: plt.Axes, bump_data: pd.DataFrame) -> None:
                 "facecolor": "lightblue",
                 "alpha": 0.7,
                 "edgecolor": "navy",
+            },
+        )
+
+
+def add_right_ranking_labels(ax: plt.Axes, bump_data: pd.DataFrame) -> None:
+    time_points = sorted(bump_data["time"].unique(), key=numerical_sort_key)
+    last_time = time_points[-1]
+    last_time_data = bump_data[bump_data["time"] == last_time].copy()
+    last_time_data = last_time_data.sort_values("score", ascending=False)
+    last_time_data["rank"] = range(1, len(last_time_data) + 1)
+
+    for _, row in last_time_data.iterrows():
+        category_name = row["category"]
+        rank = row["rank"]
+
+        ax.text(
+            len(time_points) - 1 + 0.15,
+            rank,
+            f"{rank}. {category_name}",
+            transform=ax.transData,
+            fontsize=9,
+            ha="left",
+            va="center",
+            fontweight="bold",
+            bbox={
+                "boxstyle": "round,pad=0.3",
+                "facecolor": "lightgreen",
+                "alpha": 0.7,
+                "edgecolor": "darkgreen",
             },
         )
 
@@ -228,6 +259,12 @@ def create_arg_parser() -> argparse.ArgumentParser:
         help="Figure size width height (default: 12 8)",
     )
 
+    parser.add_argument(
+        "--first-last-only",
+        action="store_true",
+        help="Show only first and last rankings (compressed view)",
+    )
+
     return parser
 
 
@@ -274,6 +311,7 @@ def plot_bump(
     save_path: str | None = None,
     show_plot: bool = True,
     figsize: tuple[float, float] = (12, 8),
+    first_last_only: bool = False,
 ) -> None:
     DataDecide, select_params, select_data = get_datadec_functions()
 
@@ -387,6 +425,13 @@ def plot_bump(
 
     print("\n=== End Debug ===\n")
 
+    # Apply first-last filter if requested
+    if first_last_only:
+        bump_data = apply_first_last_filter(
+            bump_data, time_col="time", category_col="category"
+        )
+        print(f"Applied first-last-only filter: {len(bump_data)} data points remaining")
+
     # Create custom theme with extended colors for better distinction
     num_categories = len(bump_data["category"].unique())
     custom_theme = create_bump_theme_with_colors(num_categories)
@@ -398,6 +443,7 @@ def plot_bump(
                 "rows": 1,
                 "cols": 1,
                 "figsize": figsize,
+                "ymargin": 0.0,
             },
             style={"theme": custom_theme},
         )
@@ -412,12 +458,13 @@ def plot_bump(
             category_col="category",
             marker="o",
             linewidth=2,
-            title=f"Data Recipe Rankings Across Model Sizes ({metric_str})",
+            title=f"Recipe Rank by Model Size ({metric_str})",
         )
 
         # Add annotations and labels
         ax = fm.get_axes(0, 0)
         add_left_ranking_labels(ax, bump_data)
+        add_right_ranking_labels(ax, bump_data)
         add_value_annotations(ax, bump_data)
 
         # Add annotation style label positioned below the highest ranking line (rank 1)
@@ -465,6 +512,7 @@ def main() -> None:
         save_path=args.save,
         show_plot=show_plot,
         figsize=figsize,
+        first_last_only=getattr(args, "first_last_only", False),
     )
 
 

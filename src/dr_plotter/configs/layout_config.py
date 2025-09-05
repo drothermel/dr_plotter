@@ -22,6 +22,11 @@ class LayoutConfig:
     xscale: str | None = None
     yscale: str | None = None
 
+    xlim: tuple[float, float] | None = None
+    ylim: tuple[float, float] | None = None
+    xmargin: float | None = None
+    ymargin: float | None = None
+
     def __post_init__(self) -> None:
         self.validate()
 
