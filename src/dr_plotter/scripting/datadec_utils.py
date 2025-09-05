@@ -23,19 +23,84 @@ def get_datadec_functions() -> tuple[Any, Any, Any]:
     return DataDecide, select_params, select_data
 
 
-def get_datadec_constants() -> tuple[list[str], list[str], list[str], str, str, list[str]]:
+def get_datadec_constants() -> tuple[
+    list[str], list[str], list[str], str, str, list[str]
+]:
     check_datadec_available()
     import datadec.constants
-    
+
     ppl_metrics = datadec.constants.PPL_TYPES
     olmes_tasks = datadec.constants.OLMES_TASKS
     metric_names = datadec.constants.METRIC_NAMES
     primary_metric_name = "primary_metric"
     default_proxy_metric_name = "correct_prob"
     id_cols = ["params", "data", "step", "seed"]
-    
-    return ppl_metrics, olmes_tasks, metric_names, primary_metric_name, default_proxy_metric_name, id_cols
 
+    return (
+        ppl_metrics,
+        olmes_tasks,
+        metric_names,
+        primary_metric_name,
+        default_proxy_metric_name,
+        id_cols,
+    )
+
+
+BASE_RECIPES = [
+    "C4",
+    "Falcon",
+    "Falcon+CC",
+    "Dolma1.6++",
+    "Dolma1.7",
+    "FineWeb-Pro",
+    "FineWeb-Edu",
+    "DCLM-Baseline",
+]
+
+BASE_AND_QC = [
+    "C4",
+    "Falcon",
+    "Falcon+CC",
+    "Falcon+CC (QC 10%)",
+    "Falcon+CC (QC 20%)",
+    "Falcon+CC (QC Orig 10%)",
+    "Falcon+CC (QC Tulu 10%)",
+    "Dolma1.6++",
+    "Dolma1.7",
+    "DCLM-Baseline 25% / Dolma 75%",
+    "DCLM-Baseline 50% / Dolma 50%",
+    "DCLM-Baseline 75% / Dolma 25%",
+    "FineWeb-Pro",
+    "FineWeb-Edu",
+    "DCLM-Baseline",
+    "DCLM-Baseline (QC 10%)",
+    "DCLM-Baseline (QC 20%)",
+    "DCLM-Baseline (QC 7%, FW3)",
+    "DCLM-Baseline (QC 7%, FW2)",
+    "DCLM-Baseline (QC FW 3%)",
+    "DCLM-Baseline (QC FW 10%)",
+]
+
+RECIPES_WITHOUT_ABLATIONS = [
+    "C4",
+    "Falcon",
+    "Falcon+CC",
+    "Falcon+CC (QC 10%)",
+    "Falcon+CC (QC 20%)",
+    "Falcon+CC (QC Orig 10%)",
+    "Falcon+CC (QC Tulu 10%)",
+    "Dolma1.6++",
+    "Dolma1.7",
+    "FineWeb-Pro",
+    "FineWeb-Edu",
+    "DCLM-Baseline",
+    "DCLM-Baseline (QC 10%)",
+    "DCLM-Baseline (QC 20%)",
+    "DCLM-Baseline (QC 7%, FW3)",
+    "DCLM-Baseline (QC 7%, FW2)",
+    "DCLM-Baseline (QC FW 3%)",
+    "DCLM-Baseline (QC FW 10%)",
+]
 
 CUSTOM_RECIPE_FAMILIES = {
     "core_datasets": ["C4", "Falcon", "Dolma1.6++"],
@@ -64,11 +129,11 @@ CUSTOM_RECIPE_FAMILIES = {
     ],
     "fineweb_variants": ["FineWeb-Pro", "FineWeb-Edu"],
     "mix_with_baselines": [
+        "Dolma1.7",
         "DCLM-Baseline 25% / Dolma 75%",
         "DCLM-Baseline 50% / Dolma 50%",
         "DCLM-Baseline 75% / Dolma 25%",
         "DCLM-Baseline",
-        "Dolma1.7",
     ],
 }
 
@@ -170,10 +235,14 @@ def primary_metrics() -> list[str]:
 
 
 def prepare_plot_data(
-    dd: Any, params: list[str], data: list[str], metrics: list[str], aggregate_seeds: bool = False
+    dd: Any,
+    params: list[str],
+    data: list[str],
+    metrics: list[str],
+    aggregate_seeds: bool = False,
 ) -> pd.DataFrame:
     ppl_metrics, _, _, _, _, id_cols = get_datadec_constants()
-    
+
     filter_types = ["max_steps"]
 
     # Smart filtering: only add ppl/olmes filter if ALL metrics fall into one category

@@ -14,7 +14,12 @@ from .base import BasePlotter
 
 class BumpPlotter(BasePlotter):
     plotter_name: str = "bump"
-    plotter_params: ClassVar[list[str]] = ["time_col", "category_col", "value_col"]
+    plotter_params: ClassVar[list[str]] = [
+        "time_col",
+        "category_col",
+        "value_col",
+        "rank_spacing",
+    ]
     enabled_channels: ClassVar[set[VisualChannel]] = {"hue", "style"}
     default_theme: ClassVar[Theme] = BUMP_PLOT_THEME
     supports_grouped: bool = False
@@ -53,6 +58,7 @@ class BumpPlotter(BasePlotter):
         self.time_col = self.kwargs.get("time_col")
         self.value_col = self.kwargs.get("value_col")
         self.category_col = self.kwargs.get("category_col")
+        self.rank_spacing = self.kwargs.get("rank_spacing", 1)
 
     def _plot_specific_data_prep(self) -> None:
         self.plot_data["rank"] = self.plot_data.groupby(self.time_col)[
@@ -66,15 +72,15 @@ class BumpPlotter(BasePlotter):
         for i, category in enumerate(categories):
             cat_data = self.plot_data[self.plot_data[self.category_col] == category]
             cat_data = cat_data.sort_values(by=self.time_col).copy()
-            base_colors = self.styler.get_style(
-                "base_colors", ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
+
+            color_styles = self.style_engine.cycle_cfg.get_styled_value_for_channel(
+                "hue", category
             )
             style = {
-                "color": base_colors[i % len(base_colors)],
+                "color": color_styles.get("color", "#1f77b4"),
                 "linestyle": "-",
             }
 
-            # Use the hardcoded style for now (this will be replaced with proper styler calls later)
             cat_data["_bump_color"] = style["color"]
             cat_data["_bump_linestyle"] = style.get("linestyle", "-")
             cat_data["_bump_label"] = str(category)

@@ -174,6 +174,22 @@ class FigureManager:
         plotter = plotter_class(*plotter_args, figure_manager=self, **kwargs)
         plotter.render(ax)
 
+        self._apply_layout_axis_settings(ax)
+
+    def _apply_layout_axis_settings(self, ax: Any) -> None:
+        layout = self.layout_config
+
+        if layout.xlim is not None:
+            ax.set_xlim(layout.xlim)
+
+        if layout.ylim is not None:
+            ax.set_ylim(layout.ylim)
+
+        if layout.xmargin is not None or layout.ymargin is not None:
+            current_xmargin = 0.05 if layout.xmargin is None else layout.xmargin
+            current_ymargin = 0.05 if layout.ymargin is None else layout.ymargin
+            ax.margins(x=current_xmargin, y=current_ymargin)
+
     def _resolve_faceting_config(
         self,
         faceting: FacetingConfig | None,

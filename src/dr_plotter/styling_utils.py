@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 import matplotlib.axes
 
 if TYPE_CHECKING:
     from dr_plotter.style_applicator import StyleApplicator
 
 
-def apply_title_styling(ax: matplotlib.axes.Axes, styler: StyleApplicator, title_text: str | None = None) -> None:
+def apply_title_styling(
+    ax: matplotlib.axes.Axes, styler: StyleApplicator, title_text: str | None = None
+) -> None:
     if not title_text:
         title_text = styler.get_style("title")
     if title_text:
@@ -20,7 +22,9 @@ def apply_title_styling(ax: matplotlib.axes.Axes, styler: StyleApplicator, title
         ax.set_title(title_text, **title_kwargs)
 
 
-def apply_xlabel_styling(ax: matplotlib.axes.Axes, styler: StyleApplicator, xlabel_text: str | None = None) -> None:
+def apply_xlabel_styling(
+    ax: matplotlib.axes.Axes, styler: StyleApplicator, xlabel_text: str | None = None
+) -> None:
     if not xlabel_text:
         xlabel_text = styler.get_style("xlabel")
     if xlabel_text:
@@ -33,7 +37,9 @@ def apply_xlabel_styling(ax: matplotlib.axes.Axes, styler: StyleApplicator, xlab
         ax.set_xlabel(xlabel_text, **xlabel_kwargs)
 
 
-def apply_ylabel_styling(ax: matplotlib.axes.Axes, styler: StyleApplicator, ylabel_text: str | None = None) -> None:
+def apply_ylabel_styling(
+    ax: matplotlib.axes.Axes, styler: StyleApplicator, ylabel_text: str | None = None
+) -> None:
     if not ylabel_text:
         ylabel_text = styler.get_style("ylabel")
     if ylabel_text:

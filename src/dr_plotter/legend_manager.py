@@ -236,11 +236,11 @@ class LegendManager:
                 self.config.positioning_config.legend_y_offset_factor,
             )
             bbox_to_anchor = result.legend_positions.get(0, default_pos)
-            
+
             title = None
             if entries and entries[0].visual_channel:
                 title = self.generate_channel_title(entries[0].visual_channel, entries)
-            
+
             self.fm.fig.legend(
                 handles,
                 labels,
@@ -289,11 +289,13 @@ class LegendManager:
                     if self.config.position == "lower center"
                     else self.config.position
                 )
-                
+
                 title = None
                 if axis_entries and axis_entries[0].visual_channel:
-                    title = self.generate_channel_title(axis_entries[0].visual_channel, axis_entries)
-                
+                    title = self.generate_channel_title(
+                        axis_entries[0].visual_channel, axis_entries
+                    )
+
                 axis.legend(handles, labels, loc=legend_position, title=title)
 
     def _create_grouped_legends(self) -> None:
