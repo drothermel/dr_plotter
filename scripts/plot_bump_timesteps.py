@@ -5,8 +5,8 @@ from __future__ import annotations
 import argparse
 
 import matplotlib.pyplot as plt
-from matplotlib import ticker
 import pandas as pd
+from matplotlib import ticker
 
 from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager
@@ -268,6 +268,68 @@ def downsample_per_trajectory(bump_data: pd.DataFrame, max_points: int) -> pd.Da
     return pd.concat(downsampled_trajectories, ignore_index=True)
 
 
+def add_start_final_rank_labels(
+    ax: plt.Axes,
+    bump_data: pd.DataFrame,
+    time_to_x: dict[float, float],
+    offset_x: int = 50,
+    offset_y: int = 8,
+) -> None:
+    time_points = sorted(bump_data["time"].unique())
+
+    if len(time_points) < 2:
+        return  # Need at least 2 time points for start/final comparison
+
+    first_time = time_points[0]
+    last_time = time_points[-1]
+
+    # Rank data at both time points
+    ranked_data = []
+    for time_point in [first_time, last_time]:
+        time_data = bump_data[bump_data["time"] == time_point].copy()
+        time_data = time_data.sort_values("score", ascending=False)
+        time_data["rank"] = range(1, len(time_data) + 1)
+        ranked_data.append(time_data)
+
+    first_data, last_data = ranked_data
+
+    # Create lookup dict for start ranks
+    first_ranks = dict(zip(first_data["category"], first_data["rank"]))
+
+    # Get color scheme for model sizes
+    categories = sorted(last_data["category"].unique())
+    size_to_color = get_model_size_color_scheme(categories)
+
+    # Add Start/Final labels next to the last point for each category
+    for _, row in last_data.iterrows():
+        category = row["category"]
+        start_rank = first_ranks.get(category, "?")
+        final_rank = row["rank"]
+
+        # Extract model size and get its color
+        model_size = category.split("-")[0]
+        color = size_to_color.get(model_size, "#90EE90")  # fallback to light green
+
+        label_text = f"Start: {start_rank} Final: {final_rank}"
+
+        ax.annotate(
+            label_text,
+            xy=(time_to_x[last_time], final_rank),
+            xytext=(offset_x, offset_y),
+            textcoords="offset points",
+            fontsize=7,
+            ha="left",
+            va="bottom",
+            bbox={
+                "boxstyle": "round,pad=0.2",
+                "facecolor": color,
+                "alpha": 0.8,
+                "edgecolor": "black",
+            },
+            arrowprops=None,
+        )
+
+
 def add_left_ranking_labels(ax: plt.Axes, bump_data: pd.DataFrame) -> None:
     time_points = sorted(bump_data["time"].unique())
     first_time = time_points[0]
@@ -306,7 +368,11 @@ def add_left_ranking_labels(ax: plt.Axes, bump_data: pd.DataFrame) -> None:
 
 
 def add_value_annotations(
-    ax: plt.Axes, bump_data: pd.DataFrame, first_last_only: bool = False
+    ax: plt.Axes,
+    bump_data: pd.DataFrame,
+    first_last_only: bool = False,
+    label_time_points: set[float] | None = None,
+    show_rank_labels: bool = False,
 ) -> None:
     time_points = sorted(bump_data["time"].unique())
     time_to_x = {time_point: time_point for time_point in time_points}
@@ -324,8 +390,15 @@ def add_value_annotations(
         x_pos = time_to_x[row["time"]]
         y_pos = row["rank"]
 
-        # Skip value labels for interpolated points (unless in first-last-only mode)
-        if row.get("is_interpolated", False) and not first_last_only:
+        # If label_time_points is provided, only label those specific points
+        if label_time_points is not None:
+            if row["time"] not in label_time_points:
+                continue
+            # Even if in label_time_points, skip if this is an interpolated point for this trajectory
+            if row.get("is_interpolated", False):
+                continue
+        # Original logic: skip value labels for interpolated points (unless in first-last-only mode)
+        elif row.get("is_interpolated", False) and not first_last_only:
             continue
 
         # Only show labels for original data points
@@ -348,51 +421,9 @@ def add_value_annotations(
             arrowprops=None,
         )
 
-    # Add Start/Final rank labels for first-last-only mode
-    if first_last_only and len(time_points) >= 2:
-        first_time = time_points[0]
-        last_time = time_points[-1]
-
-        # Get start and end rankings for each category
-        first_data = all_ranked_data[all_ranked_data["time"] == first_time].copy()
-        last_data = all_ranked_data[all_ranked_data["time"] == last_time].copy()
-
-        # Create lookup dicts for ranks
-        first_ranks = dict(zip(first_data["category"], first_data["rank"]))
-        last_ranks = dict(zip(last_data["category"], last_data["rank"]))
-
-        # Get color scheme for model sizes
-        categories = sorted(last_data["category"].unique())
-        size_to_color = get_model_size_color_scheme(categories)
-
-        # Add Start/Final labels next to the last point for each category
-        for _, row in last_data.iterrows():
-            category = row["category"]
-            start_rank = first_ranks.get(category, "?")
-            final_rank = row["rank"]
-
-            # Extract model size and get its color
-            model_size = category.split("-")[0]
-            color = size_to_color.get(model_size, "#90EE90")  # fallback to light green
-
-            label_text = f"Start: {start_rank} Final: {final_rank}"
-
-            ax.annotate(
-                label_text,
-                xy=(time_to_x[last_time], final_rank),
-                xytext=(50, 8),
-                textcoords="offset points",
-                fontsize=7,
-                ha="left",
-                va="bottom",
-                bbox={
-                    "boxstyle": "round,pad=0.2",
-                    "facecolor": color,
-                    "alpha": 0.8,
-                    "edgecolor": "black",
-                },
-                arrowprops=None,
-            )
+    # Add Start/Final rank labels when requested
+    if first_last_only or show_rank_labels:
+        add_start_final_rank_labels(ax, bump_data, time_to_x)
 
 
 def create_arg_parser() -> argparse.ArgumentParser:
@@ -492,7 +523,169 @@ def create_arg_parser() -> argparse.ArgumentParser:
         help="X-axis type: 'steps' for training steps or 'tokens' for token count (default: steps)",
     )
 
+    parser.add_argument(
+        "--show-rank-labels",
+        action="store_true",
+        help="Show Start/Final rank labels on the right side of the plot",
+    )
+
+    parser.add_argument(
+        "--title",
+        type=str,
+        help="Custom title for the plot (overrides default title)",
+    )
+
+    parser.add_argument(
+        "--xlim-min",
+        type=float,
+        help="Minimum x-axis limit (for token mode, specify in token count, e.g., 1e9 for 1B)",
+    )
+
+    parser.add_argument(
+        "--xlim-max",
+        type=float,
+        help="Maximum x-axis limit (for token mode, specify in token count, e.g., 1e11 for 100B)",
+    )
+
+    parser.add_argument(
+        "--no-value-labels",
+        action="store_true",
+        help="Hide per-value labels (perplexity values) on data points",
+    )
+
     return parser
+
+
+def select_label_points(
+    df: pd.DataFrame,
+    x_col: str,
+    max_points: int,
+) -> set[float]:
+    if max_points < 2:
+        raise ValueError(
+            "max_points must be at least 2 to preserve first and last points"
+        )
+
+    # Only work with original (non-interpolated) data
+    original_df = df[df["is_interpolated"] == False].copy()
+
+    selected_times = set()
+
+    for combo in original_df["param_data_combo"].unique():
+        combo_data = original_df[original_df["param_data_combo"] == combo].copy()
+        combo_data = combo_data.sort_values(x_col)
+
+        original_times = sorted(combo_data[x_col].unique())
+
+        if len(original_times) <= max_points:
+            # Use all original points if we have few enough
+            selected_times.update(original_times)
+        else:
+            # Downsample original points only
+            combo_selected = [original_times[0], original_times[-1]]  # Keep first/last
+
+            if max_points > 2:
+                middle_points_needed = max_points - 2
+                middle_times = original_times[1:-1]  # Exclude first and last
+
+                if middle_points_needed >= len(middle_times):
+                    combo_selected.extend(middle_times)
+                else:
+                    # Sample evenly spaced middle points
+                    indices = [
+                        int(i * len(middle_times) / (middle_points_needed + 1))
+                        for i in range(1, middle_points_needed + 1)
+                    ]
+                    selected_middle = [middle_times[i] for i in indices]
+                    combo_selected.extend(selected_middle)
+
+            selected_times.update(combo_selected)
+
+    return selected_times
+
+
+def prepare_interpolated_data(
+    df: pd.DataFrame,
+    params: list[str],
+    data: list[str],
+    x_axis: str,
+    common_start_x: float | None = None,
+) -> pd.DataFrame:
+    x_col = "tokens" if x_axis == "tokens" else "step"
+
+    print(
+        f"Using linear interpolation to fill missing timestep data for {len(params) * len(data)} param×data combinations"
+    )
+
+    # Find the minimum of minimum x-values across all combinations (earliest common point)
+    min_x_per_combo = df.groupby("param_data_combo")[x_col].min()
+    common_start_x = min_x_per_combo.min()
+    x_label = "token" if x_axis == "tokens" else "step"
+    print(
+        f"Starting plot at {x_label} {common_start_x} (earliest common point across all combinations)"
+    )
+
+    # Get all unique x-values from the common start point
+    all_x_values = sorted([x for x in df[x_col].unique() if x >= common_start_x])
+
+    # Interpolate missing values for each combination
+    interpolated_rows = []
+    for combo in df["param_data_combo"].unique():
+        combo_data = df[df["param_data_combo"] == combo].copy()
+        combo_data = combo_data.sort_values(x_col)
+
+        # Track which x-values had original data
+        original_x_values = set(combo_data[x_col].values)
+
+        # Interpolate values for ALL x-values from common start (not just within range)
+        interpolated_data = combo_data.set_index(x_col).reindex(all_x_values)
+        interpolated_data["value"] = interpolated_data["value"].interpolate(
+            method="linear"
+        )
+
+        # Handle extrapolation for points before/after data range
+        # Forward fill for points before first data point
+        interpolated_data["value"] = interpolated_data["value"].bfill()
+        # Backward fill for points after last data point
+        interpolated_data["value"] = interpolated_data["value"].ffill()
+
+        # Mark which values are interpolated vs original
+        interpolated_data["is_interpolated"] = [
+            x_val not in original_x_values for x_val in all_x_values
+        ]
+
+        # Forward fill params and data columns (they're constant for this combo)
+        interpolated_data["params"] = combo_data["params"].iloc[0]
+        interpolated_data["data"] = combo_data["data"].iloc[0]
+        interpolated_data["param_data_combo"] = combo
+
+        # Add other columns if they exist (e.g., tokens when x_col is "step", or step when x_col is "tokens")
+        if x_axis == "tokens" and "step" in combo_data.columns:
+            # For token-based plots, we need to maintain the step-token relationship
+            # This is complex because tokens might not map directly to our interpolated points
+            # For now, we'll set step to None for interpolated points
+            step_mapping = dict(zip(combo_data[x_col], combo_data["step"]))
+            interpolated_data["step"] = [
+                step_mapping.get(x_val) for x_val in all_x_values
+            ]
+        elif x_axis == "steps" and "tokens" in combo_data.columns:
+            # For step-based plots with token data, maintain step-token relationship
+            token_mapping = dict(zip(combo_data[x_col], combo_data["tokens"]))
+            interpolated_data["tokens"] = [
+                token_mapping.get(x_val) for x_val in all_x_values
+            ]
+
+        # Reset index to get x_col back as column
+        interpolated_data = interpolated_data.reset_index()
+        interpolated_rows.append(interpolated_data)
+
+    df_interpolated = pd.concat(interpolated_rows, ignore_index=True)
+
+    # Remove rows where interpolation couldn't fill
+    df_interpolated = df_interpolated.dropna(subset=["value"])
+
+    print(f"After interpolation: {df_interpolated.shape[0]} data points")
+    return df_interpolated
 
 
 def resolve_data_groups(data_args: list[str]) -> list[str]:
@@ -539,6 +732,11 @@ def plot_bump_timesteps(
     width_per_point: float = 0.8,
     height_per_line: float = 0.15,
     x_axis: str = "steps",
+    show_rank_labels: bool = False,
+    custom_title: str | None = None,
+    xlim_min: float | None = None,
+    xlim_max: float | None = None,
+    show_value_labels: bool = True,
 ) -> None:
     DataDecide, select_params, select_data = get_datadec_functions()
 
@@ -610,82 +808,7 @@ def plot_bump_timesteps(
     common_start_x = None
 
     if interpolate:
-        # Use linear interpolation to fill missing values for each param×data combination
-        print(
-            f"Using linear interpolation to fill missing timestep data for {len(params) * len(data)} param×data combinations"
-        )
-
-        # Determine which column to use for interpolation
-        x_col = "tokens" if x_axis == "tokens" else "step"
-
-        # Find the minimum of minimum x-values across all combinations (earliest common point)
-        min_x_per_combo = df.groupby("param_data_combo")[x_col].min()
-        common_start_x = min_x_per_combo.min()
-        x_label = "token" if x_axis == "tokens" else "step"
-        print(
-            f"Starting plot at {x_label} {common_start_x} (earliest common point across all combinations)"
-        )
-
-        # Get all unique x-values from the common start point
-        all_x_values = sorted([x for x in df[x_col].unique() if x >= common_start_x])
-
-        # Interpolate missing values for each combination
-        interpolated_rows = []
-        for combo in df["param_data_combo"].unique():
-            combo_data = df[df["param_data_combo"] == combo].copy()
-            combo_data = combo_data.sort_values(x_col)
-
-            # Track which x-values had original data
-            original_x_values = set(combo_data[x_col].values)
-
-            # Interpolate values for ALL x-values from common start (not just within range)
-            interpolated_data = combo_data.set_index(x_col).reindex(all_x_values)
-            interpolated_data["value"] = interpolated_data["value"].interpolate(
-                method="linear"
-            )
-
-            # Handle extrapolation for points before/after data range
-            # Forward fill for points before first data point
-            interpolated_data["value"] = interpolated_data["value"].bfill()
-            # Backward fill for points after last data point
-            interpolated_data["value"] = interpolated_data["value"].ffill()
-
-            # Mark which values are interpolated vs original
-            interpolated_data["is_interpolated"] = [
-                x_val not in original_x_values for x_val in all_x_values
-            ]
-
-            # Forward fill params and data columns (they're constant for this combo)
-            interpolated_data["params"] = combo_data["params"].iloc[0]
-            interpolated_data["data"] = combo_data["data"].iloc[0]
-            interpolated_data["param_data_combo"] = combo
-
-            # Add other columns if they exist (e.g., tokens when x_col is "step", or step when x_col is "tokens")
-            if x_axis == "tokens" and "step" in combo_data.columns:
-                # For token-based plots, we need to maintain the step-token relationship
-                # This is complex because tokens might not map directly to our interpolated points
-                # For now, we'll set step to None for interpolated points
-                step_mapping = dict(zip(combo_data[x_col], combo_data["step"]))
-                interpolated_data["step"] = [
-                    step_mapping.get(x_val) for x_val in all_x_values
-                ]
-            elif x_axis == "steps" and "tokens" in combo_data.columns:
-                # For step-based plots with token data, maintain step-token relationship
-                token_mapping = dict(zip(combo_data[x_col], combo_data["tokens"]))
-                interpolated_data["tokens"] = [
-                    token_mapping.get(x_val) for x_val in all_x_values
-                ]
-
-            # Reset index to get x_col back as column
-            interpolated_data = interpolated_data.reset_index()
-            interpolated_rows.append(interpolated_data)
-
-        df = pd.concat(interpolated_rows, ignore_index=True)
-
-        # Remove rows where interpolation couldn't fill
-        df = df.dropna(subset=["value"])
-
-        print(f"After interpolation: {df.shape[0]} data points")
+        df = prepare_interpolated_data(df, params, data, x_axis, common_start_x)
     else:
         # Mark all values as original (not interpolated)
         df["is_interpolated"] = False
@@ -714,40 +837,15 @@ def plot_bump_timesteps(
     print(f"Aligned all trajectories to common start {x_label}: {common_start_time}")
     print(f"Filtered from {original_shape} to {filtered_shape} points for alignment")
 
-    # Apply per-trajectory downsampling AFTER interpolation if requested
+    # Generate label points selection if max_points is specified
+    label_time_points = None
     if max_points is not None:
         print(
-            f"\nApplying per-trajectory downsampling to max {max_points} points per trajectory"
+            f"\nSelecting max {max_points} label points per trajectory from original data"
         )
-        print("(Only considering original, non-interpolated points for selection)")
-
         x_col = "tokens" if x_axis == "tokens" else "step"
-        original_trajectories = len(df["param_data_combo"].unique())
-
-        # Create temporary bump data for downsampling, filtering to only original points
-        original_df = df[df["is_interpolated"] == False].copy()
-        temp_bump_data = original_df.rename(
-            columns={x_col: "time", "param_data_combo": "category"}
-        )
-        temp_bump_data = downsample_per_trajectory(temp_bump_data, max_points)
-
-        # Get the selected time points from original data only
-        selected_times = set(temp_bump_data["time"].unique())
-
-        # Filter to keep only the selected time points and interpolated points between them
-        # Since all trajectories now start from the same common_start_time, this will maintain alignment
-        selected_times_list = sorted(selected_times)
-        min_selected = min(selected_times_list)
-        max_selected = max(selected_times_list)
-
-        df = df[(df[x_col] >= min_selected) & (df[x_col] <= max_selected)].copy()
-
-        print(f"After per-trajectory downsampling: {df.shape}")
-        original_points = len(df[df["is_interpolated"] == False])
-        interpolated_points = len(df[df["is_interpolated"] == True])
-        print(
-            f"Original points: {original_points}, Interpolated points: {interpolated_points}"
-        )
+        label_time_points = select_label_points(df, x_col, max_points)
+        print(f"Selected {len(label_time_points)} unique time points for labeling")
 
     # Create bump plot data using x-axis and param×data combinations as categories
     x_col = "tokens" if x_axis == "tokens" else "step"
@@ -849,19 +947,33 @@ def plot_bump_timesteps(
             category_col="category",
             marker="o",
             linewidth=2,
-            title=f"Rankings Over {x_label.title()} ({metric_str})",
+            title=custom_title
+            if custom_title
+            else f"Rankings Over {x_label.title()} ({metric_str})",
         )
 
         # Add annotations and labels
         ax = fm.get_axes(0, 0)
         add_left_ranking_labels(ax, bump_data)
-        add_value_annotations(ax, bump_data, first_last_only)
+        if show_value_labels:
+            add_value_annotations(
+                ax, bump_data, first_last_only, label_time_points, show_rank_labels
+            )
 
         # Format x-axis to show labels nicely
         if x_axis == "tokens":
             # Set log scale for token counts with proper formatting
             ax.set_xscale("log")
             ax.set_xlabel("Token Count (log scale)")
+            # Set x-limits for token mode
+            if xlim_min is not None or xlim_max is not None:
+                # Use custom limits if provided
+                min_limit = xlim_min if xlim_min is not None else 2e8
+                max_limit = xlim_max if xlim_max is not None else 1.2e11
+                ax.set_xlim(min_limit, max_limit)
+            else:
+                # Default limits (0.5B to 120B)
+                ax.set_xlim(2e8, 1.2e11)
             # Use FuncFormatter to properly format log scale tick labels
             ax.xaxis.set_major_formatter(
                 ticker.FuncFormatter(lambda x, _: format_token_count(x))
@@ -928,6 +1040,11 @@ def main() -> None:
         width_per_point=getattr(args, "width_per_point", 0.8),
         height_per_line=getattr(args, "height_per_line", 0.15),
         x_axis=getattr(args, "x_axis", "steps"),
+        show_rank_labels=getattr(args, "show_rank_labels", False),
+        custom_title=getattr(args, "title", None),
+        xlim_min=getattr(args, "xlim_min", None),
+        xlim_max=getattr(args, "xlim_max", None),
+        show_value_labels=not getattr(args, "no_value_labels", False),
     )
 
 
