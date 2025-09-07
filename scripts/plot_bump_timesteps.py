@@ -4,6 +4,14 @@ from __future__ import annotations
 
 import argparse
 
+# Formatting constants
+THOUSAND = 1000
+MILLION = 1e6
+BILLION = 1e9
+
+# Minimum data points for analysis
+MIN_POINTS_FOR_SAMPLING = 2
+
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import ticker
@@ -91,19 +99,19 @@ def create_bump_theme_with_colors(num_categories: int) -> Theme:
 
 
 def format_step_label(step: float) -> str:
-    if step >= 1000:
-        return f"{step / 1000:.1f}k"
+    if step >= THOUSAND:
+        return f"{step / THOUSAND:.1f}k"
     else:
         return f"{int(step)}"
 
 
 def format_token_count(token_count: float) -> str:
-    if token_count >= 1e9:
-        return f"{token_count / 1e9:.1f}B"
-    elif token_count >= 1e6:
-        return f"{token_count / 1e6:.0f}M"
-    elif token_count >= 1000:
-        return f"{token_count / 1000:.0f}K"
+    if token_count >= BILLION:
+        return f"{token_count / BILLION:.1f}B"
+    elif token_count >= MILLION:
+        return f"{token_count / MILLION:.0f}M"
+    elif token_count >= THOUSAND:
+        return f"{token_count / THOUSAND:.0f}K"
     else:
         return f"{int(token_count)}"
 
@@ -124,7 +132,7 @@ def downsample_timesteps(
         else:
             return bump_data
 
-    if max_points < 2:
+    if max_points < MIN_POINTS_FOR_SAMPLING:
         raise ValueError(
             "max_points must be at least 2 to preserve first and last points"
         )
@@ -133,8 +141,8 @@ def downsample_timesteps(
     selected_times = [time_points[0], time_points[-1]]
 
     # If we need more than just first and last, sample middle points
-    if max_points > 2:
-        middle_points_needed = max_points - 2
+    if max_points > MIN_POINTS_FOR_SAMPLING:
+        middle_points_needed = max_points - MIN_POINTS_FOR_SAMPLING
         middle_time_points = time_points[1:-1]  # Exclude first and last
 
         if middle_points_needed >= len(middle_time_points):
@@ -195,7 +203,7 @@ def get_model_size_color_scheme(categories: list[str]) -> dict[str, str]:
 
 
 def downsample_per_trajectory(bump_data: pd.DataFrame, max_points: int) -> pd.DataFrame:
-    if max_points < 2:
+    if max_points < MIN_POINTS_FOR_SAMPLING:
         raise ValueError(
             "max_points must be at least 2 to preserve first and last points"
         )
@@ -214,7 +222,8 @@ def downsample_per_trajectory(bump_data: pd.DataFrame, max_points: int) -> pd.Da
             sorted(original_data["time"].unique()) if not original_data.empty else []
         )
 
-        # If we have few enough original points, use them all plus interpolated as needed
+        # If we have few enough original points, use them all plus interpolated
+        # as needed
         if len(original_times) <= max_points:
             selected_times = set(original_times)
 
@@ -242,8 +251,8 @@ def downsample_per_trajectory(bump_data: pd.DataFrame, max_points: int) -> pd.Da
                 original_times[-1],
             ]  # Keep first/last original
 
-            if max_points > 2:
-                middle_points_needed = max_points - 2
+            if max_points > MIN_POINTS_FOR_SAMPLING:
+                middle_points_needed = max_points - MIN_POINTS_FOR_SAMPLING
                 middle_original_times = original_times[1:-1]
 
                 if middle_points_needed >= len(middle_original_times):
@@ -277,7 +286,7 @@ def add_start_final_rank_labels(
 ) -> None:
     time_points = sorted(bump_data["time"].unique())
 
-    if len(time_points) < 2:
+    if len(time_points) < MIN_POINTS_FOR_SAMPLING:
         return  # Need at least 2 time points for start/final comparison
 
     first_time = time_points[0]
@@ -394,10 +403,12 @@ def add_value_annotations(
         if label_time_points is not None:
             if row["time"] not in label_time_points:
                 continue
-            # Even if in label_time_points, skip if this is an interpolated point for this trajectory
+            # Even if in label_time_points, skip if this is an interpolated point
+            # for this trajectory
             if row.get("is_interpolated", False):
                 continue
-        # Original logic: skip value labels for interpolated points (unless in first-last-only mode)
+        # Original logic: skip value labels for interpolated points
+        # (unless in first-last-only mode)
         elif row.get("is_interpolated", False) and not first_last_only:
             continue
 
@@ -561,7 +572,7 @@ def select_label_points(
     x_col: str,
     max_points: int,
 ) -> set[float]:
-    if max_points < 2:
+    if max_points < MIN_POINTS_FOR_SAMPLING:
         raise ValueError(
             "max_points must be at least 2 to preserve first and last points"
         )
@@ -584,8 +595,8 @@ def select_label_points(
             # Downsample original points only
             combo_selected = [original_times[0], original_times[-1]]  # Keep first/last
 
-            if max_points > 2:
-                middle_points_needed = max_points - 2
+            if max_points > MIN_POINTS_FOR_SAMPLING:
+                middle_points_needed = max_points - MIN_POINTS_FOR_SAMPLING
                 middle_times = original_times[1:-1]  # Exclude first and last
 
                 if middle_points_needed >= len(middle_times):
@@ -716,7 +727,9 @@ def resolve_data_groups(data_args: list[str]) -> list[str]:
     return list(dict.fromkeys(resolved_recipes))
 
 
-def plot_bump_timesteps(
+# TODO: Refactor this function - it's overly complex (131 statements, 24 branches)
+# Consider breaking into smaller functions for data preparation, plotting, and output
+def plot_bump_timesteps(  # noqa: C901, PLR0912, PLR0915
     metric: str = "pile-valppl",
     params: list[str] | None = None,
     data: list[str] | None = None,

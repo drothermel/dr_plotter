@@ -235,7 +235,8 @@ class BasePlotter:
     def _resolve_computed_parameters(self, phase: str, context: dict) -> dict[str, Any]:  # noqa: ARG002
         return {}
 
-    # The _build_plot_args method has been removed as part of the configuration system refactoring.
+    # The _build_plot_args method has been removed as part of the configuration
+    # system refactoring.
     # All plotters now use _resolve_phase_config instead.
 
     def _should_create_legend(self) -> bool:
@@ -298,7 +299,7 @@ class BasePlotter:
     def _setup_group_context(
         self,
         group_info: GroupInfo,
-        group_index: int,
+        group_index: int,  # noqa: ARG002
         n_groups: int,  # noqa: ARG002
     ) -> GroupContext:
         name, group_data = group_info

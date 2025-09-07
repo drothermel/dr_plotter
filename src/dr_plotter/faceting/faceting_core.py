@@ -31,7 +31,8 @@ def prepare_faceted_subplots(
     if config.target_row is not None and config.target_col is not None:
         # Validate the target position is within the grid
         assert config.target_row < rows and config.target_col < cols, (
-            f"Target position ({config.target_row}, {config.target_col}) exceeds grid dimensions {grid_shape}"
+            f"Target position ({config.target_row}, {config.target_col}) "
+            f"exceeds grid dimensions {grid_shape}"
         )
 
         # When targeting a specific position, use all the data for that position

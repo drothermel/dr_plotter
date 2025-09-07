@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field, fields
 from typing import Any
 
+TUPLE_MIN_ELEMENTS = 2
+TUPLE_MAX_ELEMENTS = 3
+
 
 @dataclass
 class LayoutConfig:
@@ -74,10 +77,10 @@ class LayoutConfig:
         elif isinstance(value, cls):
             return value
         elif isinstance(value, tuple):
-            assert len(value) in {2, 3}, (
-                f"Tuple must have 2 or 3 elements, got {len(value)}"
+            assert len(value) in {TUPLE_MIN_ELEMENTS, TUPLE_MAX_ELEMENTS}, (
+                f"Tuple must have {TUPLE_MIN_ELEMENTS} or {TUPLE_MAX_ELEMENTS} elements, got {len(value)}"
             )
-            if len(value) == 2:
+            if len(value) == TUPLE_MIN_ELEMENTS:
                 return cls(rows=value[0], cols=value[1])
             else:
                 return cls(rows=value[0], cols=value[1], **value[2])

@@ -164,7 +164,9 @@ def resolve_dimension_values(
         raise ValueError(f"Unknown dimension: {dimension}")
 
 
-def plot_means(
+# TODO: Refactor this function - it's overly complex (86 statements, 28 branches)
+# Consider breaking into smaller functions for data preparation, plotting, and formatting
+def plot_means(  # noqa: C901, PLR0912, PLR0915
     row: str | None = None,
     col: str | None = None,
     lines: str | None = None,
@@ -348,10 +350,7 @@ def plot_means(
         # Apply axis limits if specified
         if xlim or ylim:
             for facet_idx in range(nfacets):
-                if row:
-                    ax = fm.get_axes(facet_idx, 0)
-                else:
-                    ax = fm.get_axes(0, facet_idx)
+                ax = fm.get_axes(facet_idx, 0) if row else fm.get_axes(0, facet_idx)
                 if xlim:
                     ax.set_xlim(xlim)
                 if ylim:
