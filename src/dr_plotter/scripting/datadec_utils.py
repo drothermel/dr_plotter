@@ -34,7 +34,7 @@ def get_datadec_constants() -> tuple[
     metric_names = datadec.constants.METRIC_NAMES
     primary_metric_name = "primary_metric"
     default_proxy_metric_name = "correct_prob"
-    id_cols = ["params", "data", "step", "seed"]
+    id_cols = ["params", "data", "step", "tokens", "seed"]
 
     return (
         ppl_metrics,

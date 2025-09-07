@@ -31,7 +31,8 @@ def prepare_faceted_subplots(
     if config.target_row is not None and config.target_col is not None:
         # Validate the target position is within the grid
         assert config.target_row < rows and config.target_col < cols, (
-            f"Target position ({config.target_row}, {config.target_col}) exceeds grid dimensions {grid_shape}"
+            f"Target position ({config.target_row}, {config.target_col}) "
+            f"exceeds grid dimensions {grid_shape}"
         )
 
         # When targeting a specific position, use all the data for that position
@@ -309,7 +310,7 @@ def _apply_exterior_labels(
     row_values = _extract_dimension_values(data, config.rows, config.row_order)
     col_values = _extract_dimension_values(data, config.cols, config.col_order)
     n_rows = len(row_values) if config.rows else 1
-    n_cols = len(col_values) if config.cols else 1
+    n_cols = len(col_values) if config.cols else 1  # noqa: F841
 
     # Apply exterior x label (bottom row only)
     if config.exterior_x_label and row == n_rows - 1:

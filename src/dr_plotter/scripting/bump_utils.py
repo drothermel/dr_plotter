@@ -5,6 +5,8 @@ from typing import Any
 import pandas as pd
 from datadec.model_utils import param_to_numeric
 
+MIN_TIME_POINTS_FOR_FILTERING = 2
+
 
 def apply_first_last_filter(
     bump_data: pd.DataFrame, time_col: str = "time", category_col: str = "category"
@@ -44,7 +46,7 @@ def apply_first_last_filter(
             # Numeric values like training steps - use regular numeric sorting
             time_points = sorted(time_values)
 
-        if len(time_points) < 2:
+        if len(time_points) < MIN_TIME_POINTS_FOR_FILTERING:
             filtered_data.append(cat_data)
         else:
             first_last = cat_data[

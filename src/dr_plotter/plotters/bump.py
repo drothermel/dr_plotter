@@ -69,7 +69,7 @@ class BumpPlotter(BasePlotter):
         categories = self.plot_data[self.category_col].unique()
         self.trajectory_data = []
 
-        for i, category in enumerate(categories):
+        for _i, category in enumerate(categories):
             cat_data = self.plot_data[self.plot_data[self.category_col] == category]
             cat_data = cat_data.sort_values(by=self.time_col).copy()
 
@@ -92,7 +92,8 @@ class BumpPlotter(BasePlotter):
     ) -> dict[str, Any]:
         return {}
 
-    def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
+    # TODO: Check if data parameter should be used instead of self.plot_data
+    def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:  # noqa: ARG002
         # Configure axis once before drawing trajectories
         self._configure_bump_axes(ax)
 

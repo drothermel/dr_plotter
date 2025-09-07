@@ -129,11 +129,12 @@ class BasePlotter:
     def _draw(self, ax: Any, data: pd.DataFrame, **kwargs: Any) -> None:
         pass
 
+    # TODO: Evaluate if group_position is needed for positioning logic
     def _draw_grouped(
         self,
         ax: Any,
         data: pd.DataFrame,
-        group_position: dict[str, Any],
+        group_position: dict[str, Any],  # noqa: ARG002
         **kwargs: Any,
     ) -> None:
         if not self.supports_grouped:
@@ -230,10 +231,12 @@ class BasePlotter:
         config.update(self._resolve_computed_parameters(phase, context))
         return config
 
-    def _resolve_computed_parameters(self, phase: str, context: dict) -> dict[str, Any]:
+    # TODO: Consider removing unused parameters if not needed by subclasses
+    def _resolve_computed_parameters(self, phase: str, context: dict) -> dict[str, Any]:  # noqa: ARG002
         return {}
 
-    # The _build_plot_args method has been removed as part of the configuration system refactoring.
+    # The _build_plot_args method has been removed as part of the configuration
+    # system refactoring.
     # All plotters now use _resolve_phase_config instead.
 
     def _should_create_legend(self) -> bool:
@@ -292,8 +295,12 @@ class BasePlotter:
             return self.plot_data[self.x_col].unique()
         return None
 
+    # TODO: Check if group_index/n_groups are needed for future group positioning
     def _setup_group_context(
-        self, group_info: GroupInfo, group_index: int, n_groups: int
+        self,
+        group_info: GroupInfo,
+        group_index: int,  # noqa: ARG002
+        n_groups: int,  # noqa: ARG002
     ) -> GroupContext:
         name, group_data = group_info
 
@@ -379,5 +386,6 @@ class BasePlotter:
         ylabel_text = styles.get("text", self.styler.get_style("ylabel", None))
         apply_ylabel_styling(ax, self.styler, ylabel_text)
 
-    def _style_grid(self, ax: Any, styles: dict[str, Any]) -> None:
+    # TODO: Determine if styles parameter should be used for grid customization
+    def _style_grid(self, ax: Any, styles: dict[str, Any]) -> None:  # noqa: ARG002
         apply_grid_styling(ax, self.styler)

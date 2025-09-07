@@ -169,7 +169,8 @@ def example_4_targeted_plotting() -> None:
             & (data["dataset"] == data["dataset"].unique()[1])  # Col 1 (second dataset)
         ]
 
-        # Use target_row and target_col to place the highlighted data at specific positions
+        # Use target_row and target_col to place the highlighted data at
+        # specific positions
         fm.plot_faceted(
             data=highlight_data,
             plot_type="line",

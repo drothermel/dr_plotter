@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 
 import argparse
 
@@ -11,7 +12,7 @@ from dr_plotter.scripting.datadec_utils import get_datadec_functions, prepare_pl
 
 def create_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Plot training curves with multiple seeds for DataDecide evaluation data"
+        description="Plot training curves with multiple seeds for DataDecide evaluation"
     )
 
     parser.add_argument(
@@ -22,7 +23,7 @@ def create_arg_parser() -> argparse.ArgumentParser:
         "--params",
         nargs="+",
         default=["all"],
-        help="Model parameter sizes to include (e.g., 10M 60M 90M) or 'all' for all available",
+        help="Model parameter sizes to include (e.g., 10M 60M 90M) or 'all'",
     )
 
     parser.add_argument(
@@ -50,7 +51,7 @@ def create_arg_parser() -> argparse.ArgumentParser:
         "--legend",
         choices=["subplot", "grouped", "figure"],
         default="subplot",
-        help="Legend strategy: subplot (per-axes), grouped (by-channel), figure (single)",
+        help="Legend strategy: subplot (per-axes), grouped (by-channel), figure",
     )
 
     parser.add_argument("--save", type=str, help="Save plot to file (specify path)")
