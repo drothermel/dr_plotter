@@ -78,7 +78,9 @@ class LayoutConfig:
             return value
         elif isinstance(value, tuple):
             assert len(value) in {TUPLE_MIN_ELEMENTS, TUPLE_MAX_ELEMENTS}, (
-                f"Tuple must have {TUPLE_MIN_ELEMENTS} or {TUPLE_MAX_ELEMENTS} elements, got {len(value)}"
+                f"Tuple must have {TUPLE_MIN_ELEMENTS} or"
+                f" {TUPLE_MAX_ELEMENTS} elements, "
+                f"got {len(value)}"
             )
             if len(value) == TUPLE_MIN_ELEMENTS:
                 return cls(rows=value[0], cols=value[1])

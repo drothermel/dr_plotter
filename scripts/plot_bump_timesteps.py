@@ -4,14 +4,6 @@ from __future__ import annotations
 
 import argparse
 
-# Formatting constants
-THOUSAND = 1000
-MILLION = 1e6
-BILLION = 1e9
-
-# Minimum data points for analysis
-MIN_POINTS_FOR_SAMPLING = 2
-
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import ticker
@@ -30,6 +22,14 @@ from dr_plotter.scripting.datadec_utils import (
     prepare_plot_data,
 )
 from dr_plotter.theme import BUMP_PLOT_THEME, Theme
+
+# Formatting constants
+THOUSAND = 1000
+MILLION = 1e6
+BILLION = 1e9
+
+# Minimum data points for analysis
+MIN_POINTS_FOR_SAMPLING = 2
 
 
 def format_perplexity(ppl_value: float) -> str:
@@ -439,7 +439,7 @@ def add_value_annotations(
 
 def create_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Plot bump chart rankings across training steps for model sizes and data combinations"
+        description="Plot bump chart rankings across training steps",
     )
 
     parser.add_argument(
@@ -460,7 +460,11 @@ def create_arg_parser() -> argparse.ArgumentParser:
         "--data",
         nargs="+",
         default=["all"],
-        help="Data recipes: 'all', 'base', 'base_qc', 'no_ablations', or specific names. Named groups: 'core_datasets', 'dolma17_variants', 'dclm_variants', 'falcon_cc_variants', 'fineweb_variants', 'mix_with_baselines', 'best_ppl', 'good_ppl', 'medium_ppl', 'poor_ppl', 'best_olmes', 'good_olmes', 'medium_olmes', 'poor_olmes'",
+        help="Data recipes: 'all', 'base', 'base_qc', 'no_ablations',"
+        " or specific names. Named groups: 'core_datasets', 'dolma17_variants',"
+        " 'dclm_variants', 'falcon_cc_variants', 'fineweb_variants', "
+        "'mix_with_baselines', 'best_ppl', 'good_ppl', 'medium_ppl', 'poor_ppl',"
+        " 'best_olmes', 'good_olmes', 'medium_olmes', 'poor_olmes'",
     )
 
     parser.add_argument(
@@ -480,7 +484,7 @@ def create_arg_parser() -> argparse.ArgumentParser:
         nargs=2,
         type=float,
         default=[14, 8],
-        help="Figure size width height (default: 14 8) - ignored when using dynamic sizing",
+        help="Figure size width height (default: 14 8)",
     )
 
     parser.add_argument(
@@ -518,20 +522,20 @@ def create_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--interpolate",
         action="store_true",
-        help="Use linear interpolation for missing timestep data instead of filtering to complete steps only",
+        help="Use linear interpolation for missing timestep data ",
     )
 
     parser.add_argument(
         "--max-points",
         type=int,
-        help="Maximum number of timestep points to show (downsamples by keeping first, last, and evenly spaced middle points)",
+        help="Maximum number of timestep points to show",
     )
 
     parser.add_argument(
         "--x-axis",
         choices=["steps", "tokens"],
         default="steps",
-        help="X-axis type: 'steps' for training steps or 'tokens' for token count (default: steps)",
+        help="X-axis type: 'steps' for training steps or 'tokens' for token count",
     )
 
     parser.add_argument(
@@ -549,13 +553,13 @@ def create_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--xlim-min",
         type=float,
-        help="Minimum x-axis limit (for token mode, specify in token count, e.g., 1e9 for 1B)",
+        help="Minimum x-axis limit (for token mode, specify in token count)",
     )
 
     parser.add_argument(
         "--xlim-max",
         type=float,
-        help="Maximum x-axis limit (for token mode, specify in token count, e.g., 1e11 for 100B)",
+        help="Maximum x-axis limit (for token mode, specify in token count)",
     )
 
     parser.add_argument(
@@ -578,7 +582,7 @@ def select_label_points(
         )
 
     # Only work with original (non-interpolated) data
-    original_df = df[df["is_interpolated"] == False].copy()
+    original_df = df[~df["is_interpolated"]].copy()
 
     selected_times = set()
 
@@ -625,15 +629,17 @@ def prepare_interpolated_data(
     x_col = "tokens" if x_axis == "tokens" else "step"
 
     print(
-        f"Using linear interpolation to fill missing timestep data for {len(params) * len(data)} param×data combinations"
+        f"Using linear interpolation to fill missing timestep data for "
+        f"{len(params) * len(data)} param×data combinations"
     )
 
-    # Find the minimum of minimum x-values across all combinations (earliest common point)
+    # Find the min of min x-values across all combinations (earliest common point)
     min_x_per_combo = df.groupby("param_data_combo")[x_col].min()
     common_start_x = min_x_per_combo.min()
     x_label = "token" if x_axis == "tokens" else "step"
     print(
-        f"Starting plot at {x_label} {common_start_x} (earliest common point across all combinations)"
+        f"Starting plot at {x_label} {common_start_x} "
+        "(earliest common point across all combinations)"
     )
 
     # Get all unique x-values from the common start point
@@ -670,10 +676,12 @@ def prepare_interpolated_data(
         interpolated_data["data"] = combo_data["data"].iloc[0]
         interpolated_data["param_data_combo"] = combo
 
-        # Add other columns if they exist (e.g., tokens when x_col is "step", or step when x_col is "tokens")
+        # Add other columns if they exist (e.g., tokens when x_col is
+        # "step", or step when x_col is "tokens")
         if x_axis == "tokens" and "step" in combo_data.columns:
             # For token-based plots, we need to maintain the step-token relationship
-            # This is complex because tokens might not map directly to our interpolated points
+            # This is complex because tokens might not map directly
+            # to our interpolated points
             # For now, we'll set step to None for interpolated points
             step_mapping = dict(zip(combo_data[x_col], combo_data["step"]))
             interpolated_data["step"] = [
@@ -786,7 +794,8 @@ def plot_bump_timesteps(  # noqa: C901, PLR0912, PLR0915
         ].drop_duplicates()
         df = df.merge(token_info, on=["params", "data", "step"], how="left")
         print(
-            f"Added token information. Token range: {df['tokens'].min():.0f} to {df['tokens'].max():.0f}"
+            f"Added token information. Token range: {df['tokens'].min():.0f} to "
+            f"{df['tokens'].max():.0f}"
         )
 
     print(f"\nData after prepare_plot_data: {df.shape}")
@@ -811,7 +820,7 @@ def plot_bump_timesteps(  # noqa: C901, PLR0912, PLR0915
         print(f"No data found for model sizes {params} with the specified filters")
         return
 
-    # Create param×data combinations as categories for bump plot
+    # Create param x data combinations as categories for bump plot
     df["param_data_combo"] = df["params"].astype(str) + "-" + df["data"].astype(str)
 
     # Mark all initial data as original (not interpolated)
@@ -827,12 +836,12 @@ def plot_bump_timesteps(  # noqa: C901, PLR0912, PLR0915
         df["is_interpolated"] = False
 
         # Show data coverage info
-        combo_counts_per_step = df.groupby("step")["param_data_combo"].nunique()
         total_possible_combos = len(params) * len(data)
         available_combos = df["param_data_combo"].nunique()
 
         print(
-            f"Data coverage: {available_combos} of {total_possible_combos} param×data combinations have data"
+            f"Data coverage: {available_combos} of {total_possible_combos} "
+            "param×data combinations have data"
         )
         print("Using all available data without requiring complete coverage")
 
@@ -854,20 +863,22 @@ def plot_bump_timesteps(  # noqa: C901, PLR0912, PLR0915
     label_time_points = None
     if max_points is not None:
         print(
-            f"\nSelecting max {max_points} label points per trajectory from original data"
+            f"\nSelecting max {max_points} label points per trajectory from "
+            "original data"
         )
         x_col = "tokens" if x_axis == "tokens" else "step"
         label_time_points = select_label_points(df, x_col, max_points)
         print(f"Selected {len(label_time_points)} unique time points for labeling")
 
-    # Create bump plot data using x-axis and param×data combinations as categories
+    # Create bump plot data using x-axis and param x data combinations as categories
     x_col = "tokens" if x_axis == "tokens" else "step"
     x_label = "token count" if x_axis == "tokens" else "training steps"
 
     bump_data = df.rename(
         columns={
             x_col: "time",  # X-axis values (steps or tokens) become time dimension
-            "param_data_combo": "category",  # Param×Data combinations become categories (trajectories)
+            "param_data_combo": "category",  # Param x Data combinations become
+            # categories (trajectories)
             "value": "score",  # Performance values (lower is better for perplexity)
         }
     )[["time", "category", "score", "is_interpolated"]]
@@ -929,13 +940,15 @@ def plot_bump_timesteps(  # noqa: C901, PLR0912, PLR0915
     # Dynamic figure sizing based on data complexity
     num_time_points = len(bump_data["time"].unique())
 
-    # Pure scaling: width = time_points * scaling_factor, height = categories * scaling_factor
+    # Pure scaling: width = time_points * scaling_factor,
+    # height = categories * scaling_factor
     dynamic_width = num_time_points * width_per_point
     dynamic_height = num_categories * height_per_line
 
     dynamic_figsize = (dynamic_width, dynamic_height)
     print(
-        f"Dynamic figure size: {dynamic_figsize[0]:.1f} x {dynamic_figsize[1]:.1f} ({num_time_points} points, {num_categories} lines)"
+        f"Dynamic figure size: {dynamic_figsize[0]:.1f} x {dynamic_figsize[1]:.1f} "
+        f"({num_time_points} points, {num_categories} lines)"
     )
 
     with FigureManager(

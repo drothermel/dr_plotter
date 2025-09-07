@@ -14,7 +14,7 @@ from dr_plotter.scripting.datadec_utils import get_datadec_functions, prepare_pl
 
 def create_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Plot mean training curves with faceted layout for DataDecide evaluation data"
+        description="Plot mean training curves with faceted layout for DataDecide eval"
     )
 
     # Faceting structure (mutually exclusive)
@@ -86,7 +86,7 @@ def create_arg_parser() -> argparse.ArgumentParser:
         "--legend",
         choices=["subplot", "grouped", "figure"],
         default="subplot",
-        help="Legend strategy: subplot (per-axes), grouped (by-channel), figure (single)",
+        help="Legend strategy: subplot (per-axes), grouped (by-channel), figure",
     )
 
     # Output (reused from plot_seeds)
@@ -165,7 +165,7 @@ def resolve_dimension_values(
 
 
 # TODO: Refactor this function - it's overly complex (86 statements, 28 branches)
-# Consider breaking into smaller functions for data preparation, plotting, and formatting
+# Consider breaking into smaller functions for data preparation, plotting, and format
 def plot_means(  # noqa: C901, PLR0912, PLR0915
     row: str | None = None,
     col: str | None = None,
@@ -227,11 +227,8 @@ def plot_means(  # noqa: C901, PLR0912, PLR0915
         elif dim == "data":
             if values:
                 all_data = resolve_dimension_values("data", values, dd, [], [], [])
-        elif dim == "metrics":
-            if values:
-                all_metrics = resolve_dimension_values(
-                    "metrics", values, dd, [], [], []
-                )
+        elif dim == "metrics" and values:
+            all_metrics = resolve_dimension_values("metrics", values, dd, [], [], [])
 
     # Use "all" for dimensions not explicitly specified
     if not all_params:
