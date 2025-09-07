@@ -107,7 +107,8 @@ def numerical_sort_key(param_size: str) -> float:
 def add_left_ranking_labels(ax: plt.Axes, bump_data: pd.DataFrame) -> None:
     """Add recipe name labels on the left side showing initial rankings."""
 
-    # Get first time point data for initial rankings (sort numerically, not alphabetically)
+    # Get first time point data for initial rankings
+    # (sort numerically, not alphabetically)
     time_points = sorted(bump_data["time"].unique(), key=numerical_sort_key)
     first_time = time_points[0]
     first_time_data = bump_data[bump_data["time"] == first_time].copy()
@@ -167,7 +168,8 @@ def add_right_ranking_labels(ax: plt.Axes, bump_data: pd.DataFrame) -> None:
 
 
 def add_value_annotations(ax: plt.Axes, bump_data: pd.DataFrame) -> None:
-    # Create mapping from model size names to numeric positions for x-axis (sorted numerically)
+    # Create mapping from model size names to numeric positions for x-axis
+    # (sorted numerically)
     time_points = sorted(bump_data["time"].unique(), key=numerical_sort_key)
     time_to_x = {time_point: idx for idx, time_point in enumerate(time_points)}
 
@@ -229,7 +231,13 @@ def create_arg_parser() -> argparse.ArgumentParser:
         "--data",
         nargs="+",
         default=["all"],
-        help="Data recipes: 'all', 'base', 'base_qc', 'no_ablations', or specific names. Named groups: 'core_datasets', 'dolma17_variants', 'dclm_variants', 'falcon_cc_variants', 'fineweb_variants', 'mix_with_baselines', 'best_ppl', 'good_ppl', 'medium_ppl', 'poor_ppl', 'best_olmes', 'good_olmes', 'medium_olmes', 'poor_olmes'",
+        help=(
+            "Data recipes: 'all', 'base', 'base_qc', 'no_ablations', or names. "
+            "Named groups: 'core_datasets', 'dolma17_variants', 'dclm_variants', "
+            "'falcon_cc_variants', 'fineweb_variants', 'mix_with_baselines', "
+            "'best_ppl', 'good_ppl', 'medium_ppl', 'poor_ppl', 'best_olmes', "
+            "'good_olmes', 'medium_olmes', 'poor_olmes'"
+        ),
     )
 
     parser.add_argument(
@@ -302,7 +310,9 @@ def resolve_data_groups(data_args: list[str]) -> list[str]:
     return list(dict.fromkeys(resolved_recipes))
 
 
-def plot_bump(
+# TODO: Refactor this function - it has grown too large (85 statements)
+# Consider breaking into smaller functions for data preparation, plotting, and output
+def plot_bump(  # noqa: PLR0915
     metric: str = "pile-valppl",
     params: list[str] | None = None,
     data: list[str] | None = None,
@@ -410,7 +420,8 @@ def plot_bump(
     print("\nFirst time rankings (LEFT labels):")
     for _, row in first_data.iterrows():
         print(
-            f"  Rank {row['rank']}: {row['category']} (ppl={row['original_ppl']:.2f}, score={row['score']:.2f})"
+            f"  Rank {row['rank']}: {row['category']} "
+            f"(ppl={row['original_ppl']:.2f}, score={row['score']:.2f})"
         )
 
     # Last time rankings (what right labels should show)
@@ -420,7 +431,8 @@ def plot_bump(
     print("\nLast time rankings (RIGHT labels):")
     for _, row in last_data.iterrows():
         print(
-            f"  Rank {row['rank']}: {row['category']} (ppl={row['original_ppl']:.2f}, score={row['score']:.2f})"
+            f"  Rank {row['rank']}: {row['category']} "
+            f"(ppl={row['original_ppl']:.2f}, score={row['score']:.2f})"
         )
 
     print("\n=== End Debug ===\n")

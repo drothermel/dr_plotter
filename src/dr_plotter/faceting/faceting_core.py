@@ -309,7 +309,7 @@ def _apply_exterior_labels(
     row_values = _extract_dimension_values(data, config.rows, config.row_order)
     col_values = _extract_dimension_values(data, config.cols, config.col_order)
     n_rows = len(row_values) if config.rows else 1
-    n_cols = len(col_values) if config.cols else 1
+    n_cols = len(col_values) if config.cols else 1  # noqa: F841
 
     # Apply exterior x label (bottom row only)
     if config.exterior_x_label and row == n_rows - 1:

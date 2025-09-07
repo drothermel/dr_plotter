@@ -72,11 +72,12 @@ class PositioningCalculator:
             tight_layout_pad=self.config.tight_layout_pad,
         )
 
+    # TODO: Implement manual positioning overrides for legend placement
     def _calculate_figure_legend_positions(
         self,
         figure_dimensions: FigureDimensions,
         legend_metadata: LegendMetadata,
-        manual_overrides: dict[str, Any],
+        manual_overrides: dict[str, Any],  # noqa: ARG002
     ) -> PositioningResult:
         num_legends = legend_metadata.num_legends
 

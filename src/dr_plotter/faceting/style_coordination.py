@@ -57,10 +57,11 @@ class FacetStyleCoordinator:
 
         return self._style_assignments[dimension][value].copy()
 
+    # TODO: Consider if row/col parameters are needed for future subplot styling
     def get_subplot_styles(
         self,
-        row: int,
-        col: int,
+        row: int,  # noqa: ARG002
+        col: int,  # noqa: ARG002
         dimension: str | None,
         subplot_data: pd.DataFrame,
         **plot_kwargs: Any,

@@ -1,8 +1,6 @@
 from typing import Any
 
-from plot_data import ExampleData
-
-from dr_plotter import consts
+import pandas as pd
 from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
@@ -10,15 +8,33 @@ from dr_plotter.scripting.datadec_utils import get_datadec_functions, prepare_pl
 
 DataDecide, select_params, select_data = get_datadec_functions()
 
-def normalize_df(df, params, data):
-    # For each (params, data) group, get the row with the minimum tokens (and all columns)
+
+def normalize_df(df: pd.DataFrame, params: list[str], data: list[str]) -> pd.DataFrame:
+    # For each (params, data) group, get the row with the minimum tokens
+    # (and all columns)
     idx_min = df.groupby(["params", "data"])["tokens"].idxmin()
     idx_max = df.groupby(["params", "data"])["tokens"].idxmax()
-    df_pd_min = df.loc[idx_min].reset_index(drop=True).rename(
-        columns={"tokens": "min_tokens", "value": "min_step_value", "step": "min_step"},
+    df_pd_min = (
+        df.loc[idx_min]
+        .reset_index(drop=True)
+        .rename(
+            columns={
+                "tokens": "min_tokens",
+                "value": "min_step_value",
+                "step": "min_step",
+            },
+        )
     )
-    df_pd_max = df.loc[idx_max].reset_index(drop=True).rename(
-        columns={"tokens": "max_tokens", "value": "max_step_value", "step": "max_step"},
+    df_pd_max = (
+        df.loc[idx_max]
+        .reset_index(drop=True)
+        .rename(
+            columns={
+                "tokens": "max_tokens",
+                "value": "max_step_value",
+                "step": "max_step",
+            },
+        )
     )
     df = df.merge(df_pd_min, on=["params", "data"], how="left")
     df = df.merge(df_pd_max, on=["params", "data"], how="left")
@@ -28,16 +44,13 @@ def normalize_df(df, params, data):
     return df
 
 
-
-
 def main(args: Any) -> Any:
-
     dd = DataDecide()
     for c in dd.full_eval.columns:
         print(c)
     params = select_params(["20M", "60M", "90M", "530M"])
     data = select_data("Dolma1.7")
-    metric = 'pile-valppl'
+    metric = "pile-valppl"
     metrics = [metric]
     df = prepare_plot_data(dd, params, data, metrics, aggregate_seeds=True)
     df = normalize_df(df, params, data)
@@ -46,7 +59,9 @@ def main(args: Any) -> Any:
     y_val = "normed_centered_value"
 
     with FigureManager(
-        PlotConfig(layout={"rows": 2, "cols": 4, "figsize": (16, 10), "tight_layout_pad": 1.0})
+        PlotConfig(
+            layout={"rows": 2, "cols": 4, "figsize": (16, 10), "tight_layout_pad": 1.0}
+        )
     ) as fm:
         fm.fig.suptitle(f"{metric} for {data}", fontsize=16)
         # Multiple lines with hue
@@ -58,7 +73,7 @@ def main(args: Any) -> Any:
             x="tokens",
             y=y_val,
             hue_by="params",
-            title=f"lin-lin x=tokens",
+            title="lin-lin x=tokens",
             xlabel="Tokens",
             ylabel="PPL",
         )
@@ -70,7 +85,7 @@ def main(args: Any) -> Any:
             x="tokens",
             y=y_val,
             hue_by="params",
-            title=f"lin-log x=tokens",
+            title="lin-log x=tokens",
             xlabel="Tokens",
             ylabel="PPL (log scale)",
         )
@@ -82,7 +97,7 @@ def main(args: Any) -> Any:
             x="tokens",
             y=y_val,
             hue_by="params",
-            title=f"log-lin x=tokens",
+            title="log-lin x=tokens",
             xlabel="Tokens (log scale)",
             ylabel="PPL",
         )
@@ -94,23 +109,23 @@ def main(args: Any) -> Any:
             x="tokens",
             y=y_val,
             hue_by="params",
-            title=f"log-log x=tokens",
+            title="log-log x=tokens",
             xlabel="Tokens (log scale)",
             ylabel="PPL (log scale)",
         )
-        #fm.get_axes(0, 0).set_xscale("log")
-        #fm.get_axes(0, 0).set_yscale("log")
+        # fm.get_axes(0, 0).set_xscale("log")
+        # fm.get_axes(0, 0).set_yscale("log")
 
-        #fm.get_axes(0, 1).set_xscale("log")
+        # fm.get_axes(0, 1).set_xscale("log")
         fm.get_axes(0, 1).set_yscale("log")
 
         fm.get_axes(0, 2).set_xscale("log")
-        #fm.get_axes(0, 2).set_yscale("log")
+        # fm.get_axes(0, 2).set_yscale("log")
 
         fm.get_axes(0, 3).set_xscale("log")
         fm.get_axes(0, 3).set_yscale("log")
-        #fm.get_axes(0, 1).set_ylim(0, 1)
-        #fm.get_axes(0, 2).set_ylim(0, 1)
+        # fm.get_axes(0, 1).set_ylim(0, 1)
+        # fm.get_axes(0, 2).set_ylim(0, 1)
         """
         fm.plot(
             "line",
@@ -155,8 +170,8 @@ def main(args: Any) -> Any:
         fm.get_axes(0, 1).set_ylim(0, 1)
         fm.get_axes(0, 2).set_ylim(0, 1)
         """
-        #fm.get_axes(0, 1).set_xscale("log")
-        #fm.get_axes(0, 2).set_xscale("log")
+        # fm.get_axes(0, 1).set_xscale("log")
+        # fm.get_axes(0, 2).set_xscale("log")
         fm.plot(
             "line",
             1,
@@ -165,7 +180,7 @@ def main(args: Any) -> Any:
             x="normed_x",
             y=y_val,
             hue_by="params",
-            title=f"lin-lin x=% training",
+            title="lin-lin x=% training",
             xlabel="% of training tokens",
             ylabel="PPL",
         )
@@ -177,7 +192,7 @@ def main(args: Any) -> Any:
             x="normed_x",
             y=y_val,
             hue_by="params",
-            title=f"lin-log x=% training",
+            title="lin-log x=% training",
             xlabel="% of training tokens",
             ylabel="PPL (log scale)",
         )
@@ -189,7 +204,7 @@ def main(args: Any) -> Any:
             x="normed_x",
             y=y_val,
             hue_by="params",
-            title=f"log-lin x=% training",
+            title="log-lin x=% training",
             xlabel="% of training tokens (log scale)",
             ylabel="PPL",
         )
@@ -201,24 +216,24 @@ def main(args: Any) -> Any:
             x="normed_x",
             y=y_val,
             hue_by="params",
-            title=f"log-log x=% training",
+            title="log-log x=% training",
             xlabel="% of training tokens (log scale)",
             ylabel="PPL (log scale)",
         )
-        #fm.get_axes(1, 0).set_yscale("log")
-        #fm.get_axes(1, 0).set_xscale("log")
+        # fm.get_axes(1, 0).set_yscale("log")
+        # fm.get_axes(1, 0).set_xscale("log")
 
-        #fm.get_axes(1, 1).set_xscale("log")
+        # fm.get_axes(1, 1).set_xscale("log")
         fm.get_axes(1, 1).set_yscale("log")
 
         fm.get_axes(1, 2).set_xscale("log")
-        #fm.get_axes(1, 2).set_yscale("log")
+        # fm.get_axes(1, 2).set_yscale("log")
 
         fm.get_axes(1, 3).set_yscale("log")
         fm.get_axes(1, 3).set_xscale("log")
 
-        #fm.get_axes(1, 1).set_ylim(0, 1)
-        #fm.get_axes(1, 2).set_ylim(0, 1)
+        # fm.get_axes(1, 1).set_ylim(0, 1)
+        # fm.get_axes(1, 2).set_ylim(0, 1)
         """
         fm.plot(
             "line",
