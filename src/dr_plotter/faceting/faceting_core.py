@@ -185,6 +185,11 @@ def _execute_plot_call(
     config: FacetingConfig,
     **kwargs: Any,
 ) -> Any:
+    # Filter out grouping parameters that matplotlib doesn't understand
+    from dr_plotter.configs import GroupingConfig
+    grouping_params = GroupingConfig.get_grouping_param_names()
+    filtered_kwargs = {k: v for k, v in kwargs.items() if k not in grouping_params}
+    
     plot_handlers = {
         "line": _plot_line_data,
         "scatter": _plot_scatter_data,
@@ -192,7 +197,7 @@ def _execute_plot_call(
         "fill_between": _plot_fill_between_data,
         "heatmap": _plot_heatmap_data,
     }
-    return plot_handlers[plot_type](ax, data, config, **kwargs)
+    return plot_handlers[plot_type](ax, data, config, **filtered_kwargs)
 
 
 def _plot_line_data(

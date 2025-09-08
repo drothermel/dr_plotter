@@ -49,6 +49,11 @@ class GroupingConfig:
         assert len(unsupported) == 0, f"Unsupported groupings: {unsupported}"
 
     @classmethod
+    def get_grouping_param_names(cls) -> set[str]:
+        """Get all possible grouping parameter names (e.g., 'hue_by', 'alpha_by')."""
+        return {f"{field.name}_by" for field in fields(cls)}
+
+    @classmethod
     def from_input(
         cls, value: dict[str, Any] | GroupingConfig | None
     ) -> GroupingConfig:
