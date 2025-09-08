@@ -13,7 +13,6 @@ from dr_plotter.configs import (
 )
 from dr_plotter.faceting.faceting_core import (
     get_grid_dimensions,
-    plot_faceted_data,
     prepare_faceted_subplots,
 )
 from dr_plotter.faceting.style_coordination import FacetStyleCoordinator
@@ -274,9 +273,20 @@ class FigureManager:
             k: v for k, v in kwargs.items() if not hasattr(FacetingConfig, k)
         }
 
-        plot_faceted_data(
-            self, data_subsets, plot_type, config, style_coordinator, **plot_kwargs
-        )
+        for (row, col), subplot_data in data_subsets.items():
+            filtered_kwargs = {
+                k: v for k, v in plot_kwargs.items() if not hasattr(FacetingConfig, k)
+            }
+            self.plot(
+                plot_type,
+                row,
+                col,
+                subplot_data,
+                x=config.x,
+                y=config.y,
+                hue_by=config.lines,
+                **filtered_kwargs,
+            )
 
     def _validate_grid_dimensions(self, grid_shape: tuple[int, int]) -> None:
         computed_rows, computed_cols = grid_shape
