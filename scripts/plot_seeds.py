@@ -116,7 +116,9 @@ def plot_seeds(
     if data is None or (len(data) == 1 and data[0] == "all"):
         data = dd.select_data("all", exclude=exclude_data)
 
-    df = dd.prepare_plot_data(params=params, data=data, metrics=[metric])
+    df = dd.prepare_plot_data(
+        params=params, data=data, metrics=[metric], auto_filter=True, melt=True
+    )
 
     metric_label = metric.replace("_", " ").title()
     nparams = len(params)

@@ -255,7 +255,12 @@ def plot_means(  # noqa: C901, PLR0912, PLR0915
 
     # Prepare data with all requested metrics (aggregate seeds for mean plotting)
     df = dd.prepare_plot_data(
-        params=all_params, data=all_data, metrics=all_metrics, aggregate_seeds=True
+        params=all_params,
+        data=all_data,
+        metrics=all_metrics,
+        aggregate_seeds=True,
+        auto_filter=True,
+        melt=True,
     )
     print(f"Data after prepare_plot_data: {df.shape}")
     print(f"Unique params in df: {sorted(df['params'].unique())}")

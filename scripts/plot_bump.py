@@ -350,7 +350,12 @@ def plot_bump(  # noqa: PLR0915
 
     # Get training curve data (not aggregated for bump plot temporal dimension)
     df = dd.prepare_plot_data(
-        params=params, data=data, metrics=metrics, aggregate_seeds=True
+        params=params,
+        data=data,
+        metrics=metrics,
+        aggregate_seeds=True,
+        auto_filter=True,
+        melt=True,
     )
 
     print(f"\nData after prepare_plot_data: {df.shape}")
