@@ -51,7 +51,9 @@ def main(args: Any) -> Any:
     data = dd.select_data("Dolma1.7")
     metric = "pile-valppl"
     metrics = [metric]
-    df = dd.prepare_plot_data(params=params, data=data, metrics=metrics, aggregate_seeds=True)
+    df = dd.prepare_plot_data(
+        params=params, data=data, metrics=metrics, aggregate_seeds=True
+    )
     df = normalize_df(df, params, data)
     print(df.head())
 

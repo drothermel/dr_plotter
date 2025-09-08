@@ -18,6 +18,7 @@ def check_datadec_available() -> bool:
 def get_datadec_instance() -> Any:
     check_datadec_available()
     from datadec import DataDecide
+
     return DataDecide()
 
 

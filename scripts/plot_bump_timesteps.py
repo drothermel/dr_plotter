@@ -783,7 +783,9 @@ def plot_bump_timesteps(  # noqa: C901, PLR0912, PLR0915
     print(f"Metric: {metrics}")
 
     # Get training curve data (not aggregated to preserve timestep dimension)
-    df = dd.prepare_plot_data(params=params, data=data, metrics=metrics, aggregate_seeds=True)
+    df = dd.prepare_plot_data(
+        params=params, data=data, metrics=metrics, aggregate_seeds=True
+    )
 
     # Add token information if x_axis is "tokens"
     if x_axis == "tokens":

@@ -189,7 +189,7 @@ def plot_means(  # noqa: C901, PLR0912, PLR0915
     ylim: tuple[float, float] | None = None,
 ) -> None:
     dd = get_datadec_instance()
-    
+
     exclude_params = exclude_params or []
     exclude_data = exclude_data or []
 
@@ -254,7 +254,9 @@ def plot_means(  # noqa: C901, PLR0912, PLR0915
     print(f"Metrics passed to prepare_plot_data: {all_metrics}")
 
     # Prepare data with all requested metrics (aggregate seeds for mean plotting)
-    df = dd.prepare_plot_data(params=all_params, data=all_data, metrics=all_metrics, aggregate_seeds=True)
+    df = dd.prepare_plot_data(
+        params=all_params, data=all_data, metrics=all_metrics, aggregate_seeds=True
+    )
     print(f"Data after prepare_plot_data: {df.shape}")
     print(f"Unique params in df: {sorted(df['params'].unique())}")
     print(f"Unique data in df: {sorted(df['data'].unique())}")

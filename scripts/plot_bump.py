@@ -349,7 +349,9 @@ def plot_bump(  # noqa: PLR0915
     print(f"Metric: {metrics}")
 
     # Get training curve data (not aggregated for bump plot temporal dimension)
-    df = dd.prepare_plot_data(params=params, data=data, metrics=metrics, aggregate_seeds=True)
+    df = dd.prepare_plot_data(
+        params=params, data=data, metrics=metrics, aggregate_seeds=True
+    )
 
     print(f"\nData after prepare_plot_data: {df.shape}")
     print(f"Unique params in df: {sorted(df['params'].unique())}")
