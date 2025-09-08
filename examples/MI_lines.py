@@ -4,9 +4,9 @@ import pandas as pd
 from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
-from dr_plotter.scripting.datadec_utils import get_datadec_functions, prepare_plot_data
+from dr_plotter.scripting.datadec_utils import get_datadec_instance
 
-DataDecide, select_params, select_data = get_datadec_functions()
+dd = get_datadec_instance()
 
 
 def normalize_df(df: pd.DataFrame, params: list[str], data: list[str]) -> pd.DataFrame:
@@ -45,14 +45,13 @@ def normalize_df(df: pd.DataFrame, params: list[str], data: list[str]) -> pd.Dat
 
 
 def main(args: Any) -> Any:
-    dd = DataDecide()
     for c in dd.full_eval.columns:
         print(c)
-    params = select_params(["20M", "60M", "90M", "530M"])
-    data = select_data("Dolma1.7")
+    params = dd.select_params(["20M", "60M", "90M", "530M"])
+    data = dd.select_data("Dolma1.7")
     metric = "pile-valppl"
     metrics = [metric]
-    df = prepare_plot_data(dd, params, data, metrics, aggregate_seeds=True)
+    df = dd.prepare_plot_data(params=params, data=data, metrics=metrics, aggregate_seeds=True)
     df = normalize_df(df, params, data)
     print(df.head())
 

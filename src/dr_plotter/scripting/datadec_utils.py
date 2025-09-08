@@ -15,12 +15,10 @@ def check_datadec_available() -> bool:
         ) from None
 
 
-def get_datadec_functions() -> tuple[Any, Any, Any]:
+def get_datadec_instance() -> Any:
     check_datadec_available()
     from datadec import DataDecide
-    from datadec.script_utils import select_params, select_data
-
-    return DataDecide, select_params, select_data
+    return DataDecide()
 
 
 def get_datadec_constants() -> tuple[

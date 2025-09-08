@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 from dr_plotter.configs import PlotConfig, PositioningConfig
 from dr_plotter.figure_manager import FigureManager
-from dr_plotter.scripting.datadec_utils import get_datadec_functions, prepare_plot_data
+from dr_plotter.scripting.datadec_utils import get_datadec_instance
 
 
 def create_arg_parser() -> argparse.ArgumentParser:
@@ -188,13 +188,10 @@ def plot_means(  # noqa: C901, PLR0912, PLR0915
     xlim: tuple[float, float] | None = None,
     ylim: tuple[float, float] | None = None,
 ) -> None:
-    DataDecide, select_params, select_data = get_datadec_functions()
-
+    dd = get_datadec_instance()
+    
     exclude_params = exclude_params or []
     exclude_data = exclude_data or []
-
-    DataDecide, select_params, select_data = get_datadec_functions()
-    dd = DataDecide()
 
     # Map dimension names to DataFrame column names
     dim_to_col = {"params": "params", "data": "data", "metrics": "metric"}
@@ -232,9 +229,9 @@ def plot_means(  # noqa: C901, PLR0912, PLR0915
 
     # Use "all" for dimensions not explicitly specified
     if not all_params:
-        all_params = select_params("all", exclude=exclude_params)
+        all_params = dd.select_params("all", exclude=exclude_params)
     if not all_data:
-        all_data = select_data("all", exclude=exclude_data)
+        all_data = dd.select_data("all", exclude=exclude_data)
     if not all_metrics:
         all_metrics = ["pile-valppl"]  # default metric
 
@@ -257,7 +254,7 @@ def plot_means(  # noqa: C901, PLR0912, PLR0915
     print(f"Metrics passed to prepare_plot_data: {all_metrics}")
 
     # Prepare data with all requested metrics (aggregate seeds for mean plotting)
-    df = prepare_plot_data(dd, all_params, all_data, all_metrics, aggregate_seeds=True)
+    df = dd.prepare_plot_data(params=all_params, data=all_data, metrics=all_metrics, aggregate_seeds=True)
     print(f"Data after prepare_plot_data: {df.shape}")
     print(f"Unique params in df: {sorted(df['params'].unique())}")
     print(f"Unique data in df: {sorted(df['data'].unique())}")

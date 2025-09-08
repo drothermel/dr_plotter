@@ -18,8 +18,7 @@ from dr_plotter.scripting.datadec_utils import (
     OLMES_PERFORMANCE_RECIPE_CHUNKS,
     PPL_PERFORMANCE_RECIPE_CHUNKS,
     RECIPES_WITHOUT_ABLATIONS,
-    get_datadec_functions,
-    prepare_plot_data,
+    get_datadec_instance,
 )
 from dr_plotter.theme import BUMP_PLOT_THEME, Theme
 
@@ -759,13 +758,13 @@ def plot_bump_timesteps(  # noqa: C901, PLR0912, PLR0915
     xlim_max: float | None = None,
     show_value_labels: bool = True,
 ) -> None:
-    DataDecide, select_params, select_data = get_datadec_functions()
+    dd = get_datadec_instance()
 
     exclude_data = exclude_data or []
 
     # Handle "all" params like other scripts
     if params is None or (len(params) == 1 and params[0] == "all"):
-        params = select_params("all")
+        params = dd.select_params("all")
 
     # Resolve named data groups first, then handle "all" and exclusions
     if data is None:
@@ -773,11 +772,10 @@ def plot_bump_timesteps(  # noqa: C901, PLR0912, PLR0915
 
     resolved_data = resolve_data_groups(data)
     if len(resolved_data) == 1 and resolved_data[0] == "all":
-        data = select_data("all", exclude=exclude_data)
+        data = dd.select_data("all", exclude=exclude_data)
     else:
         data = [d for d in resolved_data if d not in (exclude_data or [])]
 
-    dd = DataDecide()
     metrics = [metric]
 
     print(f"Preparing data for recipes: {data}")
@@ -785,7 +783,7 @@ def plot_bump_timesteps(  # noqa: C901, PLR0912, PLR0915
     print(f"Metric: {metrics}")
 
     # Get training curve data (not aggregated to preserve timestep dimension)
-    df = prepare_plot_data(dd, params, data, metrics, aggregate_seeds=True)
+    df = dd.prepare_plot_data(params=params, data=data, metrics=metrics, aggregate_seeds=True)
 
     # Add token information if x_axis is "tokens"
     if x_axis == "tokens":

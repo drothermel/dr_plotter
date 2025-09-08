@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from dr_plotter.configs import PlotConfig, PositioningConfig
 from dr_plotter.figure_manager import FigureManager
-from dr_plotter.scripting.datadec_utils import get_datadec_functions, prepare_plot_data
+from dr_plotter.scripting.datadec_utils import get_datadec_instance
 
 
 def create_arg_parser() -> argparse.ArgumentParser:
@@ -105,19 +105,18 @@ def plot_seeds(
     xlog: bool = False,
     ylog: bool = False,
 ) -> None:
-    DataDecide, select_params, select_data = get_datadec_functions()
+    dd = get_datadec_instance()
 
     exclude_params = exclude_params or []
     exclude_data = exclude_data or []
 
     # Handle "all" values and exclusions
     if params is None or (len(params) == 1 and params[0] == "all"):
-        params = select_params("all", exclude=exclude_params)
+        params = dd.select_params("all", exclude=exclude_params)
     if data is None or (len(data) == 1 and data[0] == "all"):
-        data = select_data("all", exclude=exclude_data)
+        data = dd.select_data("all", exclude=exclude_data)
 
-    dd = DataDecide()
-    df = prepare_plot_data(dd, params, data, [metric])
+    df = dd.prepare_plot_data(params=params, data=data, metrics=[metric])
 
     metric_label = metric.replace("_", " ").title()
     nparams = len(params)
