@@ -37,11 +37,10 @@ CLI_THEME = Theme(
 @click.argument("dataset_path", type=click.Path())
 @click.option(
     "--x",
-    "x_column",
     required=True,
     help="Column name for x-axis",
 )
-@click.option("--y", "y_column", required=True, help="Column name for y-axis")
+@click.option("--y", required=True, help="Column name for y-axis")
 @click.option(
     "--plot-type",
     type=click.Choice(["line", "scatter"]),
@@ -51,16 +50,14 @@ CLI_THEME = Theme(
 @dimensional_plotting_cli(skip_fields={"x", "y"})
 def main(
     dataset_path: str,
-    x_column: str,
-    y_column: str,
+    x: str,
+    y: str,
     plot_type: str,
     **kwargs: Any,
 ) -> None:
     df = load_dataset(dataset_path)
-    config = CLIConfig.load_or_default(kwargs.get("config"))
-    cli_kwargs = {k: v for k, v in kwargs.items() if k != "config"}
-    cli_kwargs.update({"x": x_column, "y": y_column})
-    merged_args = config.merge_with_cli_args(cli_kwargs)
+    config = CLIConfig.load_or_default(kwargs)
+    merged_args = config.merge_with_cli_args(kwargs)
     validate_args(df, merged_args)
     configs, unused_kwargs = build_configs(merged_args)
     validate_unused_parameters(unused_kwargs)

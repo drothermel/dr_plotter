@@ -121,7 +121,8 @@ class CLIConfig:
         return cls(data)
 
     @classmethod
-    def load_or_default(cls, config_path: str | Path | None = None) -> CLIConfig:
+    def load_or_default(cls, kwargs: dict[str, Any]) -> CLIConfig:
+        config_path = kwargs.pop("config", None)
         return cls.from_yaml(config_path) if config_path else cls()
 
     def merge_with_cli_args(self, cli_args: dict[str, Any]) -> dict[str, Any]:
@@ -235,7 +236,7 @@ def validate_unused_parameters(
 ) -> None:
     if unused_kwargs:
         allowed_set = allowed_params or set()
-        unexpected_params = {k for k in unused_kwargs.keys() if k not in allowed_set}
+        unexpected_params = {k for k in unused_kwargs if k not in allowed_set}
         if unexpected_params:
             unused_params = ", ".join(unexpected_params)
             raise click.UsageError(f"Unknown parameters: {unused_params}")
