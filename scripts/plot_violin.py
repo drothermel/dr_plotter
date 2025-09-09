@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from typing import Any
 
 import click
@@ -50,7 +48,6 @@ def main(
         fm.fig.suptitle("Violin Plot Showcase: Distribution Shapes", fontsize=16)
 
         if data_type == "categorical":
-            # Simple violin plot - single group
             simple_data = experimental_data(
                 pattern_type="categorical",
                 categories=[f"Cat_{chr(65 + i)}" for i in range(categories)],
@@ -65,7 +62,6 @@ def main(
                 title="Simple Violin Plot",
             )
 
-            # Grouped violin plot
             grouped_data = experimental_data(
                 pattern_type="categorical",
                 categories=[f"Cat_{chr(65 + i)}" for i in range(min(categories, 3))],
@@ -82,7 +78,6 @@ def main(
             )
 
         elif data_type == "distribution":
-            # Different distribution shapes
             dist_data = experimental_data(
                 pattern_type="distribution",
                 groups=["Normal", "Gamma", "Bimodal"],
@@ -96,20 +91,18 @@ def main(
                 title="Distribution Shapes",
             )
 
-            # Multiple distribution groups with different sample sizes
             multi_dist_data = experimental_data(
                 pattern_type="distribution",
                 groups=[
                     "Normal",
                     "Gamma",
                     "Bimodal",
-                    "Uniform" if groups > 3 else "Normal",
+                    "Uniform" if groups > 3 else "Normal",  # noqa: PLR2004
                 ][: min(groups, 4)],
                 n_samples=n_samples,
                 seed=seed + 2,
             )
 
-            # Add a grouping variable for hue
             multi_dist_data["hue_group"] = (multi_dist_data.index % 2).map(
                 {0: "A", 1: "B"}
             )

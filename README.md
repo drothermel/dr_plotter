@@ -80,6 +80,109 @@ uv sync
 
 **Note**: The `examples/` directory contains legacy code that is currently incompatible with the current architecture and will not execute successfully.
 
+## CLI Plot Showcases
+
+The `scripts/` directory contains modern CLI-driven plot showcases that demonstrate the full plotting capabilities with comprehensive parameter exploration. Each showcase has been migrated from legacy examples to use the new CLI framework and modern data generation.
+
+### Available Plot Types
+
+| Plot Type | Script | Description |
+|-----------|--------|-------------|
+| **Line Plots** | `plot_line.py` | Time series, ML training curves, A/B test results with multiple visual encodings |
+| **Violin Plots** | `plot_violin.py` | Distribution shapes for categorical and statistical data analysis |
+| **Scatter Plots** | `plot_scatter.py` | Multi-dimensional data exploration with color/marker encoding |
+| **Bar Plots** | `plot_bar.py` | Categorical comparisons with multiple aggregation methods |
+| **Heatmaps** | `plot_heatmap.py` | Matrix visualization, correlation analysis, density mapping |
+| **Contour Plots** | `plot_contour.py` | Gaussian mixtures and density visualization |
+
+### Quick Start Examples
+
+```bash
+# Line plots with different data types
+uv run python scripts/plot_line.py --data-type ml_training --pause 5
+uv run python scripts/plot_line.py --data-type ab_test --groups 4 --time-points 50
+
+# Violin plots for distribution analysis  
+uv run python scripts/plot_violin.py --data-type distribution --pause 5
+uv run python scripts/plot_violin.py --categories 6 --n-samples 200
+
+# Scatter plots with multi-dimensional encoding
+uv run python scripts/plot_scatter.py --experiments 3 --conditions 3 --pause 5
+uv run python scripts/plot_scatter.py --data-type categorical --figsize "(18,12)"
+
+# Bar plots with different aggregations
+uv run python scripts/plot_bar.py --aggregate count --categories 5 --pause 5
+uv run python scripts/plot_bar.py --data-type multi_dimensional --aggregate sum
+
+# Heatmaps and correlation matrices
+uv run python scripts/plot_heatmap.py --pattern-type correlation --colormap coolwarm --pause 5
+uv run python scripts/plot_heatmap.py --matrix-rows 10 --matrix-cols 12 --colormap viridis
+
+# Contour density plots
+uv run python scripts/plot_contour.py --density-levels 15 --colormap plasma --pause 5
+uv run python scripts/plot_contour.py --n-samples 500 --colormap coolwarm
+```
+
+### Preset Configurations
+
+Each plot type includes curated preset configurations in the `configs/` directory for common use cases:
+
+```bash
+# Use preset configurations for consistent styling
+uv run python scripts/plot_line.py --config configs/line_presets.yaml
+uv run python scripts/plot_violin.py --config configs/violin_presets.yaml  
+uv run python scripts/plot_scatter.py --config configs/scatter_presets.yaml
+uv run python scripts/plot_bar.py --config configs/bar_presets.yaml
+uv run python scripts/plot_heatmap.py --config configs/heatmap_presets.yaml
+uv run python scripts/plot_contour.py --config configs/contour_presets.yaml
+```
+
+Each preset file contains 5-6 different configurations optimized for:
+- **Basic usage**: Default parameters for immediate results
+- **Publication ready**: Professional formatting with proper spacing and legends  
+- **High density**: Large datasets with optimized rendering
+- **Custom styling**: Alternative colormaps, layouts, and visual encodings
+- **Specialized analysis**: Domain-specific parameter combinations
+
+### CLI Framework Features
+
+All showcase scripts provide comprehensive CLI interfaces with 40+ parameters automatically generated from the configuration system:
+
+- **Data Generation**: Control sample sizes, patterns, seeds for reproducibility
+- **Layout Control**: Figure size, subplot arrangement, spacing, titles
+- **Visual Encoding**: Colors, markers, line styles, transparency, grouping
+- **Legend Management**: Positioning, strategies (per-subplot vs figure-wide)
+- **Output Options**: Save directories, display duration, file formats
+- **Advanced Faceting**: Multi-dimensional subplot organization
+
+```bash
+# View all available options for any plot type
+uv run python scripts/plot_line.py --help
+uv run python scripts/plot_violin.py --help
+# ... etc for all plot types
+```
+
+### Parameter Exploration Examples
+
+The CLI framework enables rapid visual parameter exploration:
+
+```bash
+# Explore different layout strategies
+uv run python scripts/plot_line.py --figsize "(20,10)" --legend-strategy figure
+uv run python scripts/plot_violin.py --figsize "(16,8)" --legend-position "[0.5,0.02]"
+
+# Test various data generation patterns
+uv run python scripts/plot_scatter.py --data-type time_series --n-samples 300
+uv run python scripts/plot_bar.py --data-type distribution --aggregate count
+
+# Experiment with visual styling
+uv run python scripts/plot_heatmap.py --colormap inferno --matrix-rows 12
+uv run python scripts/plot_contour.py --density-levels 20 --colormap hot
+
+# Combine custom parameters with presets
+uv run python scripts/plot_line.py --config configs/line_presets.yaml --seed 999 --pause 3
+```
+
 ### Basic CLI Usage
 
 ```bash
