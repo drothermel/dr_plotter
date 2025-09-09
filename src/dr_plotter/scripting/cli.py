@@ -8,21 +8,21 @@ using the dr_plotter CLI framework.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import click
 import pandas as pd
-from pathlib import Path
 
 from dr_plotter import FigureManager
 from dr_plotter.scripting import (
     CLIConfig,
-    dimensional_plotting_cli,
-    validate_layout_options,
     build_faceting_config,
     build_plot_config,
+    dimensional_plotting_cli,
+    validate_layout_options,
 )
 from dr_plotter.scripting.utils import show_or_save_plot
-from dr_plotter.theme import BASE_THEME, Theme, FigureStyles
-
+from dr_plotter.theme import BASE_THEME, FigureStyles, Theme
 
 # Global CLI theme for dr-plotter command
 CLI_THEME = Theme(
@@ -101,12 +101,8 @@ def main(
         dr-plotter ~/drotherm/repos/datadec/data/datadecide/full_eval_melted.parquet --rows-and-cols params --hue-by data
     """
 
-    try:
-        # Load the dataset
-        df = load_dataset(dataset_path)
-    except Exception as e:
-        click.echo(f"❌ Error loading dataset: {e}")
-        return
+    # Load the dataset
+    df = load_dataset(dataset_path)
 
     # Determine x and y columns
     if not x_column:
@@ -130,14 +126,11 @@ def main(
     click.echo(f"Using x='{x_column}', y='{y_column}'")
 
     # Load configuration
-    config = CLIConfig()
     if kwargs.get("config"):
-        try:
-            config = CLIConfig.from_yaml(kwargs["config"])
-            click.echo(f"✅ Loaded configuration from {kwargs['config']}")
-        except Exception as e:
-            click.echo(f"❌ Error loading config: {e}")
-            return
+        config = CLIConfig.from_yaml(kwargs["config"])
+        click.echo(f"✅ Loaded configuration from {kwargs['config']}")
+    else:
+        config = CLIConfig()
 
     # Remove config file path from kwargs since we pass CLIConfig object separately
     cli_kwargs = {k: v for k, v in kwargs.items() if k != "config"}

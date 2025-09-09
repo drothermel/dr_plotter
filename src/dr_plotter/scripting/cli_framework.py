@@ -7,10 +7,11 @@ by applications like datadec while maintaining consistency and best practices.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Union, TypeVar
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
+
 import click
 import yaml
-from pathlib import Path
 
 from dr_plotter.configs import (
     FacetingConfig,
@@ -19,8 +20,8 @@ from dr_plotter.configs import (
     PlotConfig,
     StyleConfig,
 )
-from dr_plotter.scripting.utils import parse_key_value_args
 from dr_plotter.faceting.dimension_validation import interactive_dimension_validation
+from dr_plotter.scripting.utils import parse_key_value_args
 
 F = TypeVar("F", bound=Callable[..., Any])
 
