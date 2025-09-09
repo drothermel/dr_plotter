@@ -279,7 +279,7 @@ class StyleApplicator:
         return (
             self.figure_manager
             and hasattr(self.figure_manager, "legend_config")
-            and self.figure_manager.legend_config.strategy
+            and self.figure_manager.legend_config.legend_strategy
             == LegendStrategy.GROUPED_BY_CHANNEL
         )
 

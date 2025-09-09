@@ -1,26 +1,9 @@
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
 from typing import Any
 
 import matplotlib.pyplot as plt
-
-
-def setup_arg_parser(
-    description: str = "dr_plotter example script",
-) -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=description)
-    parser.add_argument(
-        "--save-dir",
-        type=str,
-        default=None,
-        help="Save the plot(s) to the specified directory instead of displaying them.",
-    )
-    parser.add_argument(
-        "--pause", type=int, default=5, help="Duration in seconds to display the plot."
-    )
-    return parser
 
 
 def show_or_save_plot(
@@ -66,6 +49,26 @@ def _convert_to_number_if_numeric(value: str) -> Any:
     if _is_float_string(value):
         return float(value)
     return value
+
+
+def convert_cli_value_to_type(value: Any, target_type: type) -> Any:
+    if not isinstance(value, str):
+        return value
+
+    if target_type is bool:
+        return value.lower() in ("true", "1", "yes", "on")
+    elif target_type is int:
+        return int(value)
+    elif target_type is float:
+        return float(value)
+    elif target_type is str:
+        return value
+    else:
+        # For complex types like tuples, try eval (unsafe but needed for CLI)
+        try:
+            return eval(value)
+        except:
+            return value
 
 
 def _is_float_string(value: str) -> bool:

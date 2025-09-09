@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""
-Global dr-plotter CLI entry point.
-
-Provides a global command for creating dimensional plots from data files
-using the dr_plotter CLI framework.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -14,11 +6,10 @@ from typing import Any
 import click
 import pandas as pd
 
-from dr_plotter import FigureManager
+from dr_plotter import FigureManager, consts
 from dr_plotter.scripting import (
     CLIConfig,
-    build_faceting_config,
-    build_plot_config,
+    build_configs,
     dimensional_plotting_cli,
     validate_layout_options,
 )
@@ -48,28 +39,13 @@ def load_dataset(file_path: str) -> pd.DataFrame:
     return df
 
 
-def validate_args(
-    df: pd.DataFrame, x_column: str, y_column: str, merged_args: Any
-) -> None:
-    validate_columns(df, x_column, y_column, merged_args)
+def validate_args(df: pd.DataFrame, merged_args: Any) -> None:
+    validate_columns(df, merged_args)
     validate_layout_options(click.get_current_context(), **merged_args)
 
 
-def validate_columns(
-    df: pd.DataFrame, x_column: str, y_column: str, merged_args: Any
-) -> None:
-    column_options = [
-        ("x", x_column),
-        ("y", y_column),
-        ("rows-by", merged_args.get("rows_by")),  # NEW NAME
-        ("cols-by", merged_args.get("cols_by")),  # NEW NAME
-        ("wrap-by", merged_args.get("wrap_by")),  # NEW NAME
-        ("hue-by", merged_args.get("hue_by")),
-        ("alpha-by", merged_args.get("alpha_by")),
-        ("size-by", merged_args.get("size_by")),
-        ("marker-by", merged_args.get("marker_by")),
-        ("style-by", merged_args.get("style_by")),
-    ]
+def validate_columns(df: pd.DataFrame, merged_args: Any) -> None:
+    column_options = [(key, merged_args.get(key)) for key in consts.COLUMN_KEYS]
     for option_name, column_name in column_options:
         if column_name and column_name not in df.columns:
             available_cols = ", ".join(sorted(df.columns))
@@ -94,7 +70,7 @@ def validate_columns(
     default="scatter",
     help="Type of plot to create (default: scatter)",
 )
-@dimensional_plotting_cli()  # Always validate faceting columns in validate_columns()
+@dimensional_plotting_cli(skip_fields={"x", "y"})
 def main(
     dataset_path: str,
     x_column: str,
@@ -103,33 +79,40 @@ def main(
     **kwargs: Any,
 ) -> None:
     df = load_dataset(dataset_path)
-    config = (
-        CLIConfig.from_yaml(kwargs["config"]) if kwargs.get("config") else CLIConfig()
-    )
+    config = CLIConfig()
+    if kwargs.get("config"):
+        config = CLIConfig.from_yaml(kwargs["config"])
     cli_kwargs = {k: v for k, v in kwargs.items() if k != "config"}
+    cli_kwargs.update({"x": x_column, "y": y_column})
     merged_args = config.merge_with_cli_args(cli_kwargs)
-    validate_args(df, x_column, y_column, merged_args)
-    faceting_config = build_faceting_config(
-        config,
-        x=x_column,
-        y=y_column,
-        exterior_x_label=x_column.title(),
-        exterior_y_label=y_column.title(),
-        **cli_kwargs,
+    validate_args(df, merged_args)
+
+    # Use new sequential config building system
+    configs, unused_kwargs = build_configs(merged_args)
+
+    # Check for invalid parameters
+    if unused_kwargs:
+        unused_params = ", ".join(unused_kwargs.keys())
+        raise click.UsageError(f"Unknown parameters: {unused_params}")
+
+    faceting_config = configs["faceting"]
+
+    # Build plot config using layout, legend, and style
+    from dr_plotter.configs import PlotConfig
+
+    plot_config = PlotConfig(
+        layout=configs["layout"],
+        legend=configs["legend"],
+        style=configs["style"] if configs["style"].theme else None,
     )
-    plot_config = build_plot_config(config, theme=CLI_THEME, **cli_kwargs)
 
     with FigureManager(plot_config) as fm:
-        if plot_type == "line":
-            fm.plot_faceted(df, "line", faceting=faceting_config, linewidth=1.5)
-        else:
-            fm.plot_faceted(df, "scatter", faceting=faceting_config, s=50, alpha=0.7)
+        fm.plot_faceted(df, plot_type, faceting=faceting_config)
 
     dataset_name = Path(dataset_path).stem
     show_or_save_plot(
         fm.fig, kwargs["save_dir"], kwargs["pause"], f"dr_plotter_{dataset_name}"
     )
-    click.echo("✅ dr-plotter completed!")
 
 
 if __name__ == "__main__":

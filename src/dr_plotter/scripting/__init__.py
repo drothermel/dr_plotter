@@ -1,16 +1,9 @@
-from .utils import setup_arg_parser, show_or_save_plot, create_and_render_plot
+from .utils import show_or_save_plot, create_and_render_plot
 from .cli_framework import (
     CLIConfig,
     dimensional_plotting_cli,
-    common_faceting_options,
-    dimensional_control_options,
-    layout_options,
-    legend_options,
-    output_options,
-    config_option,
     validate_layout_options,
-    build_faceting_config,
-    build_plot_config,
+    build_configs,
 )
 from .config_schema import (
     EXAMPLE_CONFIG,
@@ -24,20 +17,12 @@ from .plot_data import experimental_data, matrix_data
 __all__ = [
     # Legacy utils
     "create_and_render_plot",
-    "setup_arg_parser",
     "show_or_save_plot",
     # CLI Framework
     "CLIConfig",
     "dimensional_plotting_cli",
-    "common_faceting_options",
-    "dimensional_control_options",
-    "layout_options",
-    "legend_options",
-    "output_options",
-    "config_option",
     "validate_layout_options",
-    "build_faceting_config",
-    "build_plot_config",
+    "build_configs",
     # Config support
     "EXAMPLE_CONFIG",
     "MINIMAL_CONFIG",

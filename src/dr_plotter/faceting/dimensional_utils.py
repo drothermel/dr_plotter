@@ -50,20 +50,20 @@ def apply_dimensional_filters(
     data: pd.DataFrame, config: FacetingConfig
 ) -> pd.DataFrame:
     # Apply fixed dimensions filtering
-    if config.fixed_dimensions is not None:
-        for dim, value in config.fixed_dimensions.items():
+    if config.fixed is not None:
+        for dim, value in config.fixed.items():
             if dim in data.columns:
                 data = data[data[dim] == value]
 
-    # Apply ordered dimensions filtering (ordered_dimensions acts as an inclusion filter)
-    if config.ordered_dimensions is not None:
-        for dim, values in config.ordered_dimensions.items():
+    # Apply ordered dimensions filtering (order acts as an inclusion filter)
+    if config.order is not None:
+        for dim, values in config.order.items():
             if dim in data.columns:
                 data = data[data[dim].isin(values)]
 
     # Apply exclude dimensions filtering
-    if config.exclude_dimensions is not None:
-        for dim, values in config.exclude_dimensions.items():
+    if config.exclude is not None:
+        for dim, values in config.exclude.items():
             if dim in data.columns:
                 data = data[~data[dim].isin(values)]
 
@@ -75,19 +75,19 @@ def resolve_dimension_values(
     dim: str,
     config: FacetingConfig,
 ) -> list[str]:
-    if config.fixed_dimensions is not None and dim in config.fixed_dimensions:
-        return [config.fixed_dimensions[dim]]
-    if config.ordered_dimensions is not None and dim in config.ordered_dimensions:
-        vals = config.ordered_dimensions[dim]
+    if config.fixed is not None and dim in config.fixed:
+        return [config.fixed[dim]]
+    if config.order is not None and dim in config.order:
+        vals = config.order[dim]
     else:
         # Use smart sorting for better handling of numeric strings with units
         vals = smart_sort_values(data[dim].unique())
-    if config.exclude_dimensions is not None and dim in config.exclude_dimensions:
-        vals = [v for v in vals if v not in config.exclude_dimensions[dim]]
+    if config.exclude is not None and dim in config.exclude:
+        vals = [v for v in vals if v not in config.exclude[dim]]
     return vals
 
 
 def generate_dimensional_title(config: FacetingConfig) -> str:
-    if config.fixed_dimensions:
-        return " ".join(f"{k}={v}" for k, v in config.fixed_dimensions.items())
+    if config.fixed:
+        return " ".join(f"{k}={v}" for k, v in config.fixed.items())
     return f"{config.y} by {config.x}"

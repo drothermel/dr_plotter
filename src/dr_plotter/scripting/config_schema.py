@@ -6,8 +6,9 @@ Provides structured YAML configuration support with validation.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
 from pathlib import Path
+from typing import Any, Union
+
 import yaml
 
 # Example configuration that mirrors dr_plotter config objects
@@ -61,92 +62,26 @@ def write_example_config(path: Union[str, Path], minimal: bool = False) -> None:
         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
 
-def validate_config(config_data: Dict[str, Any]) -> List[str]:
-    """Validate flat configuration structure and return any errors."""
-    errors = []
+def validate_config(config_data: dict[str, Any]) -> list[str]:
+    from dr_plotter.scripting.cli_framework import build_configs
 
-    # Valid top-level keys in flat structure
-    valid_keys = {
-        # Faceting parameters (NEW NAMES)
-        "rows_by",
-        "cols_by",
-        "wrap_by",
-        "max_cols",
-        "hue_by",
-        "alpha_by",
-        "size_by",
-        "marker_by",
-        "style_by",
-        "fixed",
-        "order",
-        "exclude",
-        # Layout parameters (NOW SUPPORTED)
-        "rows",
-        "cols",
-        "figsize",
-        "tight_layout",
-        "tight_layout_pad",
-        # Subplot sizing parameters
-        "subplot_width",
-        "subplot_height",
-        "auto_titles",
-        # Legend parameters
-        "legend_strategy",
-        # Output parameters
-        "save_dir",
-        "pause",
-    }
-
-    for key in config_data:
-        if key not in valid_keys:
-            errors.append(f"Unknown configuration key: {key}")
-
-    # Check for conflicting layout options (UPDATED NAMES)
-    layout_options = [
-        config_data.get("rows_by"),
-        config_data.get("cols_by"),
-        config_data.get("wrap_by"),
-    ]
-    specified = [opt for opt in layout_options if opt is not None]
-    if len(specified) > 1:
-        errors.append(
-            "Cannot specify multiple faceting options (rows_by, cols_by, wrap_by)"
-        )
-
-    # Validate dimensional control types
-    for dim_control in ["fixed", "order", "exclude"]:
-        if dim_control in config_data and not isinstance(
-            config_data[dim_control], dict
-        ):
-            errors.append(f"{dim_control} must be a dictionary")
-
-    # Validate legend strategy
-    if "legend_strategy" in config_data:
-        valid_strategies = ["subplot", "figure", "grouped", "none"]
-        if config_data["legend_strategy"] not in valid_strategies:
-            errors.append(
-                f"Invalid legend strategy: {config_data['legend_strategy']}. "
-                f"Must be one of {valid_strategies}"
-            )
-
-    return errors
-
-
-def load_and_validate_config(config_path: Union[str, Path]) -> Dict[str, Any]:
-    """Load and validate a configuration file."""
     try:
-        with open(config_path) as f:
-            config_data = yaml.safe_load(f)
-    except yaml.YAMLError as e:
-        raise ValueError(f"Invalid YAML in config file: {e}")
-    except FileNotFoundError:
-        raise ValueError(f"Config file not found: {config_path}")
+        configs, unused_kwargs = build_configs(config_data)
 
+        # Any remaining unused kwargs are invalid
+        if unused_kwargs:
+            return [f"Unknown configuration key: {key}" for key in unused_kwargs]
+
+        return []
+
+    except Exception as e:
+        return [f"Configuration validation failed: {e!s}"]
+
+
+def load_and_validate_config(config_path: str | Path) -> dict[str, Any]:
+    config_path = Path(config_path)
+    with config_path.open() as f:
+        config_data = yaml.safe_load(f)
     errors = validate_config(config_data)
-    if errors:
-        error_msg = "Configuration validation errors:\n" + "\n".join(
-            f"  - {err}" for err in errors
-        )
-        raise ValueError(error_msg)
-
+    assert len(errors) == 0, " ".join(errors)
     return config_data

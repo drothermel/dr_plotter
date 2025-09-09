@@ -129,7 +129,7 @@ class FigureManager:
             return self.layout_config.tight_layout_rect
 
         has_suptitle = bool(self.layout_config.figure_title)
-        has_legend = self.legend_config.strategy in [
+        has_legend = self.legend_config.legend_strategy in [
             LegendStrategy.FIGURE_BELOW,
             LegendStrategy.GROUPED_BY_CHANNEL,
         ]

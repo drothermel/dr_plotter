@@ -19,7 +19,7 @@ def prepare_faceted_subplots(
     data: pd.DataFrame, config: FacetingConfig, grid_shape: tuple[int, int]
 ) -> dict[tuple[int, int], pd.DataFrame]:
     assert not data.empty, "Cannot facet empty DataFrame"
-    assert config.rows_by_by or config.cols_by_by or config.wrap_by, (
+    assert config.rows_by or config.cols_by or config.wrap_by, (
         "Must specify rows_by, cols_by, or wrap_by for faceting"
     )
     assert isinstance(grid_shape, tuple) and len(grid_shape) == GRID_SHAPE_DIMENSIONS, (
@@ -51,13 +51,13 @@ def prepare_faceted_subplots(
         # Handle standard row/col layout
         row_values = (
             [None]
-            if config.rows_by_by is None
-            else resolve_dimension_values(data, config.rows_by_by, config)
+            if config.rows_by is None
+            else resolve_dimension_values(data, config.rows_by, config)
         )
         col_values = (
             [None]
-            if config.cols_by_by is None
-            else resolve_dimension_values(data, config.cols_by_by, config)
+            if config.cols_by is None
+            else resolve_dimension_values(data, config.cols_by, config)
         )
 
         subsets = {}
@@ -84,10 +84,10 @@ def _create_data_subset(
     data: pd.DataFrame, config: FacetingConfig, row_val: Any, col_val: Any
 ) -> pd.DataFrame:
     mask = pd.Series([True] * len(data), index=data.index)
-    if row_val is not None and config.rows_by_by:
-        mask = mask & (data[config.rows_by_by] == row_val)
-    if col_val is not None and config.cols_by_by:
-        mask = mask & (data[config.cols_by_by] == col_val)
+    if row_val is not None and config.rows_by:
+        mask = mask & (data[config.rows_by] == row_val)
+    if col_val is not None and config.cols_by:
+        mask = mask & (data[config.cols_by] == col_val)
     return data[mask].copy()
 
 
@@ -106,13 +106,13 @@ def _apply_axis_labels(
 ) -> None:
     ax = fm.get_axes(row, col)
 
-    if _has_custom_label(config.x_labels, row, col):
-        label = config.x_labels[row][col]
+    if _has_custom_label(fm.layout_config.x_labels, row, col):
+        label = fm.layout_config.x_labels[row][col]
         if label is not None:
             ax.set_xlabel(label)
 
-    if _has_custom_label(config.y_labels, row, col):
-        label = config.y_labels[row][col]
+    if _has_custom_label(fm.layout_config.y_labels, row, col):
+        label = fm.layout_config.y_labels[row][col]
         if label is not None:
             ax.set_ylabel(label)
 
@@ -122,13 +122,13 @@ def _apply_axis_limits(
 ) -> None:
     ax = fm.get_axes(row, col)
 
-    if _has_custom_label(config.xlim, row, col):
-        xlim = config.xlim[row][col]
+    if _has_custom_label(fm.layout_config.xlim, row, col):
+        xlim = fm.layout_config.xlim[row][col]
         if xlim is not None:
             ax.set_xlim(xlim)
 
-    if _has_custom_label(config.ylim, row, col):
-        ylim = config.ylim[row][col]
+    if _has_custom_label(fm.layout_config.ylim, row, col):
+        ylim = fm.layout_config.ylim[row][col]
         if ylim is not None:
             ax.set_ylim(ylim)
 

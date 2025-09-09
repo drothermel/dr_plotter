@@ -24,7 +24,7 @@ SHORT_NAME_STRATEGY_MAP = {
 
 @dataclass
 class LegendConfig:
-    strategy: str = "subplot"
+    legend_strategy: str = "subplot"
     collect_strategy: str = "smart"
     position: str = "lower center"
     deduplication: bool = True
@@ -42,11 +42,11 @@ class LegendConfig:
 
     def __post_init__(self) -> None:
         self.validate()
-        self.strategy = SHORT_NAME_STRATEGY_MAP[self.strategy]
+        self.legend_strategy = SHORT_NAME_STRATEGY_MAP[self.legend_strategy]
 
     def validate(self) -> None:
-        assert self.strategy in SHORT_NAME_STRATEGY_MAP, (
-            f"Invalid legend strategy '{self.strategy}'. Valid options: "
+        assert self.legend_strategy in SHORT_NAME_STRATEGY_MAP, (
+            f"Invalid legend strategy '{self.legend_strategy}'. Valid options: "
             f"{list(SHORT_NAME_STRATEGY_MAP.keys())}"
         )
 

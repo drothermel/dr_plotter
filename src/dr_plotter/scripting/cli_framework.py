@@ -1,14 +1,8 @@
-"""
-Professional CLI framework for dimensional plotting with dr_plotter.
-
-This module provides reusable Click-based CLI components that can be extended
-by applications like datadec while maintaining consistency and best practices.
-"""
-
 from __future__ import annotations
 
+from dataclasses import MISSING, fields
 from pathlib import Path
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypeVar, Union, get_args, get_origin
 
 import click
 import yaml
@@ -20,9 +14,99 @@ from dr_plotter.configs import (
     PlotConfig,
     StyleConfig,
 )
-from dr_plotter.scripting.utils import parse_key_value_args
+from dr_plotter.scripting.utils import parse_key_value_args, convert_cli_value_to_type
 
 F = TypeVar("F", bound=Callable[..., Any])
+
+
+def infer_click_type(field_type: type, field_default: Any = None) -> Any:
+    origin = get_origin(field_type)
+    args = get_args(field_type)
+
+    if origin is Union:
+        non_none_types = [arg for arg in args if arg is not type(None)]
+        if non_none_types:
+            return non_none_types[0]
+        return str
+
+    if origin is tuple and args:
+        return tuple(args)
+
+    if field_type is bool:
+        return bool
+    if field_type is int:
+        return int
+    if field_type is float:
+        return float
+    if field_type is str:
+        return str
+
+    return str
+
+
+def generate_help_text(field: Any) -> str:
+    field_name = field.name.replace("_", " ")
+    return f"{field_name} parameter"
+
+
+def add_options_from_config(
+    config_class: type, skip_fields: set[str] | None = None
+) -> Callable[[F], F]:
+    def decorator(f: F) -> F:
+        skip_fields_set = skip_fields or set()
+
+        for field in fields(config_class):
+            if field.name in skip_fields_set:
+                continue
+
+            option_name = f"--{field.name.replace('_', '-')}"
+            click_type = infer_click_type(field.type, field.default)
+            help_text = generate_help_text(field)
+
+            # Special handling for boolean fields - use Click boolean flags
+            if field.type is bool and field.default is not MISSING:
+                if field.default:
+                    # Default is True, so provide --no-option to set False
+                    no_option_name = f"--no-{field.name.replace('_', '-')}"
+                    f = click.option(
+                        no_option_name,
+                        field.name,
+                        flag_value=False,
+                        default=field.default,
+                        help=f"Disable {help_text.lower()}",
+                    )(f)
+                else:
+                    # Default is False, so provide --option to set True
+                    f = click.option(
+                        option_name,
+                        field.name,
+                        flag_value=True,
+                        default=field.default,
+                        help=f"Enable {help_text.lower()}",
+                    )(f)
+            elif field.default is not MISSING:
+                f = click.option(
+                    option_name, type=click_type, default=field.default, help=help_text
+                )(f)
+            else:
+                f = click.option(option_name, type=click_type, help=help_text)(f)
+        return f
+
+    return decorator
+
+
+def add_cli_only_options() -> Callable[[F], F]:
+    def decorator(f: F) -> F:
+        f = click.option("--save-dir", help="Directory to save plots")(f)
+        f = click.option(
+            "--pause", type=int, default=5, help="Display duration in seconds"
+        )(f)
+        f = click.option(
+            "--config", type=click.Path(exists=True), help="YAML configuration file"
+        )(f)
+        return f
+
+    return decorator
 
 
 class CLIConfig:
@@ -47,153 +131,7 @@ class CLIConfig:
         return merged
 
 
-def common_faceting_options() -> Callable[[F], F]:
-    def decorator(f: F) -> F:
-        dimension_type = str  # Column validation happens in validate_columns()
-
-        f = click.option(
-            "--rows-by",
-            type=dimension_type,
-            help="Column name to use for row faceting",
-        )(f)
-        f = click.option(
-            "--cols-by",
-            type=dimension_type,
-            help="Column name to use for column faceting",
-        )(f)
-        f = click.option(
-            "--wrap-by",
-            type=dimension_type,
-            help="Column name to use for wrapped faceting",
-        )(f)
-        f = click.option(
-            "--max-cols",
-            type=int,
-            default=4,
-            help="Maximum columns for wrapping layout",
-        )(f)
-
-        f = click.option(
-            "--hue-by", type=dimension_type, help="Dimension for color/line grouping"
-        )(f)
-        f = click.option(
-            "--alpha-by",
-            type=dimension_type,
-            help="Dimension for transparency grouping",
-        )(f)
-        f = click.option(
-            "--size-by", type=dimension_type, help="Dimension for size grouping"
-        )(f)
-        f = click.option(
-            "--marker-by",
-            type=dimension_type,
-            help="Dimension for marker style grouping",
-        )(f)
-        f = click.option(
-            "--style-by", type=dimension_type, help="Dimension for line style grouping"
-        )(f)
-
-        return f
-
-    return decorator
-
-
-def dimensional_control_options() -> Callable[[F], F]:
-    def decorator(f: F) -> F:
-        f = click.option(
-            "--fixed",
-            multiple=True,
-            help="Fixed dimensions: key=value (e.g., --fixed seed=0)",
-        )(f)
-        f = click.option(
-            "--order",
-            multiple=True,
-            help="Ordered dimensions: key=val1,val2 (e.g., --order params=7B,30B,70B)",
-        )(f)
-        f = click.option(
-            "--exclude",
-            multiple=True,
-            help="Exclude values: key=val1,val2 (e.g., --exclude params=1B,2B)",
-        )(f)
-        return f
-
-    return decorator
-
-
-def layout_options() -> Callable[[F], F]:
-    def decorator(f: F) -> F:
-        # FIGURE LAYOUT OPTIONS (integers, tuples)
-        f = click.option(
-            "--rows", type=int, default=1, help="Number of subplot rows in figure"
-        )(f)
-        f = click.option(
-            "--cols", type=int, default=1, help="Number of subplot columns in figure"
-        )(f)
-        f = click.option(
-            "--figsize",
-            type=(float, float),
-            default=(12.0, 8.0),
-            help="Figure size (width height)",
-        )(f)
-        f = click.option(
-            "--tight-layout/--no-tight-layout",
-            default=True,
-            help="Enable/disable tight layout",
-        )(f)
-        f = click.option(
-            "--tight-layout-pad", type=float, default=1.0, help="Tight layout padding"
-        )(f)
-
-        # SUBPLOT SIZING OPTIONS (existing, keep these)
-        f = click.option(
-            "--subplot-width", type=float, default=3.5, help="Width of each subplot"
-        )(f)
-        f = click.option(
-            "--subplot-height", type=float, default=3.0, help="Height of each subplot"
-        )(f)
-        f = click.option(
-            "--no-auto-titles",
-            is_flag=True,
-            help="Disable automatic descriptive titles",
-        )(f)
-
-        return f
-
-    return decorator
-
-
-def legend_options() -> Callable[[F], F]:
-    def decorator(f: F) -> F:
-        f = click.option(
-            "--legend-strategy",
-            type=click.Choice(["subplot", "figure", "grouped", "none"]),
-            default="subplot",
-            help="Legend placement strategy",
-        )(f)
-        return f
-
-    return decorator
-
-
-def output_options() -> Callable[[F], F]:
-    def decorator(f: F) -> F:
-        f = click.option("--save-dir", help="Directory to save plots")(f)
-        f = click.option(
-            "--pause", type=int, default=5, help="Display duration in seconds"
-        )(f)
-        return f
-
-    return decorator
-
-
-def config_option() -> Callable[[F], F]:
-    def decorator(f: F) -> F:
-        f = click.option(
-            "--config", type=click.Path(exists=True), help="YAML configuration file"
-        )(f)
-        return f
-
-    return decorator
+# Old manual decorators removed - replaced by dynamic generation
 
 
 def validate_layout_options(ctx: click.Context, **kwargs: Any) -> None:
@@ -209,15 +147,13 @@ def validate_layout_options(ctx: click.Context, **kwargs: Any) -> None:
 
 
 def build_faceting_config(
-    config: CLIConfig,
-    x: str = "step",
-    y: str = "value",
-    exterior_x_label: str = "Steps",
-    exterior_y_label: str = "Value",
-    **cli_overrides: Any,
-) -> FacetingConfig:
-    merged = config.merge_with_cli_args(cli_overrides)
+    kwargs: dict[str, Any],
+) -> tuple[FacetingConfig, dict[str, Any]]:
+    faceting_fields = {f.name for f in fields(FacetingConfig)}
+    relevant_kwargs = {k: v for k, v in kwargs.items() if k in faceting_fields}
+    remaining_kwargs = {k: v for k, v in kwargs.items() if k not in faceting_fields}
 
+    # Handle special preprocessing for dimension controls
     def parse_dimension_value(value: Any) -> Any:
         if isinstance(value, dict):
             return value
@@ -226,37 +162,78 @@ def build_faceting_config(
         else:
             return None
 
-    fixed_dimensions = parse_dimension_value(merged.get("fixed"))
-    ordered_dimensions = parse_dimension_value(merged.get("order"))
-    exclude_dimensions = parse_dimension_value(merged.get("exclude"))
+    if "fixed" in relevant_kwargs:
+        relevant_kwargs["fixed"] = parse_dimension_value(relevant_kwargs["fixed"])
+    if "order" in relevant_kwargs:
+        relevant_kwargs["order"] = parse_dimension_value(relevant_kwargs["order"])
+    if "exclude" in relevant_kwargs:
+        relevant_kwargs["exclude"] = parse_dimension_value(relevant_kwargs["exclude"])
 
-    return FacetingConfig(
-        x=x,
-        y=y,
-        rows_by=merged.get("rows_by"),
-        cols_by=merged.get("cols_by"),
-        wrap_by=merged.get("wrap_by"),
-        max_cols=merged.get("max_cols") if merged.get("wrap_by") else None,
-        hue_by=merged.get("hue_by"),
-        alpha_by=merged.get("alpha_by"),
-        size_by=merged.get("size_by"),
-        marker_by=merged.get("marker_by"),
-        style_by=merged.get("style_by"),
-        fixed_dimensions=fixed_dimensions if fixed_dimensions else None,
-        ordered_dimensions=ordered_dimensions if ordered_dimensions else None,
-        exclude_dimensions=exclude_dimensions if exclude_dimensions else None,
-        subplot_width=merged.get("subplot_width", 3.5),
-        subplot_height=merged.get("subplot_height", 3.0),
-        auto_titles=not merged.get("no_auto_titles", False),
-        row_titles=not merged.get("no_auto_titles", False)
-        if merged.get("rows_by")
-        else False,
-        col_titles=not merged.get("no_auto_titles", False)
-        if merged.get("cols_by")
-        else False,
-        exterior_x_label=exterior_x_label,
-        exterior_y_label=exterior_y_label,
-    )
+    # Handle boolean inversion for auto_titles
+    if "no_auto_titles" in remaining_kwargs:
+        relevant_kwargs["auto_titles"] = not remaining_kwargs.pop(
+            "no_auto_titles", False
+        )
+
+    faceting_config = FacetingConfig(**relevant_kwargs)
+    return faceting_config, remaining_kwargs
+
+
+def build_layout_config(kwargs: dict[str, Any]) -> tuple[LayoutConfig, dict[str, Any]]:
+    layout_fields = {f.name: f.type for f in fields(LayoutConfig)}
+    relevant_kwargs = {k: v for k, v in kwargs.items() if k in layout_fields}
+    remaining_kwargs = {k: v for k, v in kwargs.items() if k not in layout_fields}
+
+    # Convert string CLI values to proper types
+    converted_kwargs = {}
+    for key, value in relevant_kwargs.items():
+        field_type = layout_fields.get(key)
+        if field_type:
+            converted_kwargs[key] = convert_cli_value_to_type(value, field_type)
+        else:
+            converted_kwargs[key] = value
+
+    layout_config = LayoutConfig(**converted_kwargs)
+    return layout_config, remaining_kwargs
+
+
+def build_legend_config(kwargs: dict[str, Any]) -> tuple[LegendConfig, dict[str, Any]]:
+    legend_fields = {f.name for f in fields(LegendConfig)}
+    relevant_kwargs = {k: v for k, v in kwargs.items() if k in legend_fields}
+    remaining_kwargs = {k: v for k, v in kwargs.items() if k not in legend_fields}
+
+    legend_config = LegendConfig(**relevant_kwargs)
+    return legend_config, remaining_kwargs
+
+
+def build_style_config(kwargs: dict[str, Any]) -> tuple[StyleConfig, dict[str, Any]]:
+    style_fields = {f.name for f in fields(StyleConfig)}
+    relevant_kwargs = {k: v for k, v in kwargs.items() if k in style_fields}
+    remaining_kwargs = {k: v for k, v in kwargs.items() if k not in style_fields}
+
+    style_config = StyleConfig(**relevant_kwargs)
+    return style_config, remaining_kwargs
+
+
+def build_configs(kwargs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    faceting_config, unused = build_faceting_config(kwargs)
+    layout_config, unused = build_layout_config(unused)
+    legend_config, unused = build_legend_config(unused)
+    style_config, unused = build_style_config(unused)
+
+    # Remove CLI-only parameters
+    unused.pop("save_dir", None)
+    unused.pop("pause", None)
+    unused.pop("config", None)
+
+    configs = {
+        "faceting": faceting_config,
+        "layout": layout_config,
+        "legend": legend_config,
+        "style": style_config,
+    }
+
+    return configs, unused
 
 
 def build_plot_config(
@@ -272,19 +249,18 @@ def build_plot_config(
             tight_layout=merged.get("tight_layout", True),
             tight_layout_pad=merged.get("tight_layout_pad", 1.0),
         ),
-        legend=LegendConfig(strategy=merged.get("legend_strategy", "subplot")),
+        legend=LegendConfig(legend_strategy=merged.get("legend_strategy", "subplot")),
         style=StyleConfig(theme=theme) if theme else None,
     )
 
 
-def dimensional_plotting_cli() -> Callable[[F], F]:
+def dimensional_plotting_cli(skip_fields: set[str] | None = None) -> Callable[[F], F]:
     def decorator(f: F) -> F:
-        f = output_options()(f)
-        f = legend_options()(f)
-        f = layout_options()(f)
-        f = dimensional_control_options()(f)
-        f = common_faceting_options()(f)
-        f = config_option()(f)
+        f = add_cli_only_options()(f)
+        f = add_options_from_config(StyleConfig, skip_fields)(f)
+        f = add_options_from_config(LegendConfig, skip_fields)(f)
+        f = add_options_from_config(LayoutConfig, skip_fields)(f)
+        f = add_options_from_config(FacetingConfig, skip_fields)(f)
         return f
 
     return decorator

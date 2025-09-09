@@ -23,7 +23,7 @@ class LegendRegistry:
     def __init__(self, strategy: LegendStrategy | None = None) -> None:
         self._entries: list[LegendEntry] = []
         self._seen_keys: set[tuple] = set()
-        self.strategy = strategy
+        self.legend_strategy = strategy
 
     def add_entry(self, entry: LegendEntry) -> None:
         if self._should_use_channel_based_deduplication():
@@ -36,13 +36,13 @@ class LegendRegistry:
             self._seen_keys.add(key)
 
     def _should_use_channel_based_deduplication(self) -> bool:
-        if self.strategy is None:
+        if self.legend_strategy is None:
             return False
         shared_strategies = {
             LegendStrategy.GROUPED_BY_CHANNEL,
             LegendStrategy.FIGURE_BELOW,
         }
-        return self.strategy in shared_strategies
+        return self.legend_strategy in shared_strategies
 
     def get_unique_entries(self) -> list[LegendEntry]:
         return self._entries.copy()
@@ -79,7 +79,7 @@ class LegendManager:
     def __init__(self, figure_manager: Any, config: LegendConfig | None = None) -> None:
         self.fm = figure_manager
         self.config = config or LegendConfig()
-        self.registry = LegendRegistry(self.config.strategy)
+        self.registry = LegendRegistry(self.config.legend_strategy)
 
     def _get_legend_position(self, legend_index: int = 0) -> tuple[float, float]:
         """Get legend position coordinates from config or theme defaults."""
@@ -95,7 +95,7 @@ class LegendManager:
 
         # Fall back to theme defaults
         # Only use multi-positions for grouped strategies that need multiple legends
-        if self.config.strategy == LegendStrategy.GROUPED_BY_CHANNEL:
+        if self.config.legend_strategy == LegendStrategy.GROUPED_BY_CHANNEL:
             multi_positions = self.fm.styler.get_style("multi_legend_positions")
             if multi_positions and legend_index < len(multi_positions):
                 return multi_positions[legend_index]
@@ -141,14 +141,14 @@ class LegendManager:
         return len(legend_entries) if len(legend_entries) > 0 else 1
 
     def finalize(self) -> None:
-        if self.config.strategy == LegendStrategy.NONE:
+        if self.config.legend_strategy == LegendStrategy.NONE:
             return
 
-        if self.config.strategy == LegendStrategy.FIGURE_BELOW:
+        if self.config.legend_strategy == LegendStrategy.FIGURE_BELOW:
             self._create_figure_legend()
-        elif self.config.strategy == LegendStrategy.GROUPED_BY_CHANNEL:
+        elif self.config.legend_strategy == LegendStrategy.GROUPED_BY_CHANNEL:
             self._create_grouped_legends()
-        elif self.config.strategy == LegendStrategy.PER_AXES:
+        elif self.config.legend_strategy == LegendStrategy.PER_AXES:
             self._create_per_axes_legends()
 
     def _process_entries_by_channel_type(
@@ -245,10 +245,10 @@ class LegendManager:
 
         channel_list = sorted(channels)
 
-        if self.config.strategy == LegendStrategy.GROUPED_BY_CHANNEL:
+        if self.config.legend_strategy == LegendStrategy.GROUPED_BY_CHANNEL:
             num_legends = len(channel_list)
             legends_to_create = [(i, channel) for i, channel in enumerate(channel_list)]
-        elif self.config.strategy == LegendStrategy.FIGURE_BELOW:
+        elif self.config.legend_strategy == LegendStrategy.FIGURE_BELOW:
             num_legends = 1
             legends_to_create = [(0, None)]
         else:
