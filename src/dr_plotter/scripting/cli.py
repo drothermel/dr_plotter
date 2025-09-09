@@ -77,14 +77,21 @@ def load_dataset(file_path: str) -> pd.DataFrame:
     "--dimensions",
     help="Comma-separated list of valid dimension column names (enables validation)",
 )
+@click.option(
+    "--plot-type",
+    type=click.Choice(["line", "scatter"]),
+    default="scatter",
+    help="Type of plot to create (default: scatter)",
+)
 @dimensional_plotting_cli([])  # Empty list - validation handled conditionally
 def main(
     dataset_path: str,
     x_column: str | None,
     y_column: str | None,
     dimensions: str | None,
+    plot_type: str,
     **kwargs,
-):
+) -> None:
     """Create dimensional plots from data files using dr_plotter framework.
 
     DATASET_PATH: Path to your data file (.parquet, .csv, or .json)
@@ -95,10 +102,12 @@ def main(
         dr-plotter ~/data/results.parquet --config my_config.yaml
 
         # Specify columns and dimensions explicitly
-        dr-plotter data.parquet --x step --y loss --dimensions "model,dataset,seed" --rows-and-cols model --hue-by dataset
+        dr-plotter data.parquet --x step --y loss --plot-type line \\
+            --dimensions "model,dataset,seed" --rows-and-cols model --hue-by dataset
 
         # DataDec example
-        dr-plotter ~/drotherm/repos/datadec/data/datadecide/full_eval_melted.parquet --rows-and-cols params --hue-by data
+        dr-plotter ~/drotherm/repos/datadec/data/datadecide/full_eval_melted.parquet \\
+            --rows-and-cols params --hue-by data
     """
 
     # Load the dataset
@@ -190,8 +199,7 @@ def main(
     # Create plot configuration using framework
     plot_config = build_plot_config(config, theme=CLI_THEME, **cli_kwargs)
 
-    # Generate plot - use line plot for time-series like data, scatter otherwise
-    plot_type = "line" if x_column in ["step", "time", "epoch"] else "scatter"
+    # Generate plot using explicitly specified type
     click.echo(f"Creating dimensional {plot_type} plot...")
 
     with FigureManager(plot_config) as fm:
