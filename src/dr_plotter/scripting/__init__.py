@@ -1,50 +1,38 @@
-from .utils import setup_arg_parser, show_or_save_plot, create_and_render_plot
 from .cli_framework import (
     CLIConfig,
+    build_configs,
     dimensional_plotting_cli,
-    common_faceting_options,
-    dimensional_control_options,
-    layout_options,
-    legend_options,
-    output_options,
-    config_option,
     validate_layout_options,
-    build_faceting_config,
-    build_plot_config,
 )
 from .config_schema import (
     EXAMPLE_CONFIG,
     MINIMAL_CONFIG,
+    load_config,
     write_example_config,
-    validate_config,
-    load_and_validate_config,
 )
 from .plot_data import experimental_data, matrix_data
+from .utils import (
+    create_and_render_plot,
+    load_dataset,
+    show_or_save_plot,
+    validate_args,
+    validate_columns,
+)
 
 __all__ = [
-    # Legacy utils
-    "create_and_render_plot",
-    "setup_arg_parser",
-    "show_or_save_plot",
-    # CLI Framework
-    "CLIConfig",
-    "dimensional_plotting_cli",
-    "common_faceting_options",
-    "dimensional_control_options",
-    "layout_options",
-    "legend_options",
-    "output_options",
-    "config_option",
-    "validate_layout_options",
-    "build_faceting_config",
-    "build_plot_config",
-    # Config support
     "EXAMPLE_CONFIG",
     "MINIMAL_CONFIG",
-    "write_example_config",
-    "validate_config",
-    "load_and_validate_config",
-    # Data generators
+    "CLIConfig",
+    "build_configs",
+    "create_and_render_plot",
+    "dimensional_plotting_cli",
     "experimental_data",
+    "load_config",
+    "load_dataset",
     "matrix_data",
+    "show_or_save_plot",
+    "validate_args",
+    "validate_columns",
+    "validate_layout_options",
+    "write_example_config",
 ]

@@ -1,26 +1,14 @@
 from __future__ import annotations
 
-import argparse
+import ast
 from pathlib import Path
 from typing import Any
 
+import click
 import matplotlib.pyplot as plt
+import pandas as pd
 
-
-def setup_arg_parser(
-    description: str = "dr_plotter example script",
-) -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=description)
-    parser.add_argument(
-        "--save-dir",
-        type=str,
-        default=None,
-        help="Save the plot(s) to the specified directory instead of displaying them.",
-    )
-    parser.add_argument(
-        "--pause", type=int, default=5, help="Duration in seconds to display the plot."
-    )
-    return parser
+from dr_plotter import consts
 
 
 def show_or_save_plot(
@@ -68,6 +56,25 @@ def _convert_to_number_if_numeric(value: str) -> Any:
     return value
 
 
+def convert_cli_value_to_type(value: Any, target_type: type) -> Any:
+    if not isinstance(value, str):
+        return value
+
+    if target_type is bool:
+        return value.lower() in ("true", "1", "yes", "on")
+    elif target_type is int:
+        return int(value)
+    elif target_type is float:
+        return float(value)
+    elif target_type is str:
+        return value
+    else:
+        try:
+            return ast.literal_eval(value)
+        except Exception:
+            return value
+
+
 def _is_float_string(value: str) -> bool:
     if not value:
         return False
@@ -81,3 +88,29 @@ def _is_float_string(value: str) -> bool:
     return all(part.isdigit() or part == "" for part in parts) and any(
         part for part in parts
     )
+
+
+def load_dataset(file_path: str) -> pd.DataFrame:
+    path = Path(file_path).expanduser()
+    assert path.suffix == ".parquet", "Only parquet files are supported"
+    assert path.exists(), f"Dataset not found: {path}"
+    df = pd.read_parquet(path)
+    return df
+
+
+def validate_columns(df: pd.DataFrame, merged_args: Any) -> None:
+    column_options = [(key, merged_args.get(key)) for key in consts.COLUMN_KEYS]
+    for option_name, column_name in column_options:
+        if column_name and column_name not in df.columns:
+            available_cols = ", ".join(sorted(df.columns))
+            raise click.UsageError(
+                f"Column '{column_name}' for --{option_name} "
+                f"not found in dataset. Available columns: {available_cols}"
+            )
+
+
+def validate_args(df: pd.DataFrame, merged_args: Any) -> None:
+    from dr_plotter.scripting import validate_layout_options
+
+    validate_columns(df, merged_args)
+    validate_layout_options(click.get_current_context(), **merged_args)

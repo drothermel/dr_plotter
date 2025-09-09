@@ -23,7 +23,7 @@ class LegendRegistry:
     def __init__(self, strategy: LegendStrategy | None = None) -> None:
         self._entries: list[LegendEntry] = []
         self._seen_keys: set[tuple] = set()
-        self.strategy = strategy
+        self.legend_strategy = strategy
 
     def add_entry(self, entry: LegendEntry) -> None:
         if self._should_use_channel_based_deduplication():
@@ -36,13 +36,13 @@ class LegendRegistry:
             self._seen_keys.add(key)
 
     def _should_use_channel_based_deduplication(self) -> bool:
-        if self.strategy is None:
+        if self.legend_strategy is None:
             return False
         shared_strategies = {
             LegendStrategy.GROUPED_BY_CHANNEL,
             LegendStrategy.FIGURE_BELOW,
         }
-        return self.strategy in shared_strategies
+        return self.legend_strategy in shared_strategies
 
     def get_unique_entries(self) -> list[LegendEntry]:
         return self._entries.copy()
@@ -68,10 +68,6 @@ def resolve_legend_config(legend_input: str | LegendConfig) -> LegendConfig:
             f"{list(string_mappings.keys())}"
         )
         return string_mappings[legend_input]
-
-    if legend_input.positioning_config is None:
-        legend_input.positioning_config = PositioningConfig()
-
     return legend_input
 
 
@@ -79,31 +75,24 @@ class LegendManager:
     def __init__(self, figure_manager: Any, config: LegendConfig | None = None) -> None:
         self.fm = figure_manager
         self.config = config or LegendConfig()
-        self.registry = LegendRegistry(self.config.strategy)
+        self.registry = LegendRegistry(self.config.legend_strategy)
 
     def _get_legend_position(self, legend_index: int = 0) -> tuple[float, float]:
-        """Get legend position coordinates from config or theme defaults."""
-        # Use explicit position if specified
         if self.config.legend_position is not None:
             return self.config.legend_position
 
-        # Use multi-legend positions if specified and index is available
         if self.config.multi_legend_positions is not None and legend_index < len(
             self.config.multi_legend_positions
         ):
             return self.config.multi_legend_positions[legend_index]
 
-        # Fall back to theme defaults
-        # Only use multi-positions for grouped strategies that need multiple legends
-        if self.config.strategy == LegendStrategy.GROUPED_BY_CHANNEL:
+        if self.config.legend_strategy == LegendStrategy.GROUPED_BY_CHANNEL:
             multi_positions = self.fm.styler.get_style("multi_legend_positions")
             if multi_positions and legend_index < len(multi_positions):
                 return multi_positions[legend_index]
             else:
-                # If we need more positions than available, space them evenly
                 return (legend_index * 0.25 + 0.25, 0.05)
         else:
-            # For single legends (figure, subplot), always use single position
             return self.fm.styler.get_style("legend_position")
 
     def _calculate_ncol(self, num_handles: int) -> int:
@@ -141,14 +130,14 @@ class LegendManager:
         return len(legend_entries) if len(legend_entries) > 0 else 1
 
     def finalize(self) -> None:
-        if self.config.strategy == LegendStrategy.NONE:
+        if self.config.legend_strategy == LegendStrategy.NONE:
             return
 
-        if self.config.strategy == LegendStrategy.FIGURE_BELOW:
+        if self.config.legend_strategy == LegendStrategy.FIGURE_BELOW:
             self._create_figure_legend()
-        elif self.config.strategy == LegendStrategy.GROUPED_BY_CHANNEL:
+        elif self.config.legend_strategy == LegendStrategy.GROUPED_BY_CHANNEL:
             self._create_grouped_legends()
-        elif self.config.strategy == LegendStrategy.PER_AXES:
+        elif self.config.legend_strategy == LegendStrategy.PER_AXES:
             self._create_per_axes_legends()
 
     def _process_entries_by_channel_type(
@@ -156,52 +145,57 @@ class LegendManager:
     ) -> list[LegendEntry]:
         return entries
 
-    def _create_figure_legend(self) -> None:
-        entries = self.registry.get_unique_entries()
-
+    def _prepare_legend_entries(
+        self, entries: list[LegendEntry]
+    ) -> tuple[list[Any], list[str], list[LegendEntry]] | None:
         if not entries:
-            return
+            return None
 
         entries = self._process_entries_by_channel_type(entries)
+        handles = [entry.artist for entry in entries]
+        labels = [entry.label for entry in entries]
+        return handles, labels, entries
 
-        handles = []
-        labels = []
+    def _create_figure_legend(self) -> None:
+        entries = self.registry.get_unique_entries()
+        result = self._prepare_legend_entries(entries)
+        if result is None:
+            return
 
-        for entry in entries:
-            handles.append(entry.artist)
-            labels.append(entry.label)
+        handles, labels, entries = result
 
-        if hasattr(self.fm, "fig") and self.fm.fig:
-            ncol = self._calculate_ncol(len(handles))
+        if not hasattr(self.fm, "fig") or not self.fm.fig or not self.fm.fig.axes:
+            return
 
-            bbox_to_anchor = self._get_legend_position(0)
+        ncol = self._calculate_ncol(len(handles))
+        bbox_to_anchor = self._get_legend_position(0)
+        title = None
+        if entries and entries[0].visual_channel:
+            title = self.generate_channel_title(entries[0].visual_channel, entries)
 
-            title = None
-            if entries and entries[0].visual_channel:
-                title = self.generate_channel_title(entries[0].visual_channel, entries)
+        self.fm.fig.legend(
+            handles,
+            labels,
+            title=title,
+            loc=self.config.position,
+            bbox_to_anchor=bbox_to_anchor,
+            ncol=ncol,
+            frameon=self.fm.styler.get_style("legend_frameon", default=True),
+        )
 
-            self.fm.fig.legend(
-                handles,
-                labels,
-                title=title,
-                loc=self.config.position,
-                bbox_to_anchor=bbox_to_anchor,
-                ncol=ncol,
-                frameon=self.fm.styler.get_style("legend_frameon", True),
-            )
-
-            if self.config.remove_axes_legends:
-                for ax in self.fm.fig.axes:
-                    legend = ax.get_legend()
-                    if legend:
-                        legend.remove()
+        if self.config.remove_axes_legends:
+            for ax in self.fm.fig.axes:
+                legend = ax.get_legend()
+                if legend:
+                    legend.remove()
 
     def _create_per_axes_legends(self) -> None:
         entries = self.registry.get_unique_entries()
-        if not entries:
+        result = self._prepare_legend_entries(entries)
+        if result is None:
             return
 
-        entries = self._process_entries_by_channel_type(entries)
+        _, _, entries = result
 
         entries_by_axis = {}
         for entry in entries:
@@ -242,14 +236,11 @@ class LegendManager:
         for entry in self.registry.get_unique_entries():
             if entry.visual_channel:
                 channels.add(entry.visual_channel)
-
         channel_list = sorted(channels)
 
-        if self.config.strategy == LegendStrategy.GROUPED_BY_CHANNEL:
-            num_legends = len(channel_list)
+        if self.config.legend_strategy == LegendStrategy.GROUPED_BY_CHANNEL:
             legends_to_create = [(i, channel) for i, channel in enumerate(channel_list)]
-        elif self.config.strategy == LegendStrategy.FIGURE_BELOW:
-            num_legends = 1
+        elif self.config.legend_strategy == LegendStrategy.FIGURE_BELOW:
             legends_to_create = [(0, None)]
         else:
             return
@@ -260,31 +251,21 @@ class LegendManager:
             else:
                 entries = self.registry.get_unique_entries()
 
-            if not entries:
+            result = self._prepare_legend_entries(entries)
+            if result is None:
                 continue
 
-            entries = self._process_entries_by_channel_type(entries)
-
-            handles = []
-            labels = []
-
-            for entry in entries:
-                handles.append(entry.artist)
-                labels.append(entry.label)
-
-            if hasattr(self.fm, "fig") and self.fm.fig and self.fm.fig.axes:
-                bbox_to_anchor = self._get_legend_position(legend_index)
-
-                title = None
-                if channel:
-                    title = self.generate_channel_title(channel, entries)
-
-                self.fm.fig.legend(
-                    handles,
-                    labels,
-                    title=title,
-                    loc=self.config.position,  # Respect config position instead of hardcoding
-                    bbox_to_anchor=bbox_to_anchor,
-                    ncol=self.calculate_optimal_ncol(entries),
-                    frameon=self.fm.styler.get_style("legend_frameon", True),
-                )
+            handles, labels, entries = result
+            if not hasattr(self.fm, "fig") or not self.fm.fig or not self.fm.fig.axes:
+                continue
+            bbox_to_anchor = self._get_legend_position(legend_index)
+            title = self.generate_channel_title(channel, entries) if channel else None
+            self.fm.fig.legend(
+                handles,
+                labels,
+                title=title,
+                loc=self.config.position,
+                bbox_to_anchor=bbox_to_anchor,
+                ncol=self.calculate_optimal_ncol(entries),
+                frameon=self.fm.styler.get_style("legend_frameon", default=True),
+            )

@@ -13,6 +13,19 @@ CHANNEL_TO_ATTR: dict[VisualChannel, StyleAttrName] = {
     "alpha": "alpha",
 }
 
+COLUMN_KEYS = [
+    "x",
+    "y",
+    "rows-by",
+    "cols-by",
+    "wrap-by",
+    "hue-by",
+    "alpha-by",
+    "size-by",
+    "marker-by",
+    "style-by",
+]
+
 
 def get_cycle_key(channel: VisualChannel) -> str:
     return f"{channel}_cycle"

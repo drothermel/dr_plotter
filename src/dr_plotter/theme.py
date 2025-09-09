@@ -203,7 +203,6 @@ BASE_THEME = Theme(
     ),
     figure_styles=FigureStyles(
         title_fontsize=14,
-        suptitle_fontsize=16,
         suptitle_y=0.99,
         suptitle_tight_layout_rect=(0, 0, 1, 0.98),
         legend_tight_layout_rect=(0, 0.06, 1, 1),
@@ -214,7 +213,7 @@ BASE_THEME = Theme(
         multi_legend_positions=[(0.4, 0.00), (0.6, 0.00)],
         legend_frameon=True,
         row_title_rotation=90,
-        row_title_offset=-0.25,  # Distance from plot area (more negative = further left)
+        row_title_offset=-0.25,
     ),
     error_color="#FF0000",
     error_edge_color="#FF0000",
