@@ -96,7 +96,7 @@ def common_faceting_options(valid_dimensions: List[str]) -> Callable[[F], F]:
     def decorator(f: F) -> F:
         # Use Choice validation if dimensions provided, otherwise accept any string
         dimension_type = click.Choice(valid_dimensions) if valid_dimensions else str
-        
+
         # Layout options
         f = click.option(
             "--rows",
@@ -244,9 +244,9 @@ def config_option() -> Callable[[F], F]:
 def validate_layout_options(ctx: click.Context, **kwargs) -> None:
     """Validate layout options are specified correctly."""
     rows = kwargs.get("rows")
-    cols = kwargs.get("cols") 
+    cols = kwargs.get("cols")
     rows_and_cols = kwargs.get("rows_and_cols")
-    
+
     # Only check: don't mix rows+cols with rows_and_cols
     if rows_and_cols is not None and (rows is not None or cols is not None):
         raise click.UsageError(
