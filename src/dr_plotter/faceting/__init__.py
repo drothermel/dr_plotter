@@ -9,9 +9,9 @@ from .dimension_validation import (
 
 __all__ = [
     "FacetStyleCoordinator",
-    "get_grid_dimensions", 
-    "prepare_faceted_subplots",
     "discover_categorical_dimensions",
-    "interactive_dimension_validation", 
+    "get_grid_dimensions",
+    "interactive_dimension_validation",
+    "prepare_faceted_subplots",
     "validate_dimensions",
 ]

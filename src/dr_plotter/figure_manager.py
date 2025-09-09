@@ -127,10 +127,13 @@ class FigureManager:
         # Use explicit rect if specified
         if self.layout_config.tight_layout_rect is not None:
             return self.layout_config.tight_layout_rect
-        
+
         has_suptitle = bool(self.layout_config.figure_title)
-        has_legend = self.legend_config.strategy in [LegendStrategy.FIGURE_BELOW, LegendStrategy.GROUPED_BY_CHANNEL]
-        
+        has_legend = self.legend_config.strategy in [
+            LegendStrategy.FIGURE_BELOW,
+            LegendStrategy.GROUPED_BY_CHANNEL,
+        ]
+
         if has_suptitle and has_legend:
             return self.styler.get_style("suptitle_legend_tight_layout_rect")
         elif has_suptitle:
@@ -270,8 +273,10 @@ class FigureManager:
         data = apply_dimensional_filters(data, config)
         # Get subplot dimensions from config or theme defaults
         subplot_width = config.subplot_width or self.styler.get_style("subplot_width")
-        subplot_height = config.subplot_height or self.styler.get_style("subplot_height")
-        
+        subplot_height = config.subplot_height or self.styler.get_style(
+            "subplot_height"
+        )
+
         if subplot_width is not None and subplot_height is not None:
             # Update both figsize and grid dimensions
             self.layout_config.figsize = (

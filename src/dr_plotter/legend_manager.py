@@ -86,12 +86,13 @@ class LegendManager:
         # Use explicit position if specified
         if self.config.legend_position is not None:
             return self.config.legend_position
-        
+
         # Use multi-legend positions if specified and index is available
-        if (self.config.multi_legend_positions is not None and 
-            legend_index < len(self.config.multi_legend_positions)):
+        if self.config.multi_legend_positions is not None and legend_index < len(
+            self.config.multi_legend_positions
+        ):
             return self.config.multi_legend_positions[legend_index]
-        
+
         # Fall back to theme defaults
         # Only use multi-positions for grouped strategies that need multiple legends
         if self.config.strategy == LegendStrategy.GROUPED_BY_CHANNEL:
@@ -138,8 +139,6 @@ class LegendManager:
         if self.config.ncol is not None:
             return self.config.ncol
         return len(legend_entries) if len(legend_entries) > 0 else 1
-
-
 
     def finalize(self) -> None:
         if self.config.strategy == LegendStrategy.NONE:

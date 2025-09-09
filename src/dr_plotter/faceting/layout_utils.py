@@ -38,8 +38,12 @@ def get_grid_dimensions(data: pd.DataFrame, config: FacetingConfig) -> tuple[int
     if config.rows_and_cols:
         values = resolve_dimension_values(data, config.rows_and_cols, config)
         return calculate_wrapped_grid(values, config.max_cols, config.max_rows)
-    row_values = resolve_dimension_values(data, config.rows, config) if config.rows else [None]
-    col_values = resolve_dimension_values(data, config.cols, config) if config.cols else [None]
+    row_values = (
+        resolve_dimension_values(data, config.rows, config) if config.rows else [None]
+    )
+    col_values = (
+        resolve_dimension_values(data, config.cols, config) if config.cols else [None]
+    )
     n_rows = len(row_values)
     n_cols = len(col_values)
     return n_rows, n_cols

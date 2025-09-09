@@ -153,10 +153,14 @@ def _apply_exterior_labels(
     else:
         # Standard row/col layout
         row_values = (
-            resolve_dimension_values(data, config.rows, config) if config.rows else [None]
+            resolve_dimension_values(data, config.rows, config)
+            if config.rows
+            else [None]
         )
         col_values = (
-            resolve_dimension_values(data, config.cols, config) if config.cols else [None]
+            resolve_dimension_values(data, config.cols, config)
+            if config.cols
+            else [None]
         )
         n_rows = len(row_values) if config.rows else 1
         n_cols = len(col_values) if config.cols else 1  # noqa: F841
@@ -213,13 +217,15 @@ def _apply_dimension_titles(
             rotation = config.row_title_rotation
             if rotation is None:
                 rotation = fm.styler.get_style("row_title_rotation", 90)
-            
-            offset = config.row_title_offset  
+
+            offset = config.row_title_offset
             if offset is None:
                 offset = fm.styler.get_style("row_title_offset", -0.15)
-                
+
             fontsize = fm.styler.get_style("title_fontsize", 14)
-            _add_row_title(ax, title, offset=offset, rotation=rotation, fontsize=fontsize)
+            _add_row_title(
+                ax, title, offset=offset, rotation=rotation, fontsize=fontsize
+            )
 
     # Column titles (top, first row only)
     if config.col_titles and row == 0 and col < len(col_values):
@@ -238,7 +244,13 @@ def _resolve_dimension_title(
     return None
 
 
-def _add_row_title(ax: matplotlib.axes.Axes, title: str, offset: float = -0.15, rotation: float = 0, fontsize: float = 14) -> None:
+def _add_row_title(
+    ax: matplotlib.axes.Axes,
+    title: str,
+    offset: float = -0.15,
+    rotation: float = 0,
+    fontsize: float = 14,
+) -> None:
     ax_left = ax.twinx()
     ax_left.yaxis.set_label_position("left")
     ax_left.spines["left"].set_position(("axes", offset))
@@ -251,7 +263,7 @@ def _add_row_title(ax: matplotlib.axes.Axes, title: str, offset: float = -0.15, 
         va = "center"  # For horizontal text, keep centered
     else:
         va = "center"  # Default for other angles
-        
+
     ax_left.set_ylabel(
         title,
         rotation=rotation,

@@ -33,8 +33,12 @@ class LegendConfig:
     spacing: float = 0.1
     remove_axes_legends: bool = True
     channel_titles: dict[str, str] | None = None
-    legend_position: tuple[float, float] | None = None  # (x, y) coordinates, uses theme default if None
-    multi_legend_positions: list[tuple[float, float]] | None = None  # For multi-legend cases
+    legend_position: tuple[float, float] | None = (
+        None  # (x, y) coordinates, uses theme default if None
+    )
+    multi_legend_positions: list[tuple[float, float]] | None = (
+        None  # For multi-legend cases
+    )
 
     def __post_init__(self) -> None:
         self.validate()

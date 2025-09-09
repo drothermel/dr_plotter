@@ -40,8 +40,12 @@ class FacetingConfig:
 
     row_titles: bool | list[str] | None = None
     col_titles: bool | list[str] | None = None
-    row_title_rotation: float | None = None  # Rotation angle for row titles (None=use theme default)
-    row_title_offset: float | None = None  # Distance from plot area (None=use theme default)
+    row_title_rotation: float | None = (
+        None  # Rotation angle for row titles (None=use theme default)
+    )
+    row_title_offset: float | None = (
+        None  # Distance from plot area (None=use theme default)
+    )
 
     exterior_x_label: str | None = None
     exterior_y_label: str | None = None

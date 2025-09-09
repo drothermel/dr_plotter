@@ -44,13 +44,13 @@ def create_and_render_plot(
 
 def parse_key_value_args(args: list[str] | None) -> dict[str, Any]:
     """Parse key=value arguments into dict.
-    
+
     Handles comma-separated values and automatic type conversion to numbers.
-    
+
     Examples:
-        parse_key_value_args(["seed=0", "data=C4,Dolma1.7"]) 
+        parse_key_value_args(["seed=0", "data=C4,Dolma1.7"])
         # Returns: {"seed": 0, "data": ["C4", "Dolma1.7"]}
-        
+
         parse_key_value_args(["params=7B,30B,70B"])
         # Returns: {"params": ["7B", "30B", "70B"]}
     """
