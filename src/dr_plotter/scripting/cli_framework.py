@@ -211,24 +211,20 @@ def build_style_config(kwargs: dict[str, Any]) -> tuple[StyleConfig, dict[str, A
     return style_config, remaining_kwargs
 
 
-def build_configs(kwargs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+def build_configs(kwargs: dict[str, Any]) -> tuple[PlotConfig, dict[str, Any]]:
     faceting_config, unused = build_faceting_config(kwargs)
     layout_config, unused = build_layout_config(unused)
     legend_config, unused = build_legend_config(unused)
     style_config, unused = build_style_config(unused)
 
-    unused.pop("save_dir", None)
-    unused.pop("pause", None)
-    unused.pop("config", None)
+    plot_config = PlotConfig(
+        layout=layout_config,
+        legend=legend_config,
+        style=style_config if style_config.theme else None,
+        faceting=faceting_config,
+    )
 
-    configs = {
-        "faceting": faceting_config,
-        "layout": layout_config,
-        "legend": legend_config,
-        "style": style_config,
-    }
-
-    return configs, unused
+    return plot_config, unused
 
 
 def validate_unused_parameters(

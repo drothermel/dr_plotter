@@ -6,14 +6,11 @@ from typing import Any
 import click
 
 from dr_plotter import FigureManager
-from dr_plotter.configs import PlotConfig
 from dr_plotter.scripting import (
-    CLIConfig,
-    build_configs,
+    CLIWorkflowConfig,
     dimensional_plotting_cli,
+    execute_cli_workflow,
     load_dataset,
-    validate_args,
-    validate_unused_parameters,
 )
 from dr_plotter.scripting.utils import show_or_save_plot
 from dr_plotter.theme import BASE_THEME, FigureStyles, Theme
@@ -55,25 +52,20 @@ def main(
     plot_type: str,
     **kwargs: Any,
 ) -> None:
-    df = load_dataset(dataset_path)
-    config = CLIConfig.load_or_default(kwargs)
-    merged_args = config.merge_with_cli_args(kwargs)
-    validate_args(df, merged_args)
-    configs, unused_kwargs = build_configs(merged_args)
-    validate_unused_parameters(unused_kwargs)
-
-    plot_config = PlotConfig(
-        layout=configs["layout"],
-        legend=configs["legend"],
-        style=configs["style"] if configs["style"].theme else None,
+    df, plot_config = execute_cli_workflow(
+        kwargs,
+        CLIWorkflowConfig(
+            data_loader=lambda _: load_dataset(dataset_path),
+            allowed_unused={"save_dir", "pause"},
+        ),
     )
-
     with FigureManager(plot_config) as fm:
-        fm.plot_faceted(df, plot_type, faceting=configs["faceting"])
-
-    dataset_name = Path(dataset_path).stem
+        fm.plot_faceted(df, plot_type)
     show_or_save_plot(
-        fm.fig, kwargs["save_dir"], kwargs["pause"], f"dr_plotter_{dataset_name}"
+        fm.fig,
+        kwargs["save_dir"],
+        kwargs["pause"],
+        f"dr_plotter_{Path(dataset_path).stem}",
     )
 
 

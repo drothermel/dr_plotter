@@ -13,7 +13,9 @@ from .config_schema import (
 )
 from .plot_data import experimental_data, matrix_data
 from .utils import (
+    CLIWorkflowConfig,
     create_and_render_plot,
+    execute_cli_workflow,
     load_dataset,
     parse_scale_flags,
     parse_scale_pair,
@@ -26,9 +28,11 @@ __all__ = [
     "EXAMPLE_CONFIG",
     "MINIMAL_CONFIG",
     "CLIConfig",
+    "CLIWorkflowConfig",
     "build_configs",
     "create_and_render_plot",
     "dimensional_plotting_cli",
+    "execute_cli_workflow",
     "experimental_data",
     "load_config",
     "load_dataset",

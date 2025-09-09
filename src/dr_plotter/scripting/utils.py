@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 import ast
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import click
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter import consts
+from dr_plotter.configs import PlotConfig
+from dr_plotter.scripting import (
+    CLIConfig,
+    build_configs,
+    validate_layout_options,
+    validate_unused_parameters,
+)
 
 
 def show_or_save_plot(
@@ -139,8 +147,46 @@ def validate_columns(df: pd.DataFrame, merged_args: Any) -> None:
             )
 
 
-def validate_args(df: pd.DataFrame, merged_args: Any) -> None:
-    from dr_plotter.scripting import validate_layout_options
-
-    validate_columns(df, merged_args)
+def validate_args(
+    df: pd.DataFrame,
+    merged_args: dict[str, Any],
+    unused_kwargs: dict[str, Any],
+    workflow_config: CLIWorkflowConfig,
+) -> None:
     validate_layout_options(click.get_current_context(), **merged_args)
+    validate_unused_parameters(unused_kwargs, workflow_config.allowed_unused)
+    validate_columns(df, merged_args)
+
+
+def apply_fixed_params(
+    merged_args: dict[str, Any], workflow_config: CLIWorkflowConfig
+) -> dict[str, Any]:
+    for param, value in workflow_config.fixed_params.items():
+        assert param not in merged_args, (
+            f"Param: {param} is fixed and cannot be overridden"
+        )
+        merged_args[param] = value
+    return merged_args
+
+
+@dataclass
+class CLIWorkflowConfig:
+    data_loader: Callable[[dict], pd.DataFrame]
+    default_params: dict[str, Any] = field(default_factory=dict)
+    fixed_params: dict[str, Any] = field(default_factory=dict)
+    allowed_unused: set[str] | None = None
+
+
+def execute_cli_workflow(
+    kwargs: dict[str, Any], workflow_config: CLIWorkflowConfig
+) -> tuple[pd.DataFrame, PlotConfig]:
+    config = CLIConfig.load_or_default(kwargs)
+    merged_args = {**workflow_config.default_params}
+    merged_args.update(config.merge_with_cli_args(kwargs))
+    merged_args = apply_fixed_params(merged_args, workflow_config)
+
+    plot_config, unused_kwargs = build_configs(merged_args)
+    df = workflow_config.data_loader(merged_args)
+    validate_args(df, merged_args, unused_kwargs, workflow_config)
+
+    return df, plot_config
