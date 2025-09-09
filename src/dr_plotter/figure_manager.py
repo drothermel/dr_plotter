@@ -306,7 +306,7 @@ class FigureManager:
         if config.auto_titles:
             self.layout_config.figure_title = generate_dimensional_title(config)
 
-        if not config.rows and not config.cols and not config.rows_and_cols:
+        if not config.rows_by and not config.cols_by and not config.wrap_by:
             self.plot(
                 plot_type,
                 0,

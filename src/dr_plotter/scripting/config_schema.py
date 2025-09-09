@@ -13,10 +13,10 @@ import yaml
 # Example configuration that mirrors dr_plotter config objects
 # Flat configuration structure matching CLI parameters exactly
 EXAMPLE_CONFIG = {
-    # Faceting parameters (direct mapping to FacetingConfig)
-    "rows": None,
-    "cols": None,
-    "rows_and_cols": "model_size",
+    # Faceting parameters (NEW NAMES)
+    "rows_by": None,
+    "cols_by": None,
+    "wrap_by": "model_size",
     "max_cols": 4,
     "hue_by": "dataset",
     "alpha_by": "seed",
@@ -26,7 +26,13 @@ EXAMPLE_CONFIG = {
     "fixed": {"metric": "loss"},
     "order": {"model_size": ["1B", "7B", "30B", "70B", "180B"]},
     "exclude": {"dataset": ["deprecated_data"]},
-    # Layout parameters
+    # Layout parameters (NOW CONNECTED)
+    "rows": 1,
+    "cols": 1,
+    "figsize": [12.0, 8.0],
+    "tight_layout": True,
+    "tight_layout_pad": 1.0,
+    # Subplot sizing parameters
     "subplot_width": 3.5,
     "subplot_height": 3.0,
     "auto_titles": True,
@@ -38,8 +44,7 @@ EXAMPLE_CONFIG = {
 }
 
 MINIMAL_CONFIG = {
-    # Direct CLI parameter mapping
-    "rows_and_cols": "params",
+    "wrap_by": "params",  # NEW NAME
     "hue_by": "data",
     "fixed": {"metric": "pile-valppl"},
     "legend_strategy": "figure",
@@ -62,10 +67,10 @@ def validate_config(config_data: Dict[str, Any]) -> List[str]:
 
     # Valid top-level keys in flat structure
     valid_keys = {
-        # Faceting parameters
-        "rows",
-        "cols",
-        "rows_and_cols",
+        # Faceting parameters (NEW NAMES)
+        "rows_by",
+        "cols_by",
+        "wrap_by",
         "max_cols",
         "hue_by",
         "alpha_by",
@@ -75,7 +80,13 @@ def validate_config(config_data: Dict[str, Any]) -> List[str]:
         "fixed",
         "order",
         "exclude",
-        # Layout parameters
+        # Layout parameters (NOW SUPPORTED)
+        "rows",
+        "cols",
+        "figsize",
+        "tight_layout",
+        "tight_layout_pad",
+        # Subplot sizing parameters
         "subplot_width",
         "subplot_height",
         "auto_titles",
@@ -90,16 +101,16 @@ def validate_config(config_data: Dict[str, Any]) -> List[str]:
         if key not in valid_keys:
             errors.append(f"Unknown configuration key: {key}")
 
-    # Check for conflicting layout options
+    # Check for conflicting layout options (UPDATED NAMES)
     layout_options = [
-        config_data.get("rows"),
-        config_data.get("cols"),
-        config_data.get("rows_and_cols"),
+        config_data.get("rows_by"),
+        config_data.get("cols_by"),
+        config_data.get("wrap_by"),
     ]
     specified = [opt for opt in layout_options if opt is not None]
     if len(specified) > 1:
         errors.append(
-            "Cannot specify multiple layout options (rows, cols, rows_and_cols)"
+            "Cannot specify multiple faceting options (rows_by, cols_by, wrap_by)"
         )
 
     # Validate dimensional control types

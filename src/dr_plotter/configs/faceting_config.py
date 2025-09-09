@@ -8,9 +8,9 @@ class FacetingConfig:
     x: str | None = None
     y: str | None = None
 
-    rows: str | None = None
-    cols: str | None = None
-    rows_and_cols: str | None = None
+    rows_by: str | None = None
+    cols_by: str | None = None
+    wrap_by: str | None = None
     max_cols: int | None = None
     max_rows: int | None = None
 

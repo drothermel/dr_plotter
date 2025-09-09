@@ -35,14 +35,18 @@ def get_grid_dimensions(data: pd.DataFrame, config: FacetingConfig) -> tuple[int
     assert not data.empty, "Cannot compute dimensions from empty DataFrame"
     if config.target_row is not None and config.target_col is not None:
         return max(config.target_row + 1, 1), max(config.target_col + 1, 1)
-    if config.rows_and_cols:
-        values = resolve_dimension_values(data, config.rows_and_cols, config)
+    if config.wrap_by:
+        values = resolve_dimension_values(data, config.wrap_by, config)
         return calculate_wrapped_grid(values, config.max_cols, config.max_rows)
     row_values = (
-        resolve_dimension_values(data, config.rows, config) if config.rows else [None]
+        resolve_dimension_values(data, config.rows_by, config)
+        if config.rows_by
+        else [None]
     )
     col_values = (
-        resolve_dimension_values(data, config.cols, config) if config.cols else [None]
+        resolve_dimension_values(data, config.cols_by, config)
+        if config.cols_by
+        else [None]
     )
     n_rows = len(row_values)
     n_cols = len(col_values)
