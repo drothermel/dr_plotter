@@ -6,6 +6,7 @@ from typing import Any
 import click
 
 from dr_plotter import FigureManager
+from dr_plotter.configs import PlotConfig
 from dr_plotter.scripting import (
     CLIConfig,
     build_configs,
@@ -62,19 +63,11 @@ def main(
     cli_kwargs.update({"x": x_column, "y": y_column})
     merged_args = config.merge_with_cli_args(cli_kwargs)
     validate_args(df, merged_args)
-
-    # Use new sequential config building system
     configs, unused_kwargs = build_configs(merged_args)
-
     # Check for invalid parameters
     if unused_kwargs:
         unused_params = ", ".join(unused_kwargs.keys())
         raise click.UsageError(f"Unknown parameters: {unused_params}")
-
-    faceting_config = configs["faceting"]
-
-    # Build plot config using layout, legend, and style
-    from dr_plotter.configs import PlotConfig
 
     plot_config = PlotConfig(
         layout=configs["layout"],
@@ -83,7 +76,7 @@ def main(
     )
 
     with FigureManager(plot_config) as fm:
-        fm.plot_faceted(df, plot_type, faceting=faceting_config)
+        fm.plot_faceted(df, plot_type, faceting=configs["faceting"])
 
     dataset_name = Path(dataset_path).stem
     show_or_save_plot(

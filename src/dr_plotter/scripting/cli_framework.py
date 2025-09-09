@@ -14,7 +14,7 @@ from dr_plotter.configs import (
     PlotConfig,
     StyleConfig,
 )
-from dr_plotter.scripting.utils import parse_key_value_args, convert_cli_value_to_type
+from dr_plotter.scripting.utils import convert_cli_value_to_type, parse_key_value_args
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -63,10 +63,8 @@ def add_options_from_config(
             click_type = infer_click_type(field.type, field.default)
             help_text = generate_help_text(field)
 
-            # Special handling for boolean fields - use Click boolean flags
             if field.type is bool and field.default is not MISSING:
                 if field.default:
-                    # Default is True, so provide --no-option to set False
                     no_option_name = f"--no-{field.name.replace('_', '-')}"
                     f = click.option(
                         no_option_name,
@@ -76,7 +74,6 @@ def add_options_from_config(
                         help=f"Disable {help_text.lower()}",
                     )(f)
                 else:
-                    # Default is False, so provide --option to set True
                     f = click.option(
                         option_name,
                         field.name,
@@ -131,9 +128,6 @@ class CLIConfig:
         return merged
 
 
-# Old manual decorators removed - replaced by dynamic generation
-
-
 def validate_layout_options(ctx: click.Context, **kwargs: Any) -> None:
     rows_by = kwargs.get("rows_by")
     cols_by = kwargs.get("cols_by")
@@ -153,7 +147,6 @@ def build_faceting_config(
     relevant_kwargs = {k: v for k, v in kwargs.items() if k in faceting_fields}
     remaining_kwargs = {k: v for k, v in kwargs.items() if k not in faceting_fields}
 
-    # Handle special preprocessing for dimension controls
     def parse_dimension_value(value: Any) -> Any:
         if isinstance(value, dict):
             return value
@@ -169,7 +162,6 @@ def build_faceting_config(
     if "exclude" in relevant_kwargs:
         relevant_kwargs["exclude"] = parse_dimension_value(relevant_kwargs["exclude"])
 
-    # Handle boolean inversion for auto_titles
     if "no_auto_titles" in remaining_kwargs:
         relevant_kwargs["auto_titles"] = not remaining_kwargs.pop(
             "no_auto_titles", False
@@ -184,7 +176,6 @@ def build_layout_config(kwargs: dict[str, Any]) -> tuple[LayoutConfig, dict[str,
     relevant_kwargs = {k: v for k, v in kwargs.items() if k in layout_fields}
     remaining_kwargs = {k: v for k, v in kwargs.items() if k not in layout_fields}
 
-    # Convert string CLI values to proper types
     converted_kwargs = {}
     for key, value in relevant_kwargs.items():
         field_type = layout_fields.get(key)
@@ -221,7 +212,6 @@ def build_configs(kwargs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any
     legend_config, unused = build_legend_config(unused)
     style_config, unused = build_style_config(unused)
 
-    # Remove CLI-only parameters
     unused.pop("save_dir", None)
     unused.pop("pause", None)
     unused.pop("config", None)
