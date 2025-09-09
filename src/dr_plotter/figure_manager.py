@@ -11,11 +11,17 @@ from dr_plotter.configs import (
     GroupingConfig,
     PlotConfig,
 )
+from dr_plotter.configs.legend_config import LegendStrategy
+from dr_plotter.faceting.dimensional_utils import (
+    apply_dimensional_filters,
+    generate_dimensional_title,
+    resolve_dimension_values,
+)
 from dr_plotter.faceting.faceting_core import (
-    get_grid_dimensions,
-    plot_faceted_data,
+    _apply_subplot_customization,
     prepare_faceted_subplots,
 )
+from dr_plotter.faceting.layout_utils import get_grid_dimensions
 from dr_plotter.faceting.style_coordination import FacetStyleCoordinator
 from dr_plotter.legend_manager import (
     LegendEntry,
@@ -24,6 +30,31 @@ from dr_plotter.legend_manager import (
 from dr_plotter.plotters.base import BasePlotter
 from dr_plotter.style_applicator import StyleApplicator
 from dr_plotter.utils import get_axes_from_grid
+
+FACETING_PARAM_NAMES = {
+    "rows",
+    "cols",
+    "lines",
+    "row_order",
+    "col_order",
+    "lines_order",
+    "x",
+    "y",
+    "x_labels",
+    "y_labels",
+    "xlim",
+    "ylim",
+    "subplot_titles",
+    "title_template",
+    "color_wrap",
+    "target_row",
+    "target_col",
+    "row_titles",
+    "col_titles",
+    "exterior_x_label",
+    "exterior_y_label",
+}
+DEFAULT_MARGIN = 0.05
 
 
 class FigureManager:
@@ -85,10 +116,32 @@ class FigureManager:
         self._apply_axis_scaling()
         self._apply_figure_title()
         if self.layout_config.tight_layout:
+            rect = self._get_tight_layout_rect()
             self.fig.tight_layout(
-                rect=self.layout_config.tight_layout_rect,
+                rect=rect,
                 pad=self.layout_config.tight_layout_pad,
             )
+
+    def _get_tight_layout_rect(self) -> tuple[float, float, float, float] | None:
+        """Calculate appropriate tight_layout rect based on suptitle and legend presence."""
+        # Use explicit rect if specified
+        if self.layout_config.tight_layout_rect is not None:
+            return self.layout_config.tight_layout_rect
+
+        has_suptitle = bool(self.layout_config.figure_title)
+        has_legend = self.legend_config.strategy in [
+            LegendStrategy.FIGURE_BELOW,
+            LegendStrategy.GROUPED_BY_CHANNEL,
+        ]
+
+        if has_suptitle and has_legend:
+            return self.styler.get_style("suptitle_legend_tight_layout_rect")
+        elif has_suptitle:
+            return self.styler.get_style("suptitle_tight_layout_rect")
+        elif has_legend:
+            return self.styler.get_style("legend_tight_layout_rect")
+        else:
+            return None  # Use matplotlib's default
 
     def _apply_axis_labels(self) -> None:
         if self._external_mode:
@@ -186,8 +239,12 @@ class FigureManager:
             ax.set_ylim(layout.ylim)
 
         if layout.xmargin is not None or layout.ymargin is not None:
-            current_xmargin = 0.05 if layout.xmargin is None else layout.xmargin
-            current_ymargin = 0.05 if layout.ymargin is None else layout.ymargin
+            current_xmargin = (
+                DEFAULT_MARGIN if layout.xmargin is None else layout.xmargin
+            )
+            current_ymargin = (
+                DEFAULT_MARGIN if layout.ymargin is None else layout.ymargin
+            )
             ax.margins(x=current_xmargin, y=current_ymargin)
 
     def _resolve_faceting_config(
@@ -195,42 +252,11 @@ class FigureManager:
         faceting: FacetingConfig | None,
         **kwargs: Any,
     ) -> FacetingConfig:
-        faceting_params = {}
-
-        faceting_param_names = {
-            "rows",
-            "cols",
-            "lines",
-            "row_order",
-            "col_order",
-            "lines_order",
-            "x",
-            "y",
-            "x_labels",
-            "y_labels",
-            "xlim",
-            "ylim",
-            "subplot_titles",
-            "title_template",
-            "color_wrap",
-            "target_row",
-            "target_col",
-            "row_titles",
-            "col_titles",
-            "exterior_x_label",
-            "exterior_y_label",
-        }
-
-        for param_name in faceting_param_names:
-            if param_name in kwargs:
-                faceting_params[param_name] = kwargs[param_name]
-
+        faceting_params = {k: kwargs[k] for k in FACETING_PARAM_NAMES if k in kwargs}
         if faceting is None:
             return FacetingConfig(**faceting_params)
-
         config_dict = dict(faceting.__dict__.items())
         config_dict.update({k: v for k, v in faceting_params.items() if v is not None})
-
         return FacetingConfig(**config_dict)
 
     def plot_faceted(
@@ -241,14 +267,46 @@ class FigureManager:
         **kwargs: Any,
     ) -> None:
         assert not data.empty, "Cannot create faceted plot with empty DataFrame"
-
         config = self._resolve_faceting_config(faceting, **kwargs)
+        grid_shape = get_grid_dimensions(data, config)
 
-        assert config.x is not None, "x parameter is required for faceted plotting"
-        assert config.y is not None, "y parameter is required for faceted plotting"
-        assert config.rows or config.cols, "Must specify rows or cols for faceting"
+        data = apply_dimensional_filters(data, config)
+        # Get subplot dimensions from config or theme defaults
+        subplot_width = config.subplot_width or self.styler.get_style("subplot_width")
+        subplot_height = config.subplot_height or self.styler.get_style(
+            "subplot_height"
+        )
 
-        if not config.rows and not config.cols:
+        if subplot_width is not None and subplot_height is not None:
+            # Update both figsize and grid dimensions
+            self.layout_config.figsize = (
+                subplot_width * grid_shape[1],
+                subplot_height * grid_shape[0],
+            )
+            # Update layout grid to match calculated dimensions
+            self.layout_config.rows, self.layout_config.cols = grid_shape
+
+            # Recreate figure with new dimensions if they changed
+            if grid_shape != (
+                len(self.axes.flat) if hasattr(self.axes, "flat") else 1,
+                1,
+            ):
+                plt.close(self.fig)
+                self.fig, self.axes = plt.subplots(
+                    self.layout_config.rows,
+                    self.layout_config.cols,
+                    constrained_layout=self.layout_config.constrained_layout,
+                    **{
+                        **self.layout_config.combined_kwargs,
+                        "figsize": self.layout_config.figsize,
+                    },
+                )
+
+        self._validate_grid_dimensions(grid_shape)
+        if config.auto_titles:
+            self.layout_config.figure_title = generate_dimensional_title(config)
+
+        if not config.rows and not config.cols and not config.rows_and_cols:
             self.plot(
                 plot_type,
                 0,
@@ -256,27 +314,51 @@ class FigureManager:
                 data,
                 x=config.x,
                 y=config.y,
-                hue_by=config.lines,
+                hue_by=config.hue_by,
+                alpha_by=config.alpha_by,
+                size_by=config.size_by,
+                marker_by=config.marker_by,
+                style_by=config.style_by,
                 **kwargs,
             )
             return
 
-        grid_shape = get_grid_dimensions(data, config)
-        self._validate_grid_dimensions(grid_shape)
         data_subsets = prepare_faceted_subplots(data, config, grid_shape)
-
         style_coordinator = self._get_or_create_style_coordinator()
-        if config.lines:
-            lines_values = sorted(data[config.lines].unique())
-            style_coordinator.register_dimension_values(config.lines, lines_values)
-
-        plot_kwargs = {
+        # Register dimension values for all specified visual channels
+        visual_channels = [
+            config.hue_by,
+            config.alpha_by,
+            config.size_by,
+            config.marker_by,
+            config.style_by,
+        ]
+        for channel in visual_channels:
+            if channel:
+                channel_values = resolve_dimension_values(data, channel, config)
+                style_coordinator.register_dimension_values(channel, channel_values)
+        filtered_kwargs = {
             k: v for k, v in kwargs.items() if not hasattr(FacetingConfig, k)
         }
+        full_data = pd.concat(data_subsets.values(), ignore_index=True)
+        for (row, col), subplot_data in data_subsets.items():
+            self.plot(
+                plot_type,
+                row,
+                col,
+                subplot_data,
+                x=config.x,
+                y=config.y,
+                hue_by=config.hue_by,
+                alpha_by=config.alpha_by,
+                size_by=config.size_by,
+                marker_by=config.marker_by,
+                style_by=config.style_by,
+                style_coordinator=style_coordinator if config.hue_by else None,
+                **filtered_kwargs,
+            )
 
-        plot_faceted_data(
-            self, data_subsets, plot_type, config, style_coordinator, **plot_kwargs
-        )
+            _apply_subplot_customization(self, row, col, config, full_data)
 
     def _validate_grid_dimensions(self, grid_shape: tuple[int, int]) -> None:
         computed_rows, computed_cols = grid_shape

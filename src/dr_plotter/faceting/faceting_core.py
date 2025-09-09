@@ -1,18 +1,17 @@
 from __future__ import annotations
-from typing import Any, TYPE_CHECKING
+
+from typing import TYPE_CHECKING, Any
 
 import matplotlib.axes
 import pandas as pd
 
 from dr_plotter.configs import FacetingConfig
-from dr_plotter.legend_manager import LegendEntry
+from dr_plotter.faceting.dimensional_utils import resolve_dimension_values
 from dr_plotter.styling_utils import apply_grid_styling
 
 if TYPE_CHECKING:
     from dr_plotter.figure_manager import FigureManager
-    from dr_plotter.faceting.style_coordination import FacetStyleCoordinator
 
-SUPPORTED_PLOT_TYPES = ["line", "scatter", "bar", "fill_between", "heatmap"]
 GRID_SHAPE_DIMENSIONS = 2
 
 
@@ -20,38 +19,53 @@ def prepare_faceted_subplots(
     data: pd.DataFrame, config: FacetingConfig, grid_shape: tuple[int, int]
 ) -> dict[tuple[int, int], pd.DataFrame]:
     assert not data.empty, "Cannot facet empty DataFrame"
-    assert config.rows or config.cols, "Must specify rows or cols for faceting"
+    assert config.rows or config.cols or config.rows_and_cols, (
+        "Must specify rows, cols, or rows_and_cols for faceting"
+    )
     assert isinstance(grid_shape, tuple) and len(grid_shape) == GRID_SHAPE_DIMENSIONS, (
         "grid_shape must be (rows, cols) tuple"
     )
 
     rows, cols = grid_shape
-
-    # Check if we're doing targeted plotting at a specific position
     if config.target_row is not None and config.target_col is not None:
-        # Validate the target position is within the grid
         assert config.target_row < rows and config.target_col < cols, (
             f"Target position ({config.target_row}, {config.target_col}) "
             f"exceeds grid dimensions {grid_shape}"
         )
-
-        # When targeting a specific position, use all the data for that position
-        # This is typically used for highlighting specific cells with filtered data
         subsets = {(config.target_row, config.target_col): data.copy()}
         return subsets
 
-    # Normal faceting behavior
-    row_values = _extract_dimension_values(data, config.rows, config.row_order)
-    col_values = _extract_dimension_values(data, config.cols, config.col_order)
+    if config.rows_and_cols:
+        # Handle wrapping layout: single dimension mapped to grid positions
+        values = resolve_dimension_values(data, config.rows_and_cols, config)
+        rows, cols = grid_shape
+        subsets = {}
+        for i, val in enumerate(values):
+            r = i // cols  # Row position in grid
+            c = i % cols  # Column position in grid
+            if r < rows:  # Only create subsets within grid bounds
+                subset = data[data[config.rows_and_cols] == val].copy()
+                if not subset.empty:
+                    subsets[(r, c)] = subset
+    else:
+        # Handle standard row/col layout
+        row_values = (
+            [None]
+            if config.rows is None
+            else resolve_dimension_values(data, config.rows, config)
+        )
+        col_values = (
+            [None]
+            if config.cols is None
+            else resolve_dimension_values(data, config.cols, config)
+        )
 
-    subsets = {}
-
-    for r, row_val in enumerate(row_values):
-        for c, col_val in enumerate(col_values):
-            subset = _create_data_subset(data, config, row_val, col_val)
-            if not subset.empty:
-                subsets[(r, c)] = subset
-
+        subsets = {}
+        for r, row_val in enumerate(row_values):
+            for c, col_val in enumerate(col_values):
+                subset = _create_data_subset(data, config, row_val, col_val)
+                if not subset.empty:
+                    subsets[(r, c)] = subset
     return subsets
 
 
@@ -60,11 +74,9 @@ def _extract_dimension_values(
 ) -> list[Any]:
     if not column:
         return [None]
-
     values = sorted(data[column].unique())
     if order:
         values = [v for v in order if v in values]
-
     return values
 
 
@@ -72,184 +84,11 @@ def _create_data_subset(
     data: pd.DataFrame, config: FacetingConfig, row_val: Any, col_val: Any
 ) -> pd.DataFrame:
     mask = pd.Series([True] * len(data), index=data.index)
-
     if row_val is not None and config.rows:
         mask = mask & (data[config.rows] == row_val)
     if col_val is not None and config.cols:
         mask = mask & (data[config.cols] == col_val)
-
     return data[mask].copy()
-
-
-def plot_faceted_data(
-    fm: FigureManager,
-    data_subsets: dict[tuple[int, int], pd.DataFrame],
-    plot_type: str,
-    config: FacetingConfig,
-    style_coordinator: FacetStyleCoordinator,
-    **kwargs: Any,
-) -> None:
-    assert data_subsets, "Cannot plot with empty data_subsets"
-    assert plot_type in SUPPORTED_PLOT_TYPES, f"Unsupported plot type: {plot_type}"
-    assert config.x and config.y, "Must specify x and y columns for plotting"
-
-    # Reconstruct full dataset from subsets for dimension title extraction
-    full_data = pd.concat(data_subsets.values(), ignore_index=True)
-
-    for (row, col), subplot_data in data_subsets.items():
-        _plot_subplot_at_position(
-            fm,
-            row,
-            col,
-            subplot_data,
-            plot_type,
-            config,
-            style_coordinator,
-            full_data,
-            **kwargs,
-        )
-
-
-def _plot_subplot_at_position(
-    fm: FigureManager,
-    row: int,
-    col: int,
-    subplot_data: pd.DataFrame,
-    plot_type: str,
-    config: FacetingConfig,
-    style_coordinator: FacetStyleCoordinator,
-    full_data: pd.DataFrame,
-    **kwargs: Any,
-) -> None:
-    if config.lines and config.lines in subplot_data.columns:
-        _plot_with_style_coordination(
-            fm, row, col, subplot_data, plot_type, config, style_coordinator, **kwargs
-        )
-    else:
-        _plot_single_series_at_position(
-            fm, row, col, subplot_data, plot_type, config, **kwargs
-        )
-
-    _apply_subplot_customization(fm, row, col, config, full_data)
-
-
-def _plot_with_style_coordination(
-    fm: FigureManager,
-    row: int,
-    col: int,
-    subplot_data: pd.DataFrame,
-    plot_type: str,
-    config: FacetingConfig,
-    style_coordinator: FacetStyleCoordinator,
-    **kwargs: Any,
-) -> None:
-    ax = fm.get_axes(row, col)
-
-    lines_values = _extract_dimension_values(
-        subplot_data, config.lines, config.lines_order
-    )
-
-    for line_value in lines_values:
-        if line_value is None:
-            continue
-
-        line_data = subplot_data[subplot_data[config.lines] == line_value]
-        assert not line_data.empty, f"Line data for {line_value} is empty"
-
-        plot_kwargs = style_coordinator.get_consistent_style(config.lines, line_value)
-        plot_kwargs.update(kwargs)
-
-        artist = _execute_plot_call(ax, plot_type, line_data, config, **plot_kwargs)
-        _register_legend_entry_if_needed(
-            fm, artist, str(line_value), ax, config.lines, line_value
-        )
-
-
-def _plot_single_series_at_position(
-    fm: FigureManager,
-    row: int,
-    col: int,
-    subplot_data: pd.DataFrame,
-    plot_type: str,
-    config: FacetingConfig,
-    **kwargs: Any,
-) -> None:
-    ax = fm.get_axes(row, col)
-    _execute_plot_call(ax, plot_type, subplot_data, config, **kwargs)
-
-
-def _execute_plot_call(
-    ax: matplotlib.axes.Axes,
-    plot_type: str,
-    data: pd.DataFrame,
-    config: FacetingConfig,
-    **kwargs: Any,
-) -> Any:
-    plot_handlers = {
-        "line": _plot_line_data,
-        "scatter": _plot_scatter_data,
-        "bar": _plot_bar_data,
-        "fill_between": _plot_fill_between_data,
-        "heatmap": _plot_heatmap_data,
-    }
-    return plot_handlers[plot_type](ax, data, config, **kwargs)
-
-
-def _plot_line_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
-) -> Any:
-    lines = ax.plot(data[config.x], data[config.y], **kwargs)
-    return lines[0] if lines else None
-
-
-def _register_legend_entry_if_needed(
-    fm: FigureManager,
-    artist: Any,
-    label: str,
-    ax: matplotlib.axes.Axes,
-    visual_channel: str,
-    channel_value: Any,
-) -> None:
-    if fm and artist and label:
-        entry = LegendEntry(
-            artist=artist,
-            label=label,
-            axis=ax,
-            visual_channel=visual_channel,
-            channel_value=channel_value,
-            source_column=visual_channel,
-        )
-        fm.register_legend_entry(entry)
-
-
-def _plot_scatter_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
-) -> None:
-    ax.scatter(data[config.x], data[config.y], **kwargs)
-
-
-def _plot_bar_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
-) -> None:
-    filtered_kwargs = {k: v for k, v in kwargs.items() if k not in ["marker"]}
-    ax.bar(data[config.x], data[config.y], **filtered_kwargs)
-
-
-def _plot_fill_between_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
-) -> None:
-    ax.fill_between(data[config.x], data[config.y], **kwargs)
-
-
-def _plot_heatmap_data(
-    ax: matplotlib.axes.Axes, data: pd.DataFrame, config: FacetingConfig, **kwargs: Any
-) -> None:
-    values = data.pivot_table(index=config.y, columns=config.x, values="value")
-    ax.imshow(values, **kwargs)
-    ax.set_xticks(range(len(values.columns)))
-    ax.set_yticks(range(len(values.index)))
-    ax.set_xticklabels(values.columns)
-    ax.set_yticklabels(values.index)
 
 
 def _apply_subplot_customization(
@@ -306,52 +145,87 @@ def _apply_exterior_labels(
 
     ax = fm.get_axes(row, col)
 
-    # Get grid dimensions to determine exterior positions
-    row_values = _extract_dimension_values(data, config.rows, config.row_order)
-    col_values = _extract_dimension_values(data, config.cols, config.col_order)
-    n_rows = len(row_values) if config.rows else 1
-    n_cols = len(col_values) if config.cols else 1  # noqa: F841
+    # Get grid dimensions - handle rows_and_cols mode
+    if config.rows_and_cols:
+        # For wrapped layouts, get actual grid dimensions from FigureManager
+        n_rows, n_cols = fm.layout_config.rows, fm.layout_config.cols
+        dimension_name = config.rows_and_cols
+    else:
+        # Standard row/col layout
+        row_values = (
+            resolve_dimension_values(data, config.rows, config)
+            if config.rows
+            else [None]
+        )
+        col_values = (
+            resolve_dimension_values(data, config.cols, config)
+            if config.cols
+            else [None]
+        )
+        n_rows = len(row_values) if config.rows else 1
+        n_cols = len(col_values) if config.cols else 1  # noqa: F841
+        dimension_name = config.rows or config.cols
 
     # Apply exterior x label (bottom row only)
     if config.exterior_x_label and row == n_rows - 1:
         ax.set_xlabel(config.exterior_x_label)
 
     # Apply exterior y label (leftmost column only)
-    if config.exterior_y_label and col == 0:
-        ax.set_ylabel(config.exterior_y_label)
-
-
-def get_grid_dimensions(data: pd.DataFrame, config: FacetingConfig) -> tuple[int, int]:
-    assert not data.empty, "Cannot compute dimensions from empty DataFrame"
-
-    # For targeted plotting, we don't need to compute dimensions from data
-    # since we'll be placing data at a specific position
-    if config.target_row is not None and config.target_col is not None:
-        # Return dimensions that will accommodate the target position
-        return max(config.target_row + 1, 1), max(config.target_col + 1, 1)
-
-    n_rows = len(data[config.rows].unique()) if config.rows else 1
-    n_cols = len(data[config.cols].unique()) if config.cols else 1
-    return n_rows, n_cols
+    if col == 0:
+        if config.exterior_y_label:
+            # Use explicitly provided label
+            ax.set_ylabel(config.exterior_y_label)
+        elif config.rows_and_cols and dimension_name:
+            # Auto-label with dimension name for rows_and_cols mode
+            ax.set_ylabel(dimension_name.capitalize())
 
 
 def _apply_dimension_titles(
     fm: FigureManager, row: int, col: int, config: FacetingConfig, data: pd.DataFrame
 ) -> None:
+    ax = fm.get_axes(row, col)
+
+    # Handle wrapping layout (rows_and_cols) - add title to every subplot
+    if config.rows_and_cols and config.auto_titles:
+        values = resolve_dimension_values(data, config.rows_and_cols, config)
+        _, grid_cols = fm.layout_config.rows, fm.layout_config.cols
+
+        # Calculate which value this subplot represents
+        subplot_index = row * grid_cols + col
+        if subplot_index < len(values):
+            value = values[subplot_index]
+            title = f"{config.rows_and_cols}={value}"
+            ax.set_title(title, pad=10)
+        return
+
+    # Handle standard row/col layout
     if not (config.row_titles or config.col_titles):
         return
 
-    ax = fm.get_axes(row, col)
-
     # Get dimension values using same logic as faceting system
-    row_values = _extract_dimension_values(data, config.rows, config.row_order)
-    col_values = _extract_dimension_values(data, config.cols, config.col_order)
+    row_values = (
+        resolve_dimension_values(data, config.rows, config) if config.rows else [None]
+    )
+    col_values = (
+        resolve_dimension_values(data, config.cols, config) if config.cols else [None]
+    )
 
     # Row titles (left side, first column only)
     if config.row_titles and col == 0 and row < len(row_values):
         title = _resolve_dimension_title(config.row_titles, row, row_values)
         if title:
-            _add_row_title(ax, title)
+            rotation = config.row_title_rotation
+            if rotation is None:
+                rotation = fm.styler.get_style("row_title_rotation", 90)
+
+            offset = config.row_title_offset
+            if offset is None:
+                offset = fm.styler.get_style("row_title_offset", -0.15)
+
+            fontsize = fm.styler.get_style("title_fontsize", 14)
+            _add_row_title(
+                ax, title, offset=offset, rotation=rotation, fontsize=fontsize
+            )
 
     # Column titles (top, first row only)
     if config.col_titles and row == 0 and col < len(col_values):
@@ -370,18 +244,32 @@ def _resolve_dimension_title(
     return None
 
 
-def _add_row_title(ax: matplotlib.axes.Axes, title: str, offset: float = -0.15) -> None:
+def _add_row_title(
+    ax: matplotlib.axes.Axes,
+    title: str,
+    offset: float = -0.15,
+    rotation: float = 0,
+    fontsize: float = 14,
+) -> None:
     ax_left = ax.twinx()
     ax_left.yaxis.set_label_position("left")
     ax_left.spines["left"].set_position(("axes", offset))
     ax_left.spines["left"].set_visible(False)
     ax_left.set_yticks([])
+    # Adjust vertical alignment based on rotation
+    if rotation == 90:
+        va = "bottom"  # For vertical text, align to bottom
+    elif rotation == 0:
+        va = "center"  # For horizontal text, keep centered
+    else:
+        va = "center"  # Default for other angles
+
     ax_left.set_ylabel(
         title,
-        rotation=0,
-        size="large",
+        rotation=rotation,
+        size=fontsize,
         ha="right",
-        va="center",
+        va=va,
     )
 
 
