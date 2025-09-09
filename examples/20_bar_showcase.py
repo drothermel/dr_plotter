@@ -5,7 +5,7 @@ Demonstrates single and grouped bar plots.
 
 from typing import Any
 
-from plot_data import ExampleData
+from dr_plotter.scripting import ExampleData
 
 from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager
