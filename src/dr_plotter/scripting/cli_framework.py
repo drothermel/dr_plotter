@@ -7,10 +7,11 @@ by applications like datadec while maintaining consistency and best practices.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Union, TypeVar
+from pathlib import Path
+from typing import Any, Callable, TypeVar
+
 import click
 import yaml
-from pathlib import Path
 
 from dr_plotter.configs import (
     FacetingConfig,
@@ -20,84 +21,43 @@ from dr_plotter.configs import (
     StyleConfig,
 )
 from dr_plotter.scripting.utils import parse_key_value_args
-from dr_plotter.faceting.dimension_validation import interactive_dimension_validation
 
 F = TypeVar("F", bound=Callable[..., Any])
 
 
 class CLIConfig:
-    """Container for CLI configuration with YAML support."""
-
-    def __init__(self, config_data: Optional[Dict[str, Any]] = None):
+    def __init__(self, config_data: dict[str, Any] | None = None) -> None:
         self.data = config_data or {}
 
     @classmethod
-    def from_yaml(cls, config_path: Union[str, Path]) -> CLIConfig:
-        """Load configuration from YAML file."""
-        with open(config_path) as f:
+    def from_yaml(cls, config_path: str | Path) -> CLIConfig:
+        if isinstance(config_path, str):
+            config_path = Path(config_path)
+        assert config_path.exists(), f"Config file not found: {config_path}"
+        assert config_path.suffix == ".yaml", "Config file must be a YAML file"
+        with config_path.open() as f:
             data = yaml.safe_load(f)
         return cls(data)
 
-    def get(self, key: str, default: Any = None) -> Any:
-        """Get configuration value with dot notation support."""
-        keys = key.split(".")
-        value = self.data
-        for k in keys:
-            if isinstance(value, dict) and k in value:
-                value = value[k]
-            else:
-                return default
-        return value
-
-    def merge_with_cli_args(self, cli_args: Dict[str, Any]) -> Dict[str, Any]:
-        """Merge config with CLI arguments, giving precedence to CLI."""
-        # Start with config values
+    def merge_with_cli_args(self, cli_args: dict[str, Any]) -> dict[str, Any]:
+        """Simple merge: config provides defaults, CLI overrides when present."""
         merged = {}
 
-        # Map config sections to CLI argument names
-        config_mappings = {
-            "faceting.rows": "rows",
-            "faceting.cols": "cols",
-            "faceting.rows_and_cols": "rows_and_cols",
-            "faceting.max_cols": "max_cols",
-            "faceting.hue_by": "hue_by",
-            "faceting.alpha_by": "alpha_by",
-            "faceting.size_by": "size_by",
-            "faceting.marker_by": "marker_by",
-            "faceting.style_by": "style_by",
-            "faceting.fixed_dimensions": "fixed",
-            "faceting.ordered_dimensions": "order",
-            "faceting.exclude_dimensions": "exclude",
-            "layout.subplot_width": "subplot_width",
-            "layout.subplot_height": "subplot_height",
-            "layout.auto_titles": "auto_titles",
-            "legend.strategy": "legend_strategy",
-            "output.save_dir": "save_dir",
-            "output.pause": "pause",
-        }
+        # Start with config values (flat structure matches CLI exactly)
+        merged.update(self.data)
 
-        # Apply config defaults
-        for config_key, cli_key in config_mappings.items():
-            config_value = self.get(config_key)
-            if config_value is not None:
-                merged[cli_key] = config_value
-
-        # Override with CLI arguments (only if not None and not empty)
+        # CLI arguments override config values
         for key, value in cli_args.items():
-            if value is not None and value != () and value != [] and value != "":
+            if value is not None:
                 merged[key] = value
 
         return merged
 
 
-def common_faceting_options(valid_dimensions: List[str]) -> Callable[[F], F]:
-    """Add common faceting options to a Click command."""
-
+def common_faceting_options() -> Callable[[F], F]:
     def decorator(f: F) -> F:
-        # Use Choice validation if dimensions provided, otherwise accept any string
-        dimension_type = click.Choice(valid_dimensions) if valid_dimensions else str
-
-        # Layout options
+        # Always use str type - column validation happens in validate_columns()
+        dimension_type = str
         f = click.option(
             "--rows",
             type=dimension_type,
@@ -120,7 +80,6 @@ def common_faceting_options(valid_dimensions: List[str]) -> Callable[[F], F]:
             help="Maximum columns for wrapping layout",
         )(f)
 
-        # Visual channels
         f = click.option(
             "--hue-by",
             type=dimension_type,
@@ -153,8 +112,6 @@ def common_faceting_options(valid_dimensions: List[str]) -> Callable[[F], F]:
 
 
 def dimensional_control_options() -> Callable[[F], F]:
-    """Add dimensional control options to a Click command."""
-
     def decorator(f: F) -> F:
         f = click.option(
             "--fixed",
@@ -171,15 +128,12 @@ def dimensional_control_options() -> Callable[[F], F]:
             multiple=True,
             help="Exclude values: key=val1,val2 (e.g., --exclude params=1B,2B)",
         )(f)
-
         return f
 
     return decorator
 
 
 def layout_options() -> Callable[[F], F]:
-    """Add layout and styling options to a Click command."""
-
     def decorator(f: F) -> F:
         f = click.option(
             "--subplot-width", type=float, default=3.5, help="Width of each subplot"
@@ -192,15 +146,12 @@ def layout_options() -> Callable[[F], F]:
             is_flag=True,
             help="Disable automatic descriptive titles",
         )(f)
-
         return f
 
     return decorator
 
 
 def legend_options() -> Callable[[F], F]:
-    """Add legend configuration options to a Click command."""
-
     def decorator(f: F) -> F:
         f = click.option(
             "--legend-strategy",
@@ -208,49 +159,41 @@ def legend_options() -> Callable[[F], F]:
             default="subplot",
             help="Legend placement strategy",
         )(f)
-
         return f
 
     return decorator
 
 
 def output_options() -> Callable[[F], F]:
-    """Add output control options to a Click command."""
-
     def decorator(f: F) -> F:
         f = click.option("--save-dir", help="Directory to save plots")(f)
         f = click.option(
             "--pause", type=int, default=5, help="Display duration in seconds"
         )(f)
-
         return f
 
     return decorator
 
 
 def config_option() -> Callable[[F], F]:
-    """Add YAML config file support to a Click command."""
-
     def decorator(f: F) -> F:
         f = click.option(
             "--config", type=click.Path(exists=True), help="YAML configuration file"
         )(f)
-
         return f
 
     return decorator
 
 
-def validate_layout_options(ctx: click.Context, **kwargs) -> None:
-    """Validate layout options are specified correctly."""
+def validate_layout_options(ctx: click.Context, **kwargs: Any) -> None:
     rows = kwargs.get("rows")
     cols = kwargs.get("cols")
     rows_and_cols = kwargs.get("rows_and_cols")
 
-    # Only check: don't mix rows+cols with rows_and_cols
     if rows_and_cols is not None and (rows is not None or cols is not None):
         raise click.UsageError(
-            "Cannot combine --rows-and-cols with --rows or --cols. Use either explicit grid (--rows + --cols) or wrapping (--rows-and-cols)."
+            "Cannot combine --rows-and-cols with --rows or --cols. Use either"
+            " explicit grid (--rows + --cols) or wrapping (--rows-and-cols)."
         )
 
 
@@ -260,18 +203,15 @@ def build_faceting_config(
     y: str = "value",
     exterior_x_label: str = "Steps",
     exterior_y_label: str = "Value",
-    **cli_overrides,
+    **cli_overrides: Any,
 ) -> FacetingConfig:
-    """Build FacetingConfig from CLI arguments and config file."""
-    # Merge config with CLI overrides
     merged = config.merge_with_cli_args(cli_overrides)
 
-    # Parse dimensional control arguments (handle both CLI strings and config dicts)
-    def parse_dimension_value(value):
+    def parse_dimension_value(value: Any) -> Any:
         if isinstance(value, dict):
-            return value  # Already parsed from config file
+            return value
         elif isinstance(value, (list, tuple)) and value:
-            return parse_key_value_args(value)  # Parse CLI arguments
+            return parse_key_value_args(value)
         else:
             return None
 
@@ -308,8 +248,9 @@ def build_faceting_config(
     )
 
 
-def build_plot_config(config: CLIConfig, theme=None, **cli_overrides) -> PlotConfig:
-    """Build PlotConfig from CLI arguments and config file."""
+def build_plot_config(
+    config: CLIConfig, theme: str | None = None, **cli_overrides: Any
+) -> PlotConfig:
     merged = config.merge_with_cli_args(cli_overrides)
 
     return PlotConfig(
@@ -324,35 +265,14 @@ def build_plot_config(config: CLIConfig, theme=None, **cli_overrides) -> PlotCon
     )
 
 
-def validate_dimensions_interactive(
-    data, faceting_config, allow_skip: bool = True
-) -> bool:
-    """Wrapper for interactive dimension validation with consistent messaging."""
-    click.echo("🔍 Validating dimensional configuration...")
-
-    if not interactive_dimension_validation(
-        data, faceting_config, allow_skip=allow_skip
-    ):
-        click.echo("❌ Aborted by user.")
-        return False
-
-    click.echo("✅ Dimensional validation passed.")
-    return True
-
-
-# Complete decorator for standard dimensional plotting CLIs
-def dimensional_plotting_cli(valid_dimensions: List[str]) -> Callable[[F], F]:
-    """Complete decorator that adds all standard dimensional plotting options."""
-
+def dimensional_plotting_cli() -> Callable[[F], F]:
     def decorator(f: F) -> F:
-        # Apply all option decorators in reverse order (Click requirement)
         f = output_options()(f)
         f = legend_options()(f)
         f = layout_options()(f)
         f = dimensional_control_options()(f)
-        f = common_faceting_options(valid_dimensions)(f)
+        f = common_faceting_options()(f)
         f = config_option()(f)
-
         return f
 
     return decorator

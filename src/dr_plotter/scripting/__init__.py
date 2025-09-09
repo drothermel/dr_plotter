@@ -11,7 +11,6 @@ from .cli_framework import (
     validate_layout_options,
     build_faceting_config,
     build_plot_config,
-    validate_dimensions_interactive,
 )
 from .config_schema import (
     EXAMPLE_CONFIG,
@@ -39,7 +38,6 @@ __all__ = [
     "validate_layout_options",
     "build_faceting_config",
     "build_plot_config",
-    "validate_dimensions_interactive",
     # Config support
     "EXAMPLE_CONFIG",
     "MINIMAL_CONFIG",
