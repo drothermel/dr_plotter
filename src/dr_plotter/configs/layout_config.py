@@ -5,6 +5,19 @@ from typing import Any
 
 TUPLE_MIN_ELEMENTS = 2
 TUPLE_MAX_ELEMENTS = 3
+VALID_SCALE_PAIRS = {
+    "lin-lin",
+    "lin-log",
+    "log-lin",
+    "log-log",
+    "linear-linear",
+    "linear-log",
+    "log-linear",
+    "linlin",
+    "linlog",
+    "loglin",
+    "loglog",
+}
 
 
 @dataclass
@@ -22,8 +35,7 @@ class LayoutConfig:
     x_labels: list[list[str | None]] | None = None
     y_labels: list[list[str | None]] | None = None
     figure_title: str | None = None
-    xscale: str | None = None
-    yscale: str | None = None
+    xyscale: str | list[list[str]] | None = None
 
     xlim: tuple[float, float] | None = None
     ylim: tuple[float, float] | None = None
@@ -38,15 +50,26 @@ class LayoutConfig:
             "Only one of constrained_layout or tight_layout can be True"
         )
 
-        valid_scales = {"linear", "log", "symlog", "logit", None}
-        assert self.xscale in valid_scales, (
-            f"xscale must be one of {valid_scales}, got {self.xscale}"
-        )
-        assert self.yscale in valid_scales, (
-            f"yscale must be one of {valid_scales}, got {self.yscale}"
-        )
+        if self.xyscale is not None:
+            self._validate_xyscale()
 
         self._validate_no_config_overlap()
+
+    def _validate_xyscale(self) -> None:
+        if isinstance(self.xyscale, str):
+            assert self.xyscale in VALID_SCALE_PAIRS, (
+                f"xyscale must be one of {VALID_SCALE_PAIRS}, got '{self.xyscale}'"
+            )
+        elif isinstance(self.xyscale, list):
+            for row_idx, row in enumerate(self.xyscale):
+                assert isinstance(row, list), (
+                    f"xyscale row {row_idx} must be a list, got {type(row)}"
+                )
+                for col_idx, scale_pair in enumerate(row):
+                    assert scale_pair in VALID_SCALE_PAIRS, (
+                        f"xyscale[{row_idx}][{col_idx}] not in {VALID_SCALE_PAIRS}, "
+                        f"got '{scale_pair}'"
+                    )
 
     def _validate_no_config_overlap(self) -> None:
         config_field_names = {f.name for f in fields(self)}
@@ -70,7 +93,12 @@ class LayoutConfig:
 
     @classmethod
     def from_input(
-        cls, value: tuple[int, int] | dict[str, Any] | LayoutConfig | None
+        cls,
+        value: tuple[int, int]
+        | tuple[int, int, dict[str, Any]]
+        | dict[str, Any]
+        | LayoutConfig
+        | None,
     ) -> LayoutConfig:
         if value is None:
             return cls()

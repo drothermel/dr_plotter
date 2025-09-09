@@ -7,11 +7,10 @@ import click
 
 from dr_plotter import FigureManager
 from dr_plotter.scripting import (
-    CLIConfig,
-    build_configs,
+    CLIWorkflowConfig,
     dimensional_plotting_cli,
+    execute_cli_workflow,
     load_dataset,
-    validate_args,
 )
 from dr_plotter.scripting.utils import show_or_save_plot
 from dr_plotter.theme import BASE_THEME, FigureStyles, Theme
@@ -35,11 +34,10 @@ CLI_THEME = Theme(
 @click.argument("dataset_path", type=click.Path())
 @click.option(
     "--x",
-    "x_column",
     required=True,
     help="Column name for x-axis",
 )
-@click.option("--y", "y_column", required=True, help="Column name for y-axis")
+@click.option("--y", required=True, help="Column name for y-axis")
 @click.option(
     "--plot-type",
     type=click.Choice(["line", "scatter"]),
@@ -49,45 +47,25 @@ CLI_THEME = Theme(
 @dimensional_plotting_cli(skip_fields={"x", "y"})
 def main(
     dataset_path: str,
-    x_column: str,
-    y_column: str,
+    x: str,
+    y: str,
     plot_type: str,
     **kwargs: Any,
 ) -> None:
-    df = load_dataset(dataset_path)
-    config = CLIConfig()
-    if kwargs.get("config"):
-        config = CLIConfig.from_yaml(kwargs["config"])
-    cli_kwargs = {k: v for k, v in kwargs.items() if k != "config"}
-    cli_kwargs.update({"x": x_column, "y": y_column})
-    merged_args = config.merge_with_cli_args(cli_kwargs)
-    validate_args(df, merged_args)
-
-    # Use new sequential config building system
-    configs, unused_kwargs = build_configs(merged_args)
-
-    # Check for invalid parameters
-    if unused_kwargs:
-        unused_params = ", ".join(unused_kwargs.keys())
-        raise click.UsageError(f"Unknown parameters: {unused_params}")
-
-    faceting_config = configs["faceting"]
-
-    # Build plot config using layout, legend, and style
-    from dr_plotter.configs import PlotConfig
-
-    plot_config = PlotConfig(
-        layout=configs["layout"],
-        legend=configs["legend"],
-        style=configs["style"] if configs["style"].theme else None,
+    df, plot_config = execute_cli_workflow(
+        kwargs,
+        CLIWorkflowConfig(
+            data_loader=lambda _: load_dataset(dataset_path),
+            allowed_unused={"save_dir", "pause"},
+        ),
     )
-
     with FigureManager(plot_config) as fm:
-        fm.plot_faceted(df, plot_type, faceting=faceting_config)
-
-    dataset_name = Path(dataset_path).stem
+        fm.plot_faceted(df, plot_type)
     show_or_save_plot(
-        fm.fig, kwargs["save_dir"], kwargs["pause"], f"dr_plotter_{dataset_name}"
+        fm.fig,
+        kwargs["save_dir"],
+        kwargs["pause"],
+        f"dr_plotter_{Path(dataset_path).stem}",
     )
 
 

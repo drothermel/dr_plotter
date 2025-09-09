@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 import ast
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import click
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter import consts
+from dr_plotter.configs import PlotConfig
+from dr_plotter.scripting import (
+    CLIConfig,
+    build_configs,
+    validate_layout_options,
+    validate_unused_parameters,
+)
 
 
 def show_or_save_plot(
@@ -75,6 +83,36 @@ def convert_cli_value_to_type(value: Any, target_type: type) -> Any:
             return value
 
 
+def parse_scale_pair(scale_str: str) -> tuple[str, str]:
+    scale_map = {"lin": "linear", "linear": "linear", "log": "log"}
+
+    # Handle concatenated format (linlin, linlog, loglin, loglog)
+    if "-" not in scale_str:
+        if scale_str == "linlin":
+            return "linear", "linear"
+        elif scale_str == "linlog":
+            return "linear", "log"
+        elif scale_str == "loglin":
+            return "log", "linear"
+        elif scale_str == "loglog":
+            return "log", "log"
+        else:
+            raise ValueError(f"Unknown concatenated scale format: '{scale_str}'")
+
+    # Handle hyphenated format (lin-lin, linear-log, etc.)
+    x_scale, y_scale = scale_str.split("-", 1)
+
+    assert x_scale in scale_map, f"Unknown x scale: '{x_scale}'"
+    assert y_scale in scale_map, f"Unknown y scale: '{y_scale}'"
+
+    return scale_map[x_scale], scale_map[y_scale]
+
+
+def parse_scale_flags(scale_str: str) -> tuple[bool, bool]:
+    x_scale, y_scale = parse_scale_pair(scale_str)
+    return x_scale == "log", y_scale == "log"
+
+
 def _is_float_string(value: str) -> bool:
     if not value:
         return False
@@ -109,8 +147,46 @@ def validate_columns(df: pd.DataFrame, merged_args: Any) -> None:
             )
 
 
-def validate_args(df: pd.DataFrame, merged_args: Any) -> None:
-    from dr_plotter.scripting import validate_layout_options
-
-    validate_columns(df, merged_args)
+def validate_args(
+    df: pd.DataFrame,
+    merged_args: dict[str, Any],
+    unused_kwargs: dict[str, Any],
+    workflow_config: CLIWorkflowConfig,
+) -> None:
     validate_layout_options(click.get_current_context(), **merged_args)
+    validate_unused_parameters(unused_kwargs, workflow_config.allowed_unused)
+    validate_columns(df, merged_args)
+
+
+def apply_fixed_params(
+    merged_args: dict[str, Any], workflow_config: CLIWorkflowConfig
+) -> dict[str, Any]:
+    for param, value in workflow_config.fixed_params.items():
+        assert param not in merged_args, (
+            f"Param: {param} is fixed and cannot be overridden"
+        )
+        merged_args[param] = value
+    return merged_args
+
+
+@dataclass
+class CLIWorkflowConfig:
+    data_loader: Callable[[dict], pd.DataFrame]
+    default_params: dict[str, Any] = field(default_factory=dict)
+    fixed_params: dict[str, Any] = field(default_factory=dict)
+    allowed_unused: set[str] | None = None
+
+
+def execute_cli_workflow(
+    kwargs: dict[str, Any], workflow_config: CLIWorkflowConfig
+) -> tuple[pd.DataFrame, PlotConfig]:
+    config = CLIConfig.load_or_default(kwargs)
+    merged_args = {**workflow_config.default_params}
+    merged_args.update(config.merge_with_cli_args(kwargs))
+    merged_args = apply_fixed_params(merged_args, workflow_config)
+
+    plot_config, unused_kwargs = build_configs(merged_args)
+    df = workflow_config.data_loader(merged_args)
+    validate_args(df, merged_args, unused_kwargs, workflow_config)
+
+    return df, plot_config
