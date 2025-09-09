@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -52,3 +53,16 @@ class FacetingConfig:
     def validate(self) -> None:
         assert self.x is not None, "x parameter is required for faceting"
         assert self.y is not None, "y parameter is required for faceting"
+
+    @classmethod
+    def from_input(
+        cls, value: dict[str, Any] | FacetingConfig | None
+    ) -> FacetingConfig | None:
+        if value is None:
+            return None
+        elif isinstance(value, cls):
+            return value
+        elif isinstance(value, dict):
+            return cls(**value)
+        else:
+            raise TypeError(f"Cannot create FacetingConfig from {type(value).__name__}")

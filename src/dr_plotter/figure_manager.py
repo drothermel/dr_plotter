@@ -253,6 +253,14 @@ class FigureManager:
         **kwargs: Any,
     ) -> None:
         assert not data.empty, "Cannot create faceted plot with empty DataFrame"
+
+        if (
+            faceting is None
+            and hasattr(self.config, "faceting")
+            and self.config.faceting is not None
+        ):
+            faceting = self.config.faceting
+
         config = self._resolve_faceting_config(faceting, **kwargs)
         grid_shape = get_grid_dimensions(data, config)
 
