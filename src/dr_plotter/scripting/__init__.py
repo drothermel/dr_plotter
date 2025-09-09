@@ -15,6 +15,8 @@ from .plot_data import experimental_data, matrix_data
 from .utils import (
     create_and_render_plot,
     load_dataset,
+    parse_scale_flags,
+    parse_scale_pair,
     show_or_save_plot,
     validate_args,
     validate_columns,
@@ -31,6 +33,8 @@ __all__ = [
     "load_config",
     "load_dataset",
     "matrix_data",
+    "parse_scale_flags",
+    "parse_scale_pair",
     "show_or_save_plot",
     "validate_args",
     "validate_columns",

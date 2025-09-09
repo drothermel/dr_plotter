@@ -75,6 +75,36 @@ def convert_cli_value_to_type(value: Any, target_type: type) -> Any:
             return value
 
 
+def parse_scale_pair(scale_str: str) -> tuple[str, str]:
+    scale_map = {"lin": "linear", "linear": "linear", "log": "log"}
+
+    # Handle concatenated format (linlin, linlog, loglin, loglog)
+    if "-" not in scale_str:
+        if scale_str == "linlin":
+            return "linear", "linear"
+        elif scale_str == "linlog":
+            return "linear", "log"
+        elif scale_str == "loglin":
+            return "log", "linear"
+        elif scale_str == "loglog":
+            return "log", "log"
+        else:
+            raise ValueError(f"Unknown concatenated scale format: '{scale_str}'")
+
+    # Handle hyphenated format (lin-lin, linear-log, etc.)
+    x_scale, y_scale = scale_str.split("-", 1)
+
+    assert x_scale in scale_map, f"Unknown x scale: '{x_scale}'"
+    assert y_scale in scale_map, f"Unknown y scale: '{y_scale}'"
+
+    return scale_map[x_scale], scale_map[y_scale]
+
+
+def parse_scale_flags(scale_str: str) -> tuple[bool, bool]:
+    x_scale, y_scale = parse_scale_pair(scale_str)
+    return x_scale == "log", y_scale == "log"
+
+
 def _is_float_string(value: str) -> bool:
     if not value:
         return False

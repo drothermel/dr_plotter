@@ -147,17 +147,27 @@ class FigureManager:
         if self._external_mode:
             return
 
-        if self.layout_config.xscale is not None:
-            for row_idx in range(self.layout_config.rows):
-                for col_idx in range(self.layout_config.cols):
-                    ax = self.get_axes(row_idx, col_idx)
-                    ax.set_xscale(self.layout_config.xscale)
+        if self.layout_config.xyscale is not None:
+            self._apply_xyscale()
 
-        if self.layout_config.yscale is not None:
+    def _apply_xyscale(self) -> None:
+        from dr_plotter.scripting.utils import parse_scale_pair
+
+        if isinstance(self.layout_config.xyscale, str):
+            x_scale, y_scale = parse_scale_pair(self.layout_config.xyscale)
             for row_idx in range(self.layout_config.rows):
                 for col_idx in range(self.layout_config.cols):
                     ax = self.get_axes(row_idx, col_idx)
-                    ax.set_yscale(self.layout_config.yscale)
+                    ax.set_xscale(x_scale)
+                    ax.set_yscale(y_scale)
+        elif isinstance(self.layout_config.xyscale, list):
+            for row_idx, row_scales in enumerate(self.layout_config.xyscale):
+                for col_idx, scale_pair in enumerate(row_scales):
+                    if scale_pair is not None:
+                        x_scale, y_scale = parse_scale_pair(scale_pair)
+                        ax = self.get_axes(row_idx, col_idx)
+                        ax.set_xscale(x_scale)
+                        ax.set_yscale(y_scale)
 
     def _apply_figure_title(self) -> None:
         if self._external_mode:
