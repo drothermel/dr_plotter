@@ -3,8 +3,8 @@
 `dr_plotter` is a plotting framework built on matplotlib that provides structured configuration management for research visualizations. The library emphasizes reproducible plots through declarative configuration and automated CLI generation.
 
 ```bash
-# Update datadec dependency
-uv lock --upgrade-package datadec
+# Easy installation
+uv add dr_plotter
 ```
 
 ## Core Architecture
