@@ -4,14 +4,14 @@ from pathlib import Path
 from typing import Any
 
 import click
-import pandas as pd
 
-from dr_plotter import FigureManager, consts
+from dr_plotter import FigureManager
 from dr_plotter.scripting import (
     CLIConfig,
     build_configs,
     dimensional_plotting_cli,
-    validate_layout_options,
+    load_dataset,
+    validate_args,
 )
 from dr_plotter.scripting.utils import show_or_save_plot
 from dr_plotter.theme import BASE_THEME, FigureStyles, Theme
@@ -29,30 +29,6 @@ CLI_THEME = Theme(
         legend_tight_layout_rect=(0, 0.08, 1, 1),
     ),
 )
-
-
-def load_dataset(file_path: str) -> pd.DataFrame:
-    path = Path(file_path).expanduser()
-    assert path.suffix == ".parquet", "Only parquet files are supported"
-    assert path.exists(), f"Dataset not found: {path}"
-    df = pd.read_parquet(path)
-    return df
-
-
-def validate_args(df: pd.DataFrame, merged_args: Any) -> None:
-    validate_columns(df, merged_args)
-    validate_layout_options(click.get_current_context(), **merged_args)
-
-
-def validate_columns(df: pd.DataFrame, merged_args: Any) -> None:
-    column_options = [(key, merged_args.get(key)) for key in consts.COLUMN_KEYS]
-    for option_name, column_name in column_options:
-        if column_name and column_name not in df.columns:
-            available_cols = ", ".join(sorted(df.columns))
-            raise click.UsageError(
-                f"Column '{column_name}' for --{option_name} "
-                f"not found in dataset. Available columns: {available_cols}"
-            )
 
 
 @click.command()

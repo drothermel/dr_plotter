@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 from typing import Any
 
+import click
 import matplotlib.pyplot as plt
+import pandas as pd
+
+from dr_plotter import consts
 
 
 def show_or_save_plot(
@@ -64,10 +69,9 @@ def convert_cli_value_to_type(value: Any, target_type: type) -> Any:
     elif target_type is str:
         return value
     else:
-        # For complex types like tuples, try eval (unsafe but needed for CLI)
         try:
-            return eval(value)
-        except:
+            return ast.literal_eval(value)
+        except Exception:
             return value
 
 
@@ -84,3 +88,29 @@ def _is_float_string(value: str) -> bool:
     return all(part.isdigit() or part == "" for part in parts) and any(
         part for part in parts
     )
+
+
+def load_dataset(file_path: str) -> pd.DataFrame:
+    path = Path(file_path).expanduser()
+    assert path.suffix == ".parquet", "Only parquet files are supported"
+    assert path.exists(), f"Dataset not found: {path}"
+    df = pd.read_parquet(path)
+    return df
+
+
+def validate_columns(df: pd.DataFrame, merged_args: Any) -> None:
+    column_options = [(key, merged_args.get(key)) for key in consts.COLUMN_KEYS]
+    for option_name, column_name in column_options:
+        if column_name and column_name not in df.columns:
+            available_cols = ", ".join(sorted(df.columns))
+            raise click.UsageError(
+                f"Column '{column_name}' for --{option_name} "
+                f"not found in dataset. Available columns: {available_cols}"
+            )
+
+
+def validate_args(df: pd.DataFrame, merged_args: Any) -> None:
+    from dr_plotter.scripting import validate_layout_options
+
+    validate_columns(df, merged_args)
+    validate_layout_options(click.get_current_context(), **merged_args)

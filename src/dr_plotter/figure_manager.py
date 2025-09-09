@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import fields
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -31,29 +32,8 @@ from dr_plotter.plotters.base import BasePlotter
 from dr_plotter.style_applicator import StyleApplicator
 from dr_plotter.utils import get_axes_from_grid
 
-FACETING_PARAM_NAMES = {
-    "rows",
-    "cols",
-    "lines",
-    "row_order",
-    "col_order",
-    "lines_order",
-    "x",
-    "y",
-    "x_labels",
-    "y_labels",
-    "xlim",
-    "ylim",
-    "subplot_titles",
-    "title_template",
-    "color_wrap",
-    "target_row",
-    "target_col",
-    "row_titles",
-    "col_titles",
-    "exterior_x_label",
-    "exterior_y_label",
-}
+# Auto-generate faceting parameter names from FacetingConfig dataclass
+FACETING_PARAM_NAMES = {f.name for f in fields(FacetingConfig)}
 DEFAULT_MARGIN = 0.05
 
 
@@ -123,8 +103,6 @@ class FigureManager:
             )
 
     def _get_tight_layout_rect(self) -> tuple[float, float, float, float] | None:
-        """Calculate appropriate tight_layout rect based on suptitle and legend presence."""
-        # Use explicit rect if specified
         if self.layout_config.tight_layout_rect is not None:
             return self.layout_config.tight_layout_rect
 
@@ -141,7 +119,7 @@ class FigureManager:
         elif has_legend:
             return self.styler.get_style("legend_tight_layout_rect")
         else:
-            return None  # Use matplotlib's default
+            return None
 
     def _apply_axis_labels(self) -> None:
         if self._external_mode:
@@ -271,22 +249,18 @@ class FigureManager:
         grid_shape = get_grid_dimensions(data, config)
 
         data = apply_dimensional_filters(data, config)
-        # Get subplot dimensions from config or theme defaults
         subplot_width = config.subplot_width or self.styler.get_style("subplot_width")
         subplot_height = config.subplot_height or self.styler.get_style(
             "subplot_height"
         )
 
         if subplot_width is not None and subplot_height is not None:
-            # Update both figsize and grid dimensions
             self.layout_config.figsize = (
                 subplot_width * grid_shape[1],
                 subplot_height * grid_shape[0],
             )
-            # Update layout grid to match calculated dimensions
             self.layout_config.rows, self.layout_config.cols = grid_shape
 
-            # Recreate figure with new dimensions if they changed
             if grid_shape != (
                 len(self.axes.flat) if hasattr(self.axes, "flat") else 1,
                 1,
@@ -325,7 +299,6 @@ class FigureManager:
 
         data_subsets = prepare_faceted_subplots(data, config, grid_shape)
         style_coordinator = self._get_or_create_style_coordinator()
-        # Register dimension values for all specified visual channels
         visual_channels = [
             config.hue_by,
             config.alpha_by,
@@ -364,7 +337,6 @@ class FigureManager:
         computed_rows, computed_cols = grid_shape
         figure_rows, figure_cols = self.layout_config.rows, self.layout_config.cols
 
-        # Allow partial plotting - just make sure the data fits within the figure grid
         if computed_rows > figure_rows or computed_cols > figure_cols:
             assert False, (
                 f"Data grid dimensions ({computed_rows}×{computed_cols}) "

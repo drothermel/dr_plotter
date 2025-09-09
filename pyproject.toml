@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [project.scripts]
-dr-plotter = "dr_plotter.scripting.cli:main"
+dr-plotter = "scripts.dr_plotter:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -29,6 +29,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dr_plotter", "scripts"]
 
 
 [dependency-groups]

@@ -36,7 +36,7 @@ The framework automatically generates command-line interfaces from configuration
 
 ```bash
 # Generate 70+ options automatically from config definitions
-uv run python -m dr_plotter.scripting.cli dataset.parquet \
+uv run dr-plotter dataset.parquet \
     --x time --y value \
     --rows-by experiment --cols-by condition \
     --pause 5
@@ -84,11 +84,11 @@ uv sync
 
 ```bash
 # Scatter plot with faceting by parameter values
-uv run python -m dr_plotter.scripting.cli data.parquet \
+uv run dr-plotter data.parquet \
     --x step --y loss --rows-by model_type
 
-# Time series with custom layout
-uv run python -m dr_plotter.scripting.cli data.parquet \
+# Time series with custom layout  
+uv run dr-plotter data.parquet \
     --x time --y accuracy --plot-type line \
     --figsize "(15, 8)" --no-tight-layout
 ```

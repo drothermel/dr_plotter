@@ -13,6 +13,8 @@ if TYPE_CHECKING:
     from dr_plotter.figure_manager import FigureManager
 
 GRID_SHAPE_DIMENSIONS = 2
+HORIZONTAL_TEXT_ANGLE = 0
+VERTICAL_TEXT_ANGLE = 90
 
 
 def prepare_faceted_subplots(
@@ -36,19 +38,17 @@ def prepare_faceted_subplots(
         return subsets
 
     if config.wrap_by:
-        # Handle wrapping layout: single dimension mapped to grid positions
         values = resolve_dimension_values(data, config.wrap_by, config)
         rows, cols = grid_shape
         subsets = {}
         for i, val in enumerate(values):
-            r = i // cols  # Row position in grid
-            c = i % cols  # Column position in grid
-            if r < rows:  # Only create subsets within grid bounds
+            r = i // cols
+            c = i % cols
+            if r < rows:
                 subset = data[data[config.wrap_by] == val].copy()
                 if not subset.empty:
                     subsets[(r, c)] = subset
     else:
-        # Handle standard row/col layout
         row_values = (
             [None]
             if config.rows_by is None
@@ -69,17 +69,6 @@ def prepare_faceted_subplots(
     return subsets
 
 
-def _extract_dimension_values(
-    data: pd.DataFrame, column: str | None, order: list[str] | None
-) -> list[Any]:
-    if not column:
-        return [None]
-    values = sorted(data[column].unique())
-    if order:
-        values = [v for v in order if v in values]
-    return values
-
-
 def _create_data_subset(
     data: pd.DataFrame, config: FacetingConfig, row_val: Any, col_val: Any
 ) -> pd.DataFrame:
@@ -91,6 +80,7 @@ def _create_data_subset(
     return data[mask].copy()
 
 
+# TODO: why is this unused??
 def _apply_subplot_customization(
     fm: FigureManager, row: int, col: int, config: FacetingConfig, data: pd.DataFrame
 ) -> None:
@@ -145,13 +135,10 @@ def _apply_exterior_labels(
 
     ax = fm.get_axes(row, col)
 
-    # Get grid dimensions - handle rows_and_cols mode
     if config.wrap_by:
-        # For wrapped layouts, get actual grid dimensions from FigureManager
         n_rows, n_cols = fm.layout_config.rows_by, fm.layout_config.cols_by
         dimension_name = config.wrap_by
     else:
-        # Standard row/col layout
         row_values = (
             resolve_dimension_values(data, config.rows_by, config)
             if config.rows_by
@@ -166,11 +153,9 @@ def _apply_exterior_labels(
         n_cols = len(col_values) if config.cols_by else 1  # noqa: F841
         dimension_name = config.rows_by or config.cols_by
 
-    # Apply exterior x label (bottom row only)
     if config.exterior_x_label and row == n_rows - 1:
         ax.set_xlabel(config.exterior_x_label)
 
-    # Apply exterior y label (leftmost column only)
     if col == 0:
         if config.exterior_y_label:
             # Use explicitly provided label
@@ -185,12 +170,10 @@ def _apply_dimension_titles(
 ) -> None:
     ax = fm.get_axes(row, col)
 
-    # Handle wrapping layout (rows_and_cols) - add title to every subplot
     if config.wrap_by and config.auto_titles:
         values = resolve_dimension_values(data, config.wrap_by, config)
         _, grid_cols = fm.layout_config.rows_by, fm.layout_config.cols_by
 
-        # Calculate which value this subplot represents
         subplot_index = row * grid_cols + col
         if subplot_index < len(values):
             value = values[subplot_index]
@@ -198,11 +181,9 @@ def _apply_dimension_titles(
             ax.set_title(title, pad=10)
         return
 
-    # Handle standard row/col layout
     if not (config.row_titles or config.col_titles):
         return
 
-    # Get dimension values using same logic as faceting system
     row_values = (
         resolve_dimension_values(data, config.rows_by, config)
         if config.rows_by
@@ -214,13 +195,14 @@ def _apply_dimension_titles(
         else [None]
     )
 
-    # Row titles (left side, first column only)
     if config.row_titles and col == 0 and row < len(row_values):
         title = _resolve_dimension_title(config.row_titles, row, row_values)
         if title:
             rotation = config.row_title_rotation
             if rotation is None:
-                rotation = fm.styler.get_style("row_title_rotation", 90)
+                rotation = fm.styler.get_style(
+                    "row_title_rotation", VERTICAL_TEXT_ANGLE
+                )
 
             offset = config.row_title_offset
             if offset is None:
@@ -231,7 +213,6 @@ def _apply_dimension_titles(
                 ax, title, offset=offset, rotation=rotation, fontsize=fontsize
             )
 
-    # Column titles (top, first row only)
     if config.col_titles and row == 0 and col < len(col_values):
         title = _resolve_dimension_title(config.col_titles, col, col_values)
         if title:
@@ -260,10 +241,9 @@ def _add_row_title(
     ax_left.spines["left"].set_position(("axes", offset))
     ax_left.spines["left"].set_visible(False)
     ax_left.set_yticks([])
-    # Adjust vertical alignment based on rotation
-    if rotation == 90:
+    if rotation == VERTICAL_TEXT_ANGLE:
         va = "bottom"  # For vertical text, align to bottom
-    elif rotation == 0:
+    elif rotation == HORIZONTAL_TEXT_ANGLE:
         va = "center"  # For horizontal text, keep centered
     else:
         va = "center"  # Default for other angles
