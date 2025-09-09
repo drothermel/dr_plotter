@@ -1,10 +1,8 @@
 from typing import Any
 
-import pandas as pd
-from dr_plotter.scripting import ExampleData
-
 from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager
+from dr_plotter.scripting.plot_data import experimental_data, matrix_data
 from dr_plotter.scripting.utils import setup_arg_parser, show_or_save_plot
 from dr_plotter.scripting.verif_decorators import inspect_plot_properties, verify_plot
 
@@ -19,6 +17,14 @@ EXPECTED_CHANNELS = {
     (2, 1): [],
 }
 
+SEED = 100
+SAMPLES = 100
+TIME_POINTS = 15
+HEATMAP_DIM = 5
+
+BINARY_GROUPS = ["Group_A", "Group_B"]
+THREE_CATEGORIES = ["Cat_A", "Cat_B", "Cat_C"]
+
 
 @inspect_plot_properties()
 @verify_plot(
@@ -32,7 +38,38 @@ EXPECTED_CHANNELS = {
     },
 )
 def main(args: Any) -> Any:
-    data_dict: dict[str, pd.DataFrame] = ExampleData.get_all_plot_types_data()
+    scatter_data = experimental_data(
+        pattern_type="categorical", n_samples=SAMPLES, seed=SEED
+    )
+    line_data = experimental_data(
+        pattern_type="time_series",
+        time_points=TIME_POINTS,
+        groups=BINARY_GROUPS,
+        seed=SEED,
+    )
+    bar_data = experimental_data(
+        pattern_type="categorical",
+        groups=BINARY_GROUPS,
+        categories=THREE_CATEGORIES,
+        seed=SEED,
+    )
+    histogram_data = experimental_data(
+        pattern_type="distribution", n_samples=SAMPLES, seed=SEED
+    )
+    violin_data = experimental_data(
+        pattern_type="categorical",
+        groups=BINARY_GROUPS,
+        categories=THREE_CATEGORIES,
+        seed=SEED,
+    )
+    heatmap_data = matrix_data(rows=HEATMAP_DIM, cols=HEATMAP_DIM, seed=SEED)
+    contour_data = matrix_data(pattern_type="contour", rows=SAMPLES, seed=SEED)
+    bump_data = experimental_data(
+        pattern_type="time_series",
+        categories=THREE_CATEGORIES,
+        time_points=TIME_POINTS,
+        seed=SEED,
+    )
 
     with FigureManager(
         PlotConfig(
@@ -47,7 +84,7 @@ def main(args: Any) -> Any:
                 ],
                 "y_labels": [
                     ["Y Coordinate", "Value", "Count"],
-                    ["Y Coordinate", "Response", None],
+                    ["Y Continuous", "Response", None],
                     ["Count", None, None],
                 ],
             }
@@ -58,27 +95,25 @@ def main(args: Any) -> Any:
             fontsize=20,
         )
 
-        scatter_data = data_dict["scatter_data"]
         fm.plot(
             "scatter",
             0,
             0,
             scatter_data,
-            x="x",
-            y="y",
+            x="x_continuous",
+            y="y_continuous",
             hue_by="category",
             s=75,
             alpha=0.8,
             title="Scatter: Hue Encoding with Size & Transparency",
         )
 
-        line_data = data_dict["line_data"]
         fm.plot(
             "line",
             0,
             1,
             line_data,
-            x="time",
+            x="time_point",
             y="value",
             hue_by="group",
             linewidth=3,
@@ -86,7 +121,6 @@ def main(args: Any) -> Any:
             title="Line: Connected Points with Style Variation",
         )
 
-        bar_data = data_dict["bar_data"]
         fm.plot(
             "bar",
             0,
@@ -94,18 +128,16 @@ def main(args: Any) -> Any:
             bar_data,
             x="category",
             y="value",
-            hue_by="category_group",
+            hue_by="group",
             alpha=0.9,
             title="Bar: Categorical Data with Color Variation",
         )
 
-        histogram_data = data_dict["histogram_data"]
-        single_dist_data = histogram_data[histogram_data["distribution"] == "Normal"]
         fm.plot(
             "histogram",
             1,
             0,
-            single_dist_data,
+            histogram_data,
             x="value",
             bins=30,
             alpha=0.7,
@@ -113,7 +145,6 @@ def main(args: Any) -> Any:
             title="Histogram: Distribution with Bin Customization",
         )
 
-        violin_data = data_dict["violin_data"]
         fm.plot(
             "violin",
             1,
@@ -127,7 +158,6 @@ def main(args: Any) -> Any:
             title="Violin: Distribution Shape with Style Variation",
         )
 
-        heatmap_data = data_dict["heatmap_data"]
         fm.plot(
             "heatmap",
             1,
@@ -141,7 +171,6 @@ def main(args: Any) -> Any:
             title="Heatmap: 2D Data with Colormap Customization",
         )
 
-        contour_data = data_dict["contour_data"]
         fm.plot(
             "contour",
             2,
@@ -154,75 +183,18 @@ def main(args: Any) -> Any:
             title="Contour: Density Lines with Level Customization",
         )
 
-        bump_data = data_dict["bump_data"]
         fm.plot(
             "bump",
             2,
             1,
             bump_data,
-            time_col="time",
-            value_col="score",
+            time_col="time_point",
+            value_col="value",
             category_col="category",
             marker="o",
             linewidth=2,
             title="Bump: Ranking Plot with Marker Variation",
         )
-
-        ax_summary = fm.fig.add_subplot(3, 3, 9)
-        ax_summary.text(
-            0.1,
-            0.8,
-            "Summary:",
-            fontsize=16,
-            fontweight="bold",
-            transform=ax_summary.transAxes,
-        )
-        ax_summary.text(
-            0.1,
-            0.7,
-            "• 8 plotters verified",
-            fontsize=12,
-            transform=ax_summary.transAxes,
-        )
-        ax_summary.text(
-            0.1,
-            0.6,
-            "• Parameter variations tested",
-            fontsize=12,
-            transform=ax_summary.transAxes,
-        )
-        ax_summary.text(
-            0.1,
-            0.5,
-            "• Legend generation confirmed",
-            fontsize=12,
-            transform=ax_summary.transAxes,
-        )
-        ax_summary.text(
-            0.1,
-            0.4,
-            "• Theme system integration",
-            fontsize=12,
-            transform=ax_summary.transAxes,
-        )
-        ax_summary.text(
-            0.1,
-            0.3,
-            "• StyleApplicator pipeline",
-            fontsize=12,
-            transform=ax_summary.transAxes,
-        )
-        ax_summary.text(
-            0.1,
-            0.2,
-            "• FigureManager coordination",
-            fontsize=12,
-            transform=ax_summary.transAxes,
-        )
-        ax_summary.set_xlim(0, 1)
-        ax_summary.set_ylim(0, 1)
-        ax_summary.axis("off")
-        ax_summary.set_title("Architecture Integration", fontsize=14, fontweight="bold")
 
     show_or_save_plot(fm.fig, args, "05_all_plot_types")
     return fm.fig
