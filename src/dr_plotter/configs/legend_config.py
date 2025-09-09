@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from dr_plotter.configs.positioning_config import PositioningConfig
+# Removed PositioningConfig import - using simple coordinates now
 
 
 class LegendStrategy(Enum):
@@ -33,17 +33,12 @@ class LegendConfig:
     spacing: float = 0.1
     remove_axes_legends: bool = True
     channel_titles: dict[str, str] | None = None
-    layout_left_margin: float = 0.0
-    layout_bottom_margin: float = 0.15
-    layout_right_margin: float = 1.0
-    layout_top_margin: float = 0.95
-    positioning_config: PositioningConfig | None = None
+    legend_position: tuple[float, float] | None = None  # (x, y) coordinates, uses theme default if None
+    multi_legend_positions: list[tuple[float, float]] | None = None  # For multi-legend cases
 
     def __post_init__(self) -> None:
         self.validate()
         self.strategy = SHORT_NAME_STRATEGY_MAP[self.strategy]
-        if self.positioning_config is None:
-            self.positioning_config = PositioningConfig()
 
     def validate(self) -> None:
         assert self.strategy in SHORT_NAME_STRATEGY_MAP, (

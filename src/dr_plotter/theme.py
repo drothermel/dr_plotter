@@ -1,6 +1,7 @@
 from __future__ import annotations
+
 import itertools
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from dr_plotter import consts
 
@@ -204,6 +205,16 @@ BASE_THEME = Theme(
         title_fontsize=14,
         suptitle_fontsize=16,
         suptitle_y=0.99,
+        suptitle_tight_layout_rect=(0, 0, 1, 0.98),
+        legend_tight_layout_rect=(0, 0.06, 1, 1),
+        suptitle_legend_tight_layout_rect=(0, 0.06, 1, 0.98),
+        subplot_width=4.0,
+        subplot_height=4.0,
+        legend_position=(0.5, 0.00),
+        multi_legend_positions=[(0.4, 0.00), (0.6, 0.00)],
+        legend_frameon=True,
+        row_title_rotation=90,
+        row_title_offset=-0.25,  # Distance from plot area (more negative = further left)
     ),
     error_color="#FF0000",
     error_edge_color="#FF0000",

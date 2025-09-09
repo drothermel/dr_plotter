@@ -5,16 +5,28 @@ from dataclasses import dataclass
 
 @dataclass
 class FacetingConfig:
-    rows: str | None = None
-    cols: str | None = None
-    lines: str | None = None
-
-    row_order: list[str] | None = None
-    col_order: list[str] | None = None
-    lines_order: list[str] | None = None
-
     x: str | None = None
     y: str | None = None
+
+    rows: str | None = None
+    cols: str | None = None
+    rows_and_cols: str | None = None
+    max_cols: int | None = None
+    max_rows: int | None = None
+
+    hue_by: str | None = None
+    alpha_by: str | None = None
+    size_by: str | None = None
+    marker_by: str | None = None
+    style_by: str | None = None
+
+    fixed_dimensions: dict[str, str] | None = None
+    ordered_dimensions: dict[str, list[str]] | None = None
+    exclude_dimensions: dict[str, list[str]] | None = None
+
+    subplot_width: float | None = None
+    subplot_height: float | None = None
+    auto_titles: bool = True
 
     x_labels: list[list[str | None]] | None = None
     y_labels: list[list[str | None]] | None = None
@@ -28,6 +40,8 @@ class FacetingConfig:
 
     row_titles: bool | list[str] | None = None
     col_titles: bool | list[str] | None = None
+    row_title_rotation: float | None = None  # Rotation angle for row titles (None=use theme default)
+    row_title_offset: float | None = None  # Distance from plot area (None=use theme default)
 
     exterior_x_label: str | None = None
     exterior_y_label: str | None = None
@@ -41,5 +55,5 @@ class FacetingConfig:
         self.validate()
 
     def validate(self) -> None:
-        if not (self.rows or self.cols):
-            assert False, "Facet by rows or cols (eg rows='data')"
+        assert self.x is not None, "x parameter is required for faceting"
+        assert self.y is not None, "y parameter is required for faceting"
