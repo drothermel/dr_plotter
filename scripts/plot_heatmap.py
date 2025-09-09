@@ -32,9 +32,7 @@ from dr_plotter.scripting.utils import show_or_save_plot
     default="viridis",
     help="Colormap for heatmap visualization",
 )
-@click.option(
-    "--seed", type=int, default=701, help="Random seed for reproducible data"
-)
+@click.option("--seed", type=int, default=701, help="Random seed for reproducible data")
 @dimensional_plotting_cli()
 def main(
     pattern_type: str,
@@ -115,20 +113,30 @@ def main(
         elif pattern_type == "contour":
             # Contour/density data as heatmap
             contour_data = matrix_data(
-                pattern_type="contour", rows=matrix_rows * matrix_cols // 2, cols=2, seed=seed
+                pattern_type="contour",
+                rows=matrix_rows * matrix_cols // 2,
+                cols=2,
+                seed=seed,
             )
-            
+
             # Create a grid for heatmap visualization
             import pandas as pd
-            import numpy as np
-            
+
             # Bin the continuous x,y data into a grid
-            x_bins = pd.cut(contour_data["x"], bins=matrix_cols, labels=[f"Col_{i+1}" for i in range(matrix_cols)])
-            y_bins = pd.cut(contour_data["y"], bins=matrix_rows, labels=[f"Row_{i+1}" for i in range(matrix_rows)])
-            
+            x_bins = pd.cut(
+                contour_data["x"],
+                bins=matrix_cols,
+                labels=[f"Col_{i + 1}" for i in range(matrix_cols)],
+            )
+            y_bins = pd.cut(
+                contour_data["y"],
+                bins=matrix_rows,
+                labels=[f"Row_{i + 1}" for i in range(matrix_rows)],
+            )
+
             contour_data["x_bin"] = x_bins
             contour_data["y_bin"] = y_bins
-            
+
             # Aggregate into heatmap format
             grid_data = (
                 contour_data.groupby(["y_bin", "x_bin"])
@@ -136,7 +144,7 @@ def main(
                 .reset_index(name="value")
             )
             grid_data = grid_data.rename(columns={"x_bin": "column", "y_bin": "row"})
-            
+
             fm.plot(
                 *["heatmap", 0, 0, grid_data],
                 x="column",
@@ -148,22 +156,35 @@ def main(
 
             # Different density pattern
             dense_contour_data = matrix_data(
-                pattern_type="contour", rows=matrix_rows * matrix_cols, cols=2, seed=seed + 2
+                pattern_type="contour",
+                rows=matrix_rows * matrix_cols,
+                cols=2,
+                seed=seed + 2,
             )
-            
-            x_bins2 = pd.cut(dense_contour_data["x"], bins=matrix_cols, labels=[f"Col_{i+1}" for i in range(matrix_cols)])
-            y_bins2 = pd.cut(dense_contour_data["y"], bins=matrix_rows, labels=[f"Row_{i+1}" for i in range(matrix_rows)])
-            
+
+            x_bins2 = pd.cut(
+                dense_contour_data["x"],
+                bins=matrix_cols,
+                labels=[f"Col_{i + 1}" for i in range(matrix_cols)],
+            )
+            y_bins2 = pd.cut(
+                dense_contour_data["y"],
+                bins=matrix_rows,
+                labels=[f"Row_{i + 1}" for i in range(matrix_rows)],
+            )
+
             dense_contour_data["x_bin"] = x_bins2
             dense_contour_data["y_bin"] = y_bins2
-            
+
             dense_grid_data = (
                 dense_contour_data.groupby(["y_bin", "x_bin"])
                 .size()
                 .reset_index(name="value")
             )
-            dense_grid_data = dense_grid_data.rename(columns={"x_bin": "column", "y_bin": "row"})
-            
+            dense_grid_data = dense_grid_data.rename(
+                columns={"x_bin": "column", "y_bin": "row"}
+            )
+
             fm.plot(
                 *["heatmap", 0, 1, dense_grid_data],
                 x="column",
