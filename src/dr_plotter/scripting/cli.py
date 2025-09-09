@@ -48,8 +48,19 @@ def load_dataset(file_path: str) -> pd.DataFrame:
     return df
 
 
-def validate_columns(df: pd.DataFrame, merged_args: Any) -> None:
-    faceting_options = [
+def validate_args(
+    df: pd.DataFrame, x_column: str, y_column: str, merged_args: Any
+) -> None:
+    validate_columns(df, x_column, y_column, merged_args)
+    validate_layout_options(click.get_current_context(), **merged_args)
+
+
+def validate_columns(
+    df: pd.DataFrame, x_column: str, y_column: str, merged_args: Any
+) -> None:
+    column_options = [
+        ("x", x_column),
+        ("y", y_column),
         ("rows", merged_args.get("rows")),
         ("cols", merged_args.get("cols")),
         ("rows_and_cols", merged_args.get("rows_and_cols")),
@@ -59,7 +70,7 @@ def validate_columns(df: pd.DataFrame, merged_args: Any) -> None:
         ("marker_by", merged_args.get("marker_by")),
         ("style_by", merged_args.get("style_by")),
     ]
-    for option_name, column_name in faceting_options:
+    for option_name, column_name in column_options:
         if column_name and column_name not in df.columns:
             available_cols = ", ".join(sorted(df.columns))
             raise click.UsageError(
@@ -73,54 +84,31 @@ def validate_columns(df: pd.DataFrame, merged_args: Any) -> None:
 @click.option(
     "--x",
     "x_column",
-    help="Column name for x-axis (default: auto-detect from step/time/x)",
+    required=True,
+    help="Column name for x-axis",
 )
-@click.option(
-    "--y", "y_column", help="Column name for y-axis (default: auto-detect from value/y)"
-)
+@click.option("--y", "y_column", required=True, help="Column name for y-axis")
 @click.option(
     "--plot-type",
     type=click.Choice(["line", "scatter"]),
     default="scatter",
     help="Type of plot to create (default: scatter)",
 )
-@dimensional_plotting_cli([])  # Always validate faceting columns
+@dimensional_plotting_cli()  # Always validate faceting columns in validate_columns()
 def main(
     dataset_path: str,
-    x_column: str | None,
-    y_column: str | None,
+    x_column: str,
+    y_column: str,
     plot_type: str,
     **kwargs: Any,
 ) -> None:
     df = load_dataset(dataset_path)
-    if not x_column:
-        for col in ["step", "time", "x"]:
-            if col in df.columns:
-                x_column = col
-                break
-        if not x_column:
-            click.echo("❌ Could not auto-detect x column. Please specify with --x")
-            return
-
-    if not y_column:
-        for col in ["value", "y", "loss", "accuracy"]:
-            if col in df.columns:
-                y_column = col
-                break
-        if not y_column:
-            click.echo("❌ Could not auto-detect y column. Please specify with --y")
-            return
-
-    click.echo(f"Using x='{x_column}', y='{y_column}'")
-    if kwargs.get("config"):
-        config = CLIConfig.from_yaml(kwargs["config"])
-        click.echo(f"✅ Loaded configuration from {kwargs['config']}")
-    else:
-        config = CLIConfig()
+    config = (
+        CLIConfig.from_yaml(kwargs["config"]) if kwargs.get("config") else CLIConfig()
+    )
     cli_kwargs = {k: v for k, v in kwargs.items() if k != "config"}
     merged_args = config.merge_with_cli_args(cli_kwargs)
-    validate_columns(df, merged_args)
-    validate_layout_options(click.get_current_context(), **merged_args)
+    validate_args(df, x_column, y_column, merged_args)
     faceting_config = build_faceting_config(
         config,
         x=x_column,
@@ -137,12 +125,10 @@ def main(
         else:
             fm.plot_faceted(df, "scatter", faceting=faceting_config, s=50, alpha=0.7)
 
-    class Args:
-        save_dir = kwargs["save_dir"]
-        pause = kwargs["pause"]
-
     dataset_name = Path(dataset_path).stem
-    show_or_save_plot(fm.fig, Args(), f"dr_plotter_{dataset_name}")
+    show_or_save_plot(
+        fm.fig, kwargs["save_dir"], kwargs["pause"], f"dr_plotter_{dataset_name}"
+    )
     click.echo("✅ dr-plotter completed!")
 
 
