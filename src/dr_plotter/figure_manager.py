@@ -29,10 +29,10 @@ from dr_plotter.legend_manager import (
     LegendManager,
 )
 from dr_plotter.plotters.base import BasePlotter
+from dr_plotter.scripting.utils import parse_scale_pair
 from dr_plotter.style_applicator import StyleApplicator
 from dr_plotter.utils import get_axes_from_grid
 
-# Auto-generate faceting parameter names from FacetingConfig dataclass
 FACETING_PARAM_NAMES = {f.name for f in fields(FacetingConfig)}
 DEFAULT_MARGIN = 0.05
 
@@ -151,8 +151,6 @@ class FigureManager:
             self._apply_xyscale()
 
     def _apply_xyscale(self) -> None:
-        from dr_plotter.scripting.utils import parse_scale_pair
-
         if isinstance(self.layout_config.xyscale, str):
             x_scale, y_scale = parse_scale_pair(self.layout_config.xyscale)
             for row_idx in range(self.layout_config.rows):
