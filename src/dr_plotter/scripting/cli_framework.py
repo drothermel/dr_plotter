@@ -120,6 +120,10 @@ class CLIConfig:
             data = yaml.safe_load(f)
         return cls(data)
 
+    @classmethod
+    def load_or_default(cls, config_path: str | Path | None = None) -> CLIConfig:
+        return cls.from_yaml(config_path) if config_path else cls()
+
     def merge_with_cli_args(self, cli_args: dict[str, Any]) -> dict[str, Any]:
         merged = {**self.data}
         merged.update(

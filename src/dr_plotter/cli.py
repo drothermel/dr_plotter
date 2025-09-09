@@ -57,9 +57,7 @@ def main(
     **kwargs: Any,
 ) -> None:
     df = load_dataset(dataset_path)
-    config = CLIConfig()
-    if kwargs.get("config"):
-        config = CLIConfig.from_yaml(kwargs["config"])
+    config = CLIConfig.load_or_default(kwargs.get("config"))
     cli_kwargs = {k: v for k, v in kwargs.items() if k != "config"}
     cli_kwargs.update({"x": x_column, "y": y_column})
     merged_args = config.merge_with_cli_args(cli_kwargs)
