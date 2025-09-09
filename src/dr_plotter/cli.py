@@ -13,6 +13,7 @@ from dr_plotter.scripting import (
     dimensional_plotting_cli,
     load_dataset,
     validate_args,
+    validate_unused_parameters,
 )
 from dr_plotter.scripting.utils import show_or_save_plot
 from dr_plotter.theme import BASE_THEME, FigureStyles, Theme
@@ -64,10 +65,7 @@ def main(
     merged_args = config.merge_with_cli_args(cli_kwargs)
     validate_args(df, merged_args)
     configs, unused_kwargs = build_configs(merged_args)
-    # Check for invalid parameters
-    if unused_kwargs:
-        unused_params = ", ".join(unused_kwargs.keys())
-        raise click.UsageError(f"Unknown parameters: {unused_params}")
+    validate_unused_parameters(unused_kwargs)
 
     plot_config = PlotConfig(
         layout=configs["layout"],

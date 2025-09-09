@@ -3,6 +3,7 @@ from .cli_framework import (
     build_configs,
     dimensional_plotting_cli,
     validate_layout_options,
+    validate_unused_parameters,
 )
 from .config_schema import (
     EXAMPLE_CONFIG,
@@ -34,5 +35,6 @@ __all__ = [
     "validate_args",
     "validate_columns",
     "validate_layout_options",
+    "validate_unused_parameters",
     "write_example_config",
 ]

@@ -226,6 +226,17 @@ def build_configs(kwargs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any
     return configs, unused
 
 
+def validate_unused_parameters(
+    unused_kwargs: dict[str, Any], allowed_params: set[str] | None = None
+) -> None:
+    if unused_kwargs:
+        allowed_set = allowed_params or set()
+        unexpected_params = {k for k in unused_kwargs.keys() if k not in allowed_set}
+        if unexpected_params:
+            unused_params = ", ".join(unexpected_params)
+            raise click.UsageError(f"Unknown parameters: {unused_params}")
+
+
 def build_plot_config(
     config: CLIConfig, theme: str | None = None, **cli_overrides: Any
 ) -> PlotConfig:
