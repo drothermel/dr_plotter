@@ -213,6 +213,43 @@ with FigureManager(config) as fm:
     fm.plot_faceted(data, "scatter", faceting=config.faceting)
 ```
 
+### CLI Workflow for Custom Scripts
+
+Build your own CLI scripts using the streamlined workflow pattern:
+
+```python
+from dr_plotter import FigureManager
+from dr_plotter.scripting import CLIWorkflowConfig, execute_cli_workflow, dimensional_plotting_cli, load_dataset
+import click
+
+@click.command()
+@click.argument("dataset_path")
+@dimensional_plotting_cli()  # Auto-generates 70+ CLI options
+def main(dataset_path: str, **kwargs):
+    # Define your workflow configuration
+    workflow_config = CLIWorkflowConfig(
+        data_loader=lambda _: load_dataset(dataset_path),
+        default_params={"batch_size": 32},           # Provide sensible defaults
+        fixed_params={"model_type": "transformer"},  # Enforce script requirements  
+        allowed_unused={"save_dir", "pause"}         # Accept these extra params
+    )
+    
+    # Execute the complete workflow (config + validation + data loading)
+    df, plot_config = execute_cli_workflow(kwargs, workflow_config)
+    
+    # Create your visualization - faceting handled automatically!
+    with FigureManager(plot_config) as fm:
+        fm.plot_faceted(df, "scatter")  # plot_config.faceting used automatically
+    
+    # Handle output
+    show_or_save_plot(fm.fig, kwargs.get("save_dir"), kwargs.get("pause", 5))
+
+if __name__ == "__main__":
+    main()
+```
+
+The workflow pattern provides automatic configuration building, validation, and data loading in a single function call. All CLI parameters are handled seamlessly, with clear error messages for any validation issues.
+
 ### Data Generation
 
 Test data can be generated using the built-in functions:
@@ -232,20 +269,6 @@ matrix = matrix_data(
     rows=10, cols=8, 
     pattern_type="correlation"
 )
-```
-
-## Configuration Management
-
-Configurations can be specified programmatically or loaded from files:
-
-```python
-from dr_plotter.scripting import CLIConfig
-
-# Load from YAML
-config = CLIConfig.from_yaml("plot_config.yaml")
-
-# Merge with command-line arguments
-merged_config = config.merge_with_cli_args(cli_args)
 ```
 
 ## Design Philosophy
