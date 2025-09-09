@@ -572,6 +572,89 @@ class ExampleData:
         return pd.DataFrame(records)
 
     @staticmethod
+    def ml_scaling_data(n_points: int = 100, seed: int = 42) -> pd.DataFrame:
+        """Generate synthetic ML scaling data for dimensional plotting demonstrations.
+        
+        Creates realistic scaling curves showing how different model sizes perform
+        across different datasets and metrics with multiple random seeds.
+        """
+        np.random.seed(seed)
+
+        # Model parameters and datasets
+        model_sizes = ["1B", "7B", "30B", "70B", "180B"]
+        datasets = ["CommonCrawl", "Wikipedia", "Books", "ArXiv"]
+        metrics = ["loss", "accuracy", "bleu"]
+        seeds = [0, 1, 2]
+
+        data = []
+        for model in model_sizes:
+            for dataset in datasets:
+                for metric in metrics:
+                    for seed_id in seeds:
+                        # Generate realistic scaling curves
+                        steps = np.logspace(1, 5, n_points)  # 10 to 100k steps
+
+                        # Model size effects (larger models perform better)
+                        size_multiplier = {
+                            "1B": 1.0,
+                            "7B": 0.8,
+                            "30B": 0.6,
+                            "70B": 0.4,
+                            "180B": 0.3,
+                        }[model]
+
+                        # Dataset effects
+                        dataset_offset = {
+                            "CommonCrawl": 0.0,
+                            "Wikipedia": 0.1,
+                            "Books": 0.05,
+                            "ArXiv": 0.15,
+                        }[dataset]
+
+                        # Metric-specific scaling
+                        if metric == "loss":
+                            # Loss decreases with training (lower is better)
+                            base_values = (
+                                size_multiplier
+                                * (2.0 + dataset_offset)
+                                * np.power(steps, -0.1)
+                            )
+                            base_values += np.random.normal(0, 0.05, n_points)  # Add noise
+                        elif metric == "accuracy":
+                            # Accuracy increases with training (higher is better)
+                            base_values = (
+                                (1 - size_multiplier) * 0.95 * (1 - np.exp(-steps / 10000))
+                            )
+                            base_values -= dataset_offset * 0.1
+                            base_values += np.random.normal(0, 0.02, n_points)
+                        else:  # BLEU
+                            # BLEU score improvement
+                            base_values = (
+                                (1 - size_multiplier) * 50 * (1 - np.exp(-steps / 15000))
+                            )
+                            base_values -= dataset_offset * 2
+                            base_values += np.random.normal(0, 1, n_points)
+
+                        # Add seed variation
+                        seed_offset = np.random.RandomState(seed_id).normal(0, 0.02, n_points)
+                        values = base_values + seed_offset
+
+                        # Create records
+                        for step, value in zip(steps, values):
+                            data.append(
+                                {
+                                    "step": int(step),
+                                    "value": float(value),
+                                    "model_size": model,
+                                    "dataset": dataset,
+                                    "metric": metric,
+                                    "seed": seed_id,
+                                }
+                            )
+
+        return pd.DataFrame(data)
+
+    @staticmethod
     def get_category_time_series(
         time_points: int = 15, seed: int = 502
     ) -> pd.DataFrame:

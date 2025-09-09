@@ -2,7 +2,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from plot_data import ExampleData
+from dr_plotter.scripting import ExampleData
 
 from dr_plotter.configs import PlotConfig
 from dr_plotter.figure_manager import FigureManager

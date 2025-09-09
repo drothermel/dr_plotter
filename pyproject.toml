@@ -16,7 +16,12 @@ dependencies = [
     "scikit-learn>=1.6.1",
     "pydantic>=2.11.7",
     "pyarrow>=21.0.0",
+    "click>=8.0.0",  # CLI framework for example scripts
+    "PyYAML>=6.0.0",  # YAML config file support
 ]
+
+[project.scripts]
+dr-plotter = "dr_plotter.scripting.cli:main"
 
 [build-system]
 requires = ["hatchling"]

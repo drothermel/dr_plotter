@@ -5,7 +5,7 @@ Demonstrates plotting multiple y-columns with the METRICS constant.
 
 from typing import Any
 
-from plot_data import ExampleData
+from dr_plotter.scripting import ExampleData
 
 from dr_plotter import consts
 from dr_plotter.configs import PlotConfig
