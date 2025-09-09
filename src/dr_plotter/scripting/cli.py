@@ -61,20 +61,20 @@ def validate_columns(
     column_options = [
         ("x", x_column),
         ("y", y_column),
-        ("rows", merged_args.get("rows")),
-        ("cols", merged_args.get("cols")),
-        ("rows_and_cols", merged_args.get("rows_and_cols")),
-        ("hue_by", merged_args.get("hue_by")),
-        ("alpha_by", merged_args.get("alpha_by")),
-        ("size_by", merged_args.get("size_by")),
-        ("marker_by", merged_args.get("marker_by")),
-        ("style_by", merged_args.get("style_by")),
+        ("rows-by", merged_args.get("rows_by")),  # NEW NAME
+        ("cols-by", merged_args.get("cols_by")),  # NEW NAME
+        ("wrap-by", merged_args.get("wrap_by")),  # NEW NAME
+        ("hue-by", merged_args.get("hue_by")),
+        ("alpha-by", merged_args.get("alpha_by")),
+        ("size-by", merged_args.get("size_by")),
+        ("marker-by", merged_args.get("marker_by")),
+        ("style-by", merged_args.get("style_by")),
     ]
     for option_name, column_name in column_options:
         if column_name and column_name not in df.columns:
             available_cols = ", ".join(sorted(df.columns))
             raise click.UsageError(
-                f"Column '{column_name}' for --{option_name.replace('_', '-')} "
+                f"Column '{column_name}' for --{option_name} "
                 f"not found in dataset. Available columns: {available_cols}"
             )
 

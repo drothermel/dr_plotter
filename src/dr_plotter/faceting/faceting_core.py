@@ -19,8 +19,8 @@ def prepare_faceted_subplots(
     data: pd.DataFrame, config: FacetingConfig, grid_shape: tuple[int, int]
 ) -> dict[tuple[int, int], pd.DataFrame]:
     assert not data.empty, "Cannot facet empty DataFrame"
-    assert config.rows or config.cols or config.rows_and_cols, (
-        "Must specify rows, cols, or rows_and_cols for faceting"
+    assert config.rows_by_by or config.cols_by_by or config.wrap_by, (
+        "Must specify rows_by, cols_by, or wrap_by for faceting"
     )
     assert isinstance(grid_shape, tuple) and len(grid_shape) == GRID_SHAPE_DIMENSIONS, (
         "grid_shape must be (rows, cols) tuple"
@@ -35,29 +35,29 @@ def prepare_faceted_subplots(
         subsets = {(config.target_row, config.target_col): data.copy()}
         return subsets
 
-    if config.rows_and_cols:
+    if config.wrap_by:
         # Handle wrapping layout: single dimension mapped to grid positions
-        values = resolve_dimension_values(data, config.rows_and_cols, config)
+        values = resolve_dimension_values(data, config.wrap_by, config)
         rows, cols = grid_shape
         subsets = {}
         for i, val in enumerate(values):
             r = i // cols  # Row position in grid
             c = i % cols  # Column position in grid
             if r < rows:  # Only create subsets within grid bounds
-                subset = data[data[config.rows_and_cols] == val].copy()
+                subset = data[data[config.wrap_by] == val].copy()
                 if not subset.empty:
                     subsets[(r, c)] = subset
     else:
         # Handle standard row/col layout
         row_values = (
             [None]
-            if config.rows is None
-            else resolve_dimension_values(data, config.rows, config)
+            if config.rows_by_by is None
+            else resolve_dimension_values(data, config.rows_by_by, config)
         )
         col_values = (
             [None]
-            if config.cols is None
-            else resolve_dimension_values(data, config.cols, config)
+            if config.cols_by_by is None
+            else resolve_dimension_values(data, config.cols_by_by, config)
         )
 
         subsets = {}
@@ -84,10 +84,10 @@ def _create_data_subset(
     data: pd.DataFrame, config: FacetingConfig, row_val: Any, col_val: Any
 ) -> pd.DataFrame:
     mask = pd.Series([True] * len(data), index=data.index)
-    if row_val is not None and config.rows:
-        mask = mask & (data[config.rows] == row_val)
-    if col_val is not None and config.cols:
-        mask = mask & (data[config.cols] == col_val)
+    if row_val is not None and config.rows_by_by:
+        mask = mask & (data[config.rows_by_by] == row_val)
+    if col_val is not None and config.cols_by_by:
+        mask = mask & (data[config.cols_by_by] == col_val)
     return data[mask].copy()
 
 
@@ -146,25 +146,25 @@ def _apply_exterior_labels(
     ax = fm.get_axes(row, col)
 
     # Get grid dimensions - handle rows_and_cols mode
-    if config.rows_and_cols:
+    if config.wrap_by:
         # For wrapped layouts, get actual grid dimensions from FigureManager
-        n_rows, n_cols = fm.layout_config.rows, fm.layout_config.cols
-        dimension_name = config.rows_and_cols
+        n_rows, n_cols = fm.layout_config.rows_by, fm.layout_config.cols_by
+        dimension_name = config.wrap_by
     else:
         # Standard row/col layout
         row_values = (
-            resolve_dimension_values(data, config.rows, config)
-            if config.rows
+            resolve_dimension_values(data, config.rows_by, config)
+            if config.rows_by
             else [None]
         )
         col_values = (
-            resolve_dimension_values(data, config.cols, config)
-            if config.cols
+            resolve_dimension_values(data, config.cols_by, config)
+            if config.cols_by
             else [None]
         )
-        n_rows = len(row_values) if config.rows else 1
-        n_cols = len(col_values) if config.cols else 1  # noqa: F841
-        dimension_name = config.rows or config.cols
+        n_rows = len(row_values) if config.rows_by else 1
+        n_cols = len(col_values) if config.cols_by else 1  # noqa: F841
+        dimension_name = config.rows_by or config.cols_by
 
     # Apply exterior x label (bottom row only)
     if config.exterior_x_label and row == n_rows - 1:
@@ -175,7 +175,7 @@ def _apply_exterior_labels(
         if config.exterior_y_label:
             # Use explicitly provided label
             ax.set_ylabel(config.exterior_y_label)
-        elif config.rows_and_cols and dimension_name:
+        elif config.wrap_by and dimension_name:
             # Auto-label with dimension name for rows_and_cols mode
             ax.set_ylabel(dimension_name.capitalize())
 
@@ -186,15 +186,15 @@ def _apply_dimension_titles(
     ax = fm.get_axes(row, col)
 
     # Handle wrapping layout (rows_and_cols) - add title to every subplot
-    if config.rows_and_cols and config.auto_titles:
-        values = resolve_dimension_values(data, config.rows_and_cols, config)
-        _, grid_cols = fm.layout_config.rows, fm.layout_config.cols
+    if config.wrap_by and config.auto_titles:
+        values = resolve_dimension_values(data, config.wrap_by, config)
+        _, grid_cols = fm.layout_config.rows_by, fm.layout_config.cols_by
 
         # Calculate which value this subplot represents
         subplot_index = row * grid_cols + col
         if subplot_index < len(values):
             value = values[subplot_index]
-            title = f"{config.rows_and_cols}={value}"
+            title = f"{config.wrap_by}={value}"
             ax.set_title(title, pad=10)
         return
 
@@ -204,10 +204,14 @@ def _apply_dimension_titles(
 
     # Get dimension values using same logic as faceting system
     row_values = (
-        resolve_dimension_values(data, config.rows, config) if config.rows else [None]
+        resolve_dimension_values(data, config.rows_by, config)
+        if config.rows_by
+        else [None]
     )
     col_values = (
-        resolve_dimension_values(data, config.cols, config) if config.cols else [None]
+        resolve_dimension_values(data, config.cols_by, config)
+        if config.cols_by
+        else [None]
     )
 
     # Row titles (left side, first column only)

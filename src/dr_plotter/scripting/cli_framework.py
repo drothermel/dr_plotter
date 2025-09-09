@@ -40,38 +40,31 @@ class CLIConfig:
         return cls(data)
 
     def merge_with_cli_args(self, cli_args: dict[str, Any]) -> dict[str, Any]:
-        """Simple merge: config provides defaults, CLI overrides when present."""
-        merged = {}
-
-        # Start with config values (flat structure matches CLI exactly)
-        merged.update(self.data)
-
-        # CLI arguments override config values
-        for key, value in cli_args.items():
-            if value is not None:
-                merged[key] = value
-
+        merged = {**self.data}
+        merged.update(
+            {key: value for key, value in cli_args.items() if value is not None}
+        )
         return merged
 
 
 def common_faceting_options() -> Callable[[F], F]:
     def decorator(f: F) -> F:
-        # Always use str type - column validation happens in validate_columns()
-        dimension_type = str
+        dimension_type = str  # Column validation happens in validate_columns()
+
         f = click.option(
-            "--rows",
+            "--rows-by",
             type=dimension_type,
-            help="Dimension to use for row faceting",
+            help="Column name to use for row faceting",
         )(f)
         f = click.option(
-            "--cols",
+            "--cols-by",
             type=dimension_type,
-            help="Dimension to use for column faceting",
+            help="Column name to use for column faceting",
         )(f)
         f = click.option(
-            "--rows-and-cols",
+            "--wrap-by",
             type=dimension_type,
-            help="Dimension to wrap across rows and columns",
+            help="Column name to use for wrapped faceting",
         )(f)
         f = click.option(
             "--max-cols",
@@ -81,9 +74,7 @@ def common_faceting_options() -> Callable[[F], F]:
         )(f)
 
         f = click.option(
-            "--hue-by",
-            type=dimension_type,
-            help="Dimension for color/line grouping",
+            "--hue-by", type=dimension_type, help="Dimension for color/line grouping"
         )(f)
         f = click.option(
             "--alpha-by",
@@ -91,9 +82,7 @@ def common_faceting_options() -> Callable[[F], F]:
             help="Dimension for transparency grouping",
         )(f)
         f = click.option(
-            "--size-by",
-            type=dimension_type,
-            help="Dimension for size grouping",
+            "--size-by", type=dimension_type, help="Dimension for size grouping"
         )(f)
         f = click.option(
             "--marker-by",
@@ -101,9 +90,7 @@ def common_faceting_options() -> Callable[[F], F]:
             help="Dimension for marker style grouping",
         )(f)
         f = click.option(
-            "--style-by",
-            type=dimension_type,
-            help="Dimension for line style grouping",
+            "--style-by", type=dimension_type, help="Dimension for line style grouping"
         )(f)
 
         return f
@@ -135,6 +122,29 @@ def dimensional_control_options() -> Callable[[F], F]:
 
 def layout_options() -> Callable[[F], F]:
     def decorator(f: F) -> F:
+        # FIGURE LAYOUT OPTIONS (integers, tuples)
+        f = click.option(
+            "--rows", type=int, default=1, help="Number of subplot rows in figure"
+        )(f)
+        f = click.option(
+            "--cols", type=int, default=1, help="Number of subplot columns in figure"
+        )(f)
+        f = click.option(
+            "--figsize",
+            type=(float, float),
+            default=(12.0, 8.0),
+            help="Figure size (width height)",
+        )(f)
+        f = click.option(
+            "--tight-layout/--no-tight-layout",
+            default=True,
+            help="Enable/disable tight layout",
+        )(f)
+        f = click.option(
+            "--tight-layout-pad", type=float, default=1.0, help="Tight layout padding"
+        )(f)
+
+        # SUBPLOT SIZING OPTIONS (existing, keep these)
         f = click.option(
             "--subplot-width", type=float, default=3.5, help="Width of each subplot"
         )(f)
@@ -146,6 +156,7 @@ def layout_options() -> Callable[[F], F]:
             is_flag=True,
             help="Disable automatic descriptive titles",
         )(f)
+
         return f
 
     return decorator
@@ -186,14 +197,14 @@ def config_option() -> Callable[[F], F]:
 
 
 def validate_layout_options(ctx: click.Context, **kwargs: Any) -> None:
-    rows = kwargs.get("rows")
-    cols = kwargs.get("cols")
-    rows_and_cols = kwargs.get("rows_and_cols")
+    rows_by = kwargs.get("rows_by")
+    cols_by = kwargs.get("cols_by")
+    wrap_by = kwargs.get("wrap_by")
 
-    if rows_and_cols is not None and (rows is not None or cols is not None):
+    if wrap_by is not None and (rows_by is not None or cols_by is not None):
         raise click.UsageError(
-            "Cannot combine --rows-and-cols with --rows or --cols. Use either"
-            " explicit grid (--rows + --cols) or wrapping (--rows-and-cols)."
+            "Cannot combine --wrap-by with --rows-by or --cols-by. Use either"
+            " explicit grid (--rows-by + --cols-by) or wrapping (--wrap-by)."
         )
 
 
@@ -222,10 +233,10 @@ def build_faceting_config(
     return FacetingConfig(
         x=x,
         y=y,
-        rows=merged.get("rows"),
-        cols=merged.get("cols"),
-        rows_and_cols=merged.get("rows_and_cols"),
-        max_cols=merged.get("max_cols") if merged.get("rows_and_cols") else None,
+        rows_by=merged.get("rows_by"),
+        cols_by=merged.get("cols_by"),
+        wrap_by=merged.get("wrap_by"),
+        max_cols=merged.get("max_cols") if merged.get("wrap_by") else None,
         hue_by=merged.get("hue_by"),
         alpha_by=merged.get("alpha_by"),
         size_by=merged.get("size_by"),
@@ -238,10 +249,10 @@ def build_faceting_config(
         subplot_height=merged.get("subplot_height", 3.0),
         auto_titles=not merged.get("no_auto_titles", False),
         row_titles=not merged.get("no_auto_titles", False)
-        if merged.get("rows")
+        if merged.get("rows_by")
         else False,
         col_titles=not merged.get("no_auto_titles", False)
-        if merged.get("cols")
+        if merged.get("cols_by")
         else False,
         exterior_x_label=exterior_x_label,
         exterior_y_label=exterior_y_label,
@@ -255,10 +266,11 @@ def build_plot_config(
 
     return PlotConfig(
         layout=LayoutConfig(
-            rows=1,
-            cols=1,
-            tight_layout=True,
-            tight_layout_pad=1.0,
+            rows=merged.get("rows", 1),
+            cols=merged.get("cols", 1),
+            figsize=merged.get("figsize", (12.0, 8.0)),
+            tight_layout=merged.get("tight_layout", True),
+            tight_layout_pad=merged.get("tight_layout_pad", 1.0),
         ),
         legend=LegendConfig(strategy=merged.get("legend_strategy", "subplot")),
         style=StyleConfig(theme=theme) if theme else None,
