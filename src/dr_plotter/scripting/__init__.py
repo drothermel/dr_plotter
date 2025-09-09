@@ -20,6 +20,7 @@ from .config_schema import (
     validate_config,
     load_and_validate_config,
 )
+from .plot_data import ExampleData
 
 __all__ = [
     # Legacy utils
@@ -45,4 +46,6 @@ __all__ = [
     "write_example_config",
     "validate_config",
     "load_and_validate_config",
+    # Example data
+    "ExampleData",
 ]

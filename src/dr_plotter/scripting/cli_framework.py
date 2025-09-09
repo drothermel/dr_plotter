@@ -94,20 +94,23 @@ def common_faceting_options(valid_dimensions: List[str]) -> Callable[[F], F]:
     """Add common faceting options to a Click command."""
 
     def decorator(f: F) -> F:
+        # Use Choice validation if dimensions provided, otherwise accept any string
+        dimension_type = click.Choice(valid_dimensions) if valid_dimensions else str
+        
         # Layout options
         f = click.option(
             "--rows",
-            type=click.Choice(valid_dimensions),
+            type=dimension_type,
             help="Dimension to use for row faceting",
         )(f)
         f = click.option(
             "--cols",
-            type=click.Choice(valid_dimensions),
+            type=dimension_type,
             help="Dimension to use for column faceting",
         )(f)
         f = click.option(
             "--rows-and-cols",
-            type=click.Choice(valid_dimensions),
+            type=dimension_type,
             help="Dimension to wrap across rows and columns",
         )(f)
         f = click.option(
@@ -120,27 +123,27 @@ def common_faceting_options(valid_dimensions: List[str]) -> Callable[[F], F]:
         # Visual channels
         f = click.option(
             "--hue-by",
-            type=click.Choice(valid_dimensions),
+            type=dimension_type,
             help="Dimension for color/line grouping",
         )(f)
         f = click.option(
             "--alpha-by",
-            type=click.Choice(valid_dimensions),
+            type=dimension_type,
             help="Dimension for transparency grouping",
         )(f)
         f = click.option(
             "--size-by",
-            type=click.Choice(valid_dimensions),
+            type=dimension_type,
             help="Dimension for size grouping",
         )(f)
         f = click.option(
             "--marker-by",
-            type=click.Choice(valid_dimensions),
+            type=dimension_type,
             help="Dimension for marker style grouping",
         )(f)
         f = click.option(
             "--style-by",
-            type=click.Choice(valid_dimensions),
+            type=dimension_type,
             help="Dimension for line style grouping",
         )(f)
 
@@ -239,20 +242,16 @@ def config_option() -> Callable[[F], F]:
 
 
 def validate_layout_options(ctx: click.Context, **kwargs) -> None:
-    """Validate that exactly one layout option is specified."""
-    layout_options = [
-        kwargs.get("rows"),
-        kwargs.get("cols"),
-        kwargs.get("rows_and_cols"),
-    ]
-    specified_layouts = [opt for opt in layout_options if opt is not None]
-
-    if len(specified_layouts) == 0:
+    """Validate layout options are specified correctly."""
+    rows = kwargs.get("rows")
+    cols = kwargs.get("cols") 
+    rows_and_cols = kwargs.get("rows_and_cols")
+    
+    # Only check: don't mix rows+cols with rows_and_cols
+    if rows_and_cols is not None and (rows is not None or cols is not None):
         raise click.UsageError(
-            "Must specify one of: --rows, --cols, or --rows-and-cols"
+            "Cannot combine --rows-and-cols with --rows or --cols. Use either explicit grid (--rows + --cols) or wrapping (--rows-and-cols)."
         )
-    if len(specified_layouts) > 1:
-        raise click.UsageError("Specify only one layout option")
 
 
 def build_faceting_config(

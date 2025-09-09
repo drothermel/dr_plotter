@@ -8,22 +8,20 @@ capabilities using fake ML scaling data.
 
 from __future__ import annotations
 
-import numpy as np
-import pandas as pd
 import click
 
 from dr_plotter import FigureManager
 from dr_plotter.scripting import (
     CLIConfig,
-    dimensional_plotting_cli,
-    validate_layout_options,
+    ExampleData,
     build_faceting_config,
     build_plot_config,
+    dimensional_plotting_cli,
     validate_dimensions_interactive,
+    validate_layout_options,
 )
 from dr_plotter.scripting.utils import show_or_save_plot
-from dr_plotter.theme import BASE_THEME, Theme, FigureStyles
-
+from dr_plotter.theme import BASE_THEME, FigureStyles, Theme
 
 # 🎨 DEMO THEME - Shows customization patterns
 DEMO_THEME = Theme(
@@ -39,85 +37,6 @@ DEMO_THEME = Theme(
         legend_tight_layout_rect=(0, 0.08, 1, 1),
     ),
 )
-
-
-def generate_scaling_data(n_points: int = 100) -> pd.DataFrame:
-    """Generate synthetic ML scaling data for demonstration."""
-    np.random.seed(42)  # Reproducible data
-
-    # Model parameters and datasets
-    model_sizes = ["1B", "7B", "30B", "70B", "180B"]
-    datasets = ["CommonCrawl", "Wikipedia", "Books", "ArXiv"]
-    metrics = ["loss", "accuracy", "bleu"]
-    seeds = [0, 1, 2]
-
-    data = []
-    for model in model_sizes:
-        for dataset in datasets:
-            for metric in metrics:
-                for seed in seeds:
-                    # Generate realistic scaling curves
-                    steps = np.logspace(1, 5, n_points)  # 10 to 100k steps
-
-                    # Model size effects (larger models perform better)
-                    size_multiplier = {
-                        "1B": 1.0,
-                        "7B": 0.8,
-                        "30B": 0.6,
-                        "70B": 0.4,
-                        "180B": 0.3,
-                    }[model]
-
-                    # Dataset effects
-                    dataset_offset = {
-                        "CommonCrawl": 0.0,
-                        "Wikipedia": 0.1,
-                        "Books": 0.05,
-                        "ArXiv": 0.15,
-                    }[dataset]
-
-                    # Metric-specific scaling
-                    if metric == "loss":
-                        # Loss decreases with training (lower is better)
-                        base_values = (
-                            size_multiplier
-                            * (2.0 + dataset_offset)
-                            * np.power(steps, -0.1)
-                        )
-                        base_values += np.random.normal(0, 0.05, n_points)  # Add noise
-                    elif metric == "accuracy":
-                        # Accuracy increases with training (higher is better)
-                        base_values = (
-                            (1 - size_multiplier) * 0.95 * (1 - np.exp(-steps / 10000))
-                        )
-                        base_values -= dataset_offset * 0.1
-                        base_values += np.random.normal(0, 0.02, n_points)
-                    else:  # BLEU
-                        # BLEU score improvement
-                        base_values = (
-                            (1 - size_multiplier) * 50 * (1 - np.exp(-steps / 15000))
-                        )
-                        base_values -= dataset_offset * 2
-                        base_values += np.random.normal(0, 1, n_points)
-
-                    # Add seed variation
-                    seed_offset = np.random.RandomState(seed).normal(0, 0.02, n_points)
-                    values = base_values + seed_offset
-
-                    # Create records
-                    for step, value in zip(steps, values):
-                        data.append(
-                            {
-                                "step": int(step),
-                                "value": float(value),
-                                "model_size": model,
-                                "dataset": dataset,
-                                "metric": metric,
-                                "seed": seed,
-                            }
-                        )
-
-    return pd.DataFrame(data)
 
 
 @click.command()
@@ -149,7 +68,7 @@ def main(**kwargs):
 
     # Generate synthetic data
     click.echo(f"Generating {kwargs['n_points']} data points per combination...")
-    df = generate_scaling_data(kwargs["n_points"])
+    df = ExampleData.ml_scaling_data(kwargs["n_points"])
     click.echo(f"Generated {len(df)} total data points")
 
     # Create faceting configuration using framework
