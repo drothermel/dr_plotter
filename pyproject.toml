@@ -1,6 +1,6 @@
 [project]
 name = "dr_plotter"
-version = "0.1.0"
+version = "0.1.1"
 description = "A general-purpose plotting library for creating publication-quality figures."
 readme = "README.md"
 authors = [
