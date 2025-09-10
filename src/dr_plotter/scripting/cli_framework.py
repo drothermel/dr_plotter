@@ -14,7 +14,7 @@ from dr_plotter.configs import (
     PlotConfig,
     StyleConfig,
 )
-from dr_plotter.scripting.utils import convert_cli_value_to_type, parse_key_value_args
+from dr_plotter.utils import convert_cli_value_to_type, parse_key_value_args
 
 F = TypeVar("F", bound=Callable[..., Any])
 

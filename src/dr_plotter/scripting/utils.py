@@ -1,22 +1,23 @@
 from __future__ import annotations
 
-import ast
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 import click
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from dr_plotter import consts
-from dr_plotter.configs import PlotConfig
-from dr_plotter.scripting import (
+from dr_plotter.scripting.cli_framework import (
     CLIConfig,
     build_configs,
     validate_layout_options,
     validate_unused_parameters,
 )
+
+if TYPE_CHECKING:
+    from dr_plotter.configs import PlotConfig
 
 
 def show_or_save_plot(
@@ -40,92 +41,6 @@ def create_and_render_plot(
 ) -> None:
     plotter = plotter_class(*plotter_args, **kwargs)
     plotter.render(ax)
-
-
-def parse_key_value_args(args: list[str] | None) -> dict[str, Any]:
-    result = {}
-    if not args:
-        return result
-    for arg in args:
-        assert "=" in arg, f"Invalid format: {arg}. Use key=value"
-        key, value = arg.split("=", 1)
-        key = key.strip()
-        values = [v.strip() for v in value.split(",")]
-        rk = [_convert_to_number_if_numeric(v) for v in values]
-        result[key] = rk if "," in arg else rk[0]
-    return result
-
-
-def _convert_to_number_if_numeric(value: str) -> Any:
-    if value.isdigit() or (value.startswith("-") and value[1:].isdigit()):
-        return int(value)
-    if _is_float_string(value):
-        return float(value)
-    return value
-
-
-def convert_cli_value_to_type(value: Any, target_type: type) -> Any:
-    if not isinstance(value, str):
-        return value
-
-    if target_type is bool:
-        return value.lower() in ("true", "1", "yes", "on")
-    elif target_type is int:
-        return int(value)
-    elif target_type is float:
-        return float(value)
-    elif target_type is str:
-        return value
-    else:
-        try:
-            return ast.literal_eval(value)
-        except Exception:
-            return value
-
-
-def parse_scale_pair(scale_str: str) -> tuple[str, str]:
-    scale_map = {"lin": "linear", "linear": "linear", "log": "log"}
-
-    # Handle concatenated format (linlin, linlog, loglin, loglog)
-    if "-" not in scale_str:
-        if scale_str == "linlin":
-            return "linear", "linear"
-        elif scale_str == "linlog":
-            return "linear", "log"
-        elif scale_str == "loglin":
-            return "log", "linear"
-        elif scale_str == "loglog":
-            return "log", "log"
-        else:
-            raise ValueError(f"Unknown concatenated scale format: '{scale_str}'")
-
-    # Handle hyphenated format (lin-lin, linear-log, etc.)
-    x_scale, y_scale = scale_str.split("-", 1)
-
-    assert x_scale in scale_map, f"Unknown x scale: '{x_scale}'"
-    assert y_scale in scale_map, f"Unknown y scale: '{y_scale}'"
-
-    return scale_map[x_scale], scale_map[y_scale]
-
-
-def parse_scale_flags(scale_str: str) -> tuple[bool, bool]:
-    x_scale, y_scale = parse_scale_pair(scale_str)
-    return x_scale == "log", y_scale == "log"
-
-
-def _is_float_string(value: str) -> bool:
-    if not value:
-        return False
-    check_value = value[1:] if value.startswith("-") else value
-    if "." not in check_value:
-        return False
-    parts = check_value.split(".")
-    num_parts_in_float = 2
-    if len(parts) != num_parts_in_float:
-        return False
-    return all(part.isdigit() or part == "" for part in parts) and any(
-        part for part in parts
-    )
 
 
 def load_dataset(file_path: str) -> pd.DataFrame:

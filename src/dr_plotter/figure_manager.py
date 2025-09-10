@@ -29,9 +29,8 @@ from dr_plotter.legend_manager import (
     LegendManager,
 )
 from dr_plotter.plotters.base import BasePlotter
-from dr_plotter.scripting.utils import parse_scale_pair
 from dr_plotter.style_applicator import StyleApplicator
-from dr_plotter.utils import get_axes_from_grid
+from dr_plotter.utils import get_axes_from_grid, parse_scale_pair
 
 FACETING_PARAM_NAMES = {f.name for f in fields(FacetingConfig)}
 DEFAULT_MARGIN = 0.05
