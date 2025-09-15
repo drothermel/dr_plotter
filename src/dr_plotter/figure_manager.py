@@ -39,6 +39,7 @@ DEFAULT_MARGIN = 0.05
 class FigureManager:
     def __init__(self, config: PlotConfig | None = None) -> None:
         config = PlotConfig() if config is None else config
+        self.config = config
 
         self.layout_config = config.layout
         self.style_config = config.style
@@ -244,7 +245,7 @@ class FigureManager:
         config_dict.update({k: v for k, v in faceting_params.items() if v is not None})
         return FacetingConfig(**config_dict)
 
-    def plot_faceted(
+    def plot(  # noqa: C901
         self,
         data: pd.DataFrame,
         plot_type: str,
@@ -295,22 +296,11 @@ class FigureManager:
         if config.auto_titles:
             self.layout_config.figure_title = generate_dimensional_title(config)
 
+        # All plotting goes through the faceting pipeline - single plots are just
+        # faceting with target position (0,0)
         if not config.rows_by and not config.cols_by and not config.wrap_by:
-            self.plot(
-                plot_type,
-                0,
-                0,
-                data,
-                x=config.x,
-                y=config.y,
-                hue_by=config.hue_by,
-                alpha_by=config.alpha_by,
-                size_by=config.size_by,
-                marker_by=config.marker_by,
-                style_by=config.style_by,
-                **kwargs,
-            )
-            return
+            config.target_row = 0
+            config.target_col = 0
 
         data_subsets = prepare_faceted_subplots(data, config, grid_shape)
         style_coordinator = self._get_or_create_style_coordinator()
@@ -330,21 +320,27 @@ class FigureManager:
         }
         full_data = pd.concat(data_subsets.values(), ignore_index=True)
         for (row, col), subplot_data in data_subsets.items():
-            self.plot(
-                plot_type,
-                row,
-                col,
-                subplot_data,
-                x=config.x,
-                y=config.y,
-                hue_by=config.hue_by,
-                alpha_by=config.alpha_by,
-                size_by=config.size_by,
-                marker_by=config.marker_by,
-                style_by=config.style_by,
-                style_coordinator=style_coordinator if config.hue_by else None,
-                **filtered_kwargs,
-            )
+            subplot_kwargs = filtered_kwargs.copy()
+            if config.x:
+                subplot_kwargs["x"] = config.x
+            if config.y:
+                subplot_kwargs["y"] = config.y
+            if config.hue_by:
+                subplot_kwargs["hue_by"] = config.hue_by
+            if config.alpha_by:
+                subplot_kwargs["alpha_by"] = config.alpha_by
+            if config.size_by:
+                subplot_kwargs["size_by"] = config.size_by
+            if config.marker_by:
+                subplot_kwargs["marker_by"] = config.marker_by
+            if config.style_by:
+                subplot_kwargs["style_by"] = config.style_by
+            if config.hue_by:
+                subplot_kwargs["style_coordinator"] = style_coordinator
+
+            # Call _add_plot directly - no need for _plot() middleman
+            plotter_class = BasePlotter.get_plotter(plot_type)
+            self._add_plot(plotter_class, (subplot_data,), row, col, **subplot_kwargs)
 
             _apply_subplot_customization(self, row, col, config, full_data)
 
@@ -372,9 +368,3 @@ class FigureManager:
                 }
             self._facet_style_coordinator = FacetStyleCoordinator(theme=theme_info)
         return self._facet_style_coordinator
-
-    def plot(
-        self, plot_type: str, row: int, col: int, *args: Any, **kwargs: Any
-    ) -> None:
-        plotter_class = BasePlotter.get_plotter(plot_type)
-        self._add_plot(plotter_class, args, row, col, **kwargs)
