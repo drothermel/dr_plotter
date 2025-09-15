@@ -49,10 +49,8 @@ def main(args: Any) -> Any:
         )
 
         fm.plot(
-            "scatter",
-            0,
-            0,
             filtered_data,
+            "scatter",
             x="performance",
             y="accuracy",
             hue_by="experiment",
@@ -60,13 +58,13 @@ def main(args: Any) -> Any:
             s=60,
             alpha=0.7,
             title="Scatter: Experiment (Hue) × Condition (Marker)",
+            target_row=0,
+            target_col=0,
         )
 
         fm.plot(
-            "line",
-            0,
-            1,
             time_series_data,
+            "line",
             x="time_point",
             y="performance",
             hue_by="experiment",
@@ -74,6 +72,8 @@ def main(args: Any) -> Any:
             linewidth=2,
             alpha=0.8,
             title="Line: Experiment (Hue) × Condition (Marker)",
+            target_row=0,
+            target_col=1,
         )
 
     show_or_save_plot(fm.fig, args, "09_cross_groupby_legends")

@@ -60,7 +60,7 @@ def main(
         ),
     )
     with FigureManager(plot_config) as fm:
-        fm.plot_faceted(df, plot_type)
+        fm.plot(df, plot_type)
     show_or_save_plot(
         fm.fig,
         kwargs["save_dir"],

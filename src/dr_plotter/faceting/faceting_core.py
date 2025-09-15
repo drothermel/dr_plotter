@@ -21,8 +21,14 @@ def prepare_faceted_subplots(
     data: pd.DataFrame, config: FacetingConfig, grid_shape: tuple[int, int]
 ) -> dict[tuple[int, int], pd.DataFrame]:
     assert not data.empty, "Cannot facet empty DataFrame"
-    assert config.rows_by or config.cols_by or config.wrap_by, (
-        "Must specify rows_by, cols_by, or wrap_by for faceting"
+    assert (
+        config.rows_by
+        or config.cols_by
+        or config.wrap_by
+        or (config.target_row is not None and config.target_col is not None)
+    ), (
+        "Must specify rows_by, cols_by, wrap_by, or "
+        "target position (target_row + target_col) for plotting"
     )
     assert isinstance(grid_shape, tuple) and len(grid_shape) == GRID_SHAPE_DIMENSIONS, (
         "grid_shape must be (rows, cols) tuple"
@@ -136,7 +142,7 @@ def _apply_exterior_labels(
     ax = fm.get_axes(row, col)
 
     if config.wrap_by:
-        n_rows, n_cols = fm.layout_config.rows_by, fm.layout_config.cols_by
+        n_rows, n_cols = fm.layout_config.rows, fm.layout_config.cols
         dimension_name = config.wrap_by
     else:
         row_values = (
@@ -172,7 +178,7 @@ def _apply_dimension_titles(
 
     if config.wrap_by and config.auto_titles:
         values = resolve_dimension_values(data, config.wrap_by, config)
-        _, grid_cols = fm.layout_config.rows_by, fm.layout_config.cols_by
+        _, grid_cols = fm.layout_config.rows, fm.layout_config.cols
 
         subplot_index = row * grid_cols + col
         if subplot_index < len(values):
