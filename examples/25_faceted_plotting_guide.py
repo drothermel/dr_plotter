@@ -43,7 +43,7 @@ def example_1_basic_2d_faceting() -> None:
     with FigureManager(
         PlotConfig(layout={"rows": 4, "cols": 3, "figsize": (18, 16)})
     ) as fm:
-        fm.plot_faceted(
+        fm.plot(
             data=data,
             plot_type="line",
             rows="metric",
@@ -85,7 +85,7 @@ def example_2_grid_layouts() -> None:
     with FigureManager(
         PlotConfig(layout={"rows": 2, "cols": 3, "figsize": (18, 12)})
     ) as fm:
-        fm.plot_faceted(
+        fm.plot(
             data=data,
             plot_type="scatter",
             rows="metric_row",
@@ -112,7 +112,7 @@ def example_3_layered_faceting() -> None:
     with FigureManager(
         PlotConfig(layout={"rows": 4, "cols": 3, "figsize": (18, 16)})
     ) as fm:
-        fm.plot_faceted(
+        fm.plot(
             data=scatter_data,
             plot_type="scatter",
             rows="metric",
@@ -124,7 +124,7 @@ def example_3_layered_faceting() -> None:
             s=30,
         )
 
-        fm.plot_faceted(
+        fm.plot(
             data=line_data,
             plot_type="line",
             rows="metric",
@@ -150,7 +150,7 @@ def example_4_targeted_plotting() -> None:
     with FigureManager(
         PlotConfig(layout={"rows": 4, "cols": 3, "figsize": (18, 16)})
     ) as fm:
-        fm.plot_faceted(
+        fm.plot(
             data=data,
             plot_type="line",
             rows="metric",
@@ -171,7 +171,7 @@ def example_4_targeted_plotting() -> None:
 
         # Use target_row and target_col to place the highlighted data at
         # specific positions
-        fm.plot_faceted(
+        fm.plot(
             data=highlight_data,
             plot_type="line",
             rows="metric",
@@ -192,7 +192,7 @@ def example_4_targeted_plotting() -> None:
             & (data["dataset"] == data["dataset"].unique()[2])  # Third dataset (col 2)
         ]
 
-        fm.plot_faceted(
+        fm.plot(
             data=highlight_data_col2,
             plot_type="line",
             rows="metric",
@@ -227,7 +227,7 @@ def example_5_custom_subplot_configuration() -> None:
     with FigureManager(
         PlotConfig(layout={"rows": 4, "cols": 3, "figsize": (18, 16)})
     ) as fm:
-        fm.plot_faceted(
+        fm.plot(
             data=data,
             plot_type="scatter",
             rows="metric",
@@ -278,7 +278,7 @@ def example_6_migration_comparison() -> None:
     print("\nAFTER FACETING (single API call):")
     print("```python")
     print("# 5 lines of code:")
-    print("fm.plot_faceted(")
+    print("fm.plot(")
     print("    data=data, plot_type='line',")
     print("    rows='metric', cols='dataset', lines='model_size',")
     print("    x='step', y='value'")
@@ -288,7 +288,7 @@ def example_6_migration_comparison() -> None:
     with FigureManager(
         PlotConfig(layout={"rows": 4, "cols": 3, "figsize": (18, 16)})
     ) as fm:
-        fm.plot_faceted(
+        fm.plot(
             data=data,
             plot_type="line",
             rows="metric",

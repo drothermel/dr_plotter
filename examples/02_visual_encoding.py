@@ -57,16 +57,16 @@ def main(args: Any) -> Any:
         assert len(color_data.groupby("group")) == EXPECTED_GROUP_COUNT_COLOR
 
         fm.plot(
-            "scatter",
-            0,
-            0,
             color_data,
+            "scatter",
             x="time",
             y="value",  # REQUIRED: data mapping
             hue_by="group",  # GROUPING: color encoding
             s=60,  # DEFAULT: marker size (theme default)
             alpha=0.8,  # CUSTOM: transparency override
             title="Color Encoding (Hue)",  # STYLING: plot identification
+            target_row=0,
+            target_col=0,
         )
 
         # Color and marker encoding with complex data
@@ -77,10 +77,8 @@ def main(args: Any) -> Any:
         assert "condition" in marker_data.columns
 
         fm.plot(
-            "scatter",
-            0,
-            1,
             marker_data,
+            "scatter",
             x="x",
             y="y",  # REQUIRED: data mapping
             hue_by="experiment",  # GROUPING: color encoding
@@ -88,6 +86,8 @@ def main(args: Any) -> Any:
             s=70,  # DEFAULT: marker size (theme default)
             alpha=0.9,  # CUSTOM: transparency override
             title="Color + Marker Encoding",  # STYLING: plot identification
+            target_row=0,
+            target_col=1,
         )
 
         # Color encoding with categorical data
@@ -102,15 +102,15 @@ def main(args: Any) -> Any:
         )
 
         fm.plot(
-            "violin",
-            1,
-            0,
             categorical_data,
+            "violin",
             x="category",
             y="value",  # REQUIRED: data mapping
             hue_by="group",  # GROUPING: color encoding
             showmeans=True,  # DEFAULT: show means (theme default)
             title="Categorical Color Encoding",  # STYLING: plot identification
+            target_row=1,
+            target_col=0,
         )
 
         # Color and style encoding with line plot
@@ -121,10 +121,8 @@ def main(args: Any) -> Any:
         assert len(style_data.groupby("group")) == EXPECTED_GROUP_COUNT_STYLE
 
         fm.plot(
-            "line",
-            1,
-            1,
             style_data,
+            "line",
             x="time",
             y="value",  # REQUIRED: data mapping
             hue_by="group",  # GROUPING: color encoding
@@ -132,6 +130,8 @@ def main(args: Any) -> Any:
             linewidth=2.5,  # DEFAULT: line width (theme default)
             alpha=0.8,  # CUSTOM: transparency override
             title="Color + Style Encoding",  # STYLING: plot identification
+            target_row=1,
+            target_col=1,
         )
 
     show_or_save_plot(fm.fig, args, "02_visual_encoding")

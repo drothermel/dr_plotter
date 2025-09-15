@@ -50,16 +50,16 @@ def main(args: Any) -> Any:
         assert "category" in metric_data.columns
 
         fm.plot(
-            "scatter",
-            0,
-            0,
             metric_data,
+            "scatter",
             x="x",
             y="metric_a",  # REQUIRED: data mapping
             hue_by="category",  # GROUPING: color encoding
             s=50,  # DEFAULT: marker size (theme default)
             alpha=0.8,  # CUSTOM: transparency override
             title="Multi-Metric Layout",  # STYLING: plot identification
+            target_row=0,
+            target_col=0,
         )
 
         layout_data = ExampleData.complex_encoding_data(n_samples=100, seed=302)
@@ -69,10 +69,8 @@ def main(args: Any) -> Any:
         assert "condition" in layout_data.columns
 
         fm.plot(
-            "scatter",
-            0,
-            1,
             layout_data,
+            "scatter",
             x="x",
             y="y",  # REQUIRED: data mapping
             hue_by="experiment",  # GROUPING: color encoding
@@ -80,6 +78,8 @@ def main(args: Any) -> Any:
             s=60,  # DEFAULT: marker size (theme default)
             alpha=0.7,  # CUSTOM: transparency override
             title="Complex Data Coordination",  # STYLING: plot identification
+            target_row=0,
+            target_col=1,
         )
 
         training_data = ExampleData.ml_training_curves(epochs=30, seed=303)
@@ -88,16 +88,16 @@ def main(args: Any) -> Any:
         assert "learning_rate" in training_data.columns
 
         fm.plot(
-            "line",
-            1,
-            0,
             training_data,
+            "line",
             x="epoch",
             y="train_loss",  # REQUIRED: data mapping
             hue_by="learning_rate",  # GROUPING: color encoding
             linewidth=2.0,  # DEFAULT: line width (theme default)
             alpha=0.9,  # CUSTOM: transparency override
             title="Training Curves Layout",  # STYLING: plot identification
+            target_row=1,
+            target_col=0,
         )
 
         coord_data = ExampleData.time_series_grouped(periods=25, groups=3, seed=304)
@@ -107,16 +107,16 @@ def main(args: Any) -> Any:
         assert len(coord_data.groupby("group")) == EXPECTED_COORD_GROUP_COUNT
 
         fm.plot(
-            "line",
-            1,
-            1,
             coord_data,
+            "line",
             x="time",
             y="value",  # REQUIRED: data mapping
             hue_by="group",  # GROUPING: color encoding
             linewidth=2.5,  # DEFAULT: line width (theme default)
             alpha=0.8,  # CUSTOM: transparency override
             title="Coordinated Time Series",  # STYLING: plot identification
+            target_row=1,
+            target_col=1,
         )
 
     show_or_save_plot(fm.fig, args, "03_layout_composition")

@@ -37,15 +37,15 @@ def main(args: Any) -> Any:
         assert "y" in scatter_data.columns
 
         fm.plot(
-            "scatter",
-            0,
-            0,
             scatter_data,
+            "scatter",
             x="x",
             y="y",  # REQUIRED: data mapping
             s=50,  # DEFAULT: marker size (theme default)
             alpha=0.8,  # CUSTOM: transparency override
             title="Basic Scatter Plot",  # STYLING: plot identification
+            target_row=0,
+            target_col=0,
         )
 
         # Line Plot (0,1)
@@ -54,15 +54,15 @@ def main(args: Any) -> Any:
         assert "value" in line_data.columns
 
         fm.plot(
-            "line",
-            0,
-            1,
             line_data,
+            "line",
             x="time",
             y="value",  # REQUIRED: data mapping
             linewidth=2,  # DEFAULT: line width (theme default)
             alpha=0.9,  # CUSTOM: transparency override
             title="Basic Time Series",  # STYLING: plot identification
+            target_row=0,
+            target_col=1,
         )
 
         # Bar Plot (1,0)
@@ -74,15 +74,15 @@ def main(args: Any) -> Any:
         assert "value" in bar_summary.columns
 
         fm.plot(
-            "bar",
-            1,
-            0,
             bar_summary,
+            "bar",
             x="category",
             y="value",  # REQUIRED: data mapping
             width=0.8,  # DEFAULT: bar width (theme default)
             alpha=0.9,  # CUSTOM: transparency override
             title="Basic Bar Chart",  # STYLING: plot identification
+            target_row=1,
+            target_col=0,
         )
 
         # Histogram (1,1)
@@ -90,14 +90,14 @@ def main(args: Any) -> Any:
         assert "values" in hist_data.columns
 
         fm.plot(
-            "histogram",
-            1,
-            1,
             hist_data,
+            "histogram",
             x="values",  # REQUIRED: data mapping
             bins=20,  # DEFAULT: bin count (theme default)
             alpha=0.7,  # CUSTOM: transparency override
             title="Basic Histogram",  # STYLING: plot identification
+            target_row=1,
+            target_col=1,
         )
 
     show_or_save_plot(fm.fig, args, "01_basic_functionality")
