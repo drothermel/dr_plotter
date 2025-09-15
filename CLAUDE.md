@@ -1,7 +1,27 @@
-# PROJECT INSTRUCTIONS
+# CLAUDE.md
+
+This file provides project level guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## 🚨 READ FIRST - DESIGN PHILOSOPHY
-**MANDATORY:** Before starting ANY work, read `docs/DESIGN_PHILOSOPHY.md` to understand the core principles and methodology that guide this project. All code changes must align with these principles.
+**MANDATORY:** Before starting ANY work, read `docs/processes/design_philosophy.md` to understand the core principles and methodology that guide this project. All code changes must align with these principles.
+
+- **No Backward Compatibility**: This is a research library - breaking changes are acceptable for better design
+- **Fail Fast, Fail Loudly**: Use assertions, avoid defensive programming that hides bugs
+- **No Exception Handling**: Never use try-catch blocks - let errors surface immediately
+- **Assertions Over Exceptions**: Use `assert condition, "message"` instead of `raise ValueError()`
+- **Minimize Friction**: Every design choice should reduce friction between idea and visualization
+- **Embrace Change, Demand Consistency**: When making changes, update ALL affected parts
+
+Remember: The goal is code that *disappears* into the background, allowing researchers to focus on their work.
+
+## Essential Commands
+- `us` runs `uv sync` - Install all dependencies including dev, test, and test-ml groups
+- `lint` runs `uv run ruff check --fix .` - Lint code with ruff and apply autofixes where possible
+- `ft` runs `uv run ruff format .` - Format code with ruff  
+- `uv run pytest` - Run tests with pytest (supports parallel execution with xdist)
+- `lint_fix` - Run ruff format and then check with --fix
+
+**IMPORTANT**: Do NOT run tests, linting, type checking, or formatting unless explicitly requested by the user. Focus on the requested changes only.
 
 ## 🎯 CODE STYLE REQUIREMENTS
 
@@ -12,12 +32,27 @@
 
 ### Comprehensive Typing
 - **ALL function signatures** must have complete type hints for parameters and return values
-- Use `from typing import Any, Dict, List, Optional, Tuple` etc. as needed
+- Use `from typing import Any, Optional` etc. as needed
+- Prefer `list`, `dict` etc over `List` and `Dict`
+- Add `from __future__ import annotations` and use modern type hints
 - Import types like `import pandas as pd` when using `pd.DataFrame` in hints
+- If a circular import exists, use `TYPE_CHECKING` to gate
+- All `__init__` methods must have `-> None` return type
+- All class methods need proper `self` typing context
+- Use specific types over `Any` when possible (e.g., `pd.DataFrame` not `Any`)
+- Create custom types for clarity: `type GroupKey = Tuple[Tuple[str, Any], ...]`
 - Example pattern:
   ```python
   def method_name(self, param: str, optional_param: Optional[int] = None) -> Dict[str, Any]:
   ```
+
+### File Structure
+- **ALL imports at the very top** - no imports anywhere else in the file
+- Type aliases near top after imports
+- Magic values should NEVER be hardcoded throughout, all constants be semantically named at the top of the module
+- No module-level docstrings - remove entirely
+- Class definitions without docstrings
+- Methods without docstrings but with full type hints
 
 ### Replace Comments with Structure
 - **Instead of comments** → Extract succinctly named helper functions
@@ -41,20 +76,10 @@
       # Clear, focused function that explains itself
   ```
 
-### Method Signature Standards
-- All `__init__` methods must have `-> None` return type
-- All class methods need proper `self` typing context
-- Use specific types over `Any` when possible (e.g., `pd.DataFrame` not `Any`)
-- Create custom types for clarity: `type GroupKey = Tuple[Tuple[str, Any], ...]`
-
-### File Structure
-- **ALL imports at the very top** - no imports anywhere else in the file
-- Type aliases near top after imports
-- No module-level docstrings - remove entirely
-- Class definitions without docstrings
-- Methods without docstrings but with full type hints
-
-This aligns with the "Minimalism", "Self-Documenting Code", and "Atomicity" principles in our design philosophy.
+### Fail Fast and Loud: Asserts Not Try-Except
+- **Always aim to check assumptions with asserts**
+- Avoid nested try-except blocks
+- Instead, identify assumptions and assert them at the top of the function
 
 ## 🛠️ DEVELOPMENT WORKFLOW
 
@@ -75,16 +100,6 @@ This aligns with the "Minimalism", "Self-Documenting Code", and "Atomicity" prin
 - **Prefer explicit code** over clever code
 - **Follow "Leave No Trace"** - remove all legacy patterns when making changes
 
-### Dev Tools (Only When Explicitly Requested)
-- `lint` and `lint_fix`: run linting (`uv run ruff check` with optional `--fix` flag)
-- `format`: run auto formatting (`uv run ruff format`)
-- `mp <path>`: run type checking and write errors to `.mypy_errors.jsonl`
-- `pt`: Run pytest
-- `us`: Install/update deps (`uv sync`)
-- `uv run python`: Python with uv
-
-**IMPORTANT**: Do NOT run tests, linting, type checking, or formatting unless explicitly requested by the user. Focus on the requested changes only.
-
 ### Git Shortcuts
 | Shortcut | Command | Use |
 |----------|---------|-----|
@@ -94,18 +109,8 @@ This aligns with the "Minimalism", "Self-Documenting Code", and "Atomicity" prin
 | `ga .` | `git add .` | Stage files |
 | `gc -m "msg"` | `git commit -m "msg"` | Commit |
 
-## 📋 COMMIT STRATEGY
+### 📋 COMMIT STRATEGY
 - **Small, semantic commits**: 20-30 lines per commit with clear purpose
 - **Single line messages**: Succinct and clear, imperative mood
 - **Quality gates**: Run linting/formatting before commits only when explicitly requested
 - **Incremental building**: Each commit should be reviewable and complete
-
-## ⚠️ CRITICAL REQUIREMENTS
-- **No Backward Compatibility**: This is a research library - breaking changes are acceptable for better design
-- **Fail Fast, Fail Loudly**: Use assertions, avoid defensive programming that hides bugs
-- **No Exception Handling**: Never use try-catch blocks - let errors surface immediately
-- **Assertions Over Exceptions**: Use `assert condition, "message"` instead of `raise ValueError()`
-- **Minimize Friction**: Every design choice should reduce friction between idea and visualization
-- **Embrace Change, Demand Consistency**: When making changes, update ALL affected parts
-
-Remember: The goal is code that *disappears* into the background, allowing researchers to focus on their work.
